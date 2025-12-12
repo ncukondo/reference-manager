@@ -39,7 +39,7 @@
 | ファイル | 内容 |
 |---------|------|
 | [validation.md](guidelines/validation.md) | バリデーション |
-| [testing.md](guidelines/testing.md) | テスト・品質 |
+| [testing.md](guidelines/testing.md) | **TDD手順・テスト戦略** (必読) |
 | [platform.md](guidelines/platform.md) | プラットフォームサポート |
 | [pandoc.md](guidelines/pandoc.md) | Pandoc互換性 |
 | [future.md](guidelines/future.md) | 将来の拡張 |

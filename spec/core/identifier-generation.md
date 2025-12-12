@@ -8,7 +8,8 @@ Format:
 ```
 
 Rules:
-- ASCII letters and digits only
+- ASCII letters, digits, and underscores only
+- Spaces converted to underscores for readability
 - TitleSlug (Used when Author or Year is missing):
   - From title
   - Max 32 chars

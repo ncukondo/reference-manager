@@ -1,13 +1,16 @@
 /**
  * Normalize text for identifier generation
- * Converts to lowercase, removes non-ASCII characters, keeps only alphanumeric
+ * Converts to lowercase, converts spaces to underscores, keeps only alphanumeric and underscores
  * @param text - Text to normalize
- * @returns Normalized text (ASCII alphanumeric only)
+ * @returns Normalized text (ASCII alphanumeric and underscores only)
  */
 export function normalizeText(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/\s+/g, "_")              // Convert spaces to underscores
+    .replace(/[^a-z0-9_]/g, "")        // Keep only alphanumeric and underscores
+    .replace(/_+/g, "_")                // Collapse multiple underscores
+    .replace(/^_|_$/g, "");             // Remove leading/trailing underscores
 }
 
 /**

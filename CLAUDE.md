@@ -25,7 +25,12 @@ This file contains:
 
 1. **Check spec/_index.md**
 2. Read necessary specs (always check `spec/core/`)
-3. Implement/modify according to specs
+3. **Follow TDD process** (see `spec/guidelines/testing.md`):
+   - Write tests first
+   - Create empty implementation (`throw new Error("Not implemented")`)
+   - Run tests to confirm failure: `npm run test:run -- <test-file>`
+   - Implement actual logic
+   - Run tests to confirm success: `npm run test:run -- <test-file>`
 4. Verify following test and quality guidelines
 
 ## Notes

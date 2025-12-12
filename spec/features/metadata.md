@@ -11,13 +11,9 @@
 
 ## PMID
 
-- Stored in `note`
-- Canonical form:
+- Stored in standard `PMID` field (top-level CSL-JSON field per CSL 1.0.2 spec)
+- Format: string containing numeric PMID
+- Example:
+  ```json
+  "PMID": "12345678"
   ```
-  PMID:12345678
-  ```
-
-Parsing tolerance:
-- Case-insensitive
-- `PMID 12345678`, `PMID=12345678` accepted
-- Multiple PMIDs allowed
