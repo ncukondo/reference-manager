@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__list_dir",
+      "WebFetch(domain:www.typescriptlang.org)",
+      "Bash(npm test:*)",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__write_memory",
+      "Bash(npm run test:run:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__serena__read_memory",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_symbol",
+      "mcp__serena__replace_symbol_body",
+      "mcp__serena__replace_regex",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__insert_after_symbol",
+      "mcp__serena__insert_before_symbol",
+      "mcp__serena__find_file",
+      "Bash(npm run test:*)",
+      "Bash(ls:*)",
+      "mcp__serena__think_about_collected_information",
+      "mcp__ide__getDiagnostics",
+      "mcp__serena__activate_project",
+      "WebFetch(domain:www.ncbi.nlm.nih.gov)",
+      "Bash(npx tsx:*)",
+      "mcp__serena__find_referencing_symbols",
+      "mcp__serena__initial_instructions",
+      "Bash(npm test:run:*)",
+      "Bash(tree:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "serena"
+  ]
+}

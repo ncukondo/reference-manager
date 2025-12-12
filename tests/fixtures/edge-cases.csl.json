@@ -1,0 +1,101 @@
+[
+  {
+    "id": "minimal",
+    "type": "article",
+    "title": "Minimal Entry"
+  },
+  {
+    "id": "no_author",
+    "type": "article-journal",
+    "title": "Anonymous Work Without Authors",
+    "issued": { "date-parts": [[2022]] },
+    "container-title": "Some Journal"
+  },
+  {
+    "id": "no_year",
+    "type": "article-journal",
+    "title": "Entry Without Publication Year",
+    "author": [
+      { "family": "Unknown", "given": "Author" }
+    ],
+    "container-title": "Unknown Journal"
+  },
+  {
+    "id": "special_chars",
+    "type": "article-journal",
+    "title": "Special Characters: α, β, γ & \"Quotes\" <Tags>",
+    "author": [
+      { "family": "O'Brien", "given": "Mary-Jane" },
+      { "family": "Müller", "given": "François" }
+    ],
+    "issued": { "date-parts": [[2023, 4, 1]] },
+    "container-title": "Journal of α-Particles & β-Decay",
+    "DOI": "10.1234/special.αβγ",
+    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440001"
+  },
+  {
+    "id": "very_long_title_2023",
+    "type": "article-journal",
+    "title": "A Comprehensive Systematic Review and Meta-Analysis of Randomized Controlled Trials Investigating the Efficacy and Safety of Novel Therapeutic Approaches for the Treatment of Advanced Stage Malignant Neoplasms: An Evidence-Based Perspective",
+    "author": [
+      { "family": "First", "given": "A." },
+      { "family": "Second", "given": "B." },
+      { "family": "Third", "given": "C." },
+      { "family": "Fourth", "given": "D." },
+      { "family": "Fifth", "given": "E." },
+      { "family": "Sixth", "given": "F." },
+      { "family": "Seventh", "given": "G." },
+      { "family": "Eighth", "given": "H." },
+      { "family": "Ninth", "given": "I." },
+      { "family": "Tenth", "given": "J." }
+    ],
+    "issued": { "date-parts": [[2023, 12, 31]] },
+    "container-title": "International Journal of Medical Research",
+    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440002"
+  },
+  {
+    "id": "institutional_author",
+    "type": "report",
+    "title": "Global Health Report 2023",
+    "author": [
+      { "literal": "World Health Organization" }
+    ],
+    "issued": { "date-parts": [[2023]] },
+    "publisher": "WHO",
+    "URL": "https://www.who.int/reports/2023",
+    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440003"
+  },
+  {
+    "id": "missing_uuid",
+    "type": "article-journal",
+    "title": "Entry Without UUID (Should Be Generated)",
+    "author": [
+      { "family": "New", "given": "Entry" }
+    ],
+    "issued": { "date-parts": [[2024, 1, 1]] },
+    "container-title": "Test Journal"
+  },
+  {
+    "id": "invalid_uuid",
+    "type": "article-journal",
+    "title": "Entry With Invalid UUID Format",
+    "author": [
+      { "family": "Bad", "given": "Data" }
+    ],
+    "issued": { "date-parts": [[2024, 2, 1]] },
+    "container-title": "Test Journal",
+    "custom": "reference_manager_uuid=not-a-valid-uuid"
+  },
+  {
+    "id": "preprint2024",
+    "type": "article",
+    "title": "Preprint Without Peer Review",
+    "author": [
+      { "family": "Preprint", "given": "Author" }
+    ],
+    "issued": { "date-parts": [[2024, 3, 15]] },
+    "URL": "https://arxiv.org/abs/2403.12345",
+    "note": "Preprint, not peer-reviewed",
+    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440004"
+  }
+]

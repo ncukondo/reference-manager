@@ -1,0 +1,62 @@
+[
+  {
+    "id": "original2023",
+    "type": "article-journal",
+    "title": "Original Article on Climate Change",
+    "author": [
+      { "family": "Anderson", "given": "James" }
+    ],
+    "issued": { "date-parts": [[2023, 1, 10]] },
+    "container-title": "Nature Climate Change",
+    "DOI": "10.1038/s41558-023-0001",
+    "PMID": "11111111",
+    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440001"
+  },
+  {
+    "id": "duplicate_doi",
+    "type": "article-journal",
+    "title": "Same DOI Different Title",
+    "author": [
+      { "family": "Anderson", "given": "J." }
+    ],
+    "issued": { "date-parts": [[2023]] },
+    "container-title": "Nature Climate Change",
+    "DOI": "10.1038/s41558-023-0001",
+    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440002"
+  },
+  {
+    "id": "duplicate_pmid",
+    "type": "article-journal",
+    "title": "Same PMID Entry",
+    "author": [
+      { "family": "Anderson", "given": "James" }
+    ],
+    "issued": { "date-parts": [[2023, 1]] },
+    "container-title": "Nature Climate Change",
+    "PMID": "11111111",
+    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440003"
+  },
+  {
+    "id": "duplicate_title_author_year",
+    "type": "article-journal",
+    "title": "Original Article on Climate Change",
+    "author": [
+      { "family": "Anderson", "given": "James" }
+    ],
+    "issued": { "date-parts": [[2023, 6, 15]] },
+    "container-title": "Different Journal",
+    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440004"
+  },
+  {
+    "id": "not_duplicate",
+    "type": "article-journal",
+    "title": "Completely Different Article",
+    "author": [
+      { "family": "Williams", "given": "Sarah" }
+    ],
+    "issued": { "date-parts": [[2023, 2, 1]] },
+    "container-title": "Science",
+    "DOI": "10.1126/science.abc1234",
+    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440005"
+  }
+]

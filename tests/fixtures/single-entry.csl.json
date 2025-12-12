@@ -1,0 +1,14 @@
+[
+  {
+    "id": "only_entry",
+    "type": "article-journal",
+    "title": "The Only Entry in This File",
+    "author": [
+      { "family": "Solo", "given": "Author" }
+    ],
+    "issued": { "date-parts": [[2023, 6, 1]] },
+    "container-title": "Single Entry Journal",
+    "DOI": "10.1234/single.2023.001",
+    "custom": "reference_manager_uuid=990e8400-e29b-41d4-a716-446655440001"
+  }
+]

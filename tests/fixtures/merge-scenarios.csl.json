@@ -1,0 +1,147 @@
+{
+  "description": "Test scenarios for 3-way merge operations",
+  "base": [
+    {
+      "id": "merge_test_1",
+      "type": "article-journal",
+      "title": "Original Title",
+      "author": [
+        { "family": "Author", "given": "Original" }
+      ],
+      "issued": { "date-parts": [[2023, 1, 1]] },
+      "container-title": "Original Journal",
+      "volume": "1",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      "id": "merge_test_2",
+      "type": "article-journal",
+      "title": "Unchanged Entry",
+      "author": [
+        { "family": "Stable", "given": "Author" }
+      ],
+      "issued": { "date-parts": [[2023, 2, 1]] },
+      "container-title": "Stable Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+    }
+  ],
+  "local": [
+    {
+      "id": "merge_test_1",
+      "type": "article-journal",
+      "title": "Title Modified Locally",
+      "author": [
+        { "family": "Author", "given": "Original" }
+      ],
+      "issued": { "date-parts": [[2023, 1, 1]] },
+      "container-title": "Original Journal",
+      "volume": "1",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      "id": "merge_test_2",
+      "type": "article-journal",
+      "title": "Unchanged Entry",
+      "author": [
+        { "family": "Stable", "given": "Author" }
+      ],
+      "issued": { "date-parts": [[2023, 2, 1]] },
+      "container-title": "Stable Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+    },
+    {
+      "id": "local_new",
+      "type": "article-journal",
+      "title": "New Entry Added Locally",
+      "author": [
+        { "family": "Local", "given": "New" }
+      ],
+      "issued": { "date-parts": [[2023, 3, 1]] },
+      "container-title": "New Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440003"
+    }
+  ],
+  "remote": [
+    {
+      "id": "merge_test_1",
+      "type": "article-journal",
+      "title": "Original Title",
+      "author": [
+        { "family": "Author", "given": "Original" }
+      ],
+      "issued": { "date-parts": [[2023, 1, 1]] },
+      "container-title": "Journal Changed Remotely",
+      "volume": "1",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      "id": "merge_test_2",
+      "type": "article-journal",
+      "title": "Unchanged Entry",
+      "author": [
+        { "family": "Stable", "given": "Author" }
+      ],
+      "issued": { "date-parts": [[2023, 2, 1]] },
+      "container-title": "Stable Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+    },
+    {
+      "id": "remote_new",
+      "type": "article-journal",
+      "title": "New Entry Added Remotely",
+      "author": [
+        { "family": "Remote", "given": "New" }
+      ],
+      "issued": { "date-parts": [[2023, 4, 1]] },
+      "container-title": "Remote Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440004"
+    }
+  ],
+  "expected_merged": [
+    {
+      "id": "merge_test_1",
+      "type": "article-journal",
+      "title": "Title Modified Locally",
+      "author": [
+        { "family": "Author", "given": "Original" }
+      ],
+      "issued": { "date-parts": [[2023, 1, 1]] },
+      "container-title": "Journal Changed Remotely",
+      "volume": "1",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      "id": "merge_test_2",
+      "type": "article-journal",
+      "title": "Unchanged Entry",
+      "author": [
+        { "family": "Stable", "given": "Author" }
+      ],
+      "issued": { "date-parts": [[2023, 2, 1]] },
+      "container-title": "Stable Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+    },
+    {
+      "id": "local_new",
+      "type": "article-journal",
+      "title": "New Entry Added Locally",
+      "author": [
+        { "family": "Local", "given": "New" }
+      ],
+      "issued": { "date-parts": [[2023, 3, 1]] },
+      "container-title": "New Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440003"
+    },
+    {
+      "id": "remote_new",
+      "type": "article-journal",
+      "title": "New Entry Added Remotely",
+      "author": [
+        { "family": "Remote", "given": "New" }
+      ],
+      "issued": { "date-parts": [[2023, 4, 1]] },
+      "container-title": "Remote Journal",
+      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440004"
+    }
+  ]
+}
