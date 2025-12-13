@@ -1,7 +1,7 @@
-import type { CslItem } from "./csl-json/types";
-import { Reference } from "./reference";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
+import type { CslItem } from "./csl-json/types";
+import { Reference } from "./reference";
 
 /**
  * Library manager for CSL-JSON references

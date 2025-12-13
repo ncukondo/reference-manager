@@ -19,6 +19,13 @@ const CslDateSchema = z.object({
   literal: z.string().optional(),
 });
 
+// CSL-JSON Custom Metadata
+const CslCustomSchema = z.object({
+  uuid: z.string(),
+  timestamp: z.string(),
+  additional_urls: z.array(z.string()).optional(),
+});
+
 // CSL-JSON Item
 export const CslItemSchema = z
   .object({
@@ -35,6 +42,7 @@ export const CslItemSchema = z
     page: z.string().optional(),
     DOI: z.string().optional(),
     PMID: z.string().optional(),
+    PMCID: z.string().optional(),
     ISBN: z.string().optional(),
     ISSN: z.string().optional(),
     URL: z.string().optional(),
@@ -42,7 +50,8 @@ export const CslItemSchema = z
     publisher: z.string().optional(),
     "publisher-place": z.string().optional(),
     note: z.string().optional(),
-    custom: z.string().optional(),
+    keyword: z.string().optional(),
+    custom: CslCustomSchema.optional(),
     // Allow additional fields
   })
   .passthrough();
@@ -50,5 +59,6 @@ export const CslItemSchema = z
 // CSL-JSON Library (array of items)
 export const CslLibrarySchema = z.array(CslItemSchema);
 
+export type CslCustom = z.infer<typeof CslCustomSchema>;
 export type CslItem = z.infer<typeof CslItemSchema>;
 export type CslLibrary = z.infer<typeof CslLibrarySchema>;

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { normalizeText, normalizeAuthorName, normalizeTitleSlug } from "./normalize";
+import { describe, expect, it } from "vitest";
+import { normalizeAuthorName, normalizeText, normalizeTitleSlug } from "./normalize";
 
 describe("Text Normalization", () => {
   describe("normalizeText", () => {

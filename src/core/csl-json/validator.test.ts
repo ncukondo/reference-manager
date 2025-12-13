@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
-import { validateCslJson } from "./validator";
+import { describe, expect, it } from "vitest";
 import { parseCslJson } from "./parser";
-import type { CslLibrary, CslItem } from "./types";
+import type { CslLibrary } from "./types";
+import { validateCslJson } from "./validator";
 
 const FIXTURES_DIR = resolve(__dirname, "../../../tests/fixtures");
 
@@ -50,7 +50,7 @@ describe("CSL-JSON Validator", () => {
     });
 
     it("should allow additional fields (passthrough)", () => {
-      const library: any = [
+      const library: unknown = [
         {
           id: "test",
           type: "article",
@@ -64,11 +64,11 @@ describe("CSL-JSON Validator", () => {
 
       expect(result).toBeDefined();
       expect(result.length).toBe(1);
-      expect((result[0] as any).customField).toBe("This should be allowed");
+      expect((result[0] as { customField: string }).customField).toBe("This should be allowed");
     });
 
     it("should throw error for non-array data", () => {
-      const invalidData: any = {
+      const invalidData: unknown = {
         not: "an array",
         this: "should fail",
       };
@@ -77,7 +77,7 @@ describe("CSL-JSON Validator", () => {
     });
 
     it("should throw error for entry missing id field", () => {
-      const invalidLibrary: any = [
+      const invalidLibrary: unknown = [
         {
           type: "article",
           title: "Missing ID",
@@ -88,7 +88,7 @@ describe("CSL-JSON Validator", () => {
     });
 
     it("should throw error for entry missing type field", () => {
-      const invalidLibrary: any = [
+      const invalidLibrary: unknown = [
         {
           id: "test",
           title: "Missing Type",
@@ -99,7 +99,7 @@ describe("CSL-JSON Validator", () => {
     });
 
     it("should throw error for invalid author structure", () => {
-      const invalidLibrary: any = [
+      const invalidLibrary: unknown = [
         {
           id: "test",
           type: "article",
@@ -111,7 +111,7 @@ describe("CSL-JSON Validator", () => {
     });
 
     it("should throw error for invalid date structure", () => {
-      const invalidLibrary: any = [
+      const invalidLibrary: unknown = [
         {
           id: "test",
           type: "article",
@@ -201,7 +201,10 @@ describe("CSL-JSON Validator", () => {
           publisher: "Test Publisher",
           "publisher-place": "Test City",
           note: "Test note",
-          custom: "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001",
+          custom: {
+            uuid: "550e8400-e29b-41d4-a716-446655440001",
+            timestamp: "2024-01-01T00:00:00.000Z",
+          },
         },
       ];
 
@@ -214,7 +217,7 @@ describe("CSL-JSON Validator", () => {
     });
 
     it("should provide meaningful error messages", () => {
-      const invalidLibrary: any = [
+      const invalidLibrary: unknown = [
         {
           id: 123, // Should be string
           type: "article",

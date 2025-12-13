@@ -11,7 +11,10 @@
       "issued": { "date-parts": [[2023, 1, 1]] },
       "container-title": "Original Journal",
       "volume": "1",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "merge_test_2",
@@ -22,7 +25,10 @@
       ],
       "issued": { "date-parts": [[2023, 2, 1]] },
       "container-title": "Stable Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     }
   ],
   "local": [
@@ -36,7 +42,10 @@
       "issued": { "date-parts": [[2023, 1, 1]] },
       "container-title": "Original Journal",
       "volume": "1",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "merge_test_2",
@@ -47,7 +56,10 @@
       ],
       "issued": { "date-parts": [[2023, 2, 1]] },
       "container-title": "Stable Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "local_new",
@@ -58,7 +70,10 @@
       ],
       "issued": { "date-parts": [[2023, 3, 1]] },
       "container-title": "New Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440003"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440003",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     }
   ],
   "remote": [
@@ -72,7 +87,10 @@
       "issued": { "date-parts": [[2023, 1, 1]] },
       "container-title": "Journal Changed Remotely",
       "volume": "1",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "merge_test_2",
@@ -83,7 +101,10 @@
       ],
       "issued": { "date-parts": [[2023, 2, 1]] },
       "container-title": "Stable Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "remote_new",
@@ -94,7 +115,10 @@
       ],
       "issued": { "date-parts": [[2023, 4, 1]] },
       "container-title": "Remote Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440004"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440004",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     }
   ],
   "expected_merged": [
@@ -108,7 +132,10 @@
       "issued": { "date-parts": [[2023, 1, 1]] },
       "container-title": "Journal Changed Remotely",
       "volume": "1",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440001"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "merge_test_2",
@@ -119,7 +146,10 @@
       ],
       "issued": { "date-parts": [[2023, 2, 1]] },
       "container-title": "Stable Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440002"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "local_new",
@@ -130,7 +160,10 @@
       ],
       "issued": { "date-parts": [[2023, 3, 1]] },
       "container-title": "New Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440003"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440003",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     },
     {
       "id": "remote_new",
@@ -141,7 +174,10 @@
       ],
       "issued": { "date-parts": [[2023, 4, 1]] },
       "container-title": "Remote Journal",
-      "custom": "reference_manager_uuid=880e8400-e29b-41d4-a716-446655440004"
+      "custom": {
+      "uuid": "880e8400-e29b-41d4-a716-446655440004",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
     }
   ]
 }

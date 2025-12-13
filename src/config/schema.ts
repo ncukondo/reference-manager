@@ -93,6 +93,82 @@ export type DeepPartialConfig = {
 };
 
 /**
+ * Normalize backup configuration from snake_case to camelCase
+ */
+function normalizeBackupConfig(
+  backup: Partial<{
+    maxGenerations?: number;
+    max_generations?: number;
+    maxAgeDays?: number;
+    max_age_days?: number;
+    directory?: string;
+  }>
+): Partial<BackupConfig> | undefined {
+  const normalized: Partial<BackupConfig> = {};
+
+  const maxGenerations = backup.maxGenerations ?? backup.max_generations;
+  if (maxGenerations !== undefined) {
+    normalized.maxGenerations = maxGenerations;
+  }
+
+  const maxAgeDays = backup.maxAgeDays ?? backup.max_age_days;
+  if (maxAgeDays !== undefined) {
+    normalized.maxAgeDays = maxAgeDays;
+  }
+
+  if (backup.directory !== undefined) {
+    normalized.directory = backup.directory;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
+ * Normalize watch configuration from snake_case to camelCase
+ */
+function normalizeWatchConfig(
+  watch: Partial<{
+    enabled?: boolean;
+    debounceMs?: number;
+    debounce_ms?: number;
+    pollIntervalMs?: number;
+    poll_interval_ms?: number;
+    retryIntervalMs?: number;
+    retry_interval_ms?: number;
+    maxRetries?: number;
+    max_retries?: number;
+  }>
+): Partial<WatchConfig> | undefined {
+  const normalized: Partial<WatchConfig> = {};
+
+  if (watch.enabled !== undefined) {
+    normalized.enabled = watch.enabled;
+  }
+
+  const debounceMs = watch.debounceMs ?? watch.debounce_ms;
+  if (debounceMs !== undefined) {
+    normalized.debounceMs = debounceMs;
+  }
+
+  const pollIntervalMs = watch.pollIntervalMs ?? watch.poll_interval_ms;
+  if (pollIntervalMs !== undefined) {
+    normalized.pollIntervalMs = pollIntervalMs;
+  }
+
+  const retryIntervalMs = watch.retryIntervalMs ?? watch.retry_interval_ms;
+  if (retryIntervalMs !== undefined) {
+    normalized.retryIntervalMs = retryIntervalMs;
+  }
+
+  const maxRetries = watch.maxRetries ?? watch.max_retries;
+  if (maxRetries !== undefined) {
+    normalized.maxRetries = maxRetries;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Normalize snake_case fields to camelCase
  */
 export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfig {
@@ -111,59 +187,19 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
 
   // Backup
   if (partial.backup !== undefined) {
-    const backup: Partial<BackupConfig> = {};
-
-    const maxGenerations = partial.backup.maxGenerations ?? partial.backup.max_generations;
-    if (maxGenerations !== undefined) {
-      backup.maxGenerations = maxGenerations;
-    }
-
-    const maxAgeDays = partial.backup.maxAgeDays ?? partial.backup.max_age_days;
-    if (maxAgeDays !== undefined) {
-      backup.maxAgeDays = maxAgeDays;
-    }
-
-    if (partial.backup.directory !== undefined) {
-      backup.directory = partial.backup.directory;
-    }
-
-    // Only set backup if there are fields
-    if (Object.keys(backup).length > 0) {
-      normalized.backup = backup as Partial<BackupConfig>;
+    const backup = normalizeBackupConfig(
+      partial.backup as Parameters<typeof normalizeBackupConfig>[0]
+    );
+    if (backup) {
+      normalized.backup = backup;
     }
   }
 
   // Watch
   if (partial.watch !== undefined) {
-    const watch: Partial<WatchConfig> = {};
-
-    if (partial.watch.enabled !== undefined) {
-      watch.enabled = partial.watch.enabled;
-    }
-
-    const debounceMs = partial.watch.debounceMs ?? partial.watch.debounce_ms;
-    if (debounceMs !== undefined) {
-      watch.debounceMs = debounceMs;
-    }
-
-    const pollIntervalMs = partial.watch.pollIntervalMs ?? partial.watch.poll_interval_ms;
-    if (pollIntervalMs !== undefined) {
-      watch.pollIntervalMs = pollIntervalMs;
-    }
-
-    const retryIntervalMs = partial.watch.retryIntervalMs ?? partial.watch.retry_interval_ms;
-    if (retryIntervalMs !== undefined) {
-      watch.retryIntervalMs = retryIntervalMs;
-    }
-
-    const maxRetries = partial.watch.maxRetries ?? partial.watch.max_retries;
-    if (maxRetries !== undefined) {
-      watch.maxRetries = maxRetries;
-    }
-
-    // Only set watch if there are fields
-    if (Object.keys(watch).length > 0) {
-      normalized.watch = watch as Partial<WatchConfig>;
+    const watch = normalizeWatchConfig(partial.watch as Parameters<typeof normalizeWatchConfig>[0]);
+    if (watch) {
+      normalized.watch = watch;
     }
   }
 

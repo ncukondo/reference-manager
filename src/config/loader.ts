@@ -6,6 +6,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseTOML } from "@iarna/toml";
 import {
+  defaultConfig,
+  getDefaultCurrentDirConfigFilename,
+  getDefaultUserConfigPath,
+} from "./defaults.js";
+import {
   type Config,
   type DeepPartialConfig,
   type PartialConfig,
@@ -13,11 +18,6 @@ import {
   normalizePartialConfig,
   partialConfigSchema,
 } from "./schema.js";
-import {
-  defaultConfig,
-  getDefaultCurrentDirConfigFilename,
-  getDefaultUserConfigPath,
-} from "./defaults.js";
 
 /**
  * Options for loading configuration

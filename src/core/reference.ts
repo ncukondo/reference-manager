@@ -1,6 +1,6 @@
 import type { CslItem } from "./csl-json/types";
-import { ensureUuid, extractUuidFromCustom } from "./identifier/uuid";
 import { generateIdWithCollisionCheck } from "./identifier/generator";
+import { ensureCustomMetadata, extractUuidFromCustom } from "./identifier/uuid";
 
 /**
  * Options for creating a Reference
@@ -18,14 +18,14 @@ export class Reference {
   private uuid: string;
 
   constructor(item: CslItem) {
-    // Ensure UUID is present and valid in custom field
-    const customWithUuid = ensureUuid(item.custom);
-    this.item = { ...item, custom: customWithUuid };
+    // Ensure UUID and timestamp are present and valid in custom field
+    const customMetadata = ensureCustomMetadata(item.custom);
+    this.item = { ...item, custom: customMetadata };
 
     // Extract UUID from the custom field
-    const extractedUuid = extractUuidFromCustom(customWithUuid);
+    const extractedUuid = extractUuidFromCustom(customMetadata);
     if (!extractedUuid) {
-      throw new Error("Failed to extract UUID after ensureUuid");
+      throw new Error("Failed to extract UUID after ensureCustomMetadata");
     }
     this.uuid = extractedUuid;
   }
@@ -105,6 +105,44 @@ export class Reference {
    */
   getPmid(): string | undefined {
     return this.item.PMID;
+  }
+
+  /**
+   * Get the PMCID
+   */
+  getPmcid(): string | undefined {
+    return this.item.PMCID;
+  }
+
+  /**
+   * Get the URL
+   */
+  getUrl(): string | undefined {
+    return this.item.URL;
+  }
+
+  /**
+   * Get the keyword
+   */
+  getKeyword(): string | undefined {
+    return this.item.keyword;
+  }
+
+  /**
+   * Get additional URLs from custom metadata
+   */
+  getAdditionalUrls(): string[] | undefined {
+    return this.item.custom?.additional_urls;
+  }
+
+  /**
+   * Get the timestamp from custom metadata
+   */
+  getTimestamp(): string {
+    if (!this.item.custom?.timestamp) {
+      throw new Error("Timestamp is missing from custom metadata");
+    }
+    return this.item.custom.timestamp;
   }
 
   /**

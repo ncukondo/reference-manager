@@ -10,7 +10,10 @@
     "container-title": "Nature Climate Change",
     "DOI": "10.1038/s41558-023-0001",
     "PMID": "11111111",
-    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440001"
+    "custom": {
+      "uuid": "660e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "duplicate_doi",
@@ -22,7 +25,10 @@
     "issued": { "date-parts": [[2023]] },
     "container-title": "Nature Climate Change",
     "DOI": "10.1038/s41558-023-0001",
-    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440002"
+    "custom": {
+      "uuid": "660e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "duplicate_pmid",
@@ -34,7 +40,10 @@
     "issued": { "date-parts": [[2023, 1]] },
     "container-title": "Nature Climate Change",
     "PMID": "11111111",
-    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440003"
+    "custom": {
+      "uuid": "660e8400-e29b-41d4-a716-446655440003",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "duplicate_title_author_year",
@@ -45,7 +54,10 @@
     ],
     "issued": { "date-parts": [[2023, 6, 15]] },
     "container-title": "Different Journal",
-    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440004"
+    "custom": {
+      "uuid": "660e8400-e29b-41d4-a716-446655440004",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "not_duplicate",
@@ -57,6 +69,9 @@
     "issued": { "date-parts": [[2023, 2, 1]] },
     "container-title": "Science",
     "DOI": "10.1126/science.abc1234",
-    "custom": "reference_manager_uuid=660e8400-e29b-41d4-a716-446655440005"
+    "custom": {
+      "uuid": "660e8400-e29b-41d4-a716-446655440005",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   }
 ]

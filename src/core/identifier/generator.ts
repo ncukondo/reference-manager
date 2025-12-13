@@ -47,6 +47,32 @@ function extractYear(item: CslItem): string {
 }
 
 /**
+ * Determine the title part of the ID based on author, year, and title availability
+ * @param hasAuthor - Whether author is available
+ * @param hasYear - Whether year is available
+ * @param title - Title slug
+ * @returns Title part of the ID
+ */
+function determineTitlePart(hasAuthor: boolean, hasYear: boolean, title: string): string {
+  // No title part needed if both author and year are present
+  if (hasAuthor && hasYear) {
+    return "";
+  }
+
+  // Add title if available
+  if (title) {
+    return `-${title}`;
+  }
+
+  // Add "untitled" only if both author and year are missing
+  if (!hasAuthor && !hasYear) {
+    return "-untitled";
+  }
+
+  return "";
+}
+
+/**
  * Generate a BibTeX-style ID for a CSL-JSON item
  * Format: <FirstAuthorFamily>-<Year>[<TitleSlug>][a-z suffix]
  * @param item - CSL-JSON item
@@ -58,37 +84,9 @@ export function generateId(item: CslItem): string {
   const title = item.title ? normalizeTitleSlug(item.title) : "";
 
   // Build base ID with fallbacks
-  let authorPart: string;
-  let yearPart: string;
-  let titlePart: string;
-
-  // Determine author part
-  if (author) {
-    authorPart = author;
-  } else {
-    authorPart = "anon";
-  }
-
-  // Determine year part
-  if (year) {
-    yearPart = year;
-  } else {
-    yearPart = "nd"; // no date
-  }
-
-  // Determine title part
-  // Add title slug when author or year is missing, or when title is needed for disambiguation
-  if (!author || !year) {
-    if (title) {
-      titlePart = `-${title}`;
-    } else if (!author && !year) {
-      titlePart = "-untitled";
-    } else {
-      titlePart = title ? `-${title}` : "";
-    }
-  } else {
-    titlePart = "";
-  }
+  const authorPart = author || "anon";
+  const yearPart = year || "nd"; // no date
+  const titlePart = determineTitlePart(Boolean(author), Boolean(year), title);
 
   return `${authorPart}-${yearPart}${titlePart}`;
 }

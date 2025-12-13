@@ -11,7 +11,7 @@ export function createLogger(level: LogLevel = "info"): Logger {
   const shouldLogDebug = level === "debug";
 
   function formatMessage(...args: unknown[]): string {
-    return args.map((arg) => String(arg)).join(" ") + "\n";
+    return `${args.map((arg) => String(arg)).join(" ")}\n`;
   }
 
   return {

@@ -15,7 +15,10 @@
     "DOI": "10.1234/jmi.2023.0045",
     "PMID": "12345678",
     "abstract": "This paper presents a comprehensive review of machine learning applications in medical diagnosis...",
-    "custom": "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001"
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "tanaka2022",
@@ -31,7 +34,10 @@
     "issue": "6",
     "page": "721-735",
     "DOI": "10.11234/jsai.37.721",
-    "custom": "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440002"
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "wilson2021book",
@@ -44,7 +50,10 @@
     "publisher": "Academic Press",
     "publisher-place": "New York",
     "ISBN": "978-0-12-345678-9",
-    "custom": "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440003"
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440003",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "chen2023chapter",
@@ -61,7 +70,10 @@
     "publisher": "Springer",
     "page": "45-89",
     "DOI": "10.1007/978-3-030-12345-6_3",
-    "custom": "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440004"
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440004",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "garcia2020",
@@ -79,6 +91,9 @@
     "page": "567-582",
     "DOI": "10.1093/biostatistics/kxz045",
     "PMID": "87654321",
-    "custom": "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440005"
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440005",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   }
 ]

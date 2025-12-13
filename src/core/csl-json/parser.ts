@@ -1,11 +1,11 @@
 import { readFile } from "node:fs/promises";
-import { CslLibrarySchema, type CslItem, type CslLibrary } from "./types";
-import { ensureUuid } from "../identifier/uuid";
+import { ensureCustomMetadata } from "../identifier/uuid";
+import { type CslLibrary, CslLibrarySchema } from "./types";
 
 /**
- * Parse a CSL-JSON file and ensure all entries have valid UUIDs
+ * Parse a CSL-JSON file and ensure all entries have valid UUIDs and timestamps
  * @param filePath - Path to the CSL-JSON file
- * @returns Array of CSL-JSON items with guaranteed UUIDs
+ * @returns Array of CSL-JSON items with guaranteed UUIDs and timestamps
  * @throws Error if file cannot be read or JSON is invalid
  */
 export async function parseCslJson(filePath: string): Promise<CslLibrary> {
@@ -31,9 +31,9 @@ export async function parseCslJson(filePath: string): Promise<CslLibrary> {
 
   const library = parseResult.data;
 
-  // Ensure all entries have valid UUIDs
+  // Ensure all entries have valid UUIDs and timestamps
   const processedLibrary: CslLibrary = library.map((item) => {
-    const updatedCustom = ensureUuid(item.custom);
+    const updatedCustom = ensureCustomMetadata(item.custom);
 
     return {
       ...item,

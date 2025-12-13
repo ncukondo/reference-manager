@@ -31,7 +31,10 @@
     "issued": { "date-parts": [[2023, 4, 1]] },
     "container-title": "Journal of α-Particles & β-Decay",
     "DOI": "10.1234/special.αβγ",
-    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440001"
+    "custom": {
+      "uuid": "770e8400-e29b-41d4-a716-446655440001",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "very_long_title_2023",
@@ -51,7 +54,10 @@
     ],
     "issued": { "date-parts": [[2023, 12, 31]] },
     "container-title": "International Journal of Medical Research",
-    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440002"
+    "custom": {
+      "uuid": "770e8400-e29b-41d4-a716-446655440002",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "institutional_author",
@@ -63,7 +69,10 @@
     "issued": { "date-parts": [[2023]] },
     "publisher": "WHO",
     "URL": "https://www.who.int/reports/2023",
-    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440003"
+    "custom": {
+      "uuid": "770e8400-e29b-41d4-a716-446655440003",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "missing_uuid",
@@ -84,7 +93,10 @@
     ],
     "issued": { "date-parts": [[2024, 2, 1]] },
     "container-title": "Test Journal",
-    "custom": "reference_manager_uuid=not-a-valid-uuid"
+    "custom": {
+      "uuid": "not-a-valid-uuid",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   },
   {
     "id": "preprint2024",
@@ -96,6 +108,9 @@
     "issued": { "date-parts": [[2024, 3, 15]] },
     "URL": "https://arxiv.org/abs/2403.12345",
     "note": "Preprint, not peer-reviewed",
-    "custom": "reference_manager_uuid=770e8400-e29b-41d4-a716-446655440004"
+    "custom": {
+      "uuid": "770e8400-e29b-41d4-a716-446655440004",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
   }
 ]

@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { createLogger, type LogLevel } from "./logger";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type LogLevel, createLogger } from "./logger";
 
 describe("Logger", () => {
-  let stdoutSpy: ReturnType<typeof vi.spyOn>;
+  let _stdoutSpy: ReturnType<typeof vi.spyOn>;
   let stderrSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    _stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
   });
 

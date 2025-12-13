@@ -3,8 +3,8 @@
 ## Test Framework
 
 - Test framework: **vitest**
-- Test command: `npm run test:run` (non-watch mode, for CI and verification)
-- Watch mode: `npm test` (interactive watch mode, for development)
+- Test command: `npm test` (non-watch mode, for CI and verification)
+- Watch mode: `npm run test:watch` (interactive watch mode, for development)
 
 ## Test-Driven Development (TDD) Workflow
 
@@ -43,6 +43,18 @@ All implementations MUST follow the TDD (Red-Green-Refactor) cycle:
 1. Clean up code while keeping tests green
 2. Verify tests still pass after refactoring
 
+### Step 6: Quality Checks (Green)
+After implementation is complete and all tests pass:
+
+1. **Type check**: `npm run typecheck`
+   - Ensure no TypeScript errors
+2. **Lint**: `npm run lint`
+   - Fix any linting issues
+3. **Format**: `npm run format`
+   - Apply consistent code formatting
+
+All quality checks must pass before considering the implementation complete.
+
 ## Example TDD Session
 
 ```bash
@@ -65,6 +77,11 @@ npm run test:run -- example.test.ts
 
 # 6. Run all tests to ensure no regressions
 npm run test:run
+
+# 7. Quality checks
+npm run typecheck  # Type checking
+npm run lint       # Linting
+npm run format     # Code formatting
 ```
 
 ## Required Test Coverage

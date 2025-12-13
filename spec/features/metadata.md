@@ -9,6 +9,16 @@
   ```
 - Normalized on read and write
 
+## URL
+
+- Stored in standard `URL` field (top-level CSL-JSON field)
+- Format: string containing a valid URL
+- Example:
+  ```json
+  "URL": "https://example.com/article"
+  ```
+- Primary URL for the reference (additional URLs can be stored in `custom.additional_urls`)
+
 ## PMID
 
 - Stored in standard `PMID` field (top-level CSL-JSON field per CSL 1.0.2 spec)
@@ -17,3 +27,44 @@
   ```json
   "PMID": "12345678"
   ```
+
+## PMCID
+
+- Stored in standard `PMCID` field (top-level CSL-JSON field)
+- Format: string containing PMCID (with or without "PMC" prefix)
+- Normalized to include "PMC" prefix on read and write
+- Example:
+  ```json
+  "PMCID": "PMC12345678"
+  ```
+
+## Keyword
+
+- Stored in standard `keyword` field (top-level CSL-JSON field)
+- Format: string with semicolon-separated keywords
+- Example:
+  ```json
+  "keyword": "machine learning; deep learning; neural networks"
+  ```
+- Keywords are trimmed of whitespace
+- Empty keywords are removed during normalization
+
+## Custom Metadata
+
+- Stored in `custom` field as an object
+- Contains reference-manager-specific metadata
+- Structure:
+  ```json
+  "custom": {
+    "uuid": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "additional_urls": [
+      "https://example.com/resource1",
+      "https://example.com/resource2"
+    ]
+  }
+  ```
+- Fields:
+  - `uuid`: Internal stable identifier (required, auto-generated)
+  - `timestamp`: ISO 8601 timestamp when reference was added (required, auto-generated)
+  - `additional_urls`: Optional array of additional URLs (optional)

@@ -1,6 +1,6 @@
-import writeFileAtomicLib from "write-file-atomic";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import writeFileAtomicLib from "write-file-atomic";
 
 /**
  * Write file atomically with parent directory creation

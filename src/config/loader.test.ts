@@ -2,12 +2,12 @@
  * Tests for configuration loader
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { loadConfig } from "./loader.js";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { defaultConfig } from "./defaults.js";
+import { loadConfig } from "./loader.js";
 
 describe("Config Loader", () => {
   let testDir: string;
@@ -28,7 +28,7 @@ describe("Config Loader", () => {
 
     // Restore environment variable
     if (originalEnv === undefined) {
-      delete process.env.REFERENCE_MANAGER_CONFIG;
+      process.env.REFERENCE_MANAGER_CONFIG = undefined;
     } else {
       process.env.REFERENCE_MANAGER_CONFIG = originalEnv;
     }

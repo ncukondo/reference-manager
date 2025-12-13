@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { Reference } from "./reference";
+import { describe, expect, it } from "vitest";
 import type { CslItem } from "./csl-json/types";
+import { Reference } from "./reference";
 
 describe("Reference", () => {
   const sampleItem: CslItem = {
@@ -41,7 +41,10 @@ describe("Reference", () => {
     it("should extract UUID from custom field if present", () => {
       const itemWithUuid: CslItem = {
         ...sampleItem,
-        custom: "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001",
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
       };
       const ref = new Reference(itemWithUuid);
       expect(ref.getUuid()).toBe("550e8400-e29b-41d4-a716-446655440001");
@@ -59,7 +62,10 @@ describe("Reference", () => {
     it("should generate UUID if custom field is invalid", () => {
       const itemWithInvalidUuid: CslItem = {
         ...sampleItem,
-        custom: "some_other_data",
+        custom: {
+          uuid: "invalid-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
       };
       const ref = new Reference(itemWithInvalidUuid);
       const uuid = ref.getUuid();
@@ -73,7 +79,47 @@ describe("Reference", () => {
       const ref = new Reference(sampleItem);
       const uuid = ref.getUuid();
       const item = ref.getItem();
-      expect(item.custom).toBe(`reference_manager_uuid=${uuid}`);
+      expect(item.custom).toBeDefined();
+      expect(item.custom?.uuid).toBe(uuid);
+    });
+
+    it("should generate timestamp if not present", () => {
+      const ref = new Reference(sampleItem);
+      const item = ref.getItem();
+      expect(item.custom).toBeDefined();
+      expect(item.custom?.timestamp).toBeDefined();
+      // Check if timestamp is a valid ISO 8601 string
+      expect(new Date(item.custom?.timestamp).toISOString()).toBe(item.custom?.timestamp);
+    });
+
+    it("should preserve existing timestamp", () => {
+      const itemWithTimestamp: CslItem = {
+        ...sampleItem,
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const ref = new Reference(itemWithTimestamp);
+      const item = ref.getItem();
+      expect(item.custom?.timestamp).toBe("2024-01-01T00:00:00.000Z");
+    });
+
+    it("should preserve additional_urls if present", () => {
+      const itemWithUrls: CslItem = {
+        ...sampleItem,
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          timestamp: "2024-01-01T00:00:00.000Z",
+          additional_urls: ["https://example.com/resource1", "https://example.com/resource2"],
+        },
+      };
+      const ref = new Reference(itemWithUrls);
+      const item = ref.getItem();
+      expect(item.custom?.additional_urls).toEqual([
+        "https://example.com/resource1",
+        "https://example.com/resource2",
+      ]);
     });
   });
 
@@ -159,6 +205,84 @@ describe("Reference", () => {
       const itemWithoutPmid: CslItem = { id: "test", type: "article" };
       const ref = new Reference(itemWithoutPmid);
       expect(ref.getPmid()).toBeUndefined();
+    });
+
+    it("should return PMCID", () => {
+      const itemWithPmcid: CslItem = {
+        ...sampleItem,
+        PMCID: "PMC12345678",
+      };
+      const ref = new Reference(itemWithPmcid);
+      expect(ref.getPmcid()).toBe("PMC12345678");
+    });
+
+    it("should return undefined for missing PMCID", () => {
+      const itemWithoutPmcid: CslItem = { id: "test", type: "article" };
+      const ref = new Reference(itemWithoutPmcid);
+      expect(ref.getPmcid()).toBeUndefined();
+    });
+
+    it("should return URL", () => {
+      const itemWithUrl: CslItem = {
+        ...sampleItem,
+        URL: "https://example.com/article",
+      };
+      const ref = new Reference(itemWithUrl);
+      expect(ref.getUrl()).toBe("https://example.com/article");
+    });
+
+    it("should return undefined for missing URL", () => {
+      const itemWithoutUrl: CslItem = { id: "test", type: "article" };
+      const ref = new Reference(itemWithoutUrl);
+      expect(ref.getUrl()).toBeUndefined();
+    });
+
+    it("should return keyword", () => {
+      const itemWithKeyword: CslItem = {
+        ...sampleItem,
+        keyword: "machine learning; deep learning; neural networks",
+      };
+      const ref = new Reference(itemWithKeyword);
+      expect(ref.getKeyword()).toBe("machine learning; deep learning; neural networks");
+    });
+
+    it("should return undefined for missing keyword", () => {
+      const itemWithoutKeyword: CslItem = { id: "test", type: "article" };
+      const ref = new Reference(itemWithoutKeyword);
+      expect(ref.getKeyword()).toBeUndefined();
+    });
+
+    it("should return additional URLs", () => {
+      const itemWithAdditionalUrls: CslItem = {
+        ...sampleItem,
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          timestamp: "2024-01-01T00:00:00.000Z",
+          additional_urls: ["https://example.com/resource1", "https://example.com/resource2"],
+        },
+      };
+      const ref = new Reference(itemWithAdditionalUrls);
+      expect(ref.getAdditionalUrls()).toEqual([
+        "https://example.com/resource1",
+        "https://example.com/resource2",
+      ]);
+    });
+
+    it("should return undefined for missing additional URLs", () => {
+      const ref = new Reference(sampleItem);
+      expect(ref.getAdditionalUrls()).toBeUndefined();
+    });
+
+    it("should return timestamp", () => {
+      const itemWithTimestamp: CslItem = {
+        ...sampleItem,
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const ref = new Reference(itemWithTimestamp);
+      expect(ref.getTimestamp()).toBe("2024-01-01T00:00:00.000Z");
     });
   });
 

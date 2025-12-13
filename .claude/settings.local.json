@@ -30,7 +30,10 @@
       "mcp__serena__initial_instructions",
       "Bash(npm test:run:*)",
       "Bash(tree:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(grep:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

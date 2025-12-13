@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Library } from "./library";
-import type { CslItem } from "./csl-json/types";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { CslItem } from "./csl-json/types";
+import { Library } from "./library";
 
 describe("Library", () => {
   const testDir = join(process.cwd(), "tests", "temp");
@@ -17,7 +17,10 @@ describe("Library", () => {
       issued: { "date-parts": [[2023]] },
       DOI: "10.1234/jmi.2023.0045",
       PMID: "12345678",
-      custom: "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001",
+      custom: {
+        uuid: "550e8400-e29b-41d4-a716-446655440001",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
     },
     {
       id: "tanaka-2022",
@@ -26,7 +29,10 @@ describe("Library", () => {
       author: [{ family: "Tanaka", given: "Taro" }],
       issued: { "date-parts": [[2022]] },
       DOI: "10.11234/jsai.37.721",
-      custom: "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440002",
+      custom: {
+        uuid: "550e8400-e29b-41d4-a716-446655440002",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
     },
   ];
 

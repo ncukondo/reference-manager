@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
-import { serializeCslJson, writeCslJson } from "./serializer";
+import { describe, expect, it } from "vitest";
 import { parseCslJson } from "./parser";
+import { serializeCslJson, writeCslJson } from "./serializer";
 import type { CslLibrary } from "./types";
 
 const FIXTURES_DIR = resolve(__dirname, "../../../tests/fixtures");
@@ -77,14 +77,16 @@ describe("CSL-JSON Serializer", () => {
       const parsed = JSON.parse(result);
 
       // Should handle institutional authors
-      const institutionalEntry = parsed.find((e: any) => e.id === "institutional_author");
+      const institutionalEntry = (parsed as CslLibrary).find(
+        (e) => e.id === "institutional_author"
+      );
       expect(institutionalEntry).toBeDefined();
-      expect(institutionalEntry.author?.[0]).toHaveProperty("literal");
+      expect(institutionalEntry?.author?.[0]).toHaveProperty("literal");
 
       // Should handle entries without authors
-      const noAuthorEntry = parsed.find((e: any) => e.id === "no_author");
+      const noAuthorEntry = (parsed as CslLibrary).find((e) => e.id === "no_author");
       expect(noAuthorEntry).toBeDefined();
-      expect(noAuthorEntry.author).toBeUndefined();
+      expect(noAuthorEntry?.author).toBeUndefined();
     });
   });
 
@@ -168,10 +170,8 @@ describe("CSL-JSON Serializer", () => {
       const smith2023_1 = library1.find((e) => e.id === "smith2023");
       const smith2023_2 = library2.find((e) => e.id === "smith2023");
 
-      expect(smith2023_1?.custom).toBe(smith2023_2?.custom);
-      expect(smith2023_1?.custom).toBe(
-        "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001"
-      );
+      expect(smith2023_1?.custom).toStrictEqual(smith2023_2?.custom);
+      expect(smith2023_1?.custom?.uuid).toBe("550e8400-e29b-41d4-a716-446655440001");
 
       // Cleanup
       await rm(TMP_DIR, { recursive: true, force: true });
