@@ -29,7 +29,8 @@
       "mcp__serena__find_referencing_symbols",
       "mcp__serena__initial_instructions",
       "Bash(npm test:run:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(npm run typecheck:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

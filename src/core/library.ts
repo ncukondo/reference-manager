@@ -39,7 +39,7 @@ export class Library {
    * Save library to file
    */
   async save(): Promise<void> {
-    const items = this.references.map(ref => ref.getItem());
+    const items = this.references.map((ref) => ref.getItem());
     await writeCslJson(this.filePath, items);
   }
 
@@ -48,7 +48,7 @@ export class Library {
    */
   add(item: CslItem): void {
     // Collect existing IDs for collision check
-    const existingIds = new Set(this.references.map(ref => ref.getId()));
+    const existingIds = new Set(this.references.map((ref) => ref.getId()));
 
     // Create reference with collision check
     const ref = Reference.create(item, { existingIds });

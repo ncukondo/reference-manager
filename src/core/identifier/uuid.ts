@@ -52,7 +52,10 @@ export function setUuidInCustom(custom: string | undefined, uuid: string): strin
     return `${UUID_KEY}=${uuid}`;
   }
 
-  const pairs = custom.split(";").map(p => p.trim()).filter(p => p.length > 0);
+  const pairs = custom
+    .split(";")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
   const updatedPairs: string[] = [];
   let uuidFound = false;
 

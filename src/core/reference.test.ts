@@ -51,7 +51,9 @@ describe("Reference", () => {
       const ref = new Reference(sampleItem);
       const uuid = ref.getUuid();
       expect(uuid).toBeDefined();
-      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      expect(uuid).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      );
     });
 
     it("should generate UUID if custom field is invalid", () => {
@@ -62,7 +64,9 @@ describe("Reference", () => {
       const ref = new Reference(itemWithInvalidUuid);
       const uuid = ref.getUuid();
       expect(uuid).toBeDefined();
-      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      expect(uuid).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      );
     });
 
     it("should update custom field with generated UUID", () => {

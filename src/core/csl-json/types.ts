@@ -20,30 +20,32 @@ const CslDateSchema = z.object({
 });
 
 // CSL-JSON Item
-export const CslItemSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  title: z.string().optional(),
-  author: z.array(CslNameSchema).optional(),
-  editor: z.array(CslNameSchema).optional(),
-  issued: CslDateSchema.optional(),
-  accessed: CslDateSchema.optional(),
-  "container-title": z.string().optional(),
-  volume: z.string().optional(),
-  issue: z.string().optional(),
-  page: z.string().optional(),
-  DOI: z.string().optional(),
-  PMID: z.string().optional(),
-  ISBN: z.string().optional(),
-  ISSN: z.string().optional(),
-  URL: z.string().optional(),
-  abstract: z.string().optional(),
-  publisher: z.string().optional(),
-  "publisher-place": z.string().optional(),
-  note: z.string().optional(),
-  custom: z.string().optional(),
-  // Allow additional fields
-}).passthrough();
+export const CslItemSchema = z
+  .object({
+    id: z.string(),
+    type: z.string(),
+    title: z.string().optional(),
+    author: z.array(CslNameSchema).optional(),
+    editor: z.array(CslNameSchema).optional(),
+    issued: CslDateSchema.optional(),
+    accessed: CslDateSchema.optional(),
+    "container-title": z.string().optional(),
+    volume: z.string().optional(),
+    issue: z.string().optional(),
+    page: z.string().optional(),
+    DOI: z.string().optional(),
+    PMID: z.string().optional(),
+    ISBN: z.string().optional(),
+    ISSN: z.string().optional(),
+    URL: z.string().optional(),
+    abstract: z.string().optional(),
+    publisher: z.string().optional(),
+    "publisher-place": z.string().optional(),
+    note: z.string().optional(),
+    custom: z.string().optional(),
+    // Allow additional fields
+  })
+  .passthrough();
 
 // CSL-JSON Library (array of items)
 export const CslLibrarySchema = z.array(CslItemSchema);

@@ -17,7 +17,9 @@ export async function parseCslJson(filePath: string): Promise<CslLibrary> {
   try {
     rawData = JSON.parse(content);
   } catch (error) {
-    throw new Error(`Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   // Validate with zod

@@ -48,11 +48,11 @@ describe("CSL-JSON Serializer", () => {
       const result = serializeCslJson(library);
 
       // Should have proper indentation
-      expect(result).toContain('[\n  {');
-      expect(result).toContain('  }');
+      expect(result).toContain("[\n  {");
+      expect(result).toContain("  }");
 
       // Should not have tabs
-      expect(result).not.toContain('\t');
+      expect(result).not.toContain("\t");
     });
 
     it("should preserve all fields during serialization", async () => {
@@ -169,7 +169,9 @@ describe("CSL-JSON Serializer", () => {
       const smith2023_2 = library2.find((e) => e.id === "smith2023");
 
       expect(smith2023_1?.custom).toBe(smith2023_2?.custom);
-      expect(smith2023_1?.custom).toBe("reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001");
+      expect(smith2023_1?.custom).toBe(
+        "reference_manager_uuid=550e8400-e29b-41d4-a716-446655440001"
+      );
 
       // Cleanup
       await rm(TMP_DIR, { recursive: true, force: true });

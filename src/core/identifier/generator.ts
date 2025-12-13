@@ -123,14 +123,11 @@ function generateSuffix(index: number): string {
  * @param existingIds - Array of existing IDs
  * @returns Generated ID with collision handling
  */
-export function generateIdWithCollisionCheck(
-  item: CslItem,
-  existingIds: string[]
-): string {
+export function generateIdWithCollisionCheck(item: CslItem, existingIds: string[]): string {
   const baseId = generateId(item);
 
   // Normalize existing IDs to lowercase for case-insensitive comparison
-  const normalizedExistingIds = existingIds.map(id => id.toLowerCase());
+  const normalizedExistingIds = existingIds.map((id) => id.toLowerCase());
 
   // Check for collisions
   let candidate = baseId;

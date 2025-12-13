@@ -167,7 +167,8 @@ describe("ID Generator", () => {
         const item: CslItem = {
           id: "temp",
           type: "article-journal",
-          title: "This is a very long title that should be truncated to a reasonable length for the identifier",
+          title:
+            "This is a very long title that should be truncated to a reasonable length for the identifier",
           issued: { "date-parts": [[2023]] },
         };
 

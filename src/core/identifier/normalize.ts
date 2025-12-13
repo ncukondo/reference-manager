@@ -7,10 +7,10 @@
 export function normalizeText(text: string): string {
   return text
     .toLowerCase()
-    .replace(/\s+/g, "_")              // Convert spaces to underscores
-    .replace(/[^a-z0-9_]/g, "")        // Keep only alphanumeric and underscores
-    .replace(/_+/g, "_")                // Collapse multiple underscores
-    .replace(/^_|_$/g, "");             // Remove leading/trailing underscores
+    .replace(/\s+/g, "_") // Convert spaces to underscores
+    .replace(/[^a-z0-9_]/g, "") // Keep only alphanumeric and underscores
+    .replace(/_+/g, "_") // Collapse multiple underscores
+    .replace(/^_|_$/g, ""); // Remove leading/trailing underscores
 }
 
 /**
