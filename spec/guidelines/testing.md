@@ -4,7 +4,9 @@
 
 - Test framework: **vitest**
 - Test command: `npm test` (non-watch mode, for CI and verification)
+  - Non-watch mode is set in `vitest.config.ts` with `watch: false`
 - Watch mode: `npm run test:watch` (interactive watch mode, for development)
+  - Explicitly uses `--watch` flag to override config
 
 ## Test-Driven Development (TDD) Workflow
 
@@ -30,13 +32,13 @@ All implementations MUST follow the TDD (Red-Green-Refactor) cycle:
 3. Export all required functions/classes
 
 ### Step 3: Verify Tests Fail (Red)
-1. Run tests: `npm run test:run -- <test-file>`
+1. Run tests: `npm test -- <test-file>`
 2. Confirm all tests fail with "Not implemented" errors
 3. This ensures tests are actually testing the implementation
 
 ### Step 4: Implement (Green)
 1. Implement the actual logic
-2. Run tests: `npm run test:run -- <test-file>`
+2. Run tests: `npm test -- <test-file>`
 3. Iterate until all tests pass
 
 ### Step 5: Refactor (if needed)
@@ -65,18 +67,18 @@ vim src/core/example.test.ts
 vim src/core/example.ts
 
 # 3. Verify tests fail (Red)
-npm run test:run -- example.test.ts
+npm test -- example.test.ts
 # Expected: All tests fail with "Not implemented"
 
 # 4. Implement logic
 vim src/core/example.ts
 
 # 5. Verify tests pass (Green)
-npm run test:run -- example.test.ts
+npm test -- example.test.ts
 # Expected: All tests pass
 
 # 6. Run all tests to ensure no regressions
-npm run test:run
+npm test
 
 # 7. Quality checks
 npm run typecheck  # Type checking
