@@ -3,6 +3,28 @@ import { ensureCustomMetadata } from "../identifier/uuid";
 import { type CslLibrary, CslLibrarySchema } from "./types";
 
 /**
+ * Convert keyword field from semicolon-separated string to array
+ * @param keyword - Semicolon-separated string or undefined
+ * @returns Array of keywords or undefined
+ */
+function parseKeyword(keyword: unknown): string[] | undefined {
+  if (typeof keyword !== "string") {
+    return undefined;
+  }
+
+  if (keyword.trim() === "") {
+    return undefined;
+  }
+
+  const keywords = keyword
+    .split(";")
+    .map((k) => k.trim())
+    .filter((k) => k !== "");
+
+  return keywords.length > 0 ? keywords : undefined;
+}
+
+/**
  * Parse a CSL-JSON file and ensure all entries have valid UUIDs and timestamps
  * @param filePath - Path to the CSL-JSON file
  * @returns Array of CSL-JSON items with guaranteed UUIDs and timestamps
@@ -20,6 +42,19 @@ export async function parseCslJson(filePath: string): Promise<CslLibrary> {
     throw new Error(
       `Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`
     );
+  }
+
+  // Convert keyword fields from string to array before validation
+  if (Array.isArray(rawData)) {
+    rawData = rawData.map((item: any) => {
+      if (item && typeof item === "object" && "keyword" in item) {
+        return {
+          ...item,
+          keyword: parseKeyword(item.keyword),
+        };
+      }
+      return item;
+    });
   }
 
   // Validate with zod

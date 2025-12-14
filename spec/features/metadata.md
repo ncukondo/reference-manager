@@ -41,13 +41,20 @@
 ## Keyword
 
 - Stored in standard `keyword` field (top-level CSL-JSON field)
-- Format: string with semicolon-separated keywords
-- Example:
+- **CSL-JSON file format**: string with semicolon-separated keywords
+- **In-memory format**: array of strings
+- Example (CSL-JSON file):
   ```json
   "keyword": "machine learning; deep learning; neural networks"
   ```
-- Keywords are trimmed of whitespace
-- Empty keywords are removed during normalization
+- Example (in-memory):
+  ```typescript
+  keyword: ["machine learning", "deep learning", "neural networks"]
+  ```
+- Conversion rules:
+  - **Parsing (file → memory)**: Split by semicolon (`;`), trim whitespace from each keyword, remove empty strings
+  - **Serialization (memory → file)**: Join array elements with `"; "` (semicolon + space)
+- Empty keyword arrays serialize to undefined (field omitted from CSL-JSON)
 
 ## Custom Metadata
 

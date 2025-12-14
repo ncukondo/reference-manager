@@ -124,7 +124,7 @@ export class Reference {
   /**
    * Get the keyword
    */
-  getKeyword(): string | undefined {
+  getKeyword(): string[] | undefined {
     return this.item.keyword;
   }
 

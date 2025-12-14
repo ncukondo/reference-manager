@@ -50,7 +50,7 @@ export const CslItemSchema = z
     publisher: z.string().optional(),
     "publisher-place": z.string().optional(),
     note: z.string().optional(),
-    keyword: z.string().optional(),
+    keyword: z.array(z.string()).optional(),
     custom: CslCustomSchema.optional(),
     // Allow additional fields
   })

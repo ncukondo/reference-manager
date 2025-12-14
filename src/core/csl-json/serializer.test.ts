@@ -88,6 +88,104 @@ describe("CSL-JSON Serializer", () => {
       expect(noAuthorEntry).toBeDefined();
       expect(noAuthorEntry?.author).toBeUndefined();
     });
+
+    describe("Keyword field serialization", () => {
+      it("should serialize keyword array to semicolon-separated string", () => {
+        const library: CslLibrary = [
+          {
+            id: "test",
+            type: "article-journal",
+            keyword: ["machine learning", "deep learning", "neural networks"],
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440000",
+              timestamp: "2024-01-01T00:00:00.000Z",
+            },
+          },
+        ];
+
+        const result = serializeCslJson(library);
+        const parsed = JSON.parse(result);
+
+        expect(parsed[0].keyword).toBe("machine learning; deep learning; neural networks");
+      });
+
+      it("should serialize single keyword array", () => {
+        const library: CslLibrary = [
+          {
+            id: "test",
+            type: "article-journal",
+            keyword: ["machine learning"],
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440000",
+              timestamp: "2024-01-01T00:00:00.000Z",
+            },
+          },
+        ];
+
+        const result = serializeCslJson(library);
+        const parsed = JSON.parse(result);
+
+        expect(parsed[0].keyword).toBe("machine learning");
+      });
+
+      it("should omit keyword field when array is empty", () => {
+        const library: CslLibrary = [
+          {
+            id: "test",
+            type: "article-journal",
+            keyword: [],
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440000",
+              timestamp: "2024-01-01T00:00:00.000Z",
+            },
+          },
+        ];
+
+        const result = serializeCslJson(library);
+        const parsed = JSON.parse(result);
+
+        expect(parsed[0].keyword).toBeUndefined();
+      });
+
+      it("should omit keyword field when undefined", () => {
+        const library: CslLibrary = [
+          {
+            id: "test",
+            type: "article-journal",
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440000",
+              timestamp: "2024-01-01T00:00:00.000Z",
+            },
+          },
+        ];
+
+        const result = serializeCslJson(library);
+        const parsed = JSON.parse(result);
+
+        expect(parsed[0].keyword).toBeUndefined();
+      });
+
+      it("should join keywords with semicolon and space", () => {
+        const library: CslLibrary = [
+          {
+            id: "test",
+            type: "article-journal",
+            keyword: ["keyword1", "keyword2", "keyword3"],
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440000",
+              timestamp: "2024-01-01T00:00:00.000Z",
+            },
+          },
+        ];
+
+        const result = serializeCslJson(library);
+        const parsed = JSON.parse(result);
+
+        // Should use "; " (semicolon + space) as separator
+        expect(parsed[0].keyword).toBe("keyword1; keyword2; keyword3");
+        expect(parsed[0].keyword).toContain("; ");
+      });
+    });
   });
 
   describe("writeCslJson", () => {
@@ -209,6 +307,35 @@ describe("CSL-JSON Serializer", () => {
       const library2 = await parseCslJson(tmpPath);
 
       expect(library2).toEqual(library1);
+
+      // Cleanup
+      await rm(TMP_DIR, { recursive: true, force: true });
+    });
+
+    it("should preserve keywords through round-trip", async () => {
+      const filePath = resolve(FIXTURES_DIR, "keyword-test.csl.json");
+      const library1 = await parseCslJson(filePath);
+
+      const serialized = serializeCslJson(library1);
+
+      await mkdir(TMP_DIR, { recursive: true });
+      const tmpPath = resolve(TMP_DIR, "roundtrip-keyword.csl.json");
+      await writeFile(tmpPath, serialized, "utf-8");
+
+      const library2 = await parseCslJson(tmpPath);
+
+      expect(library2).toEqual(library1);
+
+      // Check specific keyword preservation
+      const withKeywords1 = library1.find((e) => e.id === "with_keywords");
+      const withKeywords2 = library2.find((e) => e.id === "with_keywords");
+
+      expect(withKeywords1?.keyword).toEqual([
+        "machine learning",
+        "deep learning",
+        "neural networks",
+      ]);
+      expect(withKeywords2?.keyword).toEqual(withKeywords1?.keyword);
 
       // Cleanup
       await rm(TMP_DIR, { recursive: true, force: true });

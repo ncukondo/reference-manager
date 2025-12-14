@@ -1,0 +1,61 @@
+[
+  {
+    "id": "with_keywords",
+    "type": "article-journal",
+    "title": "Test Article with Keywords",
+    "keyword": "machine learning; deep learning; neural networks",
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440100",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "with_whitespace",
+    "type": "article-journal",
+    "title": "Test Article with Whitespace in Keywords",
+    "keyword": "  machine learning  ;  deep learning  ;  neural networks  ",
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440101",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "with_empty_keywords",
+    "type": "article-journal",
+    "title": "Test Article with Empty Keywords",
+    "keyword": "machine learning;;deep learning;  ;neural networks",
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440102",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "without_keywords",
+    "type": "article-journal",
+    "title": "Test Article without Keywords",
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440103",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "with_empty_string",
+    "type": "article-journal",
+    "title": "Test Article with Empty String Keyword",
+    "keyword": "",
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440104",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "single_keyword",
+    "type": "article-journal",
+    "title": "Test Article with Single Keyword",
+    "keyword": "machine learning",
+    "custom": {
+      "uuid": "550e8400-e29b-41d4-a716-446655440105",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+]
