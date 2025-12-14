@@ -28,9 +28,9 @@ This file contains:
 3. **Follow TDD process** (see `spec/guidelines/testing.md`):
    - Write tests first
    - Create empty implementation (`throw new Error("Not implemented")`)
-   - Run tests to confirm failure: `npm run test:run -- <test-file>`
+   - Run tests to confirm failure: `npm test -- <test-file>`
    - Implement actual logic
-   - Run tests to confirm success: `npm run test:run -- <test-file>`
+   - Run tests to confirm success: `npm test -- <test-file>`
 4. Verify following test and quality guidelines
 
 ## Notes

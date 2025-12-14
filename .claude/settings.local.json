@@ -33,7 +33,8 @@
       "Bash(npm run typecheck:*)",
       "Bash(grep:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run format:*)"
+      "Bash(npm run format:*)",
+      "Bash(npx biome format:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
