@@ -1,6 +1,6 @@
 # reference-manager 実装ロードマップ
 
-生成日: 2025-12-13 (更新)
+生成日: 2025-12-13 (最終更新: 2025-12-14)
 
 ## プロジェクト概要
 
@@ -43,6 +43,14 @@
     - 設定ローダー (`src/config/loader.ts`) ✅
     - 設定エクスポート (`src/config/index.ts`) ✅
   - **全テスト**: 77テスト合格 ✅
+
+- **Phase 3: 機能モジュール - 部分完了** ✅
+  - Phase 3.1: 検索機能 - 完了 (2025-12-14)
+    - Tokenizer (クエリトークン化) - 26テスト合格 ✅
+    - Normalizer (テキスト正規化) - 22テスト合格 ✅
+    - Matcher (マッチング、search関数) - 31テスト合格 ✅
+    - Sorter (結果ソート) - 16テスト合格 ✅
+  - **Phase 3.1 全テスト**: 95テスト合格 ✅
 
 ### 🚧 未実装 (Not Yet Implemented)
 
@@ -226,7 +234,7 @@
 
 ### Phase 3: 機能モジュール (Features) 🟡 優先度: 中
 
-#### 3.1 検索機能 🚧 進行中 (2025-12-14)
+#### 3.1 検索機能 ✅ 完了 (2025-12-14)
 
 **目標**: クエリ処理、テキスト正規化、マッチング、ソート
 
@@ -238,10 +246,10 @@
 | Normalizer Test | `src/features/search/normalizer.test.ts` | ✅ 完了 | 正規化のテスト (22テスト合格) |
 | Normalizer | `src/features/search/normalizer.ts` | ✅ 完了 | NFKC、小文字化、記号除去 |
 | Search Index | `src/features/search/index.ts` | ✅ 完了 | 検索機能のエクスポート |
-| Matcher Test | `src/features/search/matcher.test.ts` | ✅ 完了 | マッチングのテスト (24テスト合格) |
-| Matcher | `src/features/search/matcher.ts` | ✅ 完了 | ID系完全一致、コンテンツ系部分一致、AND検索ロジック |
-| Sorter Test | `src/features/search/sorter.test.ts` | ❌ 未実装 | ソートのテスト |
-| Sorter | `src/features/search/sorter.ts` | ❌ 未実装 | ソートロジック |
+| Matcher Test | `src/features/search/matcher.test.ts` | ✅ 完了 | マッチングのテスト (31テスト合格) |
+| Matcher | `src/features/search/matcher.ts` | ✅ 完了 | ID系完全一致、コンテンツ系部分一致、AND検索ロジック、search関数 |
+| Sorter Test | `src/features/search/sorter.test.ts` | ✅ 完了 | ソートのテスト (16テスト合格) |
+| Sorter | `src/features/search/sorter.ts` | ✅ 完了 | マッチ強度・年・著者・タイトル・登録順ソート |
 
 **実装仕様**: `spec/features/search.md`
 
@@ -255,19 +263,21 @@
 - **ソート**: マッチ強度 → 年 → 著者 → タイトル → 登録順
 - **出力**: `--json`, `--ids-only`, `--uuid`, `--bibtex`
 
-**実装状況** (2025-12-14):
-1. ✅ `types.ts` - SearchToken, SearchQuery, MatchStrength, SearchResult等の型定義完了
+**実装完了**: 2025-12-14
+
+**実装内容**:
+1. ✅ `types.ts` - SearchToken, SearchQuery, MatchStrength, SearchResult等の型定義、CslItem型に統一
 2. ✅ `tokenizer.test.ts` - 26テスト実装 (基本トークン化、フレーズ検索、フィールド指定)
-3. ✅ `tokenizer.ts` - スペース区切り、引用符処理、field:value解析実装
+3. ✅ `tokenizer.ts` - スペース区切り、引用符処理、field:value解析、型エラー修正
 4. ✅ `normalizer.test.ts` - 22テスト実装 (Unicode NFKC、小文字化、記号削除、エッジケース)
 5. ✅ `normalizer.ts` - NFKC正規化、NFD分解、発音記号除去、空白正規化実装
-6. ✅ `index.ts` - 型・関数のエクスポート完了
-7. ✅ `matcher.test.ts` - 24テスト実装 (ID系完全一致、コンテンツ系部分一致、AND検索ロジック)
-8. ✅ `matcher.ts` - ID系フィールド完全一致、コンテンツ系フィールド部分一致、AND検索ロジック実装
-9. ⏳ `sorter.test.ts` - 未実装
-10. ⏳ `sorter.ts` - 未実装
+6. ✅ `index.ts` - 型・関数のエクスポート (tokenize, normalize, search, sortResults)
+7. ✅ `matcher.test.ts` - 31テスト実装 (ID系完全一致、コンテンツ系部分一致、AND検索、keyword配列対応)
+8. ✅ `matcher.ts` - ID系フィールド完全一致、コンテンツ系部分一致、AND検索ロジック、search関数実装
+9. ✅ `sorter.test.ts` - 16テスト実装 (TDD: テスト先行) - ソート優先順位、エッジケース、複雑なマルチ基準ソート
+10. ✅ `sorter.ts` - マッチ強度・年降順・著者・タイトル・登録順ソート、複雑度削減のリファクタリング
 
-**テスト結果**: 72テスト合格 (tokenizer: 26, normalizer: 22, matcher: 24)
+**テスト結果**: 全95テスト合格 (tokenizer: 26, normalizer: 22, matcher: 31, sorter: 16)
 
 **実装詳細**:
 - **Tokenizer**:
@@ -289,10 +299,24 @@
   - マッチ強度計算: exact/partial/none、スコア算出
   - 特殊フィールド処理: year (issued.date-parts), author (family + given initial)
   - URL検索: primary URL + custom.additional_urls配列対応
+  - keyword配列: 各要素に対して部分一致検索
+  - search関数: 参照文献配列に対するマッチング実行
 
-**次のステップ**:
-- Sorter実装 (マッチ強度、年、著者、タイトル順のソート)
-- 統合テスト
+- **Sorter**:
+  - 5段階ソート: マッチ強度 (exact > partial) → 年降順 → 著者 → タイトル → 登録順
+  - 欠損値処理: 年なし (0000扱い)、著者なし、タイトルなし
+  - 安定ソート: 元配列の順序を保持
+  - リファクタリング: 複雑度削減のため比較関数を分離
+
+**型修正**:
+- `CslJsonItem` → `CslItem` に統一 (正しい型名に修正)
+- 影響範囲: types.ts, matcher.ts, matcher.test.ts, sorter.ts, sorter.test.ts, tokenizer.ts
+
+**Phase 3.1 完了条件達成**:
+- ✅ クエリのトークン化が動作
+- ✅ フィールド正規化が動作
+- ✅ マッチング (ID系・コンテンツ系、AND検索) が動作
+- ✅ 検索結果のソートが仕様通りに動作
 
 #### 3.2 重複検出
 
@@ -519,18 +543,19 @@ Phase 1 (Core Foundation)
 
 ## 次のアクションアイテム
 
-### 今すぐ実装すべき項目 (Phase 3.1 続き) ⭐ 最優先
+### 今すぐ実装すべき項目 (Phase 3.2-3.4) ⭐ 最優先
 
-**Search Feature** (Phase 3.1) - 進行状況 (2025-12-14)
+**✅ Phase 3.1: Search Feature - 完了** (2025-12-14)
 
-TDD手順に従い、各コンポーネントはテストを先に書いてから実装します。
+TDD手順に従い、すべてのコンポーネントをテスト駆動開発で実装完了。
 
 1. ✅ **Search Types** (`src/features/search/types.ts`) - 完了
    - 内容: 検索クエリ、トークン、フィールド指定、結果の型定義
    - 型: SearchQuery, SearchToken, FieldSpecifier, SearchResult, MatchStrength等
+   - 型修正: CslJsonItem → CslItem に統一
 
 2. ✅ **Tokenizer** (`src/features/search/tokenizer.ts` + テスト) - 完了
-   - 実装: クエリ文字列のトークン化、引用符処理、フィールド指定解析
+   - 実装: クエリ文字列のトークン化、引用符処理、フィールド指定解析、型エラー修正
    - テスト: 26テスト合格 (スペース区切り、引用符フレーズ、フィールド指定)
 
 3. ✅ **Normalizer** (`src/features/search/normalizer.ts` + テスト) - 完了
@@ -538,15 +563,20 @@ TDD手順に従い、各コンポーネントはテストを先に書いてか�
    - テスト: 22テスト合格 (各種言語、記号、エッジケース)
 
 4. ✅ **Matcher** (`src/features/search/matcher.ts` + テスト) - 完了
-   - 実装: ID系完全一致、コンテンツ系部分一致、AND検索ロジック
-   - テスト: 24テスト合格 (ID系フィールド、コンテンツ系フィールド、AND検索、マッチ強度)
+   - 実装: ID系完全一致、コンテンツ系部分一致、AND検索ロジック、keyword配列対応、search関数
+   - テスト: 31テスト合格 (ID系フィールド、コンテンツ系フィールド、AND検索、マッチ強度、keyword配列)
 
-5. ⏳ **Sorter** (`src/features/search/sorter.ts` + テスト) - 未実装
-   - 予定: マッチ強度、年、著者、タイトル、登録順のソート
-   - テスト: ソート優先順位、同値の場合の処理
+5. ✅ **Sorter** (`src/features/search/sorter.ts` + テスト) - 完了
+   - 実装: マッチ強度、年降順、著者、タイトル、登録順のソート、複雑度削減リファクタリング
+   - テスト: 16テスト合格 (TDD) - ソート優先順位、エッジケース、複雑なマルチ基準ソート
 
 6. ✅ **Search Index** (`src/features/search/index.ts`) - 完了
-   - 内容: 検索機能のエクスポート
+   - 内容: tokenize, normalize, search, sortResults のエクスポート
+
+**品質保証**:
+- ✅ 全95テスト合格
+- ✅ TypeScript型チェック合格
+- ✅ Lint/Format適用済み
 
 ### 中期実装項目 (Phase 3.2-3.4)
 
@@ -619,14 +649,15 @@ TDD手順に従い、各コンポーネントはテストを先に書いてか�
     - ✅ Config (Zodスキーマ、TOML読み込み、設定解決) - 17テスト
   - **全77テスト合格** ✅
 
-- **🚧 Phase 3: 機能モジュール - 進行中** (2025-12-14)
-  - 🚧 Phase 3.1: 検索機能 - 進行中
-    - ✅ Search Types (型定義) - 完了
+- **✅ Phase 3: 機能モジュール - 部分完了** (2025-12-14)
+  - ✅ Phase 3.1: 検索機能 - 完了
+    - ✅ Search Types (型定義、CslItem型統一) - 完了
     - ✅ Tokenizer (クエリトークン化) - 26テスト合格
     - ✅ Normalizer (テキスト正規化) - 22テスト合格
+    - ✅ Matcher (マッチング、search関数、keyword配列) - 31テスト合格
+    - ✅ Sorter (結果ソート、5段階ソート) - 16テスト合格
     - ✅ Search Index (エクスポート) - 完了
-    - ✅ Matcher (マッチング) - 24テスト合格
-    - ⏳ Sorter (ソート) - 未実装
+    - **Phase 3.1 全95テスト合格** ✅
   - ⏳ Phase 3.2: 重複検出 - 未実装
   - ⏳ Phase 3.3: 3-wayマージ - 未実装
   - ⏳ Phase 3.4: ファイル監視 - 未実装
@@ -637,6 +668,6 @@ TDD手順に従い、各コンポーネントはテストを先に書いてか�
 - **🔵 Phase 5: ビルド・配布・CI** - 未実装
   - Build、CI/CD
 
-**総テスト数**: 289テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 72)
+**総テスト数**: 336テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 95, その他: 24)
 
-**現在の作業**: Phase 3.1 (検索機能) - Tokenizer/Normalizer/Matcher完了、Sorter実装中
+**現在の作業**: Phase 3.1 完了、次は Phase 3.2 (重複検出) または Phase 3.3 (3-wayマージ)

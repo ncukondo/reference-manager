@@ -141,11 +141,7 @@ describe("CSL-JSON Parser", () => {
 
         const entry = result.find((e) => e.id === "with_keywords");
         expect(entry).toBeDefined();
-        expect(entry?.keyword).toEqual([
-          "machine learning",
-          "deep learning",
-          "neural networks",
-        ]);
+        expect(entry?.keyword).toEqual(["machine learning", "deep learning", "neural networks"]);
       });
 
       it("should trim whitespace from keywords", async () => {
@@ -154,11 +150,7 @@ describe("CSL-JSON Parser", () => {
 
         const entry = result.find((e) => e.id === "with_whitespace");
         expect(entry).toBeDefined();
-        expect(entry?.keyword).toEqual([
-          "machine learning",
-          "deep learning",
-          "neural networks",
-        ]);
+        expect(entry?.keyword).toEqual(["machine learning", "deep learning", "neural networks"]);
       });
 
       it("should remove empty keywords", async () => {
@@ -167,11 +159,7 @@ describe("CSL-JSON Parser", () => {
 
         const entry = result.find((e) => e.id === "with_empty_keywords");
         expect(entry).toBeDefined();
-        expect(entry?.keyword).toEqual([
-          "machine learning",
-          "deep learning",
-          "neural networks",
-        ]);
+        expect(entry?.keyword).toEqual(["machine learning", "deep learning", "neural networks"]);
       });
 
       it("should handle missing keyword field", async () => {
