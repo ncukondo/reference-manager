@@ -238,8 +238,8 @@
 | Normalizer Test | `src/features/search/normalizer.test.ts` | ✅ 完了 | 正規化のテスト (22テスト合格) |
 | Normalizer | `src/features/search/normalizer.ts` | ✅ 完了 | NFKC、小文字化、記号除去 |
 | Search Index | `src/features/search/index.ts` | ✅ 完了 | 検索機能のエクスポート |
-| Matcher Test | `src/features/search/matcher.test.ts` | ❌ 未実装 | マッチングのテスト |
-| Matcher | `src/features/search/matcher.ts` | ❌ 未実装 | ID系完全一致、コンテンツ系部分一致 |
+| Matcher Test | `src/features/search/matcher.test.ts` | ✅ 完了 | マッチングのテスト (24テスト合格) |
+| Matcher | `src/features/search/matcher.ts` | ✅ 完了 | ID系完全一致、コンテンツ系部分一致、AND検索ロジック |
 | Sorter Test | `src/features/search/sorter.test.ts` | ❌ 未実装 | ソートのテスト |
 | Sorter | `src/features/search/sorter.ts` | ❌ 未実装 | ソートロジック |
 
@@ -262,12 +262,12 @@
 4. ✅ `normalizer.test.ts` - 22テスト実装 (Unicode NFKC、小文字化、記号削除、エッジケース)
 5. ✅ `normalizer.ts` - NFKC正規化、NFD分解、発音記号除去、空白正規化実装
 6. ✅ `index.ts` - 型・関数のエクスポート完了
-7. ⏳ `matcher.test.ts` - 未実装
-8. ⏳ `matcher.ts` - 未実装
+7. ✅ `matcher.test.ts` - 24テスト実装 (ID系完全一致、コンテンツ系部分一致、AND検索ロジック)
+8. ✅ `matcher.ts` - ID系フィールド完全一致、コンテンツ系フィールド部分一致、AND検索ロジック実装
 9. ⏳ `sorter.test.ts` - 未実装
 10. ⏳ `sorter.ts` - 未実装
 
-**テスト結果**: 48テスト合格 (tokenizer: 26, normalizer: 22)
+**テスト結果**: 72テスト合格 (tokenizer: 26, normalizer: 22, matcher: 24)
 
 **実装詳細**:
 - **Tokenizer**:
@@ -282,8 +282,15 @@
   - 空白正規化: 連続空白→単一空白、trim
   - 多言語対応: CJK文字保持、発音記号付き欧文正規化
 
+- **Matcher**:
+  - ID系フィールド (PMID, PMCID, DOI, URL): 完全一致、大文字小文字区別
+  - コンテンツ系フィールド (title, author, keyword等): 部分一致、正規化適用
+  - AND検索ロジック: すべてのトークンがマッチ必要
+  - マッチ強度計算: exact/partial/none、スコア算出
+  - 特殊フィールド処理: year (issued.date-parts), author (family + given initial)
+  - URL検索: primary URL + custom.additional_urls配列対応
+
 **次のステップ**:
-- Matcher実装 (ID系完全一致、コンテンツ系部分一致、AND検索ロジック)
 - Sorter実装 (マッチ強度、年、著者、タイトル順のソート)
 - 統合テスト
 
@@ -530,9 +537,9 @@ TDD手順に従い、各コンポーネントはテストを先に書いてか�
    - 実装: Unicode NFKC正規化、小文字化、記号削除、空白正規化
    - テスト: 22テスト合格 (各種言語、記号、エッジケース)
 
-4. ⏳ **Matcher** (`src/features/search/matcher.ts` + テスト) - 未実装
-   - 予定: ID系完全一致、コンテンツ系部分一致、AND検索ロジック
-   - テスト: ID系フィールド (PMID, DOI等)、コンテンツ系フィールド (title, author等)
+4. ✅ **Matcher** (`src/features/search/matcher.ts` + テスト) - 完了
+   - 実装: ID系完全一致、コンテンツ系部分一致、AND検索ロジック
+   - テスト: 24テスト合格 (ID系フィールド、コンテンツ系フィールド、AND検索、マッチ強度)
 
 5. ⏳ **Sorter** (`src/features/search/sorter.ts` + テスト) - 未実装
    - 予定: マッチ強度、年、著者、タイトル、登録順のソート
@@ -618,7 +625,7 @@ TDD手順に従い、各コンポーネントはテストを先に書いてか�
     - ✅ Tokenizer (クエリトークン化) - 26テスト合格
     - ✅ Normalizer (テキスト正規化) - 22テスト合格
     - ✅ Search Index (エクスポート) - 完了
-    - ⏳ Matcher (マッチング) - 未実装
+    - ✅ Matcher (マッチング) - 24テスト合格
     - ⏳ Sorter (ソート) - 未実装
   - ⏳ Phase 3.2: 重複検出 - 未実装
   - ⏳ Phase 3.3: 3-wayマージ - 未実装
@@ -630,6 +637,6 @@ TDD手順に従い、各コンポーネントはテストを先に書いてか�
 - **🔵 Phase 5: ビルド・配布・CI** - 未実装
   - Build、CI/CD
 
-**総テスト数**: 265テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 48)
+**総テスト数**: 289テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 72)
 
-**現在の作業**: Phase 3.1 (検索機能) - Tokenizer/Normalizer完了、Matcher/Sorter実装中
+**現在の作業**: Phase 3.1 (検索機能) - Tokenizer/Normalizer/Matcher完了、Sorter実装中
