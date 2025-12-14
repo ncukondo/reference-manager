@@ -108,6 +108,39 @@ function matchUrl(
 }
 
 /**
+ * Check if query matches any keyword in the keyword array
+ * Performs partial match with normalization on each keyword element
+ */
+function matchKeyword(
+	queryValue: string,
+	reference: CslJsonItem,
+): FieldMatch | null {
+	// Check if keyword field exists and is an array
+	if (!reference.keyword || !Array.isArray(reference.keyword)) {
+		return null;
+	}
+
+	// Normalize query value
+	const normalizedQuery = normalize(queryValue);
+
+	// Search through each keyword element
+	for (const keyword of reference.keyword) {
+		if (typeof keyword === "string") {
+			const normalizedKeyword = normalize(keyword);
+			if (normalizedKeyword.includes(normalizedQuery)) {
+				return {
+					field: "keyword",
+					strength: "partial",
+					value: keyword,
+				};
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
  * Match a single token against a reference
  * Returns an array of field matches
  */
@@ -143,6 +176,15 @@ export function matchToken(
 			return matches;
 		}
 
+		// Handle keyword field specially (search array elements)
+		if (fieldToSearch === "keyword") {
+			const keywordMatch = matchKeyword(token.value, reference);
+			if (keywordMatch) {
+				matches.push(keywordMatch);
+			}
+			return matches;
+		}
+
 		// Map field specifier to actual CSL-JSON field name
 		const fieldMap: Record<string, string> = {
 			author: "author",
@@ -150,7 +192,6 @@ export function matchToken(
 			doi: "DOI",
 			pmid: "PMID",
 			pmcid: "PMCID",
-			keyword: "keyword",
 		};
 
 		const actualField = fieldMap[fieldToSearch] || fieldToSearch;
@@ -218,6 +259,14 @@ export function matchToken(
 			const urlMatch = matchUrl(token.value, reference);
 			if (urlMatch) {
 				matches.push(urlMatch);
+			}
+			continue;
+		}
+
+		if (field === "keyword") {
+			const keywordMatch = matchKeyword(token.value, reference);
+			if (keywordMatch) {
+				matches.push(keywordMatch);
 			}
 			continue;
 		}

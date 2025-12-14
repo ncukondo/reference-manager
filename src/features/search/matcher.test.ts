@@ -253,6 +253,128 @@ describe("matchToken", () => {
 		});
 	});
 
+	describe("Keyword field matching (array field)", () => {
+		it("should match keyword in array with field specifier", () => {
+			const refWithKeywords: CslJsonItem = {
+				...reference,
+				keyword: ["machine learning", "deep learning", "neural networks"],
+			};
+
+			const token: SearchToken = {
+				raw: "keyword:machine",
+				value: "machine",
+				field: "keyword",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, refWithKeywords);
+			expect(matches).toHaveLength(1);
+			expect(matches[0].field).toBe("keyword");
+			expect(matches[0].strength).toBe("partial");
+		});
+
+		it("should match any keyword element in array", () => {
+			const refWithKeywords: CslJsonItem = {
+				...reference,
+				keyword: ["machine learning", "deep learning", "neural networks"],
+			};
+
+			const token: SearchToken = {
+				raw: "keyword:neural",
+				value: "neural",
+				field: "keyword",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, refWithKeywords);
+			expect(matches).toHaveLength(1);
+			expect(matches[0].field).toBe("keyword");
+			expect(matches[0].value).toBe("neural networks");
+		});
+
+		it("should match keyword with normalization", () => {
+			const refWithKeywords: CslJsonItem = {
+				...reference,
+				keyword: ["Machine Learning", "Deep Learning"],
+			};
+
+			const token: SearchToken = {
+				raw: "keyword:LEARNING",
+				value: "LEARNING",
+				field: "keyword",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, refWithKeywords);
+			expect(matches.length).toBeGreaterThan(0);
+			expect(matches[0].field).toBe("keyword");
+		});
+
+		it("should not match when keyword not in array", () => {
+			const refWithKeywords: CslJsonItem = {
+				...reference,
+				keyword: ["machine learning", "deep learning"],
+			};
+
+			const token: SearchToken = {
+				raw: "keyword:quantum",
+				value: "quantum",
+				field: "keyword",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, refWithKeywords);
+			expect(matches).toHaveLength(0);
+		});
+
+		it("should handle empty keyword array", () => {
+			const refWithEmptyKeywords: CslJsonItem = {
+				...reference,
+				keyword: [],
+			};
+
+			const token: SearchToken = {
+				raw: "keyword:machine",
+				value: "machine",
+				field: "keyword",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, refWithEmptyKeywords);
+			expect(matches).toHaveLength(0);
+		});
+
+		it("should handle missing keyword field", () => {
+			const token: SearchToken = {
+				raw: "keyword:machine",
+				value: "machine",
+				field: "keyword",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, reference);
+			expect(matches).toHaveLength(0);
+		});
+
+		it("should search keyword in multi-field search", () => {
+			const refWithKeywords: CslJsonItem = {
+				...reference,
+				keyword: ["machine learning", "artificial intelligence"],
+			};
+
+			const token: SearchToken = {
+				raw: "artificial",
+				value: "artificial",
+				isPhrase: false,
+			};
+
+			const matches = matchToken(token, refWithKeywords);
+			const keywordMatch = matches.find((m) => m.field === "keyword");
+			expect(keywordMatch).toBeDefined();
+			expect(keywordMatch?.strength).toBe("partial");
+		});
+	});
+
 	describe("Multi-field search (no field specifier)", () => {
 		it("should search across all fields when no field specified", () => {
 			const token: SearchToken = {
