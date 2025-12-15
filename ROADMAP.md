@@ -1,6 +1,6 @@
 # reference-manager 実装ロードマップ
 
-生成日: 2025-12-13 (最終更新: 2025-12-15 - Phase 3.3 LWW 3-wayマージ実装完了)
+生成日: 2025-12-13 (最終更新: 2025-12-15 - Phase 3.4 ファイル監視機能実装完了)
 
 ## プロジェクト概要
 
@@ -44,7 +44,7 @@
     - 設定エクスポート (`src/config/index.ts`) ✅
   - **全テスト**: 77テスト合格 ✅
 
-- **Phase 3: 機能モジュール - 部分完了** ✅
+- **Phase 3: 機能モジュール - 完了** ✅
   - Phase 3.1: 検索機能 - 完了 (2025-12-14)
     - Tokenizer (クエリトークン化) - 26テスト合格 ✅
     - Normalizer (テキスト正規化) - 22テスト合格 ✅
@@ -54,6 +54,12 @@
   - Phase 3.2: 重複検出 - 完了 (2025-12-14)
     - Detector (重複検出ロジック) - 24テスト合格 ✅
   - **Phase 3.2 全テスト**: 24テスト合格 ✅
+  - Phase 3.3: 3-wayマージ - 完了 (2025-12-15)
+    - Three-way Merge (LWW対応マージロジック) - 21テスト合格 ✅
+  - **Phase 3.3 全テスト**: 21テスト合格 ✅
+  - Phase 3.4: ファイル監視 - 完了 (2025-12-15)
+    - FileWatcher (chokidarベース監視、debounce、リトライ) - 26テスト合格 ✅
+  - **Phase 3.4 全テスト**: 26テスト合格 ✅
 
 ### 🚧 未実装 (Not Yet Implemented)
 
@@ -451,30 +457,46 @@
 - ✅ `--prefer=local|remote` による同時刻競合の手動解決が動作
 - ✅ 追加・削除の検出が動作
 
-#### 3.4 ファイル監視
+#### 3.4 ファイル監視 ✅ 完了 (2025-12-15)
 
 **目標**: CSL-JSONファイルの変更監視と自動リロード
 
 | コンポーネント | ファイル | 状態 | 説明 |
 |--------------|---------|------|------|
-| Watcher Types | `src/features/file-watcher/types.ts` | ❌ 未実装 | ファイル監視の型定義 |
-| Watcher | `src/features/file-watcher/watcher.ts` | ❌ 未実装 | chokidarベースの監視 |
-| Watcher Test | `src/features/file-watcher/watcher.test.ts` | ❌ 未実装 | 監視のテスト |
-| Watcher Index | `src/features/file-watcher/index.ts` | ❌ 未実装 | ファイル監視のエクスポート |
+| FileWatcher | `src/features/file-watcher/file-watcher.ts` | ✅ 完了 | chokidarベースの監視 |
+| FileWatcher Test | `src/features/file-watcher/file-watcher.test.ts` | ✅ 完了 | 監視のテスト (26テスト合格) |
+| Watcher Index | `src/features/file-watcher/index.ts` | ✅ 完了 | ファイル監視のエクスポート |
 
 **実装仕様**: `spec/features/file-monitoring.md`
 
-**実装順序**:
-1. `types.ts` - イベントの型
-2. `watcher.ts` - chokidar、debounce 500ms、リトライ処理
-3. `watcher.test.ts` - 変更検知、無視パターンのテスト
-4. `index.ts` - エクスポート
+**実装完了**: 2025-12-15
 
-**Phase 3 完了条件**:
-- 検索 (PMID/DOI/タイトル+著者) が動作
-- 重複検出が動作
-- 3-wayマージが動作
-- ファイル監視・リロードが動作
+**実装内容**:
+1. ✅ `file-watcher.ts` - chokidarベースの監視クラス
+   - debounce 500ms (デフォルト)
+   - polling fallback (5s間隔)
+   - JSON parse retry (200ms × 10)
+   - 無視パターン: `*.tmp`, `*.bak`, `*.conflict.*`, `*.lock`, editor swap files
+2. ✅ `file-watcher.test.ts` - 26テスト合格
+   - コンストラクタとオプション
+   - 無視パターン検証
+   - 変更検出とdebounce
+   - polling モード
+   - イベント発行
+   - JSON parse retry
+3. ✅ `index.ts` - FileWatcher, FileWatcherOptions のエクスポート
+
+**テスト結果**: 全26テスト合格
+
+**依存関係追加**:
+- `chokidar` (dependencies)
+- `@types/chokidar` (devDependencies)
+
+**Phase 3 完了条件達成**:
+- ✅ 検索 (PMID/DOI/タイトル+著者) が動作
+- ✅ 重複検出が動作
+- ✅ 3-wayマージが動作
+- ✅ ファイル監視・リロードが動作
 
 ---
 
@@ -636,7 +658,9 @@ Phase 1 (Core Foundation)
 
 ## 次のアクションアイテム
 
-### 今すぐ実装すべき項目 (Phase 3.3-3.4) ⭐ 最優先
+### 今すぐ実装すべき項目 (Phase 4) ⭐ 最優先
+
+**✅ Phase 3: 機能モジュール - 全完了** (2025-12-15)
 
 **✅ Phase 3.1: Search Feature - 完了** (2025-12-14)
 
@@ -722,11 +746,25 @@ TDD手順に従い、すべてのコンポーネントをテスト駆動開発�
 - ✅ `--prefer=local|remote` による同時刻競合の手動解決
 - ✅ 追加・削除の検出
 
-### 中期実装項目 (Phase 3.4)
+**✅ Phase 3.4: File Watcher - 完了** (2025-12-15)
 
-- File watcher (Phase 3.4) - ファイル監視・自動リロード
+TDD手順に従い、ファイル監視機能を実装完了。
 
-### 長期実装項目 (Phase 4-5)
+1. ✅ **FileWatcher** (`src/features/file-watcher/file-watcher.ts`) - 完了
+   - 実装: chokidarベースの監視クラス
+   - 機能: debounce (500ms)、polling fallback (5s)、JSON parse retry (200ms × 10)
+   - 無視パターン: `*.tmp`, `*.bak`, `*.conflict.*`, `*.lock`, editor swap files
+   - テスト: 26テスト合格
+
+2. ✅ **FileWatcher Index** (`src/features/file-watcher/index.ts`) - 完了
+   - 内容: FileWatcher, FileWatcherOptions のエクスポート
+
+**品質保証**:
+- ✅ 全26テスト合格
+- ✅ TypeScript型チェック合格
+- ✅ Lint/Format適用済み
+
+### 次の実装項目 (Phase 4)
 
 - HTTP Server (Hono)
 - CLI (commander)
@@ -791,7 +829,7 @@ TDD手順に従い、すべてのコンポーネントをテスト駆動開発�
     - ✅ Config (Zodスキーマ、TOML読み込み、設定解決) - 17テスト
   - **全77テスト合格** ✅
 
-- **🔄 Phase 3: 機能モジュール - 部分完了** (最終更新: 2025-12-15)
+- **✅ Phase 3: 機能モジュール - 完了** (最終更新: 2025-12-15)
   - ✅ Phase 3.1: 検索機能 - 完了 (2025-12-14)
     - ✅ Search Types (型定義、CslItem型統一) - 完了
     - ✅ Tokenizer (クエリトークン化) - 26テスト合格
@@ -810,7 +848,10 @@ TDD手順に従い、すべてのコンポーネントをテスト駆動開発�
     - ✅ Three-way Merge (LWW対応マージロジック) - 21テスト合格
     - ✅ Merge Index (エクスポート) - 完了
     - **Phase 3.3 全21テスト合格** ✅
-  - ⏳ Phase 3.4: ファイル監視 - 未実装
+  - ✅ Phase 3.4: ファイル監視 - 完了 (2025-12-15)
+    - ✅ FileWatcher (chokidarベース、debounce、リトライ) - 26テスト合格
+    - ✅ FileWatcher Index (エクスポート) - 完了
+    - **Phase 3.4 全26テスト合格** ✅
 
 - **🟢 Phase 4: サーバーとCLI** - 未実装
   - Server、CLI
@@ -818,9 +859,9 @@ TDD手順に従い、すべてのコンポーネントをテスト駆動開発�
 - **🔵 Phase 5: ビルド・配布・CI** - 未実装
   - Build、CI/CD
 
-**総テスト数**: 381テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 95, Phase 3.2: 24, Phase 3.3: 21, その他: 24)
+**総テスト数**: 407テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 95, Phase 3.2: 24, Phase 3.3: 21, Phase 3.4: 26, その他: 24)
 
-**現在の作業**: Phase 3.4 (ファイル監視) - 未着手
+**現在の作業**: Phase 4 (サーバーとCLI) - 未着手
 
-- ✅ Phase 3.3 (3-wayマージ) 完了
-- 次: ファイル監視機能実装 (chokidar, debounce, retry)
+- ✅ Phase 3 (機能モジュール) 全完了
+- 次: HTTPサーバー (Hono) およびCLI (commander) 実装
