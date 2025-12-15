@@ -54,27 +54,61 @@ function ensureUuid(custom: CslCustom | undefined): Partial<CslCustom> & { uuid:
 }
 
 /**
- * Ensure custom metadata has a valid timestamp
+ * Ensure custom metadata has a valid created_at timestamp
+ * Migrates from legacy timestamp field if needed
  * Generates a new timestamp if missing
  */
-function ensureTimestamp(custom: Partial<CslCustom> & { uuid: string }): CslCustom {
-  if (custom.timestamp) {
-    return custom as CslCustom;
+function ensureCreatedAt(
+  custom: Partial<CslCustom> & { uuid: string }
+): Partial<CslCustom> & { uuid: string; created_at: string } {
+  // Already has created_at
+  if (custom.created_at) {
+    return custom as Partial<CslCustom> & { uuid: string; created_at: string };
   }
 
+  // Legacy migration: move timestamp to created_at if timestamp exists but created_at doesn't
+  if (custom.timestamp) {
+    return {
+      ...custom,
+      created_at: custom.timestamp,
+    };
+  }
+
+  // Generate new created_at
   const newTimestamp = generateTimestamp();
   return {
     ...custom,
-    timestamp: newTimestamp,
+    created_at: newTimestamp,
   };
 }
 
 /**
- * Ensure custom metadata has both valid UUID and timestamp
+ * Ensure custom metadata has a valid timestamp (last modification time)
+ * Defaults to created_at if missing
+ */
+function ensureTimestamp(
+  custom: Partial<CslCustom> & { uuid: string; created_at: string }
+): CslCustom {
+  // Already has timestamp
+  if (custom.timestamp) {
+    return custom as CslCustom;
+  }
+
+  // Default to created_at (new item, not yet modified)
+  return {
+    ...custom,
+    timestamp: custom.created_at,
+  };
+}
+
+/**
+ * Ensure custom metadata has valid UUID, created_at, and timestamp
+ * Handles legacy migration from old timestamp-only format
  * Generates new values if missing or invalid
  */
 export function ensureCustomMetadata(custom: CslCustom | undefined): CslCustom {
   const withUuid = ensureUuid(custom);
-  const withTimestamp = ensureTimestamp(withUuid);
+  const withCreatedAt = ensureCreatedAt(withUuid);
+  const withTimestamp = ensureTimestamp(withCreatedAt);
   return withTimestamp;
 }

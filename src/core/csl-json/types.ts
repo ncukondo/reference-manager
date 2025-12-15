@@ -22,6 +22,7 @@ const CslDateSchema = z.object({
 // CSL-JSON Custom Metadata
 const CslCustomSchema = z.object({
   uuid: z.string(),
+  created_at: z.string(),
   timestamp: z.string(),
   additional_urls: z.array(z.string()).optional(),
 });

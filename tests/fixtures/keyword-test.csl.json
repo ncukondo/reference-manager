@@ -6,6 +6,7 @@
     "keyword": "machine learning; deep learning; neural networks",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440100",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -16,6 +17,7 @@
     "keyword": "  machine learning  ;  deep learning  ;  neural networks  ",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440101",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -26,6 +28,7 @@
     "keyword": "machine learning;;deep learning;  ;neural networks",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440102",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -35,6 +38,7 @@
     "title": "Test Article without Keywords",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440103",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -45,6 +49,7 @@
     "keyword": "",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440104",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -55,6 +60,7 @@
     "keyword": "machine learning",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440105",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   }

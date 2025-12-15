@@ -203,6 +203,7 @@ describe("CSL-JSON Validator", () => {
           note: "Test note",
           custom: {
             uuid: "550e8400-e29b-41d4-a716-446655440001",
+            created_at: "2024-01-01T00:00:00.000Z",
             timestamp: "2024-01-01T00:00:00.000Z",
           },
         },

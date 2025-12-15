@@ -27,22 +27,43 @@
 
 ## Merge Strategy
 
-- 3-way merge
-- Identity via `reference_manager_uuid`
+- 3-way merge with **Last-Write-Wins (LWW)** strategy
+- Identity via `custom.uuid`
 - Field-by-field comparison
+- Automatic conflict resolution via `custom.timestamp`
 
-Default:
-- No conflicts → write, exit 0
-- Conflicts →
-  - Generate conflict CSL file
-  - Generate conflict report
+Resolution priority:
+1. **No change** (base == local == remote) → keep base
+2. **One side changed** → use changed version
+3. **Both changed to same value** → use that value
+4. **Both changed to different values:**
+   - Compare `custom.timestamp` (last modification time)
+   - **Newer timestamp wins automatically** (LWW)
+   - If timestamps equal → apply `--prefer` or report conflict
+
+Default behavior:
+- Auto-resolved (LWW or unambiguous) → write, exit 0
+- Conflict (same timestamp, no --prefer) →
+  - Generate conflict CSL file: `<library>.conflict.csl.json`
+  - Generate conflict report: `<library>.conflict-report.txt`
   - Do not update canonical file
-  - Exit non-zero
+  - Exit 2
 
 ## `--prefer`
 
 - `--prefer=local|remote`
+- Used as tie-breaker when `custom.timestamp` values are equal
 - Applies only to conflicting fields
+- Overrides LWW strategy for same-timestamp conflicts
+
+## Timestamp Update
+
+- `custom.timestamp` is automatically updated when:
+  - Any field is modified via `Reference.updateField()`
+  - Reference is explicitly touched via `Reference.touch()`
+  - Library performs any CRUD operation that modifies a reference
+- `custom.created_at` is set once at creation and **never** changed
+- Legacy migration: old `timestamp` field is moved to `created_at` on first load
 
 ## Exit Codes
 

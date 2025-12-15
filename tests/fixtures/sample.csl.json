@@ -17,6 +17,7 @@
     "abstract": "This paper presents a comprehensive review of machine learning applications in medical diagnosis...",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440001",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -36,6 +37,7 @@
     "DOI": "10.11234/jsai.37.721",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440002",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -52,6 +54,7 @@
     "ISBN": "978-0-12-345678-9",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440003",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -72,6 +75,7 @@
     "DOI": "10.1007/978-3-030-12345-6_3",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440004",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   },
@@ -93,6 +97,7 @@
     "PMID": "87654321",
     "custom": {
       "uuid": "550e8400-e29b-41d4-a716-446655440005",
+      "created_at": "2024-01-01T00:00:00.000Z",
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   }

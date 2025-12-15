@@ -136,13 +136,34 @@ export class Reference {
   }
 
   /**
-   * Get the timestamp from custom metadata
+   * Get the creation timestamp from custom metadata (immutable)
+   */
+  getCreatedAt(): string {
+    if (!this.item.custom?.created_at) {
+      throw new Error("created_at is missing from custom metadata");
+    }
+    return this.item.custom.created_at;
+  }
+
+  /**
+   * Get the last modification timestamp from custom metadata
    */
   getTimestamp(): string {
     if (!this.item.custom?.timestamp) {
-      throw new Error("Timestamp is missing from custom metadata");
+      throw new Error("timestamp is missing from custom metadata");
     }
     return this.item.custom.timestamp;
+  }
+
+  /**
+   * Update the timestamp to current time
+   * Call this whenever the reference is modified
+   */
+  touch(): void {
+    if (!this.item.custom) {
+      throw new Error("custom metadata is missing");
+    }
+    this.item.custom.timestamp = new Date().toISOString();
   }
 
   /**
