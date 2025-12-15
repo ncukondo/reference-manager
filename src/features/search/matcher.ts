@@ -127,161 +127,170 @@ function matchKeyword(queryValue: string, reference: CslItem): FieldMatch | null
 }
 
 /**
+ * Map field specifier to actual CSL-JSON field name
+ */
+const FIELD_MAP: Record<string, string> = {
+  author: "author",
+  title: "title",
+  doi: "DOI",
+  pmid: "PMID",
+  pmcid: "PMCID",
+};
+
+/**
+ * Match a year field against a reference
+ */
+function matchYearField(tokenValue: string, reference: CslItem): FieldMatch | null {
+  const year = extractYear(reference);
+  if (year === tokenValue) {
+    return {
+      field: "year",
+      strength: "exact",
+      value: year,
+    };
+  }
+  return null;
+}
+
+/**
+ * Match a content or ID field against a reference
+ */
+function matchFieldValue(field: string, tokenValue: string, reference: CslItem): FieldMatch | null {
+  const fieldValue = getFieldValue(reference, field);
+  if (fieldValue === null) {
+    return null;
+  }
+
+  // Check if this is an ID field (exact match, case-sensitive)
+  if (ID_FIELDS.has(field)) {
+    if (fieldValue === tokenValue) {
+      return {
+        field,
+        strength: "exact",
+        value: fieldValue,
+      };
+    }
+    return null;
+  }
+
+  // Content field: partial match, case-insensitive with normalization
+  const normalizedFieldValue = normalize(fieldValue);
+  const normalizedQuery = normalize(tokenValue);
+
+  if (normalizedFieldValue.includes(normalizedQuery)) {
+    return {
+      field,
+      strength: "partial",
+      value: fieldValue,
+    };
+  }
+  return null;
+}
+
+/**
+ * Match token against a specific field
+ */
+function matchSpecificField(token: SearchToken, reference: CslItem): FieldMatch[] {
+  const matches: FieldMatch[] = [];
+  const fieldToSearch = token.field as string;
+
+  // Handle URL field specially (search both URL and additional_urls)
+  if (fieldToSearch === "url") {
+    const urlMatch = matchUrl(token.value, reference);
+    if (urlMatch) matches.push(urlMatch);
+    return matches;
+  }
+
+  // Handle year field
+  if (fieldToSearch === "year") {
+    const yearMatch = matchYearField(token.value, reference);
+    if (yearMatch) matches.push(yearMatch);
+    return matches;
+  }
+
+  // Handle keyword field specially (search array elements)
+  if (fieldToSearch === "keyword") {
+    const keywordMatch = matchKeyword(token.value, reference);
+    if (keywordMatch) matches.push(keywordMatch);
+    return matches;
+  }
+
+  // Standard field matching
+  const actualField = FIELD_MAP[fieldToSearch] || fieldToSearch;
+  const match = matchFieldValue(actualField, token.value, reference);
+  if (match) matches.push(match);
+
+  return matches;
+}
+
+/**
+ * Standard fields to search (not special-cased)
+ */
+const STANDARD_SEARCH_FIELDS = [
+  "title",
+  "author",
+  "container-title",
+  "publisher",
+  "DOI",
+  "PMID",
+  "PMCID",
+  "abstract",
+];
+
+/**
+ * Match token against a single field (used for all-fields search)
+ */
+function matchSingleField(
+  field: string,
+  tokenValue: string,
+  reference: CslItem
+): FieldMatch | null {
+  if (field === "year") {
+    return matchYearField(tokenValue, reference);
+  }
+  if (field === "URL") {
+    return matchUrl(tokenValue, reference);
+  }
+  if (field === "keyword") {
+    return matchKeyword(tokenValue, reference);
+  }
+  return matchFieldValue(field, tokenValue, reference);
+}
+
+/**
+ * Match token against all searchable fields
+ */
+function matchAllFields(token: SearchToken, reference: CslItem): FieldMatch[] {
+  const matches: FieldMatch[] = [];
+
+  // Match special fields
+  const specialFields = ["year", "URL", "keyword"];
+  for (const field of specialFields) {
+    const match = matchSingleField(field, token.value, reference);
+    if (match) matches.push(match);
+  }
+
+  // Match standard fields
+  for (const field of STANDARD_SEARCH_FIELDS) {
+    const match = matchFieldValue(field, token.value, reference);
+    if (match) matches.push(match);
+  }
+
+  return matches;
+}
+
+/**
  * Match a single token against a reference
  * Returns an array of field matches
  */
 export function matchToken(token: SearchToken, reference: CslItem): FieldMatch[] {
-  const matches: FieldMatch[] = [];
-
   // If field is specified, only search that field
   if (token.field) {
-    const fieldToSearch = token.field;
-
-    // Handle URL field specially (search both URL and additional_urls)
-    if (fieldToSearch === "url") {
-      const urlMatch = matchUrl(token.value, reference);
-      if (urlMatch) {
-        matches.push(urlMatch);
-      }
-      return matches;
-    }
-
-    // Handle year field
-    if (fieldToSearch === "year") {
-      const year = extractYear(reference);
-      if (year === token.value) {
-        matches.push({
-          field: "year",
-          strength: "exact",
-          value: year,
-        });
-      }
-      return matches;
-    }
-
-    // Handle keyword field specially (search array elements)
-    if (fieldToSearch === "keyword") {
-      const keywordMatch = matchKeyword(token.value, reference);
-      if (keywordMatch) {
-        matches.push(keywordMatch);
-      }
-      return matches;
-    }
-
-    // Map field specifier to actual CSL-JSON field name
-    const fieldMap: Record<string, string> = {
-      author: "author",
-      title: "title",
-      doi: "DOI",
-      pmid: "PMID",
-      pmcid: "PMCID",
-    };
-
-    const actualField = fieldMap[fieldToSearch] || fieldToSearch;
-    const fieldValue = getFieldValue(reference, actualField);
-
-    if (fieldValue !== null) {
-      // Check if this is an ID field
-      if (ID_FIELDS.has(actualField)) {
-        // Exact match, case-sensitive
-        if (fieldValue === token.value) {
-          matches.push({
-            field: actualField,
-            strength: "exact",
-            value: fieldValue,
-          });
-        }
-      } else {
-        // Content field: partial match, case-insensitive with normalization
-        const normalizedFieldValue = normalize(fieldValue);
-        const normalizedQuery = normalize(token.value);
-
-        if (normalizedFieldValue.includes(normalizedQuery)) {
-          matches.push({
-            field: actualField,
-            strength: "partial",
-            value: fieldValue,
-          });
-        }
-      }
-    }
-
-    return matches;
+    return matchSpecificField(token, reference);
   }
 
   // No field specified: search all fields
-  const fieldsToSearch = [
-    "title",
-    "author",
-    "container-title",
-    "publisher",
-    "DOI",
-    "PMID",
-    "PMCID",
-    "URL",
-    "keyword",
-    "abstract",
-    "year",
-  ];
-
-  for (const field of fieldsToSearch) {
-    // Handle special fields
-    if (field === "year") {
-      const year = extractYear(reference);
-      if (year === token.value) {
-        matches.push({
-          field: "year",
-          strength: "exact",
-          value: year,
-        });
-      }
-      continue;
-    }
-
-    if (field === "URL") {
-      const urlMatch = matchUrl(token.value, reference);
-      if (urlMatch) {
-        matches.push(urlMatch);
-      }
-      continue;
-    }
-
-    if (field === "keyword") {
-      const keywordMatch = matchKeyword(token.value, reference);
-      if (keywordMatch) {
-        matches.push(keywordMatch);
-      }
-      continue;
-    }
-
-    const fieldValue = getFieldValue(reference, field);
-    if (fieldValue !== null) {
-      if (ID_FIELDS.has(field)) {
-        // Exact match for ID fields
-        if (fieldValue === token.value) {
-          matches.push({
-            field,
-            strength: "exact",
-            value: fieldValue,
-          });
-        }
-      } else {
-        // Partial match for content fields
-        const normalizedFieldValue = normalize(fieldValue);
-        const normalizedQuery = normalize(token.value);
-
-        if (normalizedFieldValue.includes(normalizedQuery)) {
-          matches.push({
-            field,
-            strength: "partial",
-            value: fieldValue,
-          });
-        }
-      }
-    }
-  }
-
-  return matches;
+  return matchAllFields(token, reference);
 }
 
 /**

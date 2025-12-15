@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { MergeOptions } from "./types.js";
 import { threeWayMerge } from "./three-way.js";
+import type { MergeOptions } from "./types.js";
 
 describe("threeWayMerge", () => {
+  // Sample custom metadata for testing
+  const baseCustom = {
+    uuid: "660e8400-e29b-41d4-a716-446655440001",
+    created_at: "2024-01-01T00:00:00.000Z",
+    timestamp: "2024-01-01T00:00:00.000Z",
+  };
+
   // Sample references for testing
   const baseItem: CslItem = {
     id: "smith2023",
@@ -11,11 +18,7 @@ describe("threeWayMerge", () => {
     title: "Original Title",
     author: [{ family: "Smith", given: "John" }],
     issued: { "date-parts": [[2023]] },
-    custom: {
-      uuid: "660e8400-e29b-41d4-a716-446655440001",
-      created_at: "2024-01-01T00:00:00.000Z",
-      timestamp: "2024-01-01T00:00:00.000Z",
-    },
+    custom: baseCustom,
   };
 
   describe("No change scenarios", () => {
@@ -40,7 +43,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Updated Title by Local",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T10:00:00.000Z",
         },
       };
@@ -62,7 +65,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Updated Title by Remote",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T15:00:00.000Z",
         },
       };
@@ -84,7 +87,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Same Updated Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T10:00:00.000Z",
         },
       };
@@ -92,7 +95,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Same Updated Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T15:00:00.000Z",
         },
       };
@@ -115,7 +118,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Local Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T15:00:00.000Z", // Newer
         },
       };
@@ -123,7 +126,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Remote Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T10:00:00.000Z", // Older
         },
       };
@@ -145,7 +148,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Local Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T10:00:00.000Z", // Older
         },
       };
@@ -153,7 +156,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Remote Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T15:00:00.000Z", // Newer
         },
       };
@@ -178,7 +181,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Local Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: sameTimestamp,
         },
       };
@@ -186,7 +189,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Remote Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: sameTimestamp,
         },
       };
@@ -210,7 +213,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Local Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: sameTimestamp,
         },
       };
@@ -218,7 +221,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Remote Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: sameTimestamp,
         },
       };
@@ -242,7 +245,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Local Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: sameTimestamp,
         },
       };
@@ -250,7 +253,7 @@ describe("threeWayMerge", () => {
         ...baseItem,
         title: "Remote Title",
         custom: {
-          ...baseItem.custom!,
+          ...baseCustom,
           timestamp: sameTimestamp,
         },
       };
@@ -362,15 +365,16 @@ describe("threeWayMerge", () => {
 
   describe("Multiple items with mixed scenarios", () => {
     it("should handle multiple items with different conflict types", () => {
+      const item1Custom = {
+        uuid: "uuid-1",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      };
       const item1: CslItem = {
         id: "item1",
         type: "article-journal",
         title: "Item 1 Original",
-        custom: {
-          uuid: "uuid-1",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
+        custom: item1Custom,
       };
 
       const item2: CslItem = {
@@ -402,7 +406,7 @@ describe("threeWayMerge", () => {
         ...item1,
         title: "Item 1 Modified Local",
         custom: {
-          ...item1.custom!,
+          ...item1Custom,
           timestamp: "2024-01-02T15:00:00.000Z",
         },
       };
@@ -413,7 +417,7 @@ describe("threeWayMerge", () => {
         ...item1,
         title: "Item 1 Modified Remote",
         custom: {
-          ...item1.custom!,
+          ...item1Custom,
           timestamp: "2024-01-02T10:00:00.000Z",
         },
       };
@@ -446,7 +450,7 @@ describe("threeWayMerge", () => {
           title: "Updated Title", // Changed
           abstract: "Original Abstract", // Unchanged
           custom: {
-            ...baseItem.custom!,
+            ...baseCustom,
             timestamp: "2024-01-02T10:00:00.000Z",
           },
         },
@@ -458,7 +462,7 @@ describe("threeWayMerge", () => {
           title: "Original Title", // Unchanged
           abstract: "Updated Abstract", // Changed
           custom: {
-            ...baseItem.custom!,
+            ...baseCustom,
             timestamp: "2024-01-02T15:00:00.000Z",
           },
         },
@@ -483,7 +487,7 @@ describe("threeWayMerge", () => {
           title: "Local Title",
           abstract: "Local Abstract",
           custom: {
-            ...baseItem.custom!,
+            ...baseCustom,
             timestamp: sameTimestamp,
           },
         },
@@ -495,7 +499,7 @@ describe("threeWayMerge", () => {
           title: "Remote Title",
           abstract: "Remote Abstract",
           custom: {
-            ...baseItem.custom!,
+            ...baseCustom,
             timestamp: sameTimestamp,
           },
         },
@@ -520,15 +524,16 @@ describe("threeWayMerge", () => {
     });
 
     it("should handle items with missing custom.timestamp (use created_at as fallback)", () => {
+      const itemNoTimestampCustom = {
+        uuid: "uuid-no-ts",
+        created_at: "2024-01-01T00:00:00.000Z",
+        // timestamp is missing
+      };
       const itemNoTimestamp: CslItem = {
         id: "no-timestamp",
         type: "book",
         title: "Base Title",
-        custom: {
-          uuid: "uuid-no-ts",
-          created_at: "2024-01-01T00:00:00.000Z",
-          // timestamp is missing
-        },
+        custom: itemNoTimestampCustom,
       };
 
       const base = [itemNoTimestamp];
@@ -537,7 +542,7 @@ describe("threeWayMerge", () => {
           ...itemNoTimestamp,
           title: "Local Title",
           custom: {
-            ...itemNoTimestamp.custom!,
+            ...itemNoTimestampCustom,
             timestamp: "2024-01-02T10:00:00.000Z",
           },
         },
@@ -547,7 +552,7 @@ describe("threeWayMerge", () => {
           ...itemNoTimestamp,
           title: "Remote Title",
           custom: {
-            ...itemNoTimestamp.custom!,
+            ...itemNoTimestampCustom,
             // Still no timestamp, should use created_at
           },
         },
@@ -597,7 +602,7 @@ describe("threeWayMerge", () => {
           { family: "Doe", given: "Jane" },
         ],
         custom: {
-          ...baseWithAuthors.custom!,
+          ...baseCustom,
           timestamp: "2024-01-02T10:00:00.000Z",
         },
       };
@@ -605,7 +610,7 @@ describe("threeWayMerge", () => {
       const remoteWithAuthors: CslItem = {
         ...baseWithAuthors,
         custom: {
-          ...baseWithAuthors.custom!,
+          ...baseCustom,
           timestamp: "2024-01-01T00:00:00.000Z",
         },
       };

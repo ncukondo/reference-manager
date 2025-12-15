@@ -46,11 +46,12 @@ export async function parseCslJson(filePath: string): Promise<CslLibrary> {
 
   // Convert keyword fields from string to array before validation
   if (Array.isArray(rawData)) {
-    rawData = rawData.map((item: any) => {
+    rawData = rawData.map((item: unknown) => {
       if (item && typeof item === "object" && "keyword" in item) {
+        const itemWithKeyword = item as Record<string, unknown>;
         return {
-          ...item,
-          keyword: parseKeyword(item.keyword),
+          ...itemWithKeyword,
+          keyword: parseKeyword(itemWithKeyword.keyword),
         };
       }
       return item;
