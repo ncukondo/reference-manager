@@ -1,6 +1,6 @@
 # reference-manager 実装ロードマップ
 
-生成日: 2025-12-13 (最終更新: 2025-12-16 - Phase 4.2 仕様確認完了)
+生成日: 2025-12-13 (最終更新: 2025-12-16 - Phase 4.2 A・B 完了)
 
 ## プロジェクト概要
 
@@ -68,6 +68,19 @@
   - Server Entry (`src/server/index.ts`) - 3テスト合格 ✅
   - Validator拡張 (`validateCslItem` 追加) ✅
   - **Phase 4.1 全テスト**: 33テスト合格 ✅
+
+- **Phase 4.2: CLI - Phase A・B 完了** 🟠 (2025-12-16)
+  - Phase A: 基盤拡張 - 67テスト合格 ✅
+    - Config Schema (`src/config/schema.ts`) - server設定追加 ✅
+    - Config Defaults (`src/config/defaults.ts`) - serverデフォルト値追加 ✅
+    - Portfile (`src/server/portfile.ts`) - library/started_at追加 ✅
+    - Library Hash (`src/core/library.ts`) - ファイルハッシュ追跡 ✅
+  - Phase B: 出力モジュール - 53テスト合格 ✅
+    - JSON Output (`src/cli/output/json.ts`) - 9テスト合格 ✅
+    - Pretty Output (`src/cli/output/pretty.ts`) - 19テスト合格 ✅
+    - BibTeX Output (`src/cli/output/bibtex.ts`) - 25テスト合格 ✅
+    - Output Index (`src/cli/output/index.ts`) - エクスポート ✅
+  - **Phase 4.2 A・B 全テスト**: 120テスト合格 ✅
 
 ### 🚧 未実装 (Not Yet Implemented)
 
@@ -573,21 +586,21 @@
 - ✅ 参照文献CRUD API
 - ✅ 全エンドポイントのテストカバレッジ
 
-#### 4.2 CLI ⏳ 未実装
+#### 4.2 CLI 🟠 Phase A・B 完了 (2025-12-16)
 
 **目標**: commanderベースのCLI実装、サーバー統合
 
 | コンポーネント | ファイル | 状態 | 説明 |
 |--------------|---------|------|------|
-| **基盤拡張** | | | |
-| Config Schema | `src/config/schema.ts` | ⚠️ 要拡張 | server設定追加 |
-| Portfile | `src/server/portfile.ts` | ⚠️ 要拡張 | library/started_at追加 |
-| Library Hash | `src/core/library.ts` | ⚠️ 要拡張 | ファイルハッシュ追跡 |
-| **出力モジュール** | | | |
-| JSON Output | `src/cli/output/json.ts` | ❌ 未実装 | JSON出力 |
-| Pretty Output | `src/cli/output/pretty.ts` | ❌ 未実装 | 整形済み出力 |
-| BibTeX Output | `src/cli/output/bibtex.ts` | ❌ 未実装 | BibTeX変換出力 |
-| Output Index | `src/cli/output/index.ts` | ❌ 未実装 | 出力モジュールエクスポート |
+| **基盤拡張** | | ✅ 完了 | Phase A完了 (67テスト) |
+| Config Schema | `src/config/schema.ts` | ✅ 完了 | server設定追加 (17テスト) |
+| Portfile | `src/server/portfile.ts` | ✅ 完了 | library/started_at追加 (20テスト) |
+| Library Hash | `src/core/library.ts` | ✅ 完了 | ファイルハッシュ追跡 (30テスト) |
+| **出力モジュール** | | ✅ 完了 | Phase B完了 (53テスト) |
+| JSON Output | `src/cli/output/json.ts` | ✅ 完了 | JSON出力 (9テスト) |
+| Pretty Output | `src/cli/output/pretty.ts` | ✅ 完了 | 整形済み出力 (19テスト) |
+| BibTeX Output | `src/cli/output/bibtex.ts` | ✅ 完了 | BibTeX変換出力 (25テスト) |
+| Output Index | `src/cli/output/index.ts` | ✅ 完了 | 出力モジュールエクスポート |
 | **CLI-Server統合** | | | |
 | Server Client | `src/cli/server-client.ts` | ❌ 未実装 | サーバーAPI客户端 |
 | Server Detection | `src/cli/server-detection.ts` | ❌ 未実装 | サーバー検出・自動起動 |
@@ -996,28 +1009,28 @@ TDD手順に従い、ファイル監視機能を実装完了。
     - ✅ FileWatcher Index (エクスポート) - 完了
     - **Phase 3.4 全26テスト合格** ✅
 
-- **🟢 Phase 4: サーバーとCLI** - Phase 4.1 完了 ✅、Phase 4.2 仕様確認完了
+- **🟢 Phase 4: サーバーとCLI** - Phase 4.1 完了 ✅、Phase 4.2 A・B 完了 ✅
   - ✅ Phase 4.1: HTTPサーバー - 完了 (2025-12-15) - 33テスト合格
-  - ⏳ Phase 4.2: CLI - 仕様確認完了 (2025-12-16)、実装未着手
-    - ✅ 全コマンド詳細仕様 (add, search, list, remove, update, server)
-    - ✅ CLI-Server統合設計 (自動検出、自動起動)
-    - ✅ Exit code、グローバルオプション、対話機能
-    - ✅ 仕様整合性検証完了
-    - **見積もり**: ~155テスト、19コンポーネント
+  - 🟠 Phase 4.2: CLI - Phase A・B 完了 (2025-12-16)
+    - ✅ Phase A: 基盤拡張 (config, portfile, library hash) - 67テスト合格
+    - ✅ Phase B: 出力モジュール (json, pretty, bibtex) - 53テスト合格
+    - ⏳ Phase C: CLI-Server統合 - 未実装
+    - ⏳ Phase D: コマンド実装 - 未実装
+    - ⏳ Phase E: CLIエントリー - 未実装
+    - **Phase 4.2 A・B 合計**: 120テスト合格
+    - **Phase 4.2 C-E 見積もり**: ~35テスト (Phase C-E のみ)
 
 - **🔵 Phase 5: ビルド・配布・CI** - 未実装
   - Build、CI/CD
 
-**総テスト数**: 440テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3: 166, Phase 4.1: 33, その他: 24)
+**総テスト数**: 560テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3: 166, Phase 4.1: 33, Phase 4.2 A・B: 120, その他: 24)
 
-**Phase 4.2見積もり**: +155テスト → **総計: ~595テスト**
+**Phase 4.2 残り見積もり**: +35テスト → **総計: ~595テスト**
 
-**現在の作業**: Phase 4.2 (CLI) - 仕様確認完了、実装準備完了
+**現在の作業**: Phase 4.2 (CLI) - Phase A・B 完了、Phase C 開始準備中
 
 **次のステップ**:
-- Phase 4.2実装開始
-  - Phase A: 基盤拡張 (config, portfile, library hash)
-  - Phase B: 出力モジュール (json, pretty, bibtex)
-  - Phase C: CLI-Server統合
-  - Phase D: コマンド実装
-  - Phase E: CLIエントリー
+- Phase 4.2 C実装開始: CLI-Server統合
+  - Server Client (`src/cli/server-client.ts`)
+  - Server Detection (`src/cli/server-detection.ts`)
+- その後 Phase D・E: コマンド実装、CLIエントリー

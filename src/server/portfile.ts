@@ -12,43 +12,73 @@ export function getPortfilePath(): string {
 }
 
 /**
- * Write port and PID to the portfile.
+ * Write port, PID, library path, and optionally started_at to the portfile.
  * @param portfilePath - Path to the portfile
  * @param port - Server port number
  * @param pid - Server process ID
+ * @param library - Path to the library file
+ * @param started_at - Optional ISO 8601 timestamp of when the server started
  */
 export async function writePortfile(
   portfilePath: string,
   port: number,
-  pid: number
+  pid: number,
+  library: string,
+  started_at?: string
 ): Promise<void> {
   // Create parent directory if it doesn't exist
   const dir = path.dirname(portfilePath);
   await fs.mkdir(dir, { recursive: true });
 
-  // Write portfile with port and pid
-  const content = JSON.stringify({ port, pid }, null, 2);
+  // Write portfile with port, pid, library, and optionally started_at
+  const data: Record<string, unknown> = { port, pid, library };
+  if (started_at !== undefined) {
+    data.started_at = started_at;
+  }
+  const content = JSON.stringify(data, null, 2);
   await fs.writeFile(portfilePath, content, "utf-8");
 }
 
 /**
- * Read port and PID from the portfile.
+ * Read port, PID, library, and optionally started_at from the portfile.
  * @param portfilePath - Path to the portfile
- * @returns Object with port and pid, or null if file doesn't exist or is invalid
+ * @returns Object with port, pid, library (if present), and started_at (if present), or null if file doesn't exist or is invalid
  */
-export async function readPortfile(
-  portfilePath: string
-): Promise<{ port: number; pid: number } | null> {
+export async function readPortfile(portfilePath: string): Promise<{
+  port: number;
+  pid: number;
+  library?: string;
+  started_at?: string;
+} | null> {
   try {
     const content = await fs.readFile(portfilePath, "utf-8");
     const data = JSON.parse(content);
 
-    // Validate required fields
+    // Validate required fields (port and pid are always required)
     if (typeof data.port !== "number" || typeof data.pid !== "number") {
       return null;
     }
 
-    return { port: data.port, pid: data.pid };
+    // Build result with required fields
+    const result: {
+      port: number;
+      pid: number;
+      library?: string;
+      started_at?: string;
+    } = {
+      port: data.port,
+      pid: data.pid,
+    };
+
+    // Add optional fields if present
+    if (typeof data.library === "string") {
+      result.library = data.library;
+    }
+    if (typeof data.started_at === "string") {
+      result.started_at = data.started_at;
+    }
+
+    return result;
   } catch {
     // File doesn't exist or invalid JSON
     return null;

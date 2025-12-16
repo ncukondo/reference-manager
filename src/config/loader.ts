@@ -89,6 +89,14 @@ function mergeConfigs(
         ...override.watch,
       };
     }
+
+    // Merge server config
+    if (override.server !== undefined) {
+      result.server = {
+        ...result.server,
+        ...override.server,
+      };
+    }
   }
 
   return result;
@@ -112,6 +120,10 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       pollIntervalMs: partial.watch?.pollIntervalMs ?? defaultConfig.watch.pollIntervalMs,
       retryIntervalMs: partial.watch?.retryIntervalMs ?? defaultConfig.watch.retryIntervalMs,
       maxRetries: partial.watch?.maxRetries ?? defaultConfig.watch.maxRetries,
+    },
+    server: {
+      autoStart: partial.server?.autoStart ?? defaultConfig.server.autoStart,
+      autoStopMinutes: partial.server?.autoStopMinutes ?? defaultConfig.server.autoStopMinutes,
     },
   };
 }

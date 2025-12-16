@@ -30,6 +30,14 @@ export const watchConfigSchema = z.object({
 });
 
 /**
+ * Server configuration schema
+ */
+export const serverConfigSchema = z.object({
+  autoStart: z.boolean(),
+  autoStopMinutes: z.number().int().nonnegative(),
+});
+
+/**
  * Complete configuration schema
  */
 export const configSchema = z.object({
@@ -37,6 +45,7 @@ export const configSchema = z.object({
   logLevel: logLevelSchema,
   backup: backupConfigSchema,
   watch: watchConfigSchema,
+  server: serverConfigSchema,
 });
 
 /**
@@ -70,6 +79,14 @@ export const partialConfigSchema = z
         max_retries: z.number().int().nonnegative().optional(),
       })
       .optional(),
+    server: z
+      .object({
+        autoStart: z.boolean().optional(),
+        auto_start: z.boolean().optional(),
+        autoStopMinutes: z.number().int().nonnegative().optional(),
+        auto_stop_minutes: z.number().int().nonnegative().optional(),
+      })
+      .optional(),
   })
   .passthrough(); // Allow unknown fields in TOML files
 
@@ -79,6 +96,7 @@ export const partialConfigSchema = z
 export type LogLevel = z.infer<typeof logLevelSchema>;
 export type BackupConfig = z.infer<typeof backupConfigSchema>;
 export type WatchConfig = z.infer<typeof watchConfigSchema>;
+export type ServerConfig = z.infer<typeof serverConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
 export type PartialConfig = z.infer<typeof partialConfigSchema>;
 
@@ -90,6 +108,7 @@ export type DeepPartialConfig = {
   logLevel?: LogLevel;
   backup?: Partial<BackupConfig>;
   watch?: Partial<WatchConfig>;
+  server?: Partial<ServerConfig>;
 };
 
 /**
@@ -169,6 +188,32 @@ function normalizeWatchConfig(
 }
 
 /**
+ * Normalize server configuration from snake_case to camelCase
+ */
+function normalizeServerConfig(
+  server: Partial<{
+    autoStart?: boolean;
+    auto_start?: boolean;
+    autoStopMinutes?: number;
+    auto_stop_minutes?: number;
+  }>
+): Partial<ServerConfig> | undefined {
+  const normalized: Partial<ServerConfig> = {};
+
+  const autoStart = server.autoStart ?? server.auto_start;
+  if (autoStart !== undefined) {
+    normalized.autoStart = autoStart;
+  }
+
+  const autoStopMinutes = server.autoStopMinutes ?? server.auto_stop_minutes;
+  if (autoStopMinutes !== undefined) {
+    normalized.autoStopMinutes = autoStopMinutes;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Normalize snake_case fields to camelCase
  */
 export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfig {
@@ -200,6 +245,16 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
     const watch = normalizeWatchConfig(partial.watch as Parameters<typeof normalizeWatchConfig>[0]);
     if (watch) {
       normalized.watch = watch;
+    }
+  }
+
+  // Server
+  if (partial.server !== undefined) {
+    const server = normalizeServerConfig(
+      partial.server as Parameters<typeof normalizeServerConfig>[0]
+    );
+    if (server) {
+      normalized.server = server;
     }
   }
 

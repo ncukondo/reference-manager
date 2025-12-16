@@ -57,4 +57,8 @@ export const defaultConfig: Config = {
     retryIntervalMs: 200,
     maxRetries: 10,
   },
+  server: {
+    autoStart: false,
+    autoStopMinutes: 0,
+  },
 };

@@ -1,3 +1,4 @@
+import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
@@ -9,6 +10,7 @@ import { Reference } from "./reference";
 export class Library {
   private filePath: string;
   private references: Reference[] = [];
+  private currentHash: string | null = null;
 
   // Indices for fast lookup
   private uuidIndex: Map<string, Reference> = new Map();
@@ -32,7 +34,10 @@ export class Library {
    */
   static async load(filePath: string): Promise<Library> {
     const items = await parseCslJson(filePath);
-    return new Library(filePath, items);
+    const library = new Library(filePath, items);
+    // Compute and store file hash after loading
+    library.currentHash = await computeFileHash(filePath);
+    return library;
   }
 
   /**
@@ -41,6 +46,8 @@ export class Library {
   async save(): Promise<void> {
     const items = this.references.map((ref) => ref.getItem());
     await writeCslJson(this.filePath, items);
+    // Update file hash after saving
+    this.currentHash = await computeFileHash(this.filePath);
   }
 
   /**
@@ -122,6 +129,14 @@ export class Library {
    */
   getFilePath(): string {
     return this.filePath;
+  }
+
+  /**
+   * Get the current file hash
+   * Returns null if the library has not been loaded or saved yet
+   */
+  getCurrentHash(): string | null {
+    return this.currentHash;
   }
 
   /**
