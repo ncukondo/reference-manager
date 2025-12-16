@@ -604,14 +604,14 @@
 | **CLI-Server統合** | | ✅ 完了 | Phase C完了 (21テスト) |
 | Server Client | `src/cli/server-client.ts` | ✅ 完了 | サーバーAPI客户端 (12テスト) |
 | Server Detection | `src/cli/server-detection.ts` | ✅ 完了 | サーバー検出・自動起動 (9テスト) |
-| **コマンド** | | | |
-| List Command | `src/cli/commands/list.ts` | ❌ 未実装 | 一覧表示 |
-| Search Command | `src/cli/commands/search.ts` | ❌ 未実装 | 検索 |
-| Add Command | `src/cli/commands/add.ts` | ❌ 未実装 | 参考文献追加（重複検出・ID衝突処理） |
-| Remove Command | `src/cli/commands/remove.ts` | ❌ 未実装 | 削除（確認プロンプト） |
-| Update Command | `src/cli/commands/update.ts` | ❌ 未実装 | 更新 |
+| **コマンド** | | 🟠 部分完了 | Phase D部分完了 (22テスト) |
+| List Command | `src/cli/commands/list.ts` | ✅ 完了 | 一覧表示 (7テスト) |
+| Search Command | `src/cli/commands/search.ts` | ✅ 完了 | 検索 (7テスト) |
+| Add Command | `src/cli/commands/add.ts` | ✅ 完了 | 参考文献追加（重複検出・ID衝突処理） (5テスト) |
+| Remove Command | `src/cli/commands/remove.ts` | ✅ 完了 | 削除 (4テスト) |
+| Update Command | `src/cli/commands/update.ts` | ✅ 完了 | 更新 (6テスト) |
 | Server Command | `src/cli/commands/server.ts` | ❌ 未実装 | サーバー管理（start/stop/status） |
-| Commands Index | `src/cli/commands/index.ts` | ❌ 未実装 | コマンドエクスポート |
+| Commands Index | `src/cli/commands/index.ts` | ✅ 完了 | コマンドエクスポート |
 | **CLI Entry** | | | |
 | CLI Entry | `src/cli/index.ts` | ❌ 未実装 | Commanderセットアップ |
 | CLI Entry Test | `src/cli/index.test.ts` | ❌ 未実装 | CLIエントリーのテスト |
@@ -686,25 +686,36 @@
 - ✅ portfile検証・library path照合実装完了
 - ✅ 全テスト合格
 
-**Phase D: コマンド実装**
-11. `src/cli/commands/list.ts` - 一覧表示
-    - サーバー経由 or 直接ファイルアクセス
-12. `src/cli/commands/search.ts` - 検索
-    - クエリパース、サーバー経由 or 直接実行
-13. `src/cli/commands/add.ts` - 追加
-    - stdin/ファイル読み込み
+**Phase D: コマンド実装** 🟠 部分完了 (2025-12-16)
+11. ✅ `src/cli/commands/list.ts` - 一覧表示 (7テスト)
+    - 全参照文献の一覧表示
+    - 出力フォーマット: pretty (default), --json, --ids-only, --uuid, --bibtex
+    - 相互排他的な出力オプションチェック
+12. ✅ `src/cli/commands/search.ts` - 検索 (7テスト)
+    - クエリトークン化 + 検索実行 + ソート
+    - フィールド指定検索、AND検索
+    - 出力フォーマット対応
+13. ✅ `src/cli/commands/add.ts` - 追加 (5テスト)
     - 重複検出（`--force`対応）
-    - ID衝突処理（suffix追加）
-14. `src/cli/commands/remove.ts` - 削除
-    - 確認プロンプト（TTY検出）
-    - `--force`でスキップ
-15. `src/cli/commands/update.ts` - 更新
-    - 部分更新、timestamp自動更新
-16. `src/cli/commands/server.ts` - サーバー管理
+    - ID衝突処理（suffix追加: a, b, c, ..., z, aa, ab, ...）
+14. ✅ `src/cli/commands/remove.ts` - 削除 (4テスト)
+    - ID/UUID指定での削除
+    - 削除後の残りアイテム返却
+15. ✅ `src/cli/commands/update.ts` - 更新 (6テスト)
+    - 部分更新、timestamp自動更新、created_at保持
+    - ID/UUID指定での更新
+16. ⏳ `src/cli/commands/server.ts` - サーバー管理 (未実装)
     - `start` - サーバー起動（foreground/daemon）
     - `stop` - サーバー停止
     - `status` - ステータス確認
-17. `src/cli/commands/index.ts` - エクスポート
+17. ✅ `src/cli/commands/index.ts` - エクスポート
+
+**Phase D 実装内容** (2025-12-16):
+- ✅ List/Search/Add/Remove/Updateコマンド実装完了
+- ✅ 重複検出・ID衝突処理の統合
+- ✅ 出力フォーマット統一 (pretty/json/ids-only/uuid/bibtex)
+- ✅ 全29テスト合格 (list: 7, search: 7, add: 5, remove: 4, update: 6)
+- ⏳ Server Commandは次回実装予定
 
 **Phase E: CLIエントリー**
 18. `src/cli/index.ts` - Commanderセットアップ
@@ -722,14 +733,14 @@
 - **合計: ~155テスト**
 
 **Phase 4.2 完了条件**:
-- ⏳ 全CLIコマンドが動作（add, search, list, remove, update, server）
+- 🟠 全CLIコマンドが動作（✅ add, search, list, remove, update / ⏳ server）
 - ✅ 出力フォーマット (JSON, BibTeX, Pretty) が動作
 - ✅ サーバー自動検出・自動起動が動作
-- ⏳ ID衝突処理が動作（suffix追加）
-- ⏳ 重複検出が動作（`--force`対応）
-- ⏳ 確認プロンプトが動作（TTY検出）
-- ⏳ Exit codeが仕様通り
-- ⏳ 全テスト合格（~155テスト）
+- ✅ ID衝突処理が動作（suffix追加）
+- ✅ 重複検出が動作（`--force`対応）
+- ⏳ 確認プロンプトが動作（TTY検出） - コマンドロジックのみ実装、プロンプトは未実装
+- ⏳ Exit codeが仕様通り - CLIエントリー未実装のため未対応
+- 🟠 テスト合格（Phase A-C: 141テスト / Phase D: 29テスト / 合計: 170テスト）
 
 ---
 
