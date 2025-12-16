@@ -1,6 +1,6 @@
 # reference-manager 実装ロードマップ
 
-生成日: 2025-12-13 (最終更新: 2025-12-15 - Phase 4.1 HTTPサーバー実装完了)
+生成日: 2025-12-13 (最終更新: 2025-12-16 - Phase 4.2 仕様確認完了)
 
 ## プロジェクト概要
 
@@ -573,41 +573,115 @@
 - ✅ 参照文献CRUD API
 - ✅ 全エンドポイントのテストカバレッジ
 
-#### 4.2 CLI
+#### 4.2 CLI ⏳ 未実装
 
-**目標**: commanderベースのCLI実装
+**目標**: commanderベースのCLI実装、サーバー統合
 
 | コンポーネント | ファイル | 状態 | 説明 |
 |--------------|---------|------|------|
-| CLI Entry | `src/cli/index.ts` | ❌ 未実装 | CLIエントリーポイント |
-| Add Command | `src/cli/commands/add.ts` | ❌ 未実装 | 参考文献追加 |
-| Search Command | `src/cli/commands/search.ts` | ❌ 未実装 | 検索 |
-| List Command | `src/cli/commands/list.ts` | ❌ 未実装 | 一覧表示 |
-| Remove Command | `src/cli/commands/remove.ts` | ❌ 未実装 | 削除 |
-| Update Command | `src/cli/commands/update.ts` | ❌ 未実装 | 更新 |
-| Server Command | `src/cli/commands/server.ts` | ❌ 未実装 | サーバー管理 |
+| **基盤拡張** | | | |
+| Config Schema | `src/config/schema.ts` | ⚠️ 要拡張 | server設定追加 |
+| Portfile | `src/server/portfile.ts` | ⚠️ 要拡張 | library/started_at追加 |
+| Library Hash | `src/core/library.ts` | ⚠️ 要拡張 | ファイルハッシュ追跡 |
+| **出力モジュール** | | | |
 | JSON Output | `src/cli/output/json.ts` | ❌ 未実装 | JSON出力 |
-| BibTeX Output | `src/cli/output/bibtex.ts` | ❌ 未実装 | BibTeX出力 |
 | Pretty Output | `src/cli/output/pretty.ts` | ❌ 未実装 | 整形済み出力 |
+| BibTeX Output | `src/cli/output/bibtex.ts` | ❌ 未実装 | BibTeX変換出力 |
+| Output Index | `src/cli/output/index.ts` | ❌ 未実装 | 出力モジュールエクスポート |
+| **CLI-Server統合** | | | |
+| Server Client | `src/cli/server-client.ts` | ❌ 未実装 | サーバーAPI客户端 |
+| Server Detection | `src/cli/server-detection.ts` | ❌ 未実装 | サーバー検出・自動起動 |
+| **コマンド** | | | |
+| List Command | `src/cli/commands/list.ts` | ❌ 未実装 | 一覧表示 |
+| Search Command | `src/cli/commands/search.ts` | ❌ 未実装 | 検索 |
+| Add Command | `src/cli/commands/add.ts` | ❌ 未実装 | 参考文献追加（重複検出・ID衝突処理） |
+| Remove Command | `src/cli/commands/remove.ts` | ❌ 未実装 | 削除（確認プロンプト） |
+| Update Command | `src/cli/commands/update.ts` | ❌ 未実装 | 更新 |
+| Server Command | `src/cli/commands/server.ts` | ❌ 未実装 | サーバー管理（start/stop/status） |
+| Commands Index | `src/cli/commands/index.ts` | ❌ 未実装 | コマンドエクスポート |
+| **CLI Entry** | | | |
+| CLI Entry | `src/cli/index.ts` | ❌ 未実装 | Commanderセットアップ |
+| CLI Entry Test | `src/cli/index.test.ts` | ❌ 未実装 | CLIエントリーのテスト |
 
-**実装仕様**: `spec/architecture/cli.md`
+**実装仕様**:
+- `spec/architecture/cli.md` - CLI基本アーキテクチャ
+- `spec/architecture/cli-commands.md` - 全コマンド詳細仕様
+- `spec/architecture/cli-advanced.md` - Exit code、オプション、監視、対話機能
+- `spec/architecture/cli-server-integration.md` - CLIとサーバーの統合
 
 **実装順序**:
-1. `output/json.ts` - JSON出力
-2. `output/pretty.ts` - 整形済み出力
-3. `output/bibtex.ts` - BibTeX変換出力
-4. `commands/list.ts` - 一覧表示
-5. `commands/search.ts` - 検索コマンド
-6. `commands/add.ts` - 追加コマンド
-7. `commands/remove.ts` - 削除コマンド
-8. `commands/update.ts` - 更新コマンド
-9. `commands/server.ts` - サーバー起動・停止
-10. `index.ts` - commanderセットアップ
 
-**Phase 4 完了条件**:
-- サーバーが起動し、ポートファイルで管理される
-- CLIコマンドが全て動作
-- 出力フォーマット (JSON, BibTeX, Pretty) が動作
+**Phase A: 基盤拡張** (既存コード修正)
+1. `src/config/schema.ts` - server設定追加
+   - `serverConfigSchema`: `autoStart`, `autoStopMinutes`
+   - snake_case対応: `auto_start`, `auto_stop_minutes`
+2. `src/config/defaults.ts` - serverデフォルト値追加
+3. `src/server/portfile.ts` - フォーマット拡張
+   - `library`フィールド追加（必須）
+   - `started_at`フィールド追加（オプション）
+   - 後方互換性確保
+4. `src/core/library.ts` - ファイルハッシュ追跡
+   - `currentHash`プロパティ追加
+   - `load()`後のハッシュ更新
+   - `save()`後のハッシュ更新
+
+**Phase B: 出力モジュール**
+5. `src/cli/output/json.ts` - JSON出力
+6. `src/cli/output/pretty.ts` - Pretty出力（`[id] title`形式）
+7. `src/cli/output/bibtex.ts` - BibTeX変換（自前実装）
+8. `src/cli/output/index.ts` - エクスポート
+
+**Phase C: CLI-Server統合**
+9. `src/cli/server-client.ts` - ServerClient class
+   - HTTP API呼び出し（search, add, update, remove）
+10. `src/cli/server-detection.ts` - サーバー検出・自動起動
+    - `getServerConnection()` - portfile読み込み、検証
+    - `startServerDaemon()` - auto_start時のサーバー起動
+
+**Phase D: コマンド実装**
+11. `src/cli/commands/list.ts` - 一覧表示
+    - サーバー経由 or 直接ファイルアクセス
+12. `src/cli/commands/search.ts` - 検索
+    - クエリパース、サーバー経由 or 直接実行
+13. `src/cli/commands/add.ts` - 追加
+    - stdin/ファイル読み込み
+    - 重複検出（`--force`対応）
+    - ID衝突処理（suffix追加）
+14. `src/cli/commands/remove.ts` - 削除
+    - 確認プロンプト（TTY検出）
+    - `--force`でスキップ
+15. `src/cli/commands/update.ts` - 更新
+    - 部分更新、timestamp自動更新
+16. `src/cli/commands/server.ts` - サーバー管理
+    - `start` - サーバー起動（foreground/daemon）
+    - `stop` - サーバー停止
+    - `status` - ステータス確認
+17. `src/cli/commands/index.ts` - エクスポート
+
+**Phase E: CLIエントリー**
+18. `src/cli/index.ts` - Commanderセットアップ
+    - グローバルオプション（`--library`, `--log-level`, `--quiet`等）
+    - 全コマンド登録
+    - シグナルハンドリング（SIGINT, SIGTERM）
+19. `src/cli/index.test.ts` - 統合テスト
+
+**テスト見積もり**:
+- 基盤拡張: ~15テスト（config, portfile, library hash）
+- 出力モジュール: ~30テスト（json, pretty, bibtex各10テスト）
+- CLI-Server統合: ~20テスト（server-client, server-detection）
+- コマンド: ~80テスト（各コマンド10-15テスト）
+- CLIエントリー: ~10テスト
+- **合計: ~155テスト**
+
+**Phase 4.2 完了条件**:
+- ✅ 全CLIコマンドが動作（add, search, list, remove, update, server）
+- ✅ 出力フォーマット (JSON, BibTeX, Pretty) が動作
+- ✅ サーバー自動検出・自動起動が動作
+- ✅ ID衝突処理が動作（suffix追加）
+- ✅ 重複検出が動作（`--force`対応）
+- ✅ 確認プロンプトが動作（TTY検出）
+- ✅ Exit codeが仕様通り
+- ✅ 全テスト合格（~155テスト）
 
 ---
 
@@ -816,12 +890,26 @@ TDD手順に従い、ファイル監視機能を実装完了。
 - ✅ TypeScript型チェック合格
 - ✅ Lint/Format適用済み
 
-### 次の実装項目 (Phase 4)
+### 次の実装項目 (Phase 4.2)
 
-- HTTP Server (Hono)
-- CLI (commander)
-- Build & Distribution
-- CI/CD
+**Phase 4.2: CLI実装** - 未着手
+
+**仕様確認完了** (2025-12-16):
+- ✅ 全コマンド詳細仕様作成 (`spec/architecture/cli-commands.md`)
+- ✅ Exit code、グローバルオプション、監視、対話機能仕様 (`spec/architecture/cli-advanced.md`)
+- ✅ CLI-Server統合仕様 (`spec/architecture/cli-server-integration.md`)
+- ✅ サーバー自動起動設定追加 (`spec/architecture/cli.md`)
+- ✅ ファイル監視の目的明確化・自己書き込み検知 (`spec/features/file-monitoring.md`)
+- ✅ 仕様全体の整合性検証完了
+
+**実装準備**:
+- Phase A: 基盤拡張（config, portfile, library hash）
+- Phase B: 出力モジュール（json, pretty, bibtex）
+- Phase C: CLI-Server統合（server-client, server-detection）
+- Phase D: コマンド実装（list, search, add, remove, update, server）
+- Phase E: CLIエントリー（commander setup）
+
+**見積もり**: ~155テスト、19コンポーネント
 
 ---
 
@@ -846,7 +934,10 @@ TDD手順に従い、ファイル監視機能を実装完了。
 | **Core** | `spec/core/overview.md` | プロジェクト概要・原則 |
 | **Core** | `spec/core/data-model.md` | データモデル |
 | **Core** | `spec/core/identifier-generation.md` | ID生成ルール |
-| **Architecture** | `spec/architecture/cli.md` | CLIアーキテクチャ |
+| **Architecture** | `spec/architecture/cli.md` | CLIアーキテクチャ、設定ファイル |
+| **Architecture** | `spec/architecture/cli-commands.md` | CLI全コマンド詳細仕様 |
+| **Architecture** | `spec/architecture/cli-advanced.md` | Exit code、オプション、監視、対話機能 |
+| **Architecture** | `spec/architecture/cli-server-integration.md` | CLI-Server統合、自動起動 |
 | **Architecture** | `spec/architecture/http-server.md` | HTTPサーバー |
 | **Architecture** | `spec/architecture/runtime.md` | ランタイム・配布 |
 | **Architecture** | `spec/architecture/build-system.md` | ビルドシステム |
@@ -905,17 +996,28 @@ TDD手順に従い、ファイル監視機能を実装完了。
     - ✅ FileWatcher Index (エクスポート) - 完了
     - **Phase 3.4 全26テスト合格** ✅
 
-- **🟢 Phase 4: サーバーとCLI** - Phase 4.1 完了 ✅
+- **🟢 Phase 4: サーバーとCLI** - Phase 4.1 完了 ✅、Phase 4.2 仕様確認完了
   - ✅ Phase 4.1: HTTPサーバー - 完了 (2025-12-15) - 33テスト合格
-  - ⏳ Phase 4.2: CLI - 未実装
+  - ⏳ Phase 4.2: CLI - 仕様確認完了 (2025-12-16)、実装未着手
+    - ✅ 全コマンド詳細仕様 (add, search, list, remove, update, server)
+    - ✅ CLI-Server統合設計 (自動検出、自動起動)
+    - ✅ Exit code、グローバルオプション、対話機能
+    - ✅ 仕様整合性検証完了
+    - **見積もり**: ~155テスト、19コンポーネント
 
 - **🔵 Phase 5: ビルド・配布・CI** - 未実装
   - Build、CI/CD
 
-**総テスト数**: 440テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3.1: 95, Phase 3.2: 24, Phase 3.3: 21, Phase 3.4: 26, Phase 4.1: 33, その他: 24)
+**総テスト数**: 440テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3: 166, Phase 4.1: 33, その他: 24)
 
-**現在の作業**: Phase 4.2 (CLI) - 未着手
+**Phase 4.2見積もり**: +155テスト → **総計: ~595テスト**
 
-- ✅ Phase 3 (機能モジュール) 全完了
-- ✅ Phase 4.1 (HTTPサーバー) 完了
-- 次: CLI (commander) 実装
+**現在の作業**: Phase 4.2 (CLI) - 仕様確認完了、実装準備完了
+
+**次のステップ**:
+- Phase 4.2実装開始
+  - Phase A: 基盤拡張 (config, portfile, library hash)
+  - Phase B: 出力モジュール (json, pretty, bibtex)
+  - Phase C: CLI-Server統合
+  - Phase D: コマンド実装
+  - Phase E: CLIエントリー
