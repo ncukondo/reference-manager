@@ -69,7 +69,7 @@
   - Validator拡張 (`validateCslItem` 追加) ✅
   - **Phase 4.1 全テスト**: 33テスト合格 ✅
 
-- **Phase 4.2: CLI - Phase A・B 完了** 🟠 (2025-12-16)
+- **Phase 4.2: CLI - Phase A・B・C 完了** 🟠 (2025-12-16)
   - Phase A: 基盤拡張 - 67テスト合格 ✅
     - Config Schema (`src/config/schema.ts`) - server設定追加 ✅
     - Config Defaults (`src/config/defaults.ts`) - serverデフォルト値追加 ✅
@@ -80,7 +80,7 @@
     - Pretty Output (`src/cli/output/pretty.ts`) - 19テスト合格 ✅
     - BibTeX Output (`src/cli/output/bibtex.ts`) - 25テスト合格 ✅
     - Output Index (`src/cli/output/index.ts`) - エクスポート ✅
-  - **Phase 4.2 A・B 全テスト**: 120テスト合格 ✅
+  - **Phase 4.2 A・B・C 全テスト**: 141テスト合格 ✅
 
 ### 🚧 未実装 (Not Yet Implemented)
 
@@ -586,7 +586,7 @@
 - ✅ 参照文献CRUD API
 - ✅ 全エンドポイントのテストカバレッジ
 
-#### 4.2 CLI 🟠 Phase A・B 完了 (2025-12-16)
+#### 4.2 CLI 🟠 Phase A・B・C 完了 (2025-12-16)
 
 **目標**: commanderベースのCLI実装、サーバー統合
 
@@ -601,9 +601,9 @@
 | Pretty Output | `src/cli/output/pretty.ts` | ✅ 完了 | 整形済み出力 (19テスト) |
 | BibTeX Output | `src/cli/output/bibtex.ts` | ✅ 完了 | BibTeX変換出力 (25テスト) |
 | Output Index | `src/cli/output/index.ts` | ✅ 完了 | 出力モジュールエクスポート |
-| **CLI-Server統合** | | | |
-| Server Client | `src/cli/server-client.ts` | ❌ 未実装 | サーバーAPI客户端 |
-| Server Detection | `src/cli/server-detection.ts` | ❌ 未実装 | サーバー検出・自動起動 |
+| **CLI-Server統合** | | ✅ 完了 | Phase C完了 (21テスト) |
+| Server Client | `src/cli/server-client.ts` | ✅ 完了 | サーバーAPI客户端 (12テスト) |
+| Server Detection | `src/cli/server-detection.ts` | ✅ 完了 | サーバー検出・自動起動 (9テスト) |
 | **コマンド** | | | |
 | List Command | `src/cli/commands/list.ts` | ❌ 未実装 | 一覧表示 |
 | Search Command | `src/cli/commands/search.ts` | ❌ 未実装 | 検索 |
@@ -644,12 +644,47 @@
 7. `src/cli/output/bibtex.ts` - BibTeX変換（自前実装）
 8. `src/cli/output/index.ts` - エクスポート
 
-**Phase C: CLI-Server統合**
-9. `src/cli/server-client.ts` - ServerClient class
-   - HTTP API呼び出し（search, add, update, remove）
-10. `src/cli/server-detection.ts` - サーバー検出・自動起動
-    - `getServerConnection()` - portfile読み込み、検証
+**Phase C: CLI-Server統合** ✅ 完了 (2025-12-16)
+9. ✅ `src/cli/server-client.ts` - ServerClient class
+   - HTTP API呼び出し（getAll, findByUuid, add, update, remove）
+   - エラーハンドリング
+   - テスト: 12テスト合格
+10. ✅ `src/cli/server-detection.ts` - サーバー検出・自動起動
+    - `getServerConnection()` - portfile読み込み、検証、library path照合
     - `startServerDaemon()` - auto_start時のサーバー起動
+    - `waitForPortfile()` - ポートファイル待機（5秒タイムアウト）
+    - テスト: 9テスト合格
+
+**実装完了**: 2025-12-16
+
+**実装内容**:
+1. ✅ `server-client.ts` - ServerClient class実装
+   - `getAll()` - 全参照文献取得
+   - `findByUuid(uuid)` - UUID指定取得
+   - `add(item)` - 新規追加
+   - `update(uuid, item)` - 更新
+   - `remove(uuid)` - 削除
+   - エラーハンドリング（404, その他のHTTPエラー）
+2. ✅ `server-client.test.ts` - 12テスト実装
+   - 各APIメソッドのテスト
+   - エラーケース検証
+3. ✅ `server-detection.ts` - サーバー検出・自動起動実装
+   - `getServerConnection()` - portfile存在確認、プロセス確認、library path照合
+   - `startServerDaemon()` - daemon mode起動
+   - `waitForPortfile()` - portfile生成待機（50ms間隔、5秒タイムアウト）
+   - auto_start対応 - サーバーなしの場合自動起動
+4. ✅ `server-detection.test.ts` - 9テスト実装
+   - portfile検出テスト
+   - auto_start機能テスト
+   - library path照合テスト
+
+**テスト結果**: 全21テスト合格 (server-client: 12, server-detection: 9)
+
+**Phase C 完了条件達成**:
+- ✅ サーバーAPIクライアント実装完了
+- ✅ サーバー検出・自動起動実装完了
+- ✅ portfile検証・library path照合実装完了
+- ✅ 全テスト合格
 
 **Phase D: コマンド実装**
 11. `src/cli/commands/list.ts` - 一覧表示
@@ -687,14 +722,14 @@
 - **合計: ~155テスト**
 
 **Phase 4.2 完了条件**:
-- ✅ 全CLIコマンドが動作（add, search, list, remove, update, server）
+- ⏳ 全CLIコマンドが動作（add, search, list, remove, update, server）
 - ✅ 出力フォーマット (JSON, BibTeX, Pretty) が動作
 - ✅ サーバー自動検出・自動起動が動作
-- ✅ ID衝突処理が動作（suffix追加）
-- ✅ 重複検出が動作（`--force`対応）
-- ✅ 確認プロンプトが動作（TTY検出）
-- ✅ Exit codeが仕様通り
-- ✅ 全テスト合格（~155テスト）
+- ⏳ ID衝突処理が動作（suffix追加）
+- ⏳ 重複検出が動作（`--force`対応）
+- ⏳ 確認プロンプトが動作（TTY検出）
+- ⏳ Exit codeが仕様通り
+- ⏳ 全テスト合格（~155テスト）
 
 ---
 
@@ -1009,28 +1044,33 @@ TDD手順に従い、ファイル監視機能を実装完了。
     - ✅ FileWatcher Index (エクスポート) - 完了
     - **Phase 3.4 全26テスト合格** ✅
 
-- **🟢 Phase 4: サーバーとCLI** - Phase 4.1 完了 ✅、Phase 4.2 A・B 完了 ✅
+- **🟢 Phase 4: サーバーとCLI** - Phase 4.1 完了 ✅、Phase 4.2 A・B・C 完了 ✅
   - ✅ Phase 4.1: HTTPサーバー - 完了 (2025-12-15) - 33テスト合格
-  - 🟠 Phase 4.2: CLI - Phase A・B 完了 (2025-12-16)
+  - 🟠 Phase 4.2: CLI - Phase A・B・C 完了 (2025-12-16)
     - ✅ Phase A: 基盤拡張 (config, portfile, library hash) - 67テスト合格
     - ✅ Phase B: 出力モジュール (json, pretty, bibtex) - 53テスト合格
-    - ⏳ Phase C: CLI-Server統合 - 未実装
+    - ✅ Phase C: CLI-Server統合 (server-client, server-detection) - 21テスト合格
     - ⏳ Phase D: コマンド実装 - 未実装
     - ⏳ Phase E: CLIエントリー - 未実装
-    - **Phase 4.2 A・B 合計**: 120テスト合格
-    - **Phase 4.2 C-E 見積もり**: ~35テスト (Phase C-E のみ)
+    - **Phase 4.2 A・B・C 合計**: 141テスト合格
+    - **Phase 4.2 D-E 見積もり**: ~14テスト (Phase D-E のみ)
 
 - **🔵 Phase 5: ビルド・配布・CI** - 未実装
   - Build、CI/CD
 
-**総テスト数**: 560テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3: 166, Phase 4.1: 33, Phase 4.2 A・B: 120, その他: 24)
+**総テスト数**: 581テスト合格 (Phase 1: 140, Phase 2: 77, Phase 3: 166, Phase 4.1: 33, Phase 4.2 A・B・C: 141, その他: 24)
 
-**Phase 4.2 残り見積もり**: +35テスト → **総計: ~595テスト**
+**Phase 4.2 残り見積もり**: +14テスト → **総計: ~595テスト**
 
-**現在の作業**: Phase 4.2 (CLI) - Phase A・B 完了、Phase C 開始準備中
+**現在の作業**: Phase 4.2 (CLI) - Phase A・B・C 完了、Phase D 開始準備中
 
 **次のステップ**:
-- Phase 4.2 C実装開始: CLI-Server統合
-  - Server Client (`src/cli/server-client.ts`)
-  - Server Detection (`src/cli/server-detection.ts`)
-- その後 Phase D・E: コマンド実装、CLIエントリー
+- Phase 4.2 D実装開始: コマンド実装
+  - List Command (`src/cli/commands/list.ts`)
+  - Search Command (`src/cli/commands/search.ts`)
+  - Add Command (`src/cli/commands/add.ts`)
+  - Remove Command (`src/cli/commands/remove.ts`)
+  - Update Command (`src/cli/commands/update.ts`)
+  - Server Command (`src/cli/commands/server.ts`)
+  - Commands Index (`src/cli/commands/index.ts`)
+- その後 Phase E: CLIエントリー
