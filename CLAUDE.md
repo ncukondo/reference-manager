@@ -25,13 +25,19 @@ This file contains:
 
 1. **Check spec/_index.md**
 2. Read necessary specs (always check `spec/core/`)
-3. **Follow TDD process** (see `spec/guidelines/testing.md`):
+3. **Check ROADMAP.md** - Verify current implementation phase and next steps
+4. **Follow TDD process** (see `spec/guidelines/testing.md`):
    - Write tests first
    - Create empty implementation (`throw new Error("Not implemented")`)
    - Run tests to confirm failure: `npm test -- <test-file>`
    - Implement actual logic
    - Run tests to confirm success: `npm test -- <test-file>`
-4. Verify following test and quality guidelines
+5. **Quality checks after each implementation step**:
+   - Run type check: `npm run typecheck`
+   - Run lint: `npm run lint`
+   - Fix any issues found
+   - Update ROADMAP.md with completion status
+   - Commit changes with descriptive message
 
 ## Notes
 
