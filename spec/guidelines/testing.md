@@ -38,6 +38,10 @@ All implementations MUST follow the TDD (Red-Green-Refactor) cycle:
 
 ### Step 4: Implement (Green)
 1. Implement the actual logic
+   - **When importing already-implemented files**: Use Serena MCP tools to verify types and signatures
+     - Use `mcp__serena__find_symbol` to check function/class signatures
+     - Use `mcp__serena__get_symbols_overview` to understand module exports
+     - Verify parameter types and return types before usage
 2. Run tests: `npm test -- <test-file>`
 3. Iterate until all tests pass
 
