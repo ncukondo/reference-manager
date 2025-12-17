@@ -16,3 +16,6 @@ export type { RemoveOptions, RemoveResult } from "./remove.js";
 
 export { update } from "./update.js";
 export type { UpdateOptions, UpdateResult } from "./update.js";
+
+export { serverStart, serverStop, serverStatus } from "./server.js";
+export type { ServerStartOptions, ServerInfo } from "./server.js";
