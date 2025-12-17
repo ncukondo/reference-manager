@@ -731,11 +731,12 @@
 - ✅ Server Command実装完了 (start/stop/status)
 - ✅ 全38テスト合格 (list: 7, search: 7, add: 5, remove: 4, update: 6, server: 9)
 
-**Phase E: CLIエントリー** ✅ 完了 (2025-12-17)
-18. ✅ `src/cli/index.ts` - Commanderセットアップ
-    - グローバルオプション（`--library`, `--log-level`, `--quiet`, `--config`, `--verbose`, `--no-backup`, `--backup-dir`）
-    - 全コマンド登録 (list, search, add, remove, update, server)
-    - シグナルハンドリング（SIGINT, SIGTERM）
+**Phase E: CLIエントリー** ⚠️ 部分完了 (2025-12-17)
+18. ✅ `src/cli/index.ts` - Commanderセットアップ (部分完了)
+    - ✅ グローバルオプション（`--library`, `--log-level`, `--quiet`, `--config`, `--verbose`, `--no-backup`, `--backup-dir`）
+    - ✅ 全コマンド登録 (list, search, add, remove, update, server)
+    - ✅ シグナルハンドリング（SIGINT, SIGTERM）
+    - ⚠️ アクションハンドラーが全てTODO状態（未実装）
     - テスト: 11テスト合格
 19. ✅ `src/cli/index.test.ts` - 統合テスト
     - Commander program作成テスト
@@ -743,6 +744,69 @@
     - 各コマンド登録のテスト
     - グローバルオプションのテスト
     - 11テスト合格
+
+**Phase F: CLIアクションハンドラー実装** ⏳ 未実装 (Phase 4.2 完了のために必要)
+20. ⏳ `src/cli/helpers.ts` - 共通ヘルパー関数 (未実装)
+    - **サーバー統合関連**:
+      - `getServerOrDirect()` - サーバー検出→API優先→直接アクセスフォールバック
+      - `tryServerConnection()` - portfile読み込み、プロセス確認、library path照合
+      - `executeWithServer()` - サーバーAPI経由での実行
+      - `executeDirect()` - 直接ファイルアクセスでの実行
+    - **入出力処理**:
+      - `readJsonInput()` - stdin/ファイルからのJSON読み取り
+      - `parseJsonInput()` - JSON パース
+      - `loadConfigWithOverrides()` - CLI引数での設定上書き
+      - `getOutputFormat()` - 出力フォーマット決定・相互排他性チェック
+    - **対話機能**:
+      - `isTTY()` - TTY検出
+      - `readConfirmation()` - 確認プロンプト（removeコマンド用）
+21. ⏳ `src/cli/index.ts` - アクションハンドラー実装 (未実装)
+    - **全コマンド共通フロー** (spec/architecture/cli-server-integration.md に準拠):
+      1. 設定読み込み (loadConfigWithOverrides)
+      2. サーバー検出 (getServerConnection from server-detection.ts)
+      3. サーバー利用可能 → ServerClient経由で実行
+      4. サーバー不可 → 直接ファイルアクセス (Library class使用)
+      5. 出力フォーマット適用
+      6. Exit code返却
+    - `list` コマンドアクションハンドラー
+      - サーバーAPI優先: `GET /api/references` (server-client.ts)
+      - フォールバック: `Library.load()` → 全アイテム取得
+      - 出力フォーマット選択 (pretty/json/ids-only/uuid/bibtex)
+      - Exit code: 0 (成功), 4 (I/Oエラー)
+    - `search` コマンドアクションハンドラー
+      - クエリ取得 (tokenize from search feature)
+      - サーバーAPI優先: `GET /api/references?query=...`
+      - フォールバック: `Library.load()` → `search()` → `sortResults()`
+      - 出力フォーマット選択
+      - Exit code: 0 (成功), 4 (I/Oエラー)
+    - `add` コマンドアクションハンドラー
+      - stdin/ファイルからの入力読み取り (readJsonInput)
+      - JSON パース (parseJsonInput)
+      - サーバーAPI優先: `POST /api/references` (server-client.ts)
+      - フォールバック: `Library.load()` → `add()` (commands/add.ts) → `Library.save()`
+      - 重複検出・ID衝突処理 (commands/add.ts で実装済み)
+      - Exit code: 0 (成功), 1 (重複), 3 (パースエラー), 4 (I/Oエラー)
+    - `remove` コマンドアクションハンドラー
+      - 確認プロンプト（TTY検出、--forceでスキップ）
+      - サーバーAPI優先: `DELETE /api/references/:uuid`
+      - フォールバック: `Library.load()` → `remove()` → `Library.save()`
+      - Exit code: 0 (成功), 1 (未発見), 2 (キャンセル), 4 (I/Oエラー)
+    - `update` コマンドアクションハンドラー
+      - stdin/ファイルからの入力読み取り
+      - サーバーAPI優先: `PUT /api/references/:uuid`
+      - フォールバック: `Library.load()` → `update()` → `Library.save()`
+      - 部分更新、timestamp自動更新
+      - Exit code: 0 (成功), 1 (未発見/検証エラー), 3 (パースエラー), 4 (I/Oエラー)
+    - `server` コマンドアクションハンドラー
+      - start/stop/status サブコマンド処理
+      - `serverStart()`, `serverStop()`, `serverStatus()` (commands/server.ts)
+      - portfile管理、daemon mode対応
+      - Exit code: start (0: 成功, 1: 既起動/競合), stop (0: 成功, 1: 未起動), status (0: 起動中, 1: 停止中)
+22. ⏳ 統合テスト追加 (未実装)
+    - アクションハンドラーの動作確認
+    - stdin/ファイル入力テスト
+    - 確認プロンプトテスト
+    - Exit code検証テスト
 
 **テスト見積もり**:
 - 基盤拡張: ~15テスト（config, portfile, library hash）
@@ -752,18 +816,32 @@
 - CLIエントリー: ~10テスト
 - **合計: ~155テスト**
 
-**Phase 4.2 完了条件達成**:
-- ✅ 全CLIコマンドが動作（add, search, list, remove, update, server）
-- ✅ 出力フォーマット (JSON, BibTeX, Pretty) が動作
-- ✅ サーバー自動検出・自動起動が動作
-- ✅ ID衝突処理が動作（suffix追加）
-- ✅ 重複検出が動作（`--force`対応）
-- ✅ CLIエントリーポイント実装完了（Commander setup, グローバルオプション、シグナルハンドリング）
-- ✅ 全テスト合格（Phase A-D: 179テスト + Phase E: 11テスト = **190テスト**）
+**Phase 4.2 完了条件**:
+- ✅ **Phase A-E 完了** (基盤拡張、出力モジュール、CLI-Server統合、コマンドロジック、CLIエントリー)
+  - ✅ コマンドロジック実装完了（add, search, list, remove, update, server） - 38テスト合格
+  - ✅ 出力フォーマット実装完了 (JSON, BibTeX, Pretty) - 53テスト合格
+  - ✅ サーバー検出・自動起動モジュール実装完了 (server-client, server-detection) - 21テスト合格
+  - ✅ ID衝突処理実装完了（suffix追加）
+  - ✅ 重複検出実装完了（`--force`対応）
+  - ✅ CLIエントリーポイント実装完了（Commander setup, グローバルオプション、シグナルハンドリング） - 11テスト合格
+  - ✅ Phase A-E 全テスト合格: **190テスト**
+- ⏳ **Phase F 未完了** (CLIアクションハンドラー実装)
+  - ⏳ 共通ヘルパー関数未実装 (helpers.ts)
+  - ⏳ アクションハンドラー未実装 (src/cli/index.ts)
+  - ⏳ サーバーAPI統合未実装（サーバー検出→API優先→フォールバック）
+  - ⏳ stdin/ファイル入力処理未実装
+  - ⏳ 確認プロンプト未実装
+  - ⏳ Exit code処理未実装
+  - ⏳ 統合テスト未実装
 
-**未実装の機能（Phase 4.2では対象外）**:
-- ⏳ 確認プロンプト（TTY検出） - 仕様定義済み、実装は将来の拡張
-- ⏳ Exit code詳細実装 - コマンド関数は準備済み、CLIエントリーでの統合は将来の拡張
+**Phase 4.2 完全完了のために必要**:
+- Phase Fの全項目を実装・テスト完了させる
+
+**Phase 4.2 完了後の将来の拡張（Phase 5以降）**:
+- Interactive input機能（`add --interactive`, `update --edit`）
+- Watch mode for CLI（`search --watch`, `list --watch`）
+- Progress indicators（Spinner, progress bar）
+- Color output（`--no-color`, `NO_COLOR` 環境変数対応）
 
 ---
 
