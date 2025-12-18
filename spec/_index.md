@@ -31,6 +31,8 @@
 | [metadata.md](features/metadata.md) | メタデータフィールド |
 | [duplicate-detection.md](features/duplicate-detection.md) | 重複検出 |
 | [search.md](features/search.md) | 検索機能 |
+| [cite.md](features/cite.md) | 引用生成（citeコマンド） |
+| [cite-implementation.md](features/cite-implementation.md) | cite実装仕様 |
 | [file-monitoring.md](features/file-monitoring.md) | ファイル監視・リロード |
 | [write-safety.md](features/write-safety.md) | 書き込み安全性・競合処理 |
 
