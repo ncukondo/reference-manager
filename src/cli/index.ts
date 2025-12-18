@@ -2,10 +2,8 @@
  * CLI Entry Point
  */
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Command } from "commander";
+import { z } from "zod";
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
@@ -14,6 +12,7 @@ import { list } from "./commands/list.js";
 import { search as searchCommand } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { update as updateCommand } from "./commands/update.js";
+import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
   loadConfigWithOverrides,
@@ -24,10 +23,8 @@ import {
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
 
-// Read package.json for version and description
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(join(__dirname, "../../package.json"), "utf-8"));
+// Import package.json for version and description
+import packageJson from "../../package.json" with { type: "json" };
 
 /**
  * Create Commander program instance
@@ -157,6 +154,89 @@ function registerSearchCommand(program: Command): void {
 /**
  * Register 'add' command
  */
+async function addViaServer(
+  items: CslItem[],
+  server: { baseUrl: string },
+  force: boolean
+): Promise<void> {
+  const client = new ServerClient(server.baseUrl);
+
+  for (const item of items) {
+    try {
+      await client.add(item);
+      process.stderr.write(`Added reference: [${item.id}]\n`);
+    } catch (error) {
+      if (!force && error instanceof Error && error.message.includes("Duplicate")) {
+        process.stderr.write(`Error: ${error.message}\n`);
+        process.exit(1);
+      }
+      throw error;
+    }
+  }
+}
+
+async function addViaLibrary(items: CslItem[], libraryPath: string, force: boolean): Promise<void> {
+  const library = await Library.load(libraryPath);
+  const existingItems = library.getAll().map((ref) => ref.getItem());
+
+  for (const item of items) {
+    const result = await addCommand(existingItems, item, { force });
+
+    if (result.added) {
+      library.add(result.item);
+      process.stderr.write(`Added reference: [${result.item.id}]\n`);
+      existingItems.push(result.item);
+    } else if (result.duplicate) {
+      throw new Error(
+        `Duplicate detected: ${result.duplicate.type} match with existing reference [${result.duplicate.existing.id}]`
+      );
+    }
+  }
+
+  await library.save();
+}
+
+function handleAddError(error: unknown): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("Parse error")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(3);
+  }
+  if (message.includes("Duplicate")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(1);
+  }
+  process.stderr.write(`Error: ${message}\n`);
+  process.exit(4);
+}
+
+async function handleAddAction(
+  file: string | undefined,
+  options: CliOptions & { force?: boolean },
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const inputStr = await readJsonInput(file);
+    const input = parseJsonInput(inputStr);
+    const items: CslItem[] = Array.isArray(input) ? input : [input as CslItem];
+
+    const server = await getServerConnection(config.library, config);
+
+    if (server) {
+      await addViaServer(items, server, options.force ?? false);
+    } else {
+      await addViaLibrary(items, config.library, options.force ?? false);
+    }
+
+    process.exit(0);
+  } catch (error) {
+    handleAddError(error);
+  }
+}
+
 function registerAddCommand(program: Command): void {
   program
     .command("add")
@@ -164,80 +244,118 @@ function registerAddCommand(program: Command): void {
     .argument("[file]", "JSON file to add (or use stdin)")
     .option("-f, --force", "Skip duplicate detection")
     .action(async (file: string | undefined, options) => {
-      try {
-        const globalOpts = program.opts();
-        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-
-        // Read and parse input
-        const inputStr = await readJsonInput(file);
-        const input = parseJsonInput(inputStr);
-
-        // Validate input type
-        const items: CslItem[] = Array.isArray(input) ? input : [input as CslItem];
-
-        // Get library (server or direct)
-        const server = await getServerConnection(config.library, config);
-
-        if (server) {
-          // Use server API
-          const client = new ServerClient(server.baseUrl);
-
-          for (const item of items) {
-            try {
-              await client.add(item);
-              process.stderr.write(`Added reference: [${item.id}]\n`);
-            } catch (error) {
-              if (!options.force && error instanceof Error && error.message.includes("Duplicate")) {
-                process.stderr.write(`Error: ${error.message}\n`);
-                process.exit(1);
-              }
-              throw error;
-            }
-          }
-        } else {
-          // Direct file access
-          const library = await Library.load(config.library);
-          const existingItems = library.getAll().map((ref) => ref.getItem());
-
-          // Process each item
-          for (const item of items) {
-            const result = await addCommand(existingItems, item, { force: options.force });
-
-            if (result.added) {
-              library.add(result.item);
-              process.stderr.write(`Added reference: [${result.item.id}]\n`);
-              // Update existing items for next iteration
-              existingItems.push(result.item);
-            } else if (result.duplicate) {
-              throw new Error(
-                `Duplicate detected: ${result.duplicate.type} match with existing reference [${result.duplicate.existing.id}]`
-              );
-            }
-          }
-
-          await library.save();
-        }
-
-        process.exit(0);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes("Parse error")) {
-          process.stderr.write(`Error: ${message}\n`);
-          process.exit(3);
-        }
-        if (message.includes("Duplicate")) {
-          process.stderr.write(`Error: ${message}\n`);
-          process.exit(1);
-        }
-        process.stderr.write(`Error: ${message}\n`);
-        process.exit(4);
-      }
+      await handleAddAction(file, options, program);
     });
 }
 
 /**
  * Register 'remove' command
  */
+async function findReferenceToRemove(
+  identifier: string,
+  byUuid: boolean,
+  server: { baseUrl: string } | null,
+  libraryPath: string
+): Promise<CslItem | undefined> {
+  if (server) {
+    const client = new ServerClient(server.baseUrl);
+    const items = await client.getAll();
+    return byUuid
+      ? items.find((item) => item.custom?.uuid === identifier)
+      : items.find((item) => item.id === identifier);
+  }
+
+  const library = await Library.load(libraryPath);
+  const ref = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  return ref?.getItem();
+}
+
+async function confirmRemoval(refToRemove: CslItem, force: boolean): Promise<boolean> {
+  if (force || !isTTY()) {
+    return true;
+  }
+
+  const authors = Array.isArray(refToRemove.author)
+    ? refToRemove.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
+    : "(no authors)";
+  const confirmMsg = `Remove reference [${refToRemove.id}]?\nTitle: ${refToRemove.title || "(no title)"}\nAuthors: ${authors}\nContinue?`;
+
+  return await readConfirmation(confirmMsg);
+}
+
+async function removeReference(
+  identifier: string,
+  refToRemove: CslItem,
+  byUuid: boolean,
+  server: { baseUrl: string } | null,
+  libraryPath: string
+): Promise<void> {
+  if (server) {
+    const client = new ServerClient(server.baseUrl);
+    if (!refToRemove.custom?.uuid) {
+      throw new Error("Reference missing UUID");
+    }
+    await client.remove(refToRemove.custom.uuid);
+    return;
+  }
+
+  const library = await Library.load(libraryPath);
+  const removed = byUuid ? library.removeByUuid(identifier) : library.removeById(identifier);
+
+  if (!removed) {
+    throw new Error("Reference not found");
+  }
+
+  await library.save();
+}
+
+function handleRemoveError(error: unknown): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("not found")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(1);
+  }
+  process.stderr.write(`Error: ${message}\n`);
+  process.exit(4);
+}
+
+async function handleRemoveAction(
+  identifier: string,
+  options: { uuid?: boolean; force?: boolean },
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const server = await getServerConnection(config.library, config);
+
+    const refToRemove = await findReferenceToRemove(
+      identifier,
+      options.uuid ?? false,
+      server,
+      config.library
+    );
+
+    if (!refToRemove) {
+      process.stderr.write(`Error: Reference not found: ${identifier}\n`);
+      process.exit(1);
+    }
+
+    const confirmed = await confirmRemoval(refToRemove, options.force ?? false);
+    if (!confirmed) {
+      process.stderr.write("Cancelled.\n");
+      process.exit(2);
+    }
+
+    await removeReference(identifier, refToRemove, options.uuid ?? false, server, config.library);
+
+    process.stderr.write(`Removed reference: [${refToRemove.id}]\n`);
+    process.exit(0);
+  } catch (error) {
+    handleRemoveError(error);
+  }
+}
+
 function registerRemoveCommand(program: Command): void {
   program
     .command("remove")
@@ -246,85 +364,108 @@ function registerRemoveCommand(program: Command): void {
     .option("--uuid", "Interpret identifier as UUID")
     .option("-f, --force", "Skip confirmation prompt")
     .action(async (identifier: string, options) => {
-      try {
-        const globalOpts = program.opts();
-        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-
-        // Get library (server or direct)
-        const server = await getServerConnection(config.library, config);
-
-        // Find reference for confirmation prompt
-        let refToRemove: CslItem | undefined;
-        if (server) {
-          const client = new ServerClient(server.baseUrl);
-          const items = await client.getAll();
-          refToRemove = options.uuid
-            ? items.find((item) => item.custom?.uuid === identifier)
-            : items.find((item) => item.id === identifier);
-        } else {
-          const library = await Library.load(config.library);
-          const ref = options.uuid ? library.findByUuid(identifier) : library.findById(identifier);
-          refToRemove = ref?.getItem();
-        }
-
-        if (!refToRemove) {
-          process.stderr.write(`Error: Reference not found: ${identifier}\n`);
-          process.exit(1);
-        }
-
-        // Confirmation prompt
-        if (!options.force && isTTY()) {
-          const authors = Array.isArray(refToRemove.author)
-            ? refToRemove.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
-            : "(no authors)";
-          const confirmMsg = `Remove reference [${refToRemove.id}]?\nTitle: ${refToRemove.title || "(no title)"}\nAuthors: ${authors}\nContinue?`;
-          const confirmed = await readConfirmation(confirmMsg);
-
-          if (!confirmed) {
-            process.stderr.write("Cancelled.\n");
-            process.exit(2);
-          }
-        }
-
-        // Remove reference
-        if (server) {
-          const client = new ServerClient(server.baseUrl);
-          if (!refToRemove.custom?.uuid) {
-            throw new Error("Reference missing UUID");
-          }
-          await client.remove(refToRemove.custom.uuid);
-        } else {
-          const library = await Library.load(config.library);
-
-          // Remove using Library methods
-          const removed = options.uuid
-            ? library.removeByUuid(identifier)
-            : library.removeById(identifier);
-
-          if (!removed) {
-            throw new Error("Reference not found");
-          }
-
-          await library.save();
-        }
-
-        process.stderr.write(`Removed reference: [${refToRemove.id}]\n`);
-        process.exit(0);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes("not found")) {
-          process.stderr.write(`Error: ${message}\n`);
-          process.exit(1);
-        }
-        process.stderr.write(`Error: ${message}\n`);
-        process.exit(4);
-      }
+      await handleRemoveAction(identifier, options, program);
     });
 }
 
 /**
  * Register 'update' command
  */
+async function updateViaServer(
+  identifier: string,
+  updates: Record<string, unknown>,
+  byUuid: boolean,
+  server: { baseUrl: string }
+): Promise<void> {
+  const client = new ServerClient(server.baseUrl);
+  const items = await client.getAll();
+  const refToUpdate = byUuid
+    ? items.find((item) => item.custom?.uuid === identifier)
+    : items.find((item) => item.id === identifier);
+
+  if (!refToUpdate || !refToUpdate.custom?.uuid) {
+    process.stderr.write(`Error: Reference not found: ${identifier}\n`);
+    process.exit(1);
+  }
+
+  const updatedItem = { ...refToUpdate, ...updates } as CslItem;
+  await client.update(refToUpdate.custom.uuid, updatedItem);
+}
+
+async function updateViaLibrary(
+  identifier: string,
+  updates: Partial<CslItem>,
+  byUuid: boolean,
+  libraryPath: string
+): Promise<void> {
+  const library = await Library.load(libraryPath);
+  const items = library.getAll().map((ref) => ref.getItem());
+
+  const result = await updateCommand(items, identifier, updates, { byUuid });
+
+  if (!result.updated || !result.item) {
+    throw new Error("Reference not found");
+  }
+
+  if (result.item.custom?.uuid) {
+    library.removeByUuid(result.item.custom.uuid);
+    library.add(result.item);
+  }
+
+  await library.save();
+}
+
+function handleUpdateError(error: unknown): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("Parse error")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(3);
+  }
+  if (message.includes("not found") || message.includes("validation")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(1);
+  }
+  process.stderr.write(`Error: ${message}\n`);
+  process.exit(4);
+}
+
+async function handleUpdateAction(
+  identifier: string,
+  file: string | undefined,
+  options: { uuid?: boolean },
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const inputStr = await readJsonInput(file);
+    const updates = parseJsonInput(inputStr);
+
+    // Validate that updates is a non-null object using zod
+    const updatesSchema = z.record(z.string(), z.unknown());
+    const validatedUpdates = updatesSchema.parse(updates);
+
+    const server = await getServerConnection(config.library, config);
+
+    if (server) {
+      await updateViaServer(identifier, validatedUpdates, options.uuid ?? false, server);
+    } else {
+      await updateViaLibrary(
+        identifier,
+        validatedUpdates as Partial<CslItem>,
+        options.uuid ?? false,
+        config.library
+      );
+    }
+
+    process.stderr.write(`Updated reference: [${identifier}]\n`);
+    process.exit(0);
+  } catch (error) {
+    handleUpdateError(error);
+  }
+}
+
 function registerUpdateCommand(program: Command): void {
   program
     .command("update")
@@ -333,74 +474,7 @@ function registerUpdateCommand(program: Command): void {
     .argument("[file]", "JSON file with updates (or use stdin)")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string, file: string | undefined, options) => {
-      try {
-        const globalOpts = program.opts();
-        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-
-        // Read and parse input
-        const inputStr = await readJsonInput(file);
-        const updates = parseJsonInput(inputStr);
-
-        if (typeof updates !== "object" || Array.isArray(updates) || updates === null) {
-          throw new Error("Parse error: Updates must be a JSON object");
-        }
-
-        // Get library (server or direct)
-        const server = await getServerConnection(config.library, config);
-
-        if (server) {
-          // Use server API
-          const client = new ServerClient(server.baseUrl);
-          const items = await client.getAll();
-          const refToUpdate = options.uuid
-            ? items.find((item) => item.custom?.uuid === identifier)
-            : items.find((item) => item.id === identifier);
-
-          if (!refToUpdate || !refToUpdate.custom?.uuid) {
-            process.stderr.write(`Error: Reference not found: ${identifier}\n`);
-            process.exit(1);
-          }
-
-          // Merge updates with existing item
-          const updatedItem = { ...refToUpdate, ...updates } as CslItem;
-          await client.update(refToUpdate.custom.uuid, updatedItem);
-        } else {
-          // Direct file access
-          const library = await Library.load(config.library);
-          const items = library.getAll().map((ref) => ref.getItem());
-
-          const result = await updateCommand(items, identifier, updates as Partial<CslItem>, {
-            byUuid: options.uuid,
-          });
-
-          if (!result.updated || !result.item) {
-            throw new Error("Reference not found");
-          }
-
-          // Remove old and add updated
-          if (result.item.custom?.uuid) {
-            library.removeByUuid(result.item.custom.uuid);
-            library.add(result.item);
-          }
-
-          await library.save();
-        }
-
-        process.stderr.write(`Updated reference: [${identifier}]\n`);
-        process.exit(0);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes("Parse error")) {
-          process.stderr.write(`Error: ${message}\n`);
-          process.exit(3);
-        }
-        if (message.includes("not found") || message.includes("validation")) {
-          process.stderr.write(`Error: ${message}\n`);
-          process.exit(1);
-        }
-        process.stderr.write(`Error: ${message}\n`);
-        process.exit(4);
-      }
+      await handleUpdateAction(identifier, file, options, program);
     });
 }
 

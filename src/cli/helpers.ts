@@ -101,10 +101,11 @@ export async function loadConfigWithOverrides(options: CliOptions): Promise<Conf
   }
 
   // Backup settings
-  if (options.backupDir) {
+  if (options.backup !== undefined || options.backupDir) {
     overrides.backup = {
       ...config.backup,
-      directory: options.backupDir,
+      ...(options.backup !== undefined && { enabled: options.backup }),
+      ...(options.backupDir && { directory: options.backupDir }),
     };
   }
 

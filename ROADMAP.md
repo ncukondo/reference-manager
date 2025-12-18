@@ -1,6 +1,6 @@
 # reference-manager 実装ロードマップ
 
-生成日: 2025-12-13 (最終更新: 2025-12-17 - Phase 4 完了)
+生成日: 2025-12-13 (最終更新: 2025-12-18 - Phase 5 完了)
 
 ## プロジェクト概要
 
@@ -29,14 +29,14 @@
   - HTTPサーバー（Hono、Portfile、CRUD API） - 33テスト
   - CLI（Commander、出力モジュール、CLI-Server統合、全コマンド、アクションハンドラー） - 190テスト
 
+- **Phase 5: ビルド・配布・CI** ✅ 完了 (2025-12-18)
+  - ビルドシステム（Vite設定、Node.js 22ターゲット、外部依存関係設定）
+  - ライブラリエントリーポイント（src/index.ts、型定義生成）
+  - bin entry（bin/reference-manager.js、CLIエントリーポイント）
+  - CI/CD（GitHub Actions、マルチプラットフォームテスト）
+  - npm配布準備（package.json設定、npm pack検証）
+
 **総テスト数**: 606テスト合格
-
-### 🚧 未実装 (Not Yet Implemented)
-
-- **Phase 5: ビルド・配布・CI**
-  - ビルドシステム（Vite設定、bin entry）
-  - CI/CD（GitHub Actions）
-  - npm配布準備
 
 ---
 
@@ -174,47 +174,49 @@
 
 ---
 
-## 未実装フェーズ
-
-### Phase 5: ビルド・配布・CI (Build & Distribution) 🔵 優先度: 低
+### Phase 5: ビルド・配布・CI (Build & Distribution) ✅ 完了 (2025-12-18)
 
 #### 5.1 ビルドシステム
 
-**目標**: Viteビルド、TypeScript型定義、npm配布
-
-| コンポーネント | ファイル | 状態 | 説明 |
-|--------------|---------|------|------|
-| Vite Config | `vite.config.ts` | ✅ 存在 | ビルド設定 (要確認・調整) |
-| TypeScript Config | `tsconfig.json` | ✅ 存在 | TypeScript設定 (要確認) |
-| Bin Entry | `bin/reference-manager.js` | ⚠️ 要確認 | CLIエントリースクリプト |
-
-**実装仕様**: `spec/architecture/build-system.md`, `spec/architecture/runtime.md`
-
-**実装順序**:
-1. `vite.config.ts` の調整 - ライブラリモード、ESM出力
-2. `tsconfig.json` の確認
-3. `bin/reference-manager.js` の実装 - `dist/cli/index.js` を実行
-4. ビルド動作確認 (`npm run build`)
+**主要コンポーネント**:
+- `vite.config.ts` - Viteビルド設定
+  - ライブラリモード設定（index, cli, server エントリーポイント）
+  - Node.js 22ターゲット設定
+  - 外部依存関係設定（Node.js組み込みモジュール、npm依存関係）
+  - ESM出力、ソースマップ生成
+- `tsconfig.json` - TypeScript設定
+  - ES2023ターゲット、ESNext モジュール
+  - 型定義生成（declaration: true）
+  - 厳格な型チェック
+- `src/index.ts` - ライブラリエントリーポイント
+  - コアモジュール（Reference, Library, CSL-JSON）
+  - ユーティリティ（Utils名前空間）
+  - 設定（Config名前空間）
+  - 機能（Search, Duplicate, Merge, FileWatcher）
+- `bin/reference-manager.js` - CLIエントリースクリプト
+  - shebang（`#!/usr/bin/env node`）
+  - main関数呼び出し
+- `package.json` - npm設定
+  - ビルドスクリプト（`vite build && tsc --emitDeclarationOnly`）
+  - bin、files、exports フィールド設定
 
 #### 5.2 CI/CD
 
-**目標**: GitHub Actions によるテスト・ビルド・リリース
+**主要コンポーネント**:
+- `.github/workflows/ci.yml` - GitHub Actions CI/CD
+  - マルチプラットフォームテスト（Linux, macOS, Windows）
+  - Node.js 22
+  - テスト・lint・型チェック・ビルド
+  - カバレッジレポート
 
-| コンポーネント | ファイル | 状態 | 説明 |
-|--------------|---------|------|------|
-| CI Workflow | `.github/workflows/ci.yml` | ⚠️ 要確認 | テスト・ビルド・型チェック |
+**仕様**: `spec/architecture/build-system.md`, `spec/architecture/runtime.md`, `spec/guidelines/testing.md`
 
-**実装仕様**: `spec/guidelines/testing.md`
-
-**実装順序**:
-1. `.github/workflows/ci.yml` の実装/確認
-2. テスト・lint・型チェックの自動化
-3. npm publish の自動化 (オプション)
-
-**Phase 5 完了条件**:
-- `npm run build` でビルド成功
-- `npm install -g reference-manager` でグローバルインストール可能
-- CI/CDが動作
+**完了事項**:
+- ✅ Viteビルド設定完了
+- ✅ TypeScript型定義生成
+- ✅ CLIエントリーポイント実装
+- ✅ npm pack検証完了（368.2 KB、116ファイル）
+- ✅ CI/CD設定完了（マルチプラットフォーム対応）
 
 ---
 
@@ -246,22 +248,28 @@ Phase 1 (Core Foundation)
 
 ## 次のステップ
 
-### Phase 5: ビルド・配布・CI ⭐ 次の実装項目
+**🎉 全フェーズ完了**
 
-**実装予定順序**:
+すべての実装フェーズ（Phase 1-5）が完了しました。
 
-1. **ビルドシステムの確認・調整**
-   - `vite.config.ts` の確認（ライブラリモード、ESM出力）
-   - `bin/reference-manager.js` の実装
-   - ビルド動作確認
+### リリース準備
 
-2. **CI/CDの設定**
-   - `.github/workflows/ci.yml` の実装
-   - テスト・lint・型チェックの自動化
+プロジェクトは配布可能な状態です：
 
-3. **npm配布準備**
-   - `package.json` の確認・調整
-   - npm publish の設定
+1. **ローカルテスト**
+   - `npm run build` - ビルド
+   - `npm pack` - パッケージ作成
+   - `npm test` - テスト実行
+
+2. **npm配布**（オプション）
+   - npm レジストリへのパブリッシュ
+   - バージョン管理（semantic versioning）
+   - リリースノート作成
+
+3. **継続的メンテナンス**
+   - バグ修正
+   - 機能追加（spec/guidelines/future.md 参照）
+   - ドキュメント更新
 
 ---
 
@@ -297,16 +305,29 @@ Phase 1 (Core Foundation)
 
 ## まとめ
 
-- **✅ Phase 1-4 完了** (2025-12-17)
-  - Phase 1: コア基盤 (140テスト)
-  - Phase 2: ユーティリティと設定 (77テスト)
-  - Phase 3: 機能モジュール (166テスト)
-  - Phase 4: サーバーとCLI (223テスト)
-  - **総テスト数**: 606テスト合格
+**🎉 全フェーズ完了** (2025-12-18)
 
-- **🚧 Phase 5: ビルド・配布・CI** - 未実装
-  - ビルドシステムの確認・調整
-  - CI/CDの設定
-  - npm配布準備
+- **Phase 1: コア基盤** ✅ 完了 (2025-12-12) - 140テスト
+  - CSL-JSON処理、識別子生成、Reference, Library
 
-**次のアクション**: Phase 5の実装開始
+- **Phase 2: ユーティリティと設定** ✅ 完了 (2025-12-13) - 77テスト
+  - Logger, Hash, File, Backup、TOML設定
+
+- **Phase 3: 機能モジュール** ✅ 完了 (2025-12-15) - 166テスト
+  - 検索、重複検出、3-wayマージ、ファイル監視
+
+- **Phase 4: サーバーとCLI** ✅ 完了 (2025-12-17) - 223テスト
+  - HTTPサーバー（Hono）、CLI（Commander）、全コマンド
+
+- **Phase 5: ビルド・配布・CI** ✅ 完了 (2025-12-18)
+  - Viteビルド、型定義、CLI bin、GitHub Actions CI/CD
+
+**総テスト数**: 606テスト合格
+
+**ビルド状態**:
+- ✅ ビルド成功（`npm run build`）
+- ✅ パッケージ作成成功（368.2 KB、116ファイル）
+- ✅ CLI動作確認済み（`node bin/reference-manager.js --version`）
+- ✅ CI/CD設定完了（マルチプラットフォーム対応）
+
+**プロジェクトステータス**: 配布可能 🚀

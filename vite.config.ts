@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
+    target: "node22",
     lib: {
       entry: {
         index: resolve(__dirname, "src/index.ts"),
@@ -20,8 +21,15 @@ export default defineConfig({
         "node:process",
         "node:url",
         "node:http",
+        "node:child_process",
+        "node:os",
+        "node:events",
+        "@iarna/toml",
+        "chokidar",
         "commander",
         "hono",
+        "write-file-atomic",
+        "zod",
       ],
       output: {
         entryFileNames: "[name].js",

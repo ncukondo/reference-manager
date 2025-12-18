@@ -1,4 +1,4 @@
-# Claude Working Guidelines
+# Working Guidelines
 
 ## Required First Step
 

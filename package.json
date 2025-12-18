@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && tsc --emitDeclarationOnly",
     "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
@@ -63,6 +63,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/ncukondo/reference-manager.git"
   }
 }
