@@ -49,7 +49,11 @@ describe("FileWatcher", () => {
   describe("ignored patterns", () => {
     it("should ignore .tmp files", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 50 });
+      const watcher = new FileWatcher(tempDir, {
+        debounceMs: 50,
+        usePolling: true,
+        pollIntervalMs: 100,
+      });
       watcher.on("change", callback);
 
       await watcher.start();
@@ -59,7 +63,7 @@ describe("FileWatcher", () => {
       await fs.writeFile(tmpFile, "temp content");
 
       // Wait for potential callback
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(callback).not.toHaveBeenCalled();
       watcher.close();
@@ -67,7 +71,11 @@ describe("FileWatcher", () => {
 
     it("should ignore .bak files", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 50 });
+      const watcher = new FileWatcher(tempDir, {
+        debounceMs: 50,
+        usePolling: true,
+        pollIntervalMs: 100,
+      });
       watcher.on("change", callback);
 
       await watcher.start();
@@ -77,7 +85,7 @@ describe("FileWatcher", () => {
       await fs.writeFile(bakFile, "backup content");
 
       // Wait for potential callback
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(callback).not.toHaveBeenCalled();
       watcher.close();
@@ -85,7 +93,11 @@ describe("FileWatcher", () => {
 
     it("should ignore .conflict.* files", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 50 });
+      const watcher = new FileWatcher(tempDir, {
+        debounceMs: 50,
+        usePolling: true,
+        pollIntervalMs: 100,
+      });
       watcher.on("change", callback);
 
       await watcher.start();
@@ -95,7 +107,7 @@ describe("FileWatcher", () => {
       await fs.writeFile(conflictFile, "conflict content");
 
       // Wait for potential callback
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(callback).not.toHaveBeenCalled();
       watcher.close();
@@ -103,7 +115,11 @@ describe("FileWatcher", () => {
 
     it("should ignore .lock files", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 50 });
+      const watcher = new FileWatcher(tempDir, {
+        debounceMs: 50,
+        usePolling: true,
+        pollIntervalMs: 100,
+      });
       watcher.on("change", callback);
 
       await watcher.start();
@@ -113,7 +129,7 @@ describe("FileWatcher", () => {
       await fs.writeFile(lockFile, "lock content");
 
       // Wait for potential callback
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(callback).not.toHaveBeenCalled();
       watcher.close();
@@ -121,7 +137,11 @@ describe("FileWatcher", () => {
 
     it("should ignore editor swap files (.swp)", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 50 });
+      const watcher = new FileWatcher(tempDir, {
+        debounceMs: 50,
+        usePolling: true,
+        pollIntervalMs: 100,
+      });
       watcher.on("change", callback);
 
       await watcher.start();
@@ -131,7 +151,7 @@ describe("FileWatcher", () => {
       await fs.writeFile(swpFile, "swap content");
 
       // Wait for potential callback
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(callback).not.toHaveBeenCalled();
       watcher.close();
@@ -139,7 +159,11 @@ describe("FileWatcher", () => {
 
     it("should ignore editor swap files (~)", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 50 });
+      const watcher = new FileWatcher(tempDir, {
+        debounceMs: 50,
+        usePolling: true,
+        pollIntervalMs: 100,
+      });
       watcher.on("change", callback);
 
       await watcher.start();
@@ -149,7 +173,7 @@ describe("FileWatcher", () => {
       await fs.writeFile(tildeFile, "tilde content");
 
       // Wait for potential callback
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(callback).not.toHaveBeenCalled();
       watcher.close();
