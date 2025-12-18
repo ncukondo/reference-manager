@@ -1,7 +1,10 @@
 {
-  "name": "reference-manager",
+  "name": "@ncukondo/reference-manager",
   "version": "0.1.0",
   "description": "A local reference management tool using CSL-JSON as the single source of truth",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "engines": {
     "node": ">=22"
