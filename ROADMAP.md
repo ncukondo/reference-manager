@@ -32,7 +32,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Run tests to confirm success: `npm test -- citation-fallback.test.ts`
   - Acceptance: All tests pass (29/29), handles all CSL-JSON field variations
 
-- [ ] **Task 6.3: Implement CSL processor wrapper**
+- [x] **Task 6.3: Implement CSL processor wrapper**
   - Write comprehensive tests in `src/cli/output/citation-csl.test.ts`
     - Test bibliography generation with various CSL styles
     - Test in-text citation generation
@@ -44,8 +44,9 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Wrap @citation-js/core for in-text citation generation
   - Support text, HTML, RTF output formats
   - Handle CSL processor errors gracefully (fallback to simplified format)
+  - Create TypeScript type definitions for @citation-js packages
   - Run tests to confirm success: `npm test -- citation-csl.test.ts`
-  - Acceptance: All tests pass, generates correct citations for various styles
+  - Acceptance: All tests pass (31/31), generates correct citations for various styles
 
 - [ ] **Task 6.4: Implement CSL style management**
   - Write tests in `src/config/csl-styles.test.ts`
@@ -146,8 +147,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] ADR created: `spec/decisions/ADR-006-use-citation-js-for-csl-processing.md`
 - [x] Task 6.1: Install dependencies
 - [x] Task 6.2: Implement fallback formatter
-- [ ] Task 6.3: Implement CSL processor wrapper ← **NEXT**
-- [ ] Task 6.4: Implement CSL style management
+- [x] Task 6.3: Implement CSL processor wrapper
+- [ ] Task 6.4: Implement CSL style management ← **NEXT**
 - [ ] Task 6.5: Add citation config schema
 - [ ] Task 6.6: Implement cite command
 - [ ] Task 6.7: Register cite command in CLI
