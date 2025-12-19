@@ -12,7 +12,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 
 ### Tasks
 
-- [ ] **Task 6.1: Install dependencies**
+- [x] **Task 6.1: Install dependencies**
   - Add `@citation-js/core` and `@citation-js/plugin-csl` to package.json
   - Verify dependencies work correctly
   - Acceptance: `npm install` succeeds, packages are in node_modules
@@ -122,8 +122,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 
 - [x] Spec created: `spec/features/citation.md`
 - [x] ADR created: `spec/decisions/ADR-006-use-citation-js-for-csl-processing.md`
-- [ ] Task 6.1: Install dependencies ← **NEXT**
-- [ ] Task 6.2: Implement fallback formatter
+- [x] Task 6.1: Install dependencies
+- [ ] Task 6.2: Implement fallback formatter ← **NEXT**
 - [ ] Task 6.3: Implement CSL processor wrapper
 - [ ] Task 6.4: Implement CSL style management
 - [ ] Task 6.5: Add citation config schema
