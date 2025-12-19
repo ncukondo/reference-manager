@@ -17,19 +17,20 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Verify dependencies work correctly
   - Acceptance: `npm install` succeeds, packages are in node_modules
 
-- [ ] **Task 6.2: Implement fallback formatter**
+- [x] **Task 6.2: Implement fallback formatter**
   - Write comprehensive tests in `src/cli/output/citation-fallback.test.ts`
     - Test AMA-like simplified format for bibliography
     - Test simplified format for in-text citations
     - Test edge cases (missing fields, single/multiple authors)
     - Test all CSL-JSON field variations
+    - Test multiple entries support (array-based)
   - Create `src/cli/output/citation-fallback.ts` with empty implementations
   - Run tests to confirm failure: `npm test -- citation-fallback.test.ts`
   - Implement AMA-like simplified format for bibliography
   - Implement simplified format for in-text citations
   - Handle edge cases (missing fields, single/multiple authors)
   - Run tests to confirm success: `npm test -- citation-fallback.test.ts`
-  - Acceptance: All tests pass, handles all CSL-JSON field variations
+  - Acceptance: All tests pass (29/29), handles all CSL-JSON field variations
 
 - [ ] **Task 6.3: Implement CSL processor wrapper**
   - Write comprehensive tests in `src/cli/output/citation-csl.test.ts`
@@ -144,8 +145,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] Spec created: `spec/features/citation.md`
 - [x] ADR created: `spec/decisions/ADR-006-use-citation-js-for-csl-processing.md`
 - [x] Task 6.1: Install dependencies
-- [ ] Task 6.2: Implement fallback formatter ← **NEXT**
-- [ ] Task 6.3: Implement CSL processor wrapper
+- [x] Task 6.2: Implement fallback formatter
+- [ ] Task 6.3: Implement CSL processor wrapper ← **NEXT**
 - [ ] Task 6.4: Implement CSL style management
 - [ ] Task 6.5: Add citation config schema
 - [ ] Task 6.6: Implement cite command
