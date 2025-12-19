@@ -35,7 +35,10 @@
       "Bash(npm run lint:*)",
       "Bash(npm run format:*)",
       "Bash(npx biome format:*)",
-      "Bash(cat /workspaces/reference-manager/package.json)"
+      "Bash(cat /workspaces/reference-manager/package.json)",
+      "WebSearch",
+      "WebFetch(domain:citation.js.org)",
+      "WebFetch(domain:www.npmjs.com)"
     ]
   },
   "enableAllProjectMcpServers": true,
