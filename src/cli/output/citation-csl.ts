@@ -59,9 +59,9 @@ export function formatBibliographyCSL(items: CslItem[], options: CitationFormatO
     return result;
   } catch (error) {
     // Fall back to simplified format on any error
-    console.warn(
-      `CSL processing failed (style: ${style}), falling back to simplified format:`,
-      error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    process.stderr.write(
+      `Warning: CSL processing failed (style: ${style}), falling back to simplified format: ${errorMessage}\n`
     );
     return formatBibliography(items);
   }
@@ -100,9 +100,9 @@ export function formatInTextCSL(items: CslItem[], options: CitationFormatOptions
     return result;
   } catch (error) {
     // Fall back to simplified format on any error
-    console.warn(
-      `CSL processing failed (style: ${style}), falling back to simplified format:`,
-      error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    process.stderr.write(
+      `Warning: CSL processing failed (style: ${style}), falling back to simplified format: ${errorMessage}\n`
     );
     return formatInText(items);
   }

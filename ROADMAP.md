@@ -73,7 +73,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Run tests to confirm success: `npm test -- loader.test.ts`
   - Acceptance: Config schema validates citation settings correctly (All tests pass: 26/26)
 
-- [ ] **Task 6.6: Implement cite command**
+- [x] **Task 6.6: Implement cite command**
   - Write comprehensive tests in `src/cli/commands/cite.test.ts`
     - Test ID/UUID reference resolution
     - Test single and multiple IDs
@@ -88,7 +88,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Support all command-line options
   - Handle errors gracefully
   - Run tests to confirm success: `npm test -- cite.test.ts`
-  - Acceptance: All tests pass, command works for all option combinations
+  - Acceptance: All tests pass (25/25), command works for all option combinations
 
 - [ ] **Task 6.7: Register cite command in CLI**
   - Write integration tests for CLI registration
@@ -150,8 +150,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] Task 6.3: Implement CSL processor wrapper
 - [x] Task 6.4: Implement CSL style management
 - [x] Task 6.5: Add citation config schema
-- [ ] Task 6.6: Implement cite command ← **NEXT**
-- [ ] Task 6.7: Register cite command in CLI
+- [x] Task 6.6: Implement cite command
+- [ ] Task 6.7: Register cite command in CLI ← **NEXT**
 - [ ] Task 6.8: Quality checks and documentation
 
 ---
