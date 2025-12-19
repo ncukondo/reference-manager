@@ -1,108 +1,112 @@
-````markdown
 # Directory Structure
 
 ## Project Layout
 
 ```
 reference-manager/
-├── spec/                          # 仕様書
+├── spec/                          # Specifications
 │
 ├── src/
-│   ├── cli/                       # CLI関連
-│   │   ├── index.ts               # CLIエントリーポイント
-│   │   ├── commands/              # 各コマンドの実装
-│   │   │   ├── add.ts             # 参考文献追加
-│   │   │   ├── search.ts          # 検索
-│   │   │   ├── list.ts            # 一覧
-│   │   │   ├── remove.ts          # 削除
-│   │   │   ├── update.ts          # 更新
-│   │   │   └── server.ts          # サーバー管理
-│   │   └── output/                # 出力フォーマット
+│   ├── cli/                       # CLI-related
+│   │   ├── index.ts               # CLI entry point
+│   │   ├── commands/              # Command implementations
+│   │   │   ├── add.ts             # Add reference
+│   │   │   ├── search.ts          # Search
+│   │   │   ├── list.ts            # List
+│   │   │   ├── remove.ts          # Remove
+│   │   │   ├── update.ts          # Update
+│   │   │   └── server.ts          # Server management
+│   │   └── output/                # Output formats
 │   │       ├── json.ts
 │   │       ├── bibtex.ts
 │   │       └── pretty.ts
 │   │
-│   ├── server/                    # HTTPサーバー関連
-│   │   ├── index.ts               # サーバーエントリーポイント
-│   │   ├── routes/                # APIルート
+│   ├── server/                    # HTTP server
+│   │   ├── index.ts               # Server entry point
+│   │   ├── routes/                # API routes
 │   │   │   ├── references.ts
 │   │   │   └── health.ts
-│   │   └── portfile.ts            # ポートファイル管理
+│   │   └── portfile.ts            # Portfile management
 │   │
-│   ├── core/                      # コアロジック
-│   │   ├── library.ts             # ライブラリ管理
-│   │   ├── library.test.ts        # ライブラリテスト
-│   │   ├── reference.ts           # 参考文献エンティティ
-│   │   ├── reference.test.ts      # 参考文献テスト
-│   │   ├── types.ts               # コア型定義
-│   │   ├── csl-json/              # CSL-JSON処理
-│   │   │   ├── parser.ts          # パース
+│   ├── core/                      # Core logic
+│   │   ├── library.ts             # Library management
+│   │   ├── library.test.ts        # Library tests
+│   │   ├── reference.ts           # Reference entity
+│   │   ├── reference.test.ts      # Reference tests
+│   │   ├── csl-json/              # CSL-JSON processing
+│   │   │   ├── parser.ts          # Parser
 │   │   │   ├── parser.test.ts
-│   │   │   ├── serializer.ts      # シリアライズ
+│   │   │   ├── serializer.ts      # Serializer
 │   │   │   ├── serializer.test.ts
-│   │   │   ├── validator.ts       # バリデーション
+│   │   │   ├── validator.ts       # Validation
 │   │   │   ├── validator.test.ts
-│   │   │   └── types.ts           # CSL-JSON型定義
-│   │   ├── identifier/            # 識別子関連
-│   │   │   ├── generator.ts       # ID生成
+│   │   │   └── types.ts           # CSL-JSON type definitions
+│   │   ├── identifier/            # Identifier-related
+│   │   │   ├── generator.ts       # ID generation
 │   │   │   ├── generator.test.ts
-│   │   │   ├── uuid.ts            # UUID管理
-│   │   │   ├── uuid.test.ts
-│   │   │   ├── normalize.ts       # 正規化
+│   │   │   ├── uuid.ts            # UUID management
+│   │   │   ├── normalize.ts       # Normalization
 │   │   │   ├── normalize.test.ts
-│   │   │   └── types.ts           # 識別子型定義
-│   │   └── index.ts               # コアモジュールエクスポート
+│   │   │   └── types.ts           # Identifier type definitions
+│   │   └── index.ts               # Core module exports
 │   │
-│   ├── features/                  # 機能モジュール
-│   │   ├── search/                # 検索機能
+│   ├── features/                  # Feature modules
+│   │   ├── search/                # Search
 │   │   │   ├── index.ts
-│   │   │   ├── normalizer.ts      # テキスト正規化
+│   │   │   ├── normalizer.ts      # Text normalization
 │   │   │   ├── normalizer.test.ts
-│   │   │   ├── matcher.ts         # マッチングロジック
+│   │   │   ├── tokenizer.ts       # Tokenization
+│   │   │   ├── tokenizer.test.ts
+│   │   │   ├── matcher.ts         # Matching logic
 │   │   │   ├── matcher.test.ts
-│   │   │   ├── sorter.ts          # ソート
+│   │   │   ├── sorter.ts          # Sorting
 │   │   │   ├── sorter.test.ts
-│   │   │   └── types.ts           # 検索型定義
-│   │   ├── duplicate/             # 重複検出
+│   │   │   └── types.ts           # Search type definitions
+│   │   ├── duplicate/             # Duplicate detection
 │   │   │   ├── index.ts
 │   │   │   ├── detector.ts
 │   │   │   ├── detector.test.ts
-│   │   │   └── types.ts           # 重複検出型定義
-│   │   ├── merge/                 # 3-way マージ
+│   │   │   └── types.ts           # Duplicate detection type definitions
+│   │   ├── merge/                 # 3-way merge
 │   │   │   ├── index.ts
 │   │   │   ├── three-way.ts
 │   │   │   ├── three-way.test.ts
-│   │   │   └── types.ts           # マージ型定義
-│   │   └── file-watcher/          # ファイル監視
+│   │   │   └── types.ts           # Merge type definitions
+│   │   └── file-watcher/          # File watching
 │   │       ├── index.ts
-│   │       ├── watcher.ts
-│   │       ├── watcher.test.ts
-│   │       └── types.ts           # ファイル監視型定義
+│   │       ├── file-watcher.ts
+│   │       ├── file-watcher.test.ts
+│   │       └── types.ts           # File watcher type definitions
 │   │
-│   ├── config/                    # 設定管理
+│   ├── config/                    # Configuration management
 │   │   ├── index.ts
-│   │   ├── loader.ts              # 設定ファイル読み込み
-│   │   ├── schema.ts              # 設定スキーマ
-│   │   ├── defaults.ts            # デフォルト値
-│   │   └── types.ts               # 設定型定義
+│   │   ├── loader.ts              # Config file loading
+│   │   ├── loader.test.ts
+│   │   ├── schema.ts              # Config schema
+│   │   └── defaults.ts            # Default values
 │   │
-│   └── utils/                     # ユーティリティ
-│       ├── logger.ts              # ロギング
-│       ├── file.ts                # ファイル操作
-│       ├── hash.ts                # ハッシュ計算
-│       └── backup.ts              # バックアップ
+│   └── utils/                     # Utilities
+│       ├── logger.ts              # Logging
+│       ├── logger.test.ts
+│       ├── file.ts                # File operations
+│       ├── file.test.ts
+│       ├── hash.ts                # Hashing
+│       ├── hash.test.ts
+│       ├── backup.ts              # Backup
+│       └── backup.test.ts
 │
-├── tests/                         # テスト共有リソース
-│   └── fixtures/                  # テストデータ
+├── tests/                         # Shared test resources
+│   └── fixtures/                  # Test data
 │       └── sample.csl.json
 │
-├── bin/                           # 実行ファイル
-│   └── reference-manager.js       # CLIエントリーポイント
+├── bin/                           # Executable files
+│   └── reference-manager.js       # CLI entry point
 │
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
-├── biome.json                     # Linter/Formatter設定
+├── vitest.config.ts
+├── biome.json                     # Linter/Formatter config
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                 # GitHub Actions CI
@@ -133,7 +137,6 @@ src/core/
 ├── library.test.ts      # Unit test for library.ts
 ├── reference.ts
 ├── reference.test.ts    # Unit test for reference.ts
-├── types.ts             # Core type definitions
 └── csl-json/
     ├── parser.ts
     ├── parser.test.ts
@@ -178,5 +181,3 @@ Benefits:
 - Upper layers may depend on lower layers
 - Lower layers must not depend on upper layers
 - Types are colocated within each layer
-
-````

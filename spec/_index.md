@@ -1,55 +1,91 @@
-# reference-manager 仕様書
+# reference-manager Specifications
 
-## 概要
+## Overview
 
-**reference-manager** は CSL-JSON ファイルを単一の真実のソースとして扱うローカル参考文献管理ツールです。
+**reference-manager** is a local reference management tool that treats CSL-JSON files as the single source of truth.
 
-## ディレクトリ構成
+## Directory Structure
 
-### core/ - 常に読み込むべきコア仕様
+### meta/ - Development Process & AI Guides
 
-| ファイル | 内容 |
-|---------|------|
-| [overview.md](core/overview.md) | プロジェクト概要・基本原則 |
-| [data-model.md](core/data-model.md) | データモデル・識別子 |
-| [identifier-generation.md](core/identifier-generation.md) | ID生成ルール |
+| File | Content |
+|------|---------|
+| [development-process.md](meta/development-process.md) | **Complete workflow** from specification to implementation |
+| [guide-for-ai.md](meta/guide-for-ai.md) | **Essential guide for AI assistants** working on this project |
 
-### architecture/ - アーキテクチャ関連
+**Read first when starting any work.**
 
-| ファイル | 内容 |
-|---------|------|
-| [runtime.md](architecture/runtime.md) | ランタイム・配布方法 |
-| [build-system.md](architecture/build-system.md) | ビルドシステム・モジュール |
-| [cli.md](architecture/cli.md) | CLIアーキテクチャ |
-| [http-server.md](architecture/http-server.md) | HTTPサーバー |
-| [directory-structure.md](architecture/directory-structure.md) | ディレクトリ構成 |
+### core/ - Core Specifications (Always Read)
 
-### features/ - 機能仕様
+| File | Content |
+|------|---------|
+| [overview.md](core/overview.md) | Project overview & core principles |
+| [data-model.md](core/data-model.md) | Data model & identifiers |
+| [data-flow.md](core/data-flow.md) | Data flow diagrams for major operations |
+| [identifier-generation.md](core/identifier-generation.md) | ID generation rules |
 
-| ファイル | 内容 |
-|---------|------|
-| [metadata.md](features/metadata.md) | メタデータフィールド |
-| [duplicate-detection.md](features/duplicate-detection.md) | 重複検出 |
-| [search.md](features/search.md) | 検索機能 |
-| [file-monitoring.md](features/file-monitoring.md) | ファイル監視・リロード |
-| [write-safety.md](features/write-safety.md) | 書き込み安全性・競合処理 |
+### architecture/ - Architecture Specifications
 
-### guidelines/ - ガイドライン
+| File | Content |
+|------|---------|
+| [runtime.md](architecture/runtime.md) | Runtime & distribution |
+| [build-system.md](architecture/build-system.md) | Build system & modules |
+| [module-dependencies.md](architecture/module-dependencies.md) | Module dependency rules & diagrams |
+| [cli.md](architecture/cli.md) | CLI architecture |
+| [http-server.md](architecture/http-server.md) | HTTP server |
+| [directory-structure.md](architecture/directory-structure.md) | Directory structure |
 
-| ファイル | 内容 |
-|---------|------|
-| [validation.md](guidelines/validation.md) | バリデーション |
-| [testing.md](guidelines/testing.md) | **TDD手順・テスト戦略** (必読) |
-| [platform.md](guidelines/platform.md) | プラットフォームサポート |
-| [pandoc.md](guidelines/pandoc.md) | Pandoc互換性 |
-| [future.md](guidelines/future.md) | 将来の拡張 |
-| [non-goals.md](guidelines/non-goals.md) | 非目標 |
+### features/ - Feature Specifications
 
-## 読み込み指針
+| File | Content |
+|------|---------|
+| [metadata.md](features/metadata.md) | Metadata fields |
+| [duplicate-detection.md](features/duplicate-detection.md) | Duplicate detection |
+| [search.md](features/search.md) | Search functionality |
+| [file-monitoring.md](features/file-monitoring.md) | File monitoring & reload |
+| [write-safety.md](features/write-safety.md) | Write safety & conflict handling |
 
-| ディレクトリ | 読み込みタイミング |
-|-------------|-------------------|
-| `core/` | **常に読み込み** - プロジェクトの根幹となる仕様 |
-| `architecture/` | CLI/サーバー実装時、ビルド設定時 |
-| `features/` | 各機能の実装・修正時（該当ファイルのみ） |
-| `guidelines/` | テスト作成時、CI設定時、互換性確認時 |
+### guidelines/ - Development Guidelines
+
+| File | Content |
+|------|---------|
+| [validation.md](guidelines/validation.md) | Validation strategy |
+| [testing.md](guidelines/testing.md) | **TDD workflow & testing strategy** (Must-read) |
+| [code-style.md](guidelines/code-style.md) | Coding style & conventions |
+| [platform.md](guidelines/platform.md) | Platform support |
+| [pandoc.md](guidelines/pandoc.md) | Pandoc compatibility |
+| [future.md](guidelines/future.md) | Future extensions |
+| [non-goals.md](guidelines/non-goals.md) | Non-goals |
+
+### patterns/ - Implementation Patterns
+
+| File | Content |
+|------|---------|
+| [error-handling.md](patterns/error-handling.md) | Error handling patterns & examples |
+
+### decisions/ - Architecture Decision Records (ADRs)
+
+| File | Content |
+|------|---------|
+| [README.md](decisions/README.md) | ADR template & guidelines |
+| Individual ADR files | Recorded architectural decisions |
+
+## Reading Guide
+
+| Directory | When to Read |
+|-----------|--------------|
+| `meta/` | **Always read first** - Development process & workflow |
+| `core/` | **Always read** - Foundation of the project |
+| `architecture/` | When implementing CLI/server, configuring builds |
+| `features/` | When implementing/modifying specific features (read relevant files only) |
+| `guidelines/` | When writing tests, setting up CI, checking compatibility |
+| `patterns/` | When implementing new code or refactoring |
+| `decisions/` | When understanding why certain technical choices were made |
+
+## Development Workflow
+
+1. **Read** `spec/meta/development-process.md` - Understand the complete workflow
+2. **Read** necessary specs (always check `spec/core/`)
+3. **Check** `ROADMAP.md` - Verify current phase and next steps
+4. **Follow** TDD process (see `spec/guidelines/testing.md`)
+5. **Quality checks** after each implementation
