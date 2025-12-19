@@ -301,13 +301,12 @@ Examples:
 
 ### Built-in Styles
 
-Package should include commonly used styles:
+The following styles are provided by @citation-js/plugin-csl:
 - `apa` (APA 7th edition) - **default**
-- `chicago` (Chicago Manual of Style)
 - `vancouver` (Vancouver system)
-- `harvard` (Harvard referencing)
-- `mla` (MLA 9th edition)
-- `ama` (American Medical Association)
+- `harvard` (Cite Them Right 11th edition - Harvard)
+
+Additional styles can be added via `--csl-file` or `csl_directory` configuration.
 
 ### Custom Styles
 

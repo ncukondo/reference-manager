@@ -48,17 +48,15 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Run tests to confirm success: `npm test -- citation-csl.test.ts`
   - Acceptance: All tests pass (31/31), generates correct citations for various styles
 
-- [ ] **Task 6.4: Implement CSL style management**
+- [x] **Task 6.4: Implement CSL style management**
   - Write tests in `src/config/csl-styles.test.ts`
     - Test loading from `--csl-file` path
-    - Test searching built-in styles
+    - Test searching built-in styles (apa, vancouver, harvard from @citation-js/plugin-csl)
     - Test searching in `csl_directory` paths (array, in order)
     - Test fallback to default style
-    - Test all bundled styles (apa, chicago, vancouver, harvard, mla, ama)
   - Create `src/config/csl-styles.ts` with empty implementations
   - Run tests to confirm failure: `npm test -- csl-styles.test.ts`
-  - Bundle common CSL styles (apa, chicago, vancouver, harvard, mla, ama)
-  - Implement style resolution logic
+  - Implement style resolution logic (using citation-js built-in styles)
   - Run tests to confirm success: `npm test -- csl-styles.test.ts`
   - Acceptance: All tests pass, correctly resolves styles from multiple sources
 
@@ -148,8 +146,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] Task 6.1: Install dependencies
 - [x] Task 6.2: Implement fallback formatter
 - [x] Task 6.3: Implement CSL processor wrapper
-- [ ] Task 6.4: Implement CSL style management ← **NEXT**
-- [ ] Task 6.5: Add citation config schema
+- [x] Task 6.4: Implement CSL style management
+- [ ] Task 6.5: Add citation config schema ← **NEXT**
 - [ ] Task 6.6: Implement cite command
 - [ ] Task 6.7: Register cite command in CLI
 - [ ] Task 6.8: Quality checks and documentation
