@@ -18,64 +18,85 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Acceptance: `npm install` succeeds, packages are in node_modules
 
 - [ ] **Task 6.2: Implement fallback formatter**
-  - Create `src/cli/output/citation-fallback.ts`
+  - Write comprehensive tests in `src/cli/output/citation-fallback.test.ts`
+    - Test AMA-like simplified format for bibliography
+    - Test simplified format for in-text citations
+    - Test edge cases (missing fields, single/multiple authors)
+    - Test all CSL-JSON field variations
+  - Create `src/cli/output/citation-fallback.ts` with empty implementations
+  - Run tests to confirm failure: `npm test -- citation-fallback.test.ts`
   - Implement AMA-like simplified format for bibliography
   - Implement simplified format for in-text citations
   - Handle edge cases (missing fields, single/multiple authors)
-  - Write comprehensive tests in `src/cli/output/citation-fallback.test.ts`
+  - Run tests to confirm success: `npm test -- citation-fallback.test.ts`
   - Acceptance: All tests pass, handles all CSL-JSON field variations
 
 - [ ] **Task 6.3: Implement CSL processor wrapper**
-  - Create `src/cli/output/citation-csl.ts`
+  - Write comprehensive tests in `src/cli/output/citation-csl.test.ts`
+    - Test bibliography generation with various CSL styles
+    - Test in-text citation generation
+    - Test text, HTML, RTF output formats
+    - Test error handling and fallback to simplified format
+  - Create `src/cli/output/citation-csl.ts` with empty implementations
+  - Run tests to confirm failure: `npm test -- citation-csl.test.ts`
   - Wrap @citation-js/core for bibliography generation
   - Wrap @citation-js/core for in-text citation generation
   - Support text, HTML, RTF output formats
   - Handle CSL processor errors gracefully (fallback to simplified format)
-  - Write comprehensive tests in `src/cli/output/citation-csl.test.ts`
+  - Run tests to confirm success: `npm test -- citation-csl.test.ts`
   - Acceptance: All tests pass, generates correct citations for various styles
 
 - [ ] **Task 6.4: Implement CSL style management**
-  - Create `src/config/csl-styles.ts`
-  - Bundle common CSL styles (apa, chicago, vancouver, harvard, mla, ama)
-  - Implement style resolution logic:
-    - Load from `--csl-file` path
-    - Search built-in styles
-    - Search in `csl_directory` paths (array, in order)
-    - Fall back to default style
   - Write tests in `src/config/csl-styles.test.ts`
+    - Test loading from `--csl-file` path
+    - Test searching built-in styles
+    - Test searching in `csl_directory` paths (array, in order)
+    - Test fallback to default style
+    - Test all bundled styles (apa, chicago, vancouver, harvard, mla, ama)
+  - Create `src/config/csl-styles.ts` with empty implementations
+  - Run tests to confirm failure: `npm test -- csl-styles.test.ts`
+  - Bundle common CSL styles (apa, chicago, vancouver, harvard, mla, ama)
+  - Implement style resolution logic
+  - Run tests to confirm success: `npm test -- csl-styles.test.ts`
   - Acceptance: All tests pass, correctly resolves styles from multiple sources
 
 - [ ] **Task 6.5: Add citation config schema**
+  - Write tests for config validation in existing test file
+    - Test `citation.default_style` validation (string, default: "apa")
+    - Test `citation.csl_directory` validation (string | string[], default: ["~/.reference-manager/csl/"])
+    - Test `citation.default_locale` validation (string, default: "en-US")
+    - Test `citation.default_format` validation (enum: text|html|rtf, default: "text")
+  - Run tests to confirm failure: `npm test -- schema.test.ts`
   - Update `src/config/schema.ts` to include citation settings
-  - Add `citation.default_style` (string, default: "apa")
-  - Add `citation.csl_directory` (string | string[], default: ["~/.reference-manager/csl/"])
-  - Add `citation.default_locale` (string, default: "en-US")
-  - Add `citation.default_format` (enum: text|html|rtf, default: "text")
-  - Write tests for config validation
+  - Run tests to confirm success: `npm test -- schema.test.ts`
   - Acceptance: Config schema validates citation settings correctly
 
 - [ ] **Task 6.6: Implement cite command**
-  - Create `src/cli/commands/cite.ts`
+  - Write comprehensive tests in `src/cli/commands/cite.test.ts`
+    - Test ID/UUID reference resolution
+    - Test single and multiple IDs
+    - Test all command-line options (--uuid, --style, --csl-file, --locale, --format, --in-text)
+    - Test error handling (not found, invalid style, etc.)
+    - Test integration with CSL processor and fallback formatter
+  - Create `src/cli/commands/cite.ts` with empty implementations
+  - Run tests to confirm failure: `npm test -- cite.test.ts`
   - Implement ID/UUID reference resolution
   - Integrate CSL processor wrapper
   - Integrate fallback formatter
-  - Support command-line options:
-    - `--uuid`: Treat arguments as UUIDs
-    - `--style <style>`: CSL style name
-    - `--csl-file <path>`: Custom CSL file path
-    - `--locale <locale>`: Locale code
-    - `--format <format>`: Output format (text|html|rtf)
-    - `--in-text`: Generate in-text citations
-  - Handle single and multiple IDs
-  - Handle errors (not found, invalid style, etc.)
-  - Write comprehensive tests in `src/cli/commands/cite.test.ts`
+  - Support all command-line options
+  - Handle errors gracefully
+  - Run tests to confirm success: `npm test -- cite.test.ts`
   - Acceptance: All tests pass, command works for all option combinations
 
 - [ ] **Task 6.7: Register cite command in CLI**
+  - Write integration tests for CLI registration
+    - Test `reference-manager cite --help` shows correct usage
+    - Test command works end-to-end with various options
+  - Run tests to confirm failure: `npm test`
   - Update `src/cli/index.ts` to register cite command
   - Add command help text and examples
   - Export cite function and types from `src/cli/commands/index.ts`
-  - Write integration tests
+  - Run tests to confirm success: `npm test`
   - Acceptance: `reference-manager cite --help` shows correct usage, command works end-to-end
 
 - [ ] **Task 6.8: Quality checks and documentation**
