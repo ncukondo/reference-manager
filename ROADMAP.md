@@ -60,16 +60,18 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Run tests to confirm success: `npm test -- csl-styles.test.ts`
   - Acceptance: All tests pass, correctly resolves styles from multiple sources
 
-- [ ] **Task 6.5: Add citation config schema**
+- [x] **Task 6.5: Add citation config schema**
   - Write tests for config validation in existing test file
     - Test `citation.default_style` validation (string, default: "apa")
     - Test `citation.csl_directory` validation (string | string[], default: ["~/.reference-manager/csl/"])
     - Test `citation.default_locale` validation (string, default: "en-US")
     - Test `citation.default_format` validation (enum: text|html|rtf, default: "text")
-  - Run tests to confirm failure: `npm test -- schema.test.ts`
+  - Run tests to confirm failure: `npm test -- loader.test.ts`
   - Update `src/config/schema.ts` to include citation settings
-  - Run tests to confirm success: `npm test -- schema.test.ts`
-  - Acceptance: Config schema validates citation settings correctly
+  - Update `src/config/defaults.ts` to include citation defaults
+  - Update `src/config/loader.ts` to merge and fill citation config
+  - Run tests to confirm success: `npm test -- loader.test.ts`
+  - Acceptance: Config schema validates citation settings correctly (All tests pass: 26/26)
 
 - [ ] **Task 6.6: Implement cite command**
   - Write comprehensive tests in `src/cli/commands/cite.test.ts`
@@ -147,8 +149,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] Task 6.2: Implement fallback formatter
 - [x] Task 6.3: Implement CSL processor wrapper
 - [x] Task 6.4: Implement CSL style management
-- [ ] Task 6.5: Add citation config schema ← **NEXT**
-- [ ] Task 6.6: Implement cite command
+- [x] Task 6.5: Add citation config schema
+- [ ] Task 6.6: Implement cite command ← **NEXT**
 - [ ] Task 6.7: Register cite command in CLI
 - [ ] Task 6.8: Quality checks and documentation
 

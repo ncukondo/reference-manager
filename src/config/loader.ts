@@ -97,6 +97,14 @@ function mergeConfigs(
         ...override.server,
       };
     }
+
+    // Merge citation config
+    if (override.citation !== undefined) {
+      result.citation = {
+        ...result.citation,
+        ...override.citation,
+      };
+    }
   }
 
   return result;
@@ -125,6 +133,19 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       autoStart: partial.server?.autoStart ?? defaultConfig.server.autoStart,
       autoStopMinutes: partial.server?.autoStopMinutes ?? defaultConfig.server.autoStopMinutes,
     },
+    citation: fillCitationDefaults(partial.citation),
+  };
+}
+
+/**
+ * Fill citation config with defaults
+ */
+function fillCitationDefaults(partial: DeepPartialConfig["citation"]): Config["citation"] {
+  return {
+    defaultStyle: partial?.defaultStyle ?? defaultConfig.citation.defaultStyle,
+    cslDirectory: partial?.cslDirectory ?? defaultConfig.citation.cslDirectory,
+    defaultLocale: partial?.defaultLocale ?? defaultConfig.citation.defaultLocale,
+    defaultFormat: partial?.defaultFormat ?? defaultConfig.citation.defaultFormat,
   };
 }
 

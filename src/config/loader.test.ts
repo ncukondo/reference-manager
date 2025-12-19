@@ -3,7 +3,7 @@
  */
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { defaultConfig } from "./defaults.js";
@@ -364,6 +364,135 @@ log_level = "info"
 
       expect(config.library).toBe("/config/library.json");
       expect(config.logLevel).toBe("debug");
+    });
+  });
+
+  describe("Citation configuration", () => {
+    it("should use default citation settings when not specified", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultStyle).toBe("apa");
+      expect(config.citation.cslDirectory).toEqual([join(homedir(), ".reference-manager", "csl")]);
+      expect(config.citation.defaultLocale).toBe("en-US");
+      expect(config.citation.defaultFormat).toBe("text");
+    });
+
+    it("should load citation.default_style from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_style = "vancouver"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultStyle).toBe("vancouver");
+    });
+
+    it("should load citation.csl_directory as string from config and convert to array", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+csl_directory = "/custom/csl"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.cslDirectory).toEqual(["/custom/csl"]);
+    });
+
+    it("should load citation.csl_directory as array from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+csl_directory = ["/custom/csl1", "/custom/csl2"]
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.cslDirectory).toEqual(["/custom/csl1", "/custom/csl2"]);
+    });
+
+    it("should load citation.default_locale from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_locale = "de-DE"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultLocale).toBe("de-DE");
+    });
+
+    it("should load citation.default_format from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_format = "html"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultFormat).toBe("html");
+    });
+
+    it("should support snake_case field names for citation config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_style = "chicago"
+csl_directory = "/custom/csl"
+default_locale = "fr-FR"
+default_format = "rtf"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultStyle).toBe("chicago");
+      expect(config.citation.cslDirectory).toEqual(["/custom/csl"]);
+      expect(config.citation.defaultLocale).toBe("fr-FR");
+      expect(config.citation.defaultFormat).toBe("rtf");
+    });
+
+    it("should throw error for invalid citation.default_format", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_format = "invalid"
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
+    });
+
+    it("should merge partial citation config with defaults", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_style = "harvard"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultStyle).toBe("harvard");
+      expect(config.citation.defaultLocale).toBe("en-US"); // Default
+      expect(config.citation.defaultFormat).toBe("text"); // Default
     });
   });
 });
