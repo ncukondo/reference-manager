@@ -50,9 +50,9 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - PMID detection (numeric)
   - DOI detection (10.xxx, URL formats)
   - Multiple identifiers detection (whitespace-separated)
-- [ ] Implement DOI normalizer (`src/features/import/normalizer.ts`)
+- [x] Implement DOI normalizer (`src/features/import/normalizer.ts`)
   - URL prefix removal (doi.org, dx.doi.org)
-- [ ] Implement parser module (`src/features/import/parser.ts`)
+- [x] Implement parser module (`src/features/import/parser.ts`)
   - BibTeX parsing via citation-js
   - RIS parsing via citation-js
 - [ ] Implement fetcher module (`src/features/import/fetcher.ts`)
