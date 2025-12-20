@@ -45,7 +45,8 @@
       "Bash(gh pr diff:*)",
       "Bash(gh pr checks:*)",
       "Bash(npm view:*)",
-      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)"
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "Bash(npx biome check:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
