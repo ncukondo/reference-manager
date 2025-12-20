@@ -90,7 +90,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Run tests to confirm success: `npm test -- cite.test.ts`
   - Acceptance: All tests pass (25/25), command works for all option combinations
 
-- [ ] **Task 6.7: Register cite command in CLI**
+- [x] **Task 6.7: Register cite command in CLI**
   - Write integration tests for CLI registration
     - Test `reference-manager cite --help` shows correct usage
     - Test command works end-to-end with various options
@@ -151,8 +151,8 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] Task 6.4: Implement CSL style management
 - [x] Task 6.5: Add citation config schema
 - [x] Task 6.6: Implement cite command
-- [ ] Task 6.7: Register cite command in CLI ← **NEXT**
-- [ ] Task 6.8: Quality checks and documentation
+- [x] Task 6.7: Register cite command in CLI
+- [ ] Task 6.8: Quality checks and documentation ← **NEXT**
 
 ---
 

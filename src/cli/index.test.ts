@@ -57,6 +57,26 @@ describe("CLI Entry", () => {
       expect(serverCmd).toBeDefined();
     });
 
+    it("should register 'cite' command", () => {
+      const program = createProgram();
+      const citeCmd = program.commands.find((cmd) => cmd.name() === "cite");
+      expect(citeCmd).toBeDefined();
+    });
+
+    it("'cite' command should have correct options", () => {
+      const program = createProgram();
+      const citeCmd = program.commands.find((cmd) => cmd.name() === "cite");
+      expect(citeCmd).toBeDefined();
+
+      const options = citeCmd?.options.map((opt) => opt.long);
+      expect(options).toContain("--uuid");
+      expect(options).toContain("--style");
+      expect(options).toContain("--csl-file");
+      expect(options).toContain("--locale");
+      expect(options).toContain("--format");
+      expect(options).toContain("--in-text");
+    });
+
     it("should have global --library option", () => {
       const program = createProgram();
       const libraryOption = program.options.find((opt) => opt.long === "--library");

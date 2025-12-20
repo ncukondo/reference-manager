@@ -19,3 +19,6 @@ export type { UpdateOptions, UpdateResult } from "./update.js";
 
 export { serverStart, serverStop, serverStatus } from "./server.js";
 export type { ServerStartOptions, ServerInfo } from "./server.js";
+
+export { cite } from "./cite.js";
+export type { CiteOptions } from "./cite.js";
