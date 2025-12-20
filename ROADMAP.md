@@ -92,18 +92,18 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - [x] POST endpoint for adding references
   - [x] Import and call `addReferences()` from operations
   - [x] Minimal HTTP handling only
-- [ ] Simplify `cli/commands/add.ts`
-  - [ ] Input: library, config, options, server status
-  - [ ] If server running → call server API
-  - [ ] If server stopped → call `addReferences()` directly
-  - [ ] Output formatting (CLI-specific)
-  - [ ] Exit code determination
-  - [ ] Delete `cli/commands/add-core.ts` after migration
-- [ ] Update `cli/index.ts` for add command
-  - [ ] Change `[file]` to `[input...]` (variadic)
-  - [ ] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
-  - [ ] Add `--verbose` option
-  - [ ] Pass server status to add.ts
+- [x] Simplify `cli/commands/add.ts`
+  - [x] Input: library, config, options, server status
+  - [x] If server running → call server API
+  - [x] If server stopped → call `addReferences()` directly
+  - [x] Output formatting (CLI-specific)
+  - [x] Exit code determination
+  - [x] Delete `cli/commands/add-core.ts` after migration
+- [x] Update `cli/index.ts` for add command
+  - [x] Change `[file]` to `[input...]` (variadic)
+  - [x] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
+  - [x] Add `--verbose` option
+  - [x] Pass server status to add.ts
 - [ ] Integration tests
   - [ ] End-to-end file import (JSON, BibTeX, RIS)
   - [ ] End-to-end identifier import (PMID, DOI)
