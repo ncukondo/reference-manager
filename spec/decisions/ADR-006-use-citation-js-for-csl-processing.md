@@ -144,10 +144,21 @@ const output = cite.format('bibliography', {
 {
   "dependencies": {
     "@citation-js/core": "^0.7.21",
-    "@citation-js/plugin-csl": "^0.7.21"
+    "@citation-js/plugin-csl": "^0.7.21",
+    "@citation-js/plugin-bibtex": "^0.7.x",
+    "@citation-js/plugin-ris": "^0.7.x",
+    "@citation-js/plugin-doi": "^0.7.x",
+    "@citation-js/plugin-pubmed": "^0.7.x"
   }
 }
 ```
+
+**Plugin purposes:**
+- `plugin-csl`: CSL output generation (cite command)
+- `plugin-bibtex`: BibTeX/BibLaTeX import (add command)
+- `plugin-ris`: RIS import (add command)
+- `plugin-doi`: DOI metadata fetching (add command)
+- `plugin-pubmed`: PMID metadata fetching (add command)
 
 ### Style Management
 

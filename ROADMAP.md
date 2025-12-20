@@ -15,9 +15,59 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Current Phase
+
+### Phase 7: Multi-Format Import
+
+Extend `add` command to support multiple input formats beyond CSL-JSON.
+
+**Specification**: [spec/features/add-import.md](./spec/features/add-import.md)
+
+**Process**: TDD (see `spec/guidelines/testing.md`)
+
+#### Tasks
+
+- [ ] Add citation-js plugins as dependencies
+  - `@citation-js/plugin-bibtex`
+  - `@citation-js/plugin-ris`
+  - `@citation-js/plugin-doi`
+  - `@citation-js/plugin-pubmed`
+- [ ] Setup vitest workspace for remote access tests
+  - Separate workspace for tests requiring network (PMID/DOI fetch)
+  - Allow running local-only tests independently
+- [ ] Implement format detection module (`src/features/import/detector.ts`)
+  - File extension detection (.json, .bib, .ris)
+  - Content-based detection
+  - PMID detection (numeric)
+  - DOI detection (10.xxx, URL formats)
+- [ ] Implement DOI normalizer (`src/features/import/normalizer.ts`)
+  - URL prefix removal (doi.org, dx.doi.org)
+- [ ] Implement parser module (`src/features/import/parser.ts`)
+  - BibTeX parsing via citation-js
+  - RIS parsing via citation-js
+- [ ] Implement fetcher module (`src/features/import/fetcher.ts`)
+  - PMID fetching via citation-js
+  - DOI fetching via citation-js
+  - Error handling (not found, network error)
+  - Tests in remote workspace
+- [ ] Implement importer orchestration (`src/features/import/importer.ts`)
+  - Coordinate detection, parsing, fetching
+  - Aggregate results (success/failure/skipped)
+- [ ] Update CLI add command
+  - Change `[file]` to `[input...]` (variadic)
+  - Add `--format` option
+  - Add `--verbose` option
+  - Update output formatting
+- [ ] Integration tests
+  - End-to-end import flow
+  - stdin handling
+  - Mixed input types
+
+---
+
 ## Future Phases
 
-### Phase 7: Citation Enhancements
+### Phase 8: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -31,7 +81,7 @@ Post-MVP enhancements for citation functionality:
 - Batch citation generation from file
 - LSP integration for text editors
 
-### Phase 8: Advanced Features
+### Phase 9: Advanced Features
 
 Additional features beyond core functionality:
 
