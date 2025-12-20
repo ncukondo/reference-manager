@@ -78,11 +78,11 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 - [x] Implement importer orchestration (`src/features/import/importer.ts`)
   - Coordinate detection, parsing, fetching
   - Aggregate results (success/failure/skipped)
-- [ ] Add `importFromInputs()` to `features/import/importer.ts`
-  - [ ] Unified entry point: inputs (file paths/identifiers) → ImportResult
-  - [ ] Classifies inputs (file vs identifier)
-  - [ ] Reads files and detects format
-  - [ ] Aggregates results from importFromContent/importFromIdentifiers
+- [x] Add `importFromInputs()` to `features/import/importer.ts`
+  - [x] Unified entry point: inputs (file paths/identifiers) → ImportResult
+  - [x] Classifies inputs (file vs identifier)
+  - [x] Reads files and detects format
+  - [x] Aggregates results from importFromContent/importFromIdentifiers
 - [ ] Create `features/operations/add.ts`
   - [ ] `addReferences(inputs, library, config, options)` → AddResult
   - [ ] Calls `importFromInputs()` internally
