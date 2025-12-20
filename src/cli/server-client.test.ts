@@ -196,4 +196,58 @@ describe("ServerClient", () => {
       await expect(client.remove("uuid-1")).rejects.toThrow("Reference not found");
     });
   });
+
+  describe("addFromInputs", () => {
+    test("should add references from inputs", async () => {
+      const mockResult = {
+        added: [{ id: "Smith-2024", title: "Test Paper" }],
+        failed: [],
+        skipped: [],
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as Response);
+
+      const result = await client.addFromInputs(["10.1234/test"], { force: false });
+
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputs: ["10.1234/test"], options: { force: false } }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    test("should pass format option", async () => {
+      const mockResult = {
+        added: [],
+        failed: [],
+        skipped: [],
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as Response);
+
+      await client.addFromInputs(["test.bib"], { force: true, format: "bibtex" });
+
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputs: ["test.bib"], options: { force: true, format: "bibtex" } }),
+      });
+    });
+
+    test("should throw error on failure", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        text: async () => "Server error",
+      } as Response);
+
+      await expect(client.addFromInputs(["invalid"])).rejects.toThrow("Server error");
+    });
+  });
 });
