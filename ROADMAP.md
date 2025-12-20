@@ -101,7 +101,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
   - Run tests to confirm success: `npm test`
   - Acceptance: `reference-manager cite --help` shows correct usage, command works end-to-end
 
-- [ ] **Task 6.8: Quality checks and documentation**
+- [x] **Task 6.8: Quality checks and documentation**
   - Run full test suite: `npm test`
   - Run type check: `npm run typecheck`
   - Run lint: `npm run lint`
@@ -152,7 +152,7 @@ Add `cite` command to generate formatted citations using CSL (Citation Style Lan
 - [x] Task 6.5: Add citation config schema
 - [x] Task 6.6: Implement cite command
 - [x] Task 6.7: Register cite command in CLI
-- [ ] Task 6.8: Quality checks and documentation ← **NEXT**
+- [x] Task 6.8: Quality checks and documentation
 
 ---
 
