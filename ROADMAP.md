@@ -88,10 +88,10 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - [x] Calls `importFromInputs()` internally
   - [x] Business logic: duplicate detection, ID resolution, library save
   - [x] Move single-item logic from `cli/commands/add-core.ts`
-- [ ] Add server route for add (`server/routes/add.ts`)
-  - [ ] POST endpoint for adding references
-  - [ ] Import and call `addReferences()` from operations
-  - [ ] Minimal HTTP handling only
+- [x] Add server route for add (`server/routes/add.ts`)
+  - [x] POST endpoint for adding references
+  - [x] Import and call `addReferences()` from operations
+  - [x] Minimal HTTP handling only
 - [ ] Simplify `cli/commands/add.ts`
   - [ ] Input: library, config, options, server status
   - [ ] If server running → call server API
