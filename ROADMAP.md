@@ -66,7 +66,7 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - `src/config/schema.ts`: Reduce cognitive complexity of `normalizePartialConfig` (18 → ≤15)
   - `src/features/import/fetcher.ts`: Reduce cognitive complexity of `fetchPmids` (17 → ≤15)
   - `src/config/loader.test.ts`: Add biome-ignore for required `delete` operator
-- [ ] Implement response cache module (`src/features/import/cache.ts`)
+- [x] Implement response cache module (`src/features/import/cache.ts`)
   - In-memory cache with TTL (1 hour default)
   - Keyed by identifier (PMID or DOI)
   - Avoid redundant API calls
