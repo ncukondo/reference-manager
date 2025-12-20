@@ -32,16 +32,19 @@ describe("Config Loader", () => {
 
     // Restore environment variables
     if (originalEnv === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
       delete process.env.REFERENCE_MANAGER_CONFIG;
     } else {
       process.env.REFERENCE_MANAGER_CONFIG = originalEnv;
     }
     if (originalPubmedEmail === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
       delete process.env.PUBMED_EMAIL;
     } else {
       process.env.PUBMED_EMAIL = originalPubmedEmail;
     }
     if (originalPubmedApiKey === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
       delete process.env.PUBMED_API_KEY;
     } else {
       process.env.PUBMED_API_KEY = originalPubmedApiKey;

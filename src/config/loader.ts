@@ -63,10 +63,12 @@ function mergeConfigs(
 ): DeepPartialConfig {
   const result: DeepPartialConfig = { ...base };
 
+  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed"] as const;
+
   for (const override of overrides) {
     if (!override) continue;
 
-    // Merge top-level fields
+    // Merge top-level primitive fields
     if (override.library !== undefined) {
       result.library = override.library;
     }
@@ -74,44 +76,14 @@ function mergeConfigs(
       result.logLevel = override.logLevel;
     }
 
-    // Merge backup config
-    if (override.backup !== undefined) {
-      result.backup = {
-        ...result.backup,
-        ...override.backup,
-      };
-    }
-
-    // Merge watch config
-    if (override.watch !== undefined) {
-      result.watch = {
-        ...result.watch,
-        ...override.watch,
-      };
-    }
-
-    // Merge server config
-    if (override.server !== undefined) {
-      result.server = {
-        ...result.server,
-        ...override.server,
-      };
-    }
-
-    // Merge citation config
-    if (override.citation !== undefined) {
-      result.citation = {
-        ...result.citation,
-        ...override.citation,
-      };
-    }
-
-    // Merge pubmed config
-    if (override.pubmed !== undefined) {
-      result.pubmed = {
-        ...result.pubmed,
-        ...override.pubmed,
-      };
+    // Merge section configs
+    for (const key of sectionKeys) {
+      if (override[key] !== undefined) {
+        result[key] = {
+          ...result[key],
+          ...override[key],
+        };
+      }
     }
   }
 

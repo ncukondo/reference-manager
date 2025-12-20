@@ -345,51 +345,48 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
   }
 
   // Backup
-  if (partial.backup !== undefined) {
-    const backup = normalizeBackupConfig(
-      partial.backup as Parameters<typeof normalizeBackupConfig>[0]
-    );
-    if (backup) {
-      normalized.backup = backup;
-    }
+  const backup =
+    partial.backup !== undefined
+      ? normalizeBackupConfig(partial.backup as Parameters<typeof normalizeBackupConfig>[0])
+      : undefined;
+  if (backup) {
+    normalized.backup = backup;
   }
 
   // Watch
-  if (partial.watch !== undefined) {
-    const watch = normalizeWatchConfig(partial.watch as Parameters<typeof normalizeWatchConfig>[0]);
-    if (watch) {
-      normalized.watch = watch;
-    }
+  const watch =
+    partial.watch !== undefined
+      ? normalizeWatchConfig(partial.watch as Parameters<typeof normalizeWatchConfig>[0])
+      : undefined;
+  if (watch) {
+    normalized.watch = watch;
   }
 
   // Server
-  if (partial.server !== undefined) {
-    const server = normalizeServerConfig(
-      partial.server as Parameters<typeof normalizeServerConfig>[0]
-    );
-    if (server) {
-      normalized.server = server;
-    }
+  const server =
+    partial.server !== undefined
+      ? normalizeServerConfig(partial.server as Parameters<typeof normalizeServerConfig>[0])
+      : undefined;
+  if (server) {
+    normalized.server = server;
   }
 
   // Citation
-  if (partial.citation !== undefined) {
-    const citation = normalizeCitationConfig(
-      partial.citation as Parameters<typeof normalizeCitationConfig>[0]
-    );
-    if (citation) {
-      normalized.citation = citation;
-    }
+  const citation =
+    partial.citation !== undefined
+      ? normalizeCitationConfig(partial.citation as Parameters<typeof normalizeCitationConfig>[0])
+      : undefined;
+  if (citation) {
+    normalized.citation = citation;
   }
 
   // PubMed
-  if (partial.pubmed !== undefined) {
-    const pubmed = normalizePubmedConfig(
-      partial.pubmed as Parameters<typeof normalizePubmedConfig>[0]
-    );
-    if (pubmed) {
-      normalized.pubmed = pubmed;
-    }
+  const pubmed =
+    partial.pubmed !== undefined
+      ? normalizePubmedConfig(partial.pubmed as Parameters<typeof normalizePubmedConfig>[0])
+      : undefined;
+  if (pubmed) {
+    normalized.pubmed = pubmed;
   }
 
   return normalized;

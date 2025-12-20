@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { fetchDoi, fetchPmids, type PubmedConfig } from "./fetcher.js";
+import { type PubmedConfig, fetchDoi, fetchPmids } from "./fetcher.js";
 import { resetRateLimiters } from "./rate-limiter.js";
 
 describe("fetchPmids (remote)", () => {
@@ -110,7 +110,9 @@ describe("fetchDoi (remote)", () => {
 
     it("should fetch a DOI with special characters", async () => {
       // DOI with parentheses
-      const result = await fetchDoi("10.1002/(sici)1097-0258(19980815/30)17:15/16<1661::aid-sim968>3.0.co;2-2");
+      const result = await fetchDoi(
+        "10.1002/(sici)1097-0258(19980815/30)17:15/16<1661::aid-sim968>3.0.co;2-2"
+      );
 
       expect(result.success).toBe(true);
 

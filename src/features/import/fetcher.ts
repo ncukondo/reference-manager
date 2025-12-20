@@ -7,7 +7,7 @@
 
 import { Cite } from "@citation-js/core";
 import "@citation-js/plugin-doi";
-import { CslItemSchema, type CslItem } from "../../core/csl-json/types.js";
+import { type CslItem, CslItemSchema } from "../../core/csl-json/types.js";
 import { getRateLimiter } from "./rate-limiter.js";
 
 /** PMC Citation Exporter API base URL */
@@ -30,9 +30,7 @@ export interface PubmedConfig {
 /**
  * Result of fetching a single identifier
  */
-export type FetchResult =
-  | { success: true; item: CslItem }
-  | { success: false; error: string };
+export type FetchResult = { success: true; item: CslItem } | { success: false; error: string };
 
 /**
  * Result of fetching a PMID (includes pmid for tracking)
@@ -83,10 +81,65 @@ function extractPmidFromId(id: string | undefined): string | undefined {
  *
  * Uses batch API endpoint: /api/ctxp/v1/pubmed/?format=csl&id=1&id=2
  */
-export async function fetchPmids(
-  pmids: string[],
-  config: PubmedConfig
-): Promise<FetchResults> {
+
+/**
+ * Parse raw API items and build maps of found items and validation errors
+ */
+function parseRawItems(rawItems: unknown[]): {
+  foundItems: Map<string, CslItem>;
+  validationErrors: Map<string, string>;
+} {
+  const foundItems = new Map<string, CslItem>();
+  const validationErrors = new Map<string, string>();
+
+  for (const rawItem of rawItems) {
+    const parseResult = CslItemSchema.safeParse(rawItem);
+    if (parseResult.success) {
+      const pmid = extractPmidFromId(parseResult.data.id);
+      if (pmid) {
+        foundItems.set(pmid, parseResult.data);
+      }
+    } else {
+      // Try to extract pmid even from invalid data for error reporting
+      const maybeId = (rawItem as { id?: string })?.id;
+      const pmid = extractPmidFromId(maybeId);
+      if (pmid) {
+        validationErrors.set(pmid, parseResult.error.message);
+      }
+    }
+  }
+
+  return { foundItems, validationErrors };
+}
+
+/**
+ * Build fetch result for a single PMID
+ */
+function buildPmidResult(
+  pmid: string,
+  foundItems: Map<string, CslItem>,
+  validationErrors: Map<string, string>
+): PmidFetchResult {
+  const item = foundItems.get(pmid);
+  if (item) {
+    return { pmid, success: true as const, item };
+  }
+  const validationError = validationErrors.get(pmid);
+  if (validationError) {
+    return {
+      pmid,
+      success: false as const,
+      error: `Invalid CSL-JSON data: ${validationError}`,
+    };
+  }
+  return {
+    pmid,
+    success: false as const,
+    error: `PMID ${pmid} not found`,
+  };
+}
+
+export async function fetchPmids(pmids: string[], config: PubmedConfig): Promise<FetchResults> {
   // Return empty array for empty input
   if (pmids.length === 0) {
     return [];
@@ -120,47 +173,11 @@ export async function fetchPmids(
     // Normalize response to array
     const rawItems: unknown[] = Array.isArray(data) ? data : [data];
 
-    // Build a map of found PMIDs with validation
-    const foundItems = new Map<string, CslItem>();
-    const validationErrors = new Map<string, string>();
-
-    for (const rawItem of rawItems) {
-      const parseResult = CslItemSchema.safeParse(rawItem);
-      if (parseResult.success) {
-        const pmid = extractPmidFromId(parseResult.data.id);
-        if (pmid) {
-          foundItems.set(pmid, parseResult.data);
-        }
-      } else {
-        // Try to extract pmid even from invalid data for error reporting
-        const maybeId = (rawItem as { id?: string })?.id;
-        const pmid = extractPmidFromId(maybeId);
-        if (pmid) {
-          validationErrors.set(pmid, parseResult.error.message);
-        }
-      }
-    }
+    // Parse raw items and build results
+    const { foundItems, validationErrors } = parseRawItems(rawItems);
 
     // Build results for each requested PMID
-    return pmids.map((pmid) => {
-      const item = foundItems.get(pmid);
-      if (item) {
-        return { pmid, success: true as const, item };
-      }
-      const validationError = validationErrors.get(pmid);
-      if (validationError) {
-        return {
-          pmid,
-          success: false as const,
-          error: `Invalid CSL-JSON data: ${validationError}`,
-        };
-      }
-      return {
-        pmid,
-        success: false as const,
-        error: `PMID ${pmid} not found`,
-      };
-    });
+    return pmids.map((pmid) => buildPmidResult(pmid, foundItems, validationErrors));
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     return pmids.map((pmid) => ({

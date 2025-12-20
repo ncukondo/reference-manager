@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectFormat, type InputFormat } from "./detector.js";
+import { type InputFormat, detectFormat } from "./detector.js";
 
 describe("detectFormat", () => {
   describe("file extension detection", () => {
@@ -48,12 +48,12 @@ describe("detectFormat", () => {
     });
 
     it("should detect BibTeX content", () => {
-      const content = '@article{smith2024,\n  title={Test}}';
+      const content = "@article{smith2024,\n  title={Test}}";
       expect(detectFormat("data.txt", content)).toBe("bibtex");
     });
 
     it("should detect BibTeX with leading whitespace", () => {
-      const content = '  \n  @article{smith2024}';
+      const content = "  \n  @article{smith2024}";
       expect(detectFormat("data.txt", content)).toBe("bibtex");
     });
 
@@ -63,7 +63,7 @@ describe("detectFormat", () => {
     });
 
     it("should detect BibTeX with @comment", () => {
-      const content = '@comment{Some comment}';
+      const content = "@comment{Some comment}";
       expect(detectFormat("data.txt", content)).toBe("bibtex");
     });
 
@@ -162,15 +162,11 @@ describe("detectFormat", () => {
     });
 
     it("should detect multiple whitespace-separated identifiers", () => {
-      expect(detectFormat("12345678   10.1000/xyz\n23456789")).toBe(
-        "identifiers"
-      );
+      expect(detectFormat("12345678   10.1000/xyz\n23456789")).toBe("identifiers");
     });
 
     it("should detect mixed with DOI URLs", () => {
-      expect(detectFormat("12345678 https://doi.org/10.1000/xyz")).toBe(
-        "identifiers"
-      );
+      expect(detectFormat("12345678 https://doi.org/10.1000/xyz")).toBe("identifiers");
     });
 
     it("should return single pmid format for single PMID", () => {
