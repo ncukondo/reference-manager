@@ -38,7 +38,8 @@
       "Bash(cat /workspaces/reference-manager/package.json)",
       "WebSearch",
       "WebFetch(domain:citation.js.org)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(node bin/reference-manager.js cite:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
