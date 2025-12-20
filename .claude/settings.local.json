@@ -40,6 +40,10 @@
       "WebFetch(domain:citation.js.org)",
       "WebFetch(domain:www.npmjs.com)",
       "Bash(node bin/reference-manager.js cite:*)"
+      "Bash(npx biome format:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
