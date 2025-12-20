@@ -81,18 +81,21 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 - [ ] Refactor CLI add command structure
   - [x] Rename `add.ts` to `add-core.ts` (single item logic)
   - [ ] Create new `add.ts` facade with:
+    - [ ] `handleAddInputs()`: Main entry point for index.ts
+      - Orchestrates all processing, returns `AddSummary`
+      - Internally uses: classifyInputs, processFileInputs, processIdentifierInputs, addSingleItem
     - [ ] `classifyInputs()`: Separate file paths from identifiers
     - [ ] `processFileInputs()`: Read files and call importer
     - [ ] `processIdentifierInputs()`: Call importer for PMID/DOI
-    - [ ] `processStdinInput()`: Read stdin and call importer
-    - [ ] `formatOutput()`: Format summary (added/failed/skipped)
-    - [ ] `getExitCode()`: Determine exit code from results
+    - [ ] `formatOutput()`: Format summary to stderr (exported for index.ts)
+    - [ ] `getExitCode()`: Determine exit code from results (exported for index.ts)
+    - [ ] Types: `AddSummary`, `FormatOption`
   - [ ] Write unit tests for each function (TDD)
 - [ ] Update CLI command registration (`index.ts`)
   - [ ] Change `[file]` to `[input...]` (variadic)
   - [ ] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
   - [ ] Add `--verbose` option
-  - [ ] Wire up to new `add.ts` facade
+  - [ ] Call `handleAddInputs()`, `formatOutput()`, `getExitCode()` from add.ts
 - [ ] Integration tests
   - [ ] End-to-end file import (JSON, BibTeX, RIS)
   - [ ] End-to-end identifier import (PMID, DOI)
