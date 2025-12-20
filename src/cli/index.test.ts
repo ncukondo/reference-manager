@@ -10,8 +10,8 @@ describe("CLI Entry", () => {
 
     it("should have correct version", () => {
       const program = createProgram();
-      // Version is read from package.json (0.1.0)
-      expect(program.version()).toBe("0.1.0");
+      // Version is read from package.json
+      expect(program.version()).toBe("0.2.0");
     });
 
     it("should have correct description", () => {

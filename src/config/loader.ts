@@ -105,6 +105,14 @@ function mergeConfigs(
         ...override.citation,
       };
     }
+
+    // Merge pubmed config
+    if (override.pubmed !== undefined) {
+      result.pubmed = {
+        ...result.pubmed,
+        ...override.pubmed,
+      };
+    }
   }
 
   return result;
@@ -134,6 +142,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       autoStopMinutes: partial.server?.autoStopMinutes ?? defaultConfig.server.autoStopMinutes,
     },
     citation: fillCitationDefaults(partial.citation),
+    pubmed: fillPubmedDefaults(partial.pubmed),
   };
 }
 
@@ -146,6 +155,21 @@ function fillCitationDefaults(partial: DeepPartialConfig["citation"]): Config["c
     cslDirectory: partial?.cslDirectory ?? defaultConfig.citation.cslDirectory,
     defaultLocale: partial?.defaultLocale ?? defaultConfig.citation.defaultLocale,
     defaultFormat: partial?.defaultFormat ?? defaultConfig.citation.defaultFormat,
+  };
+}
+
+/**
+ * Fill pubmed config with defaults
+ * Environment variables take priority over config file values
+ */
+function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubmed"] {
+  // Environment variables take priority
+  const email = process.env.PUBMED_EMAIL ?? partial?.email ?? defaultConfig.pubmed.email;
+  const apiKey = process.env.PUBMED_API_KEY ?? partial?.apiKey ?? defaultConfig.pubmed.apiKey;
+
+  return {
+    email,
+    apiKey,
   };
 }
 

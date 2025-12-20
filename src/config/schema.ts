@@ -53,6 +53,14 @@ export const citationConfigSchema = z.object({
 });
 
 /**
+ * PubMed API configuration schema
+ */
+export const pubmedConfigSchema = z.object({
+  email: z.string().optional(),
+  apiKey: z.string().optional(),
+});
+
+/**
  * Complete configuration schema
  */
 export const configSchema = z.object({
@@ -62,6 +70,7 @@ export const configSchema = z.object({
   watch: watchConfigSchema,
   server: serverConfigSchema,
   citation: citationConfigSchema,
+  pubmed: pubmedConfigSchema,
 });
 
 /**
@@ -115,6 +124,13 @@ export const partialConfigSchema = z
         default_format: citationFormatSchema.optional(),
       })
       .optional(),
+    pubmed: z
+      .object({
+        email: z.string().optional(),
+        apiKey: z.string().optional(),
+        api_key: z.string().optional(),
+      })
+      .optional(),
   })
   .passthrough(); // Allow unknown fields in TOML files
 
@@ -127,6 +143,7 @@ export type WatchConfig = z.infer<typeof watchConfigSchema>;
 export type ServerConfig = z.infer<typeof serverConfigSchema>;
 export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
+export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
 export type PartialConfig = z.infer<typeof partialConfigSchema>;
 
@@ -140,6 +157,7 @@ export type DeepPartialConfig = {
   watch?: Partial<WatchConfig>;
   server?: Partial<ServerConfig>;
   citation?: Partial<CitationConfig>;
+  pubmed?: Partial<PubmedConfig>;
 };
 
 /**
@@ -286,6 +304,30 @@ function normalizeCitationConfig(
 }
 
 /**
+ * Normalize pubmed configuration from snake_case to camelCase
+ */
+function normalizePubmedConfig(
+  pubmed: Partial<{
+    email?: string;
+    apiKey?: string;
+    api_key?: string;
+  }>
+): Partial<PubmedConfig> | undefined {
+  const normalized: Partial<PubmedConfig> = {};
+
+  if (pubmed.email !== undefined) {
+    normalized.email = pubmed.email;
+  }
+
+  const apiKey = pubmed.apiKey ?? pubmed.api_key;
+  if (apiKey !== undefined) {
+    normalized.apiKey = apiKey;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Normalize snake_case fields to camelCase
  */
 export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfig {
@@ -337,6 +379,16 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
     );
     if (citation) {
       normalized.citation = citation;
+    }
+  }
+
+  // PubMed
+  if (partial.pubmed !== undefined) {
+    const pubmed = normalizePubmedConfig(
+      partial.pubmed as Parameters<typeof normalizePubmedConfig>[0]
+    );
+    if (pubmed) {
+      normalized.pubmed = pubmed;
     }
   }
 

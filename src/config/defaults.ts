@@ -75,4 +75,8 @@ export const defaultConfig: Config = {
     defaultLocale: "en-US",
     defaultFormat: "text",
   },
+  pubmed: {
+    email: undefined,
+    apiKey: undefined,
+  },
 };
