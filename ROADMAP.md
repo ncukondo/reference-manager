@@ -27,14 +27,23 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 
 #### Tasks
 
-- [ ] Add citation-js plugins as dependencies
+- [x] Add citation-js plugins as dependencies
   - `@citation-js/plugin-bibtex`
   - `@citation-js/plugin-ris`
   - `@citation-js/plugin-doi`
-  - `@citation-js/plugin-pubmed`
+  - Note: `@citation-js/plugin-pubmed` excluded due to version incompatibility (see ADR-007)
 - [ ] Setup vitest workspace for remote access tests
   - Separate workspace for tests requiring network (PMID/DOI fetch)
   - Allow running local-only tests independently
+- [ ] Update config module for PubMed settings
+  - Add `[pubmed]` section to config schema
+  - Support `email` and `api_key` fields
+  - Environment variable priority: `PUBMED_EMAIL`, `PUBMED_API_KEY`
+- [ ] Implement rate limiter module (`src/features/import/rate-limiter.ts`)
+  - Factory + lazy initialization singleton pattern
+  - Shared between CLI and server modes
+  - PubMed: 3 req/sec (without API key) or 10 req/sec (with API key)
+  - Crossref: 50 req/sec
 - [ ] Implement format detection module (`src/features/import/detector.ts`)
   - File extension detection (.json, .bib, .ris)
   - Content-based detection
@@ -46,7 +55,7 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - BibTeX parsing via citation-js
   - RIS parsing via citation-js
 - [ ] Implement fetcher module (`src/features/import/fetcher.ts`)
-  - PMID fetching via citation-js
+  - PMID fetching via PMC Citation Exporter API (see ADR-007)
   - DOI fetching via citation-js
   - Error handling (not found, network error)
   - Tests in remote workspace
@@ -62,6 +71,10 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - End-to-end import flow
   - stdin handling
   - Mixed input types
+
+#### Related ADRs
+
+- [ADR-007: Use PMC Citation Exporter API for PMID Fetching](./spec/decisions/ADR-007-use-pmc-api-for-pmid-fetching.md)
 
 ---
 

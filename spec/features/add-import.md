@@ -259,7 +259,50 @@ Add the following citation-js plugins:
 | `@citation-js/plugin-bibtex` | Parse BibTeX/BibLaTeX → CSL-JSON |
 | `@citation-js/plugin-ris` | Parse RIS → CSL-JSON |
 | `@citation-js/plugin-doi` | Fetch DOI metadata → CSL-JSON |
-| `@citation-js/plugin-pubmed` | Fetch PMID metadata → CSL-JSON |
+
+Note: PMID fetching uses PMC Citation Exporter API directly (see below) instead of `@citation-js/plugin-pubmed` due to version compatibility issues.
+
+## PubMed API Configuration
+
+PMID lookup uses the [PMC Citation Exporter API](https://pmc.ncbi.nlm.nih.gov/api/ctxp/) which returns CSL-JSON directly.
+
+### API Endpoint
+
+```
+GET https://pmc.ncbi.nlm.nih.gov/api/ctxp/v1/pubmed/?format=csl&id={PMID}
+```
+
+Multiple PMIDs: `&id={PMID1}&id={PMID2}`
+
+### Configuration
+
+Email (recommended) and API key (optional) can be configured via environment variables or config file.
+
+**Priority**: Environment variables > Config file
+
+#### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `PUBMED_EMAIL` | Contact email (recommended by NCBI) |
+| `PUBMED_API_KEY` | NCBI API key (optional, increases rate limit) |
+
+#### Config File (`.reference-manager.toml`)
+
+```toml
+[pubmed]
+email = "user@example.com"
+api_key = "your-api-key-here"
+```
+
+### Rate Limiting
+
+| Condition | Rate Limit |
+|-----------|------------|
+| Without API key | 3 requests/second |
+| With API key | 10 requests/second |
+
+The fetcher module implements rate limiting based on API key presence.
 
 ## Module Structure
 
@@ -270,9 +313,22 @@ src/features/import/
 ├── detector.ts           # Format auto-detection
 ├── normalizer.ts         # DOI URL normalization
 ├── parser.ts             # BibTeX/RIS parsing via citation-js
-├── fetcher.ts            # PMID/DOI API fetching via citation-js
+├── fetcher.ts            # PMID/DOI API fetching
+├── rate-limiter.ts       # Rate limiting for API calls
 └── importer.ts           # Main import orchestration
 ```
+
+### Rate Limiter Design
+
+Uses **factory + lazy initialization singleton** pattern:
+
+- `RateLimiter` class: Delay-based rate limiting with configurable requests/second
+- `getRateLimiter(api, config)`: Returns singleton per API type ("pubmed" | "crossref")
+- Rate determined by API key presence (PubMed: 3 or 10 req/sec, Crossref: 50 req/sec)
+- Shared between CLI and server modes within same process
+- `resetRateLimiters()`: Clears singletons for test isolation
+
+See ADR-007 for detailed rationale.
 
 ## Data Flow
 
@@ -290,7 +346,7 @@ src/features/import/
    │   ├─ json → parse directly
    │   ├─ bibtex → citation-js plugin-bibtex
    │   ├─ ris → citation-js plugin-ris
-   │   ├─ pmid → citation-js plugin-pubmed (API call)
+   │   ├─ pmid → PMC Citation Exporter API (direct fetch)
    │   └─ doi → citation-js plugin-doi (API call)
    └─ Collect results (success/failure)
    ↓
@@ -345,7 +401,13 @@ Note: Partial success (some added, some failed) returns 0 to allow scripting.
    - Network error handling
    - Timeout handling
 
-5. **Import Orchestration**
+5. **Rate Limiting**
+   - Delay enforcement between requests
+   - Singleton per API type
+   - API key affects rate limit
+   - Reset for test isolation
+
+6. **Import Orchestration**
    - Single file import
    - Multiple identifier import
    - Mixed success/failure
@@ -363,7 +425,10 @@ Note: Partial success (some added, some failed) returns 0 to allow scripting.
 
 - Parallel fetching: Fetch multiple PMIDs/DOIs concurrently (with rate limiting)
 - Timeout handling: Set reasonable timeouts for API calls (10s default)
-- Rate limiting: Respect PubMed/Crossref API rate limits
+- Rate limiting:
+  - PMID: 3 req/sec (without API key) or 10 req/sec (with API key)
+  - DOI: Respect Crossref API rate limits
+- Batch requests: PMC API supports multiple IDs per request (`&id=1&id=2`)
 
 ## Migration Notes
 
