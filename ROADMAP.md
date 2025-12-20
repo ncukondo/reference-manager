@@ -25,6 +25,10 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 
 **Process**: TDD (see `spec/guidelines/testing.md`)
 
+**Commit Policy**: Commit after completing each task
+
+**Complexity Management**: If a task is too complex, break it down into smaller subtasks. Review and update specs/ADRs as needed, then reflect changes in this ROADMAP
+
 #### Tasks
 
 - [x] Add citation-js plugins as dependencies
