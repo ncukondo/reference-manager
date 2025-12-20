@@ -1,0 +1,231 @@
+import type { CslItem } from "../../core/csl-json/types.js";
+import type { Library } from "../../core/library.js";
+import { detectDuplicate } from "../duplicate/detector.js";
+import type { InputFormat } from "../import/detector.js";
+import type { PubmedConfig } from "../import/fetcher.js";
+import {
+  type ImportInputsOptions,
+  type ImportItemResult,
+  importFromInputs,
+} from "../import/importer.js";
+
+/**
+ * Options for adding references
+ */
+export interface AddReferencesOptions {
+  /** Skip duplicate detection */
+  force?: boolean;
+  /** Explicit input format (default: auto) */
+  format?: InputFormat | "auto";
+  /** PubMed API configuration */
+  pubmedConfig?: PubmedConfig;
+}
+
+/**
+ * Information about a successfully added reference
+ */
+export interface AddedItem {
+  id: string;
+  title: string;
+  /** True if the ID was changed due to collision */
+  idChanged?: boolean;
+  /** Original ID before collision resolution */
+  originalId?: string;
+}
+
+/**
+ * Information about a failed import
+ */
+export interface FailedItem {
+  source: string;
+  error: string;
+}
+
+/**
+ * Information about a skipped duplicate
+ */
+export interface SkippedItem {
+  source: string;
+  existingId: string;
+}
+
+/**
+ * Result of addReferences operation
+ */
+export interface AddReferencesResult {
+  added: AddedItem[];
+  failed: FailedItem[];
+  skipped: SkippedItem[];
+}
+
+/**
+ * Add references to a library from various input sources.
+ *
+ * This function orchestrates:
+ * 1. Import from inputs (files or identifiers)
+ * 2. Duplicate detection (unless force=true)
+ * 3. ID collision resolution
+ * 4. Library save
+ *
+ * @param inputs - File paths or identifiers (PMID, DOI)
+ * @param library - Target library
+ * @param options - Add options
+ * @returns Result with added, failed, and skipped items
+ */
+export async function addReferences(
+  inputs: string[],
+  library: Library,
+  options: AddReferencesOptions
+): Promise<AddReferencesResult> {
+  const added: AddedItem[] = [];
+  const failed: FailedItem[] = [];
+  const skipped: SkippedItem[] = [];
+
+  // 1. Import from inputs
+  const importOptions = buildImportOptions(options);
+  const importResult = await importFromInputs(inputs, importOptions);
+
+  // Get existing items for duplicate/collision checks
+  const existingItems = library.getAll().map((ref) => ref.getItem());
+
+  // Track IDs we've added in this batch (for collision detection within batch)
+  const addedIds = new Set<string>();
+
+  // 2. Process each import result
+  for (const result of importResult.results) {
+    const processed = processImportResult(
+      result,
+      existingItems,
+      addedIds,
+      options.force ?? false,
+      library
+    );
+
+    if (processed.type === "failed") {
+      failed.push(processed.item);
+    } else if (processed.type === "skipped") {
+      skipped.push(processed.item);
+    } else {
+      added.push(processed.item);
+    }
+  }
+
+  // 3. Save library if any items were added
+  if (added.length > 0) {
+    await library.save();
+  }
+
+  return { added, failed, skipped };
+}
+
+/**
+ * Build import options from add options
+ */
+function buildImportOptions(options: AddReferencesOptions): ImportInputsOptions {
+  const importOptions: ImportInputsOptions = {};
+  if (options.format !== undefined) {
+    importOptions.format = options.format;
+  }
+  if (options.pubmedConfig !== undefined) {
+    importOptions.pubmedConfig = options.pubmedConfig;
+  }
+  return importOptions;
+}
+
+type ProcessResult =
+  | { type: "added"; item: AddedItem }
+  | { type: "failed"; item: FailedItem }
+  | { type: "skipped"; item: SkippedItem };
+
+/**
+ * Process a single import result
+ */
+function processImportResult(
+  result: ImportItemResult,
+  existingItems: CslItem[],
+  addedIds: Set<string>,
+  force: boolean,
+  library: Library
+): ProcessResult {
+  if (!result.success) {
+    return { type: "failed", item: { source: result.source, error: result.error } };
+  }
+
+  const item = result.item;
+
+  // Check for duplicates (unless force=true)
+  if (!force) {
+    const duplicateResult = detectDuplicate(item, existingItems);
+    const existingMatch = duplicateResult.matches[0];
+    if (existingMatch) {
+      return {
+        type: "skipped",
+        item: { source: result.source, existingId: existingMatch.existing.id ?? "" },
+      };
+    }
+  }
+
+  // Resolve ID collision
+  const allExistingIds = new Set([...existingItems.map((i) => i.id), ...addedIds]);
+  const { id, changed } = resolveIdCollision(item.id, allExistingIds);
+
+  const finalItem: CslItem = { ...item, id };
+
+  // Add to library
+  library.add(finalItem);
+  addedIds.add(id);
+
+  // Build result
+  const addedItem: AddedItem = {
+    id,
+    title: typeof finalItem.title === "string" ? finalItem.title : "",
+  };
+
+  if (changed) {
+    addedItem.idChanged = true;
+    addedItem.originalId = item.id;
+  }
+
+  return { type: "added", item: addedItem };
+}
+
+/**
+ * Generate an alphabetic suffix for ID collision resolution.
+ * 0 -> 'a', 1 -> 'b', ..., 25 -> 'z', 26 -> 'aa', etc.
+ */
+function generateSuffix(index: number): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  let suffix = "";
+  let n = index;
+
+  do {
+    suffix = alphabet[n % 26] + suffix;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+
+  return suffix;
+}
+
+/**
+ * Resolve ID collision by appending alphabetic suffix.
+ */
+function resolveIdCollision(
+  baseId: string,
+  existingIds: Set<string>
+): { id: string; changed: boolean } {
+  if (!existingIds.has(baseId)) {
+    return { id: baseId, changed: false };
+  }
+
+  // Find next available suffix
+  let index = 0;
+  let newId: string;
+
+  do {
+    const suffix = generateSuffix(index);
+    newId = `${baseId}${suffix}`;
+    index++;
+  } while (existingIds.has(newId));
+
+  return { id: newId, changed: true };
+}

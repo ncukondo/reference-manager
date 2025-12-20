@@ -83,12 +83,11 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - [x] Classifies inputs (file vs identifier)
   - [x] Reads files and detects format
   - [x] Aggregates results from importFromContent/importFromIdentifiers
-- [ ] Create `features/operations/add.ts`
-  - [ ] `addReferences(inputs, library, config, options)` → AddResult
-  - [ ] Calls `importFromInputs()` internally
-  - [ ] Business logic: duplicate detection, ID resolution, library save
-  - [ ] Move single-item logic from `cli/commands/add-core.ts`
-  - [ ] Delete `cli/commands/add-core.ts` after migration
+- [x] Create `features/operations/add.ts`
+  - [x] `addReferences(inputs, library, config, options)` → AddResult
+  - [x] Calls `importFromInputs()` internally
+  - [x] Business logic: duplicate detection, ID resolution, library save
+  - [x] Move single-item logic from `cli/commands/add-core.ts`
 - [ ] Add server route for add (`server/routes/add.ts`)
   - [ ] POST endpoint for adding references
   - [ ] Import and call `addReferences()` from operations
@@ -99,6 +98,7 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - [ ] If server stopped → call `addReferences()` directly
   - [ ] Output formatting (CLI-specific)
   - [ ] Exit code determination
+  - [ ] Delete `cli/commands/add-core.ts` after migration
 - [ ] Update `cli/index.ts` for add command
   - [ ] Change `[file]` to `[input...]` (variadic)
   - [ ] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
