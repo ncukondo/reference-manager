@@ -8,6 +8,7 @@ import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { add as addCommand } from "./commands/add.js";
+import { cite as citeCommand } from "./commands/cite.js";
 import { list } from "./commands/list.js";
 import { search as searchCommand } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
@@ -53,6 +54,7 @@ export function createProgram(): Command {
   registerAddCommand(program);
   registerRemoveCommand(program);
   registerUpdateCommand(program);
+  registerCiteCommand(program);
   registerServerCommand(program);
 
   return program;
@@ -475,6 +477,57 @@ function registerUpdateCommand(program: Command): void {
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program);
+    });
+}
+
+/**
+ * Register 'cite' command
+ */
+function registerCiteCommand(program: Command): void {
+  program
+    .command("cite")
+    .description("Generate formatted citations for references")
+    .argument("<id-or-uuid...>", "Citation keys or UUIDs to cite")
+    .option("--uuid", "Treat arguments as UUIDs instead of IDs")
+    .option("--style <style>", "CSL style name")
+    .option("--csl-file <path>", "Path to custom CSL file")
+    .option("--locale <locale>", "Locale code (e.g., en-US, ja-JP)")
+    .option("--format <format>", "Output format: text|html|rtf")
+    .option("--in-text", "Generate in-text citations instead of bibliography entries")
+    .action(async (idsOrUuids: string[], options) => {
+      try {
+        const globalOpts = program.opts();
+        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+        // Get items (server or direct)
+        const server = await getServerConnection(config.library, config);
+        let items: CslItem[];
+
+        if (server) {
+          // Use server API
+          const client = new ServerClient(server.baseUrl);
+          items = await client.getAll();
+        } else {
+          // Direct file access
+          const library = await Library.load(config.library);
+          items = library.getAll().map((ref) => ref.getItem());
+        }
+
+        // Execute cite command
+        await citeCommand(items, idsOrUuids, {
+          uuid: options.uuid,
+          style: options.style,
+          cslFile: options.cslFile,
+          locale: options.locale,
+          format: options.format,
+          inText: options.inText,
+        });
+
+        process.exit(0);
+      } catch (error) {
+        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.exit(4);
+      }
     });
 }
 

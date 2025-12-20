@@ -38,6 +38,21 @@ export const serverConfigSchema = z.object({
 });
 
 /**
+ * Citation format schema
+ */
+export const citationFormatSchema = z.enum(["text", "html", "rtf"]);
+
+/**
+ * Citation configuration schema
+ */
+export const citationConfigSchema = z.object({
+  defaultStyle: z.string(),
+  cslDirectory: z.array(z.string()),
+  defaultLocale: z.string(),
+  defaultFormat: citationFormatSchema,
+});
+
+/**
  * Complete configuration schema
  */
 export const configSchema = z.object({
@@ -46,6 +61,7 @@ export const configSchema = z.object({
   backup: backupConfigSchema,
   watch: watchConfigSchema,
   server: serverConfigSchema,
+  citation: citationConfigSchema,
 });
 
 /**
@@ -87,6 +103,18 @@ export const partialConfigSchema = z
         auto_stop_minutes: z.number().int().nonnegative().optional(),
       })
       .optional(),
+    citation: z
+      .object({
+        defaultStyle: z.string().optional(),
+        default_style: z.string().optional(),
+        cslDirectory: z.union([z.string(), z.array(z.string())]).optional(),
+        csl_directory: z.union([z.string(), z.array(z.string())]).optional(),
+        defaultLocale: z.string().optional(),
+        default_locale: z.string().optional(),
+        defaultFormat: citationFormatSchema.optional(),
+        default_format: citationFormatSchema.optional(),
+      })
+      .optional(),
   })
   .passthrough(); // Allow unknown fields in TOML files
 
@@ -97,6 +125,8 @@ export type LogLevel = z.infer<typeof logLevelSchema>;
 export type BackupConfig = z.infer<typeof backupConfigSchema>;
 export type WatchConfig = z.infer<typeof watchConfigSchema>;
 export type ServerConfig = z.infer<typeof serverConfigSchema>;
+export type CitationFormat = z.infer<typeof citationFormatSchema>;
+export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
 export type PartialConfig = z.infer<typeof partialConfigSchema>;
 
@@ -109,6 +139,7 @@ export type DeepPartialConfig = {
   backup?: Partial<BackupConfig>;
   watch?: Partial<WatchConfig>;
   server?: Partial<ServerConfig>;
+  citation?: Partial<CitationConfig>;
 };
 
 /**
@@ -214,6 +245,47 @@ function normalizeServerConfig(
 }
 
 /**
+ * Normalize citation configuration from snake_case to camelCase
+ */
+function normalizeCitationConfig(
+  citation: Partial<{
+    defaultStyle?: string;
+    default_style?: string;
+    cslDirectory?: string | string[];
+    csl_directory?: string | string[];
+    defaultLocale?: string;
+    default_locale?: string;
+    defaultFormat?: CitationFormat;
+    default_format?: CitationFormat;
+  }>
+): Partial<CitationConfig> | undefined {
+  const normalized: Partial<CitationConfig> = {};
+
+  const defaultStyle = citation.defaultStyle ?? citation.default_style;
+  if (defaultStyle !== undefined) {
+    normalized.defaultStyle = defaultStyle;
+  }
+
+  const cslDirectory = citation.cslDirectory ?? citation.csl_directory;
+  if (cslDirectory !== undefined) {
+    // Normalize to array: string -> [string]
+    normalized.cslDirectory = Array.isArray(cslDirectory) ? cslDirectory : [cslDirectory];
+  }
+
+  const defaultLocale = citation.defaultLocale ?? citation.default_locale;
+  if (defaultLocale !== undefined) {
+    normalized.defaultLocale = defaultLocale;
+  }
+
+  const defaultFormat = citation.defaultFormat ?? citation.default_format;
+  if (defaultFormat !== undefined) {
+    normalized.defaultFormat = defaultFormat;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Normalize snake_case fields to camelCase
  */
 export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfig {
@@ -255,6 +327,16 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
     );
     if (server) {
       normalized.server = server;
+    }
+  }
+
+  // Citation
+  if (partial.citation !== undefined) {
+    const citation = normalizeCitationConfig(
+      partial.citation as Parameters<typeof normalizeCitationConfig>[0]
+    );
+    if (citation) {
+      normalized.citation = citation;
     }
   }
 

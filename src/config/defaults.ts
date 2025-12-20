@@ -40,6 +40,14 @@ export function getDefaultCurrentDirConfigFilename(): string {
 }
 
 /**
+ * Get the default CSL directory
+ * Uses ~/.reference-manager/csl/
+ */
+export function getDefaultCslDirectory(): string {
+  return join(homedir(), ".reference-manager", "csl");
+}
+
+/**
  * Default configuration
  */
 export const defaultConfig: Config = {
@@ -60,5 +68,11 @@ export const defaultConfig: Config = {
   server: {
     autoStart: false,
     autoStopMinutes: 0,
+  },
+  citation: {
+    defaultStyle: "apa",
+    cslDirectory: [getDefaultCslDirectory()],
+    defaultLocale: "en-US",
+    defaultFormat: "text",
   },
 };

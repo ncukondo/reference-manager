@@ -1,33 +1,56 @@
 # ROADMAP
 
-## Current Status
+This document tracks future development plans for reference-manager.
 
-✅ **Version 0.1.0 - All implementation phases complete** (2025-12-18)
+For completed features and changes, see [CHANGELOG.md](./CHANGELOG.md).
 
-The project is feature-complete and ready for distribution with 606 tests passing.
+For detailed specifications, see [spec/](./spec/).
 
-## Implementation History
+## Completed Phases
 
-All 5 phases (Phase 1-5) have been successfully completed:
-- Phase 1: Core Foundation
-- Phase 2: Utils & Config
-- Phase 3: Features
-- Phase 4: Server & CLI
-- Phase 5: Build & Distribution
+- ✅ **Phase 1-5**: Core functionality, CLI commands, Server, Build & Distribution
+- ✅ **Phase 6**: Citation Generation (cite command)
 
-For detailed implementation history, see Git commit history or `README.md`.
+See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
-## Next Steps
+---
 
-### Version 0.2.0 (Future)
+## Future Phases
 
-Potential features for next version (see `spec/guidelines/future.md` for details):
-- Additional export formats
-- Advanced search features
-- Performance optimizations
-- Community-requested features
+### Phase 7: Citation Enhancements
 
-### Contributing
+Post-MVP enhancements for citation functionality:
 
-For bug reports and feature requests, please visit:
-https://github.com/ncukondo/reference-manager/issues
+- Clipboard support (`--clipboard`)
+- Pandoc cite key generation (`--cite-key`)
+- Numbered citation style (`--numbered`)
+- Custom sort order (`--sort <field>`)
+- Group by field (`--group-by <field>`)
+- Interactive style selection
+- Citation preview in server mode
+- Batch citation generation from file
+- LSP integration for text editors
+
+### Phase 8: Advanced Features
+
+Additional features beyond core functionality:
+
+- Full-text PDF management
+- Automatic metadata extraction from PDFs
+- Citation graph visualization
+- Duplicate detection improvements
+- Advanced search operators
+- Tag management
+- Note-taking integration
+
+---
+
+## Contributing
+
+When planning new features:
+
+1. Create specification in `spec/features/`
+2. Create ADR if architectural decision is needed in `spec/decisions/`
+3. Add task to this ROADMAP
+4. Follow TDD process (see `spec/guidelines/testing.md`)
+5. Update CHANGELOG.md when complete
