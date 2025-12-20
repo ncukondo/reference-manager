@@ -78,24 +78,32 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 - [x] Implement importer orchestration (`src/features/import/importer.ts`)
   - Coordinate detection, parsing, fetching
   - Aggregate results (success/failure/skipped)
-- [ ] Refactor CLI add command structure
-  - [x] Rename `add.ts` to `add-core.ts` (single item logic)
-  - [ ] Create new `add.ts` facade with:
-    - [ ] `handleAddInputs()`: Main entry point for index.ts
-      - Orchestrates all processing, returns `AddSummary`
-      - Internally uses: classifyInputs, processFileInputs, processIdentifierInputs, addSingleItem
-    - [ ] `classifyInputs()`: Separate file paths from identifiers
-    - [ ] `processFileInputs()`: Read files and call importer
-    - [ ] `processIdentifierInputs()`: Call importer for PMID/DOI
-    - [ ] `formatOutput()`: Format summary to stderr (exported for index.ts)
-    - [ ] `getExitCode()`: Determine exit code from results (exported for index.ts)
-    - [ ] Types: `AddSummary`, `FormatOption`
-  - [ ] Write unit tests for each function (TDD)
-- [ ] Update CLI command registration (`index.ts`)
+- [ ] Add `importFromInputs()` to `features/import/importer.ts`
+  - [ ] Unified entry point: inputs (file paths/identifiers) → ImportResult
+  - [ ] Classifies inputs (file vs identifier)
+  - [ ] Reads files and detects format
+  - [ ] Aggregates results from importFromContent/importFromIdentifiers
+- [ ] Create `features/operations/add.ts`
+  - [ ] `addReferences(inputs, library, config, options)` → AddResult
+  - [ ] Calls `importFromInputs()` internally
+  - [ ] Business logic: duplicate detection, ID resolution, library save
+  - [ ] Move single-item logic from `cli/commands/add-core.ts`
+  - [ ] Delete `cli/commands/add-core.ts` after migration
+- [ ] Add server route for add (`server/routes/add.ts`)
+  - [ ] POST endpoint for adding references
+  - [ ] Import and call `addReferences()` from operations
+  - [ ] Minimal HTTP handling only
+- [ ] Simplify `cli/commands/add.ts`
+  - [ ] Input: library, config, options, server status
+  - [ ] If server running → call server API
+  - [ ] If server stopped → call `addReferences()` directly
+  - [ ] Output formatting (CLI-specific)
+  - [ ] Exit code determination
+- [ ] Update `cli/index.ts` for add command
   - [ ] Change `[file]` to `[input...]` (variadic)
   - [ ] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
   - [ ] Add `--verbose` option
-  - [ ] Call `handleAddInputs()`, `formatOutput()`, `getExitCode()` from add.ts
+  - [ ] Pass server status to add.ts
 - [ ] Integration tests
   - [ ] End-to-end file import (JSON, BibTeX, RIS)
   - [ ] End-to-end identifier import (PMID, DOI)
@@ -111,7 +119,26 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 
 ## Future Phases
 
-### Phase 8: Citation Enhancements
+### Phase 8: Operation Integration
+
+Refactor other commands to use `features/operations/` pattern.
+
+See: [spec/architecture/module-dependencies.md](./spec/architecture/module-dependencies.md) (Integration Functions Pattern)
+
+- [ ] Create `features/operations/` for each command
+  - [ ] `list.ts`: listReferences(library, options)
+  - [ ] `search.ts`: searchReferences(library, query, options)
+  - [ ] `remove.ts`: removeReference(library, id, options)
+  - [ ] `update.ts`: updateReference(library, id, updates, options)
+  - [ ] `cite.ts`: citeReferences(library, ids, options)
+- [ ] Add/update server routes to use operations
+- [ ] Simplify CLI commands
+  - [ ] Server running → call server API
+  - [ ] Server stopped → call operations directly
+  - [ ] Output formatting only
+- [ ] Simplify `cli/index.ts` to routing only
+
+### Phase 9: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -125,7 +152,7 @@ Post-MVP enhancements for citation functionality:
 - Batch citation generation from file
 - LSP integration for text editors
 
-### Phase 9: Advanced Features
+### Phase 10: Advanced Features
 
 Additional features beyond core functionality:
 

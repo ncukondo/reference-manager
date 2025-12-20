@@ -169,10 +169,66 @@ export class Library {
 - `duplicate/`: Duplicate detection
 - `merge/`: 3-way merge conflict resolution
 - `file-watcher/`: File monitoring and reload
+- `import/`: Multi-format import (BibTeX, RIS, PMID, DOI)
+- `operations/`: Unified library operations (add, remove, list, etc.)
 
 **Dependencies**: `core/`, `utils/`, `config/`
 
 **Cannot import from**: `server/`, `cli/`
+
+#### Dependency Rule for operations/
+
+`features/operations/` is a special aggregation module:
+
+```
+features/
+├── search/
+├── duplicate/
+├── import/
+├── ...
+└── operations/     ← Aggregates other features
+    ├── add.ts      (imports: import/, duplicate/, core/)
+    ├── remove.ts   (imports: core/)
+    ├── list.ts     (imports: search/, core/)
+    └── ...
+```
+
+**Rule**: `operations/` can import from other `features/*`, but other `features/*` **cannot** import from `operations/`.
+
+This prevents circular dependencies and keeps `operations/` as a top-level orchestration layer within features.
+
+```typescript
+// ✅ OK: operations/ imports from other features
+// features/operations/add.ts
+import { importFromInputs } from '../import/importer.js';
+import { detectDuplicate } from '../duplicate/detector.js';
+
+// ❌ WRONG: other features import from operations/
+// features/search/matcher.ts
+import { addReferences } from '../operations/add.js';  // NOT ALLOWED
+```
+
+#### Integration Functions Pattern
+
+`operations/` exposes **integration functions** that provide a unified interface for both CLI and Server:
+
+```typescript
+// features/operations/add.ts
+export async function addReferences(
+  library: Library,
+  items: CslItem[],
+  options: AddOptions
+): Promise<AddResult> {
+  // Orchestrates: duplicate check, ID resolution, save
+  // Returns: added/skipped/failed summary
+}
+```
+
+**Benefits**:
+- CLI and Server share the same business logic
+- CLI only handles: routing (direct vs server API), output formatting, exit codes
+- Server only handles: HTTP request/response
+- Easy to test domain logic in isolation
 
 **Example**:
 ```typescript
