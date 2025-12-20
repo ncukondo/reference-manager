@@ -32,10 +32,10 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - `@citation-js/plugin-ris`
   - `@citation-js/plugin-doi`
   - Note: `@citation-js/plugin-pubmed` excluded due to version incompatibility (see ADR-007)
-- [ ] Setup vitest workspace for remote access tests
+- [x] Setup vitest workspace for remote access tests
   - Separate workspace for tests requiring network (PMID/DOI fetch)
   - Allow running local-only tests independently
-- [ ] Update config module for PubMed settings
+- [x] Update config module for PubMed settings
   - Add `[pubmed]` section to config schema
   - Support `email` and `api_key` fields
   - Environment variable priority: `PUBMED_EMAIL`, `PUBMED_API_KEY`
