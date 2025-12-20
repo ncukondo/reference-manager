@@ -429,6 +429,35 @@ Note: Partial success (some added, some failed) returns 0 to allow scripting.
   - PMID: 3 req/sec (without API key) or 10 req/sec (with API key)
   - DOI: Respect Crossref API rate limits
 - Batch requests: PMC API supports multiple IDs per request (`&id=1&id=2`)
+- Response caching: Cache API responses to avoid redundant requests
+
+### Response Cache
+
+To reduce API calls and respect rate limits, fetched metadata is cached in memory.
+
+**Design**:
+- In-memory cache (Map-based) with TTL
+- Keyed by identifier (PMID or DOI)
+- Separate caches for PMID and DOI
+- TTL: 1 hour (configurable)
+- Cache hit returns cached CslItem directly, bypassing API call
+- Cache is per-process (shared between CLI invocations in server mode)
+
+**Cache behavior**:
+| Scenario | Behavior |
+|----------|----------|
+| First fetch | API call, store in cache |
+| Repeated fetch within TTL | Return cached result |
+| Fetch after TTL expired | API call, update cache |
+| Fetch failure | Not cached (allows retry) |
+
+**Why in-memory only**:
+- Per ADR-001, no persistent cache files on disk
+- Simple implementation without file I/O complexity
+- Cache is warm during interactive sessions (server mode)
+- CLI invocations start fresh (acceptable for single-command use)
+
+**Module**: `src/features/import/cache.ts`
 
 ## Migration Notes
 

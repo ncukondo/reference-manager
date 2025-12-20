@@ -16,6 +16,7 @@ declare module "@citation-js/core" {
 
   export class Cite {
     constructor(data: unknown, options?: CiteOptions);
+    static async(data: unknown, options?: CiteOptions): Promise<Cite>;
     format(
       format: "bibliography" | "citation",
       options?: {
@@ -29,5 +30,17 @@ declare module "@citation-js/core" {
 }
 
 declare module "@citation-js/plugin-csl" {
+  // Plugin is imported for side effects only
+}
+
+declare module "@citation-js/plugin-doi" {
+  // Plugin is imported for side effects only
+}
+
+declare module "@citation-js/plugin-bibtex" {
+  // Plugin is imported for side effects only
+}
+
+declare module "@citation-js/plugin-ris" {
   // Plugin is imported for side effects only
 }

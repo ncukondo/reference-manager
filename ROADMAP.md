@@ -55,11 +55,20 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 - [x] Implement parser module (`src/features/import/parser.ts`)
   - BibTeX parsing via citation-js
   - RIS parsing via citation-js
-- [ ] Implement fetcher module (`src/features/import/fetcher.ts`)
-  - PMID fetching via PMC Citation Exporter API (see ADR-007)
-  - DOI fetching via citation-js
+- [x] Implement fetcher module (`src/features/import/fetcher.ts`)
+  - PMID batch fetching via PMC Citation Exporter API (see ADR-007)
+  - DOI fetching via citation-js (Cite.async)
+  - Zod validation for API responses
   - Error handling (not found, network error)
-  - Tests in remote workspace
+  - Remote API tests (`fetcher.remote.test.ts`)
+- [ ] Fix existing lint warnings
+  - `src/config/loader.ts`: Reduce cognitive complexity of `mergeConfigs` (17 → ≤15)
+  - `src/config/loader.test.ts`: Replace `delete` operator with `undefined` assignment
+- [ ] Implement response cache module (`src/features/import/cache.ts`)
+  - In-memory cache with TTL (1 hour default)
+  - Keyed by identifier (PMID or DOI)
+  - Avoid redundant API calls
+  - Reset function for test isolation
 - [ ] Implement importer orchestration (`src/features/import/importer.ts`)
   - Coordinate detection, parsing, fetching
   - Aggregate results (success/failure/skipped)
