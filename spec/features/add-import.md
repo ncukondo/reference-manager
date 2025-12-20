@@ -307,15 +307,27 @@ The fetcher module implements rate limiting based on API key presence.
 ## Module Structure
 
 ```
-src/features/import/
-├── index.ts              # Public exports
-├── types.ts              # ImportResult, ImportError, InputFormat
-├── detector.ts           # Format auto-detection
-├── normalizer.ts         # DOI URL normalization
-├── parser.ts             # BibTeX/RIS parsing via citation-js
-├── fetcher.ts            # PMID/DOI API fetching
-├── rate-limiter.ts       # Rate limiting for API calls
-└── importer.ts           # Main import orchestration
+src/features/
+├── import/                    # Import functionality
+│   ├── index.ts               # Public exports
+│   ├── detector.ts            # Format auto-detection
+│   ├── normalizer.ts          # DOI URL normalization
+│   ├── parser.ts              # BibTeX/RIS parsing via citation-js
+│   ├── fetcher.ts             # PMID/DOI API fetching
+│   ├── rate-limiter.ts        # Rate limiting for API calls
+│   ├── cache.ts               # Response cache (TTL-based)
+│   └── importer.ts            # Import orchestration
+│       ├── importFromContent()      # Parse file content
+│       ├── importFromIdentifiers()  # Fetch by PMID/DOI
+│       └── importFromInputs()       # Unified entry point
+│
+└── operations/                # Unified operations (CLI/Server共通)
+    └── add.ts                 # Add operation
+        └── addReferences(inputs, library, config, options) → AddResult
+            ├── Calls importFromInputs()
+            ├── Duplicate detection
+            ├── ID resolution
+            └── Library save
 ```
 
 ### Rate Limiter Design
@@ -333,36 +345,43 @@ See ADR-007 for detailed rationale.
 ## Data Flow
 
 ```
-1. Parse CLI arguments
-   ↓
-2. Determine input source(s)
-   ├─ File path(s) provided → read file(s)
-   ├─ Identifier(s) provided → collect identifiers
-   └─ No args → read stdin
-   ↓
-3. For each input:
-   ├─ Detect format (or use --format)
-   ├─ Parse/fetch to CSL-JSON
-   │   ├─ json → parse directly
-   │   ├─ bibtex → citation-js plugin-bibtex
-   │   ├─ ris → citation-js plugin-ris
-   │   ├─ pmid → PMC Citation Exporter API (direct fetch)
-   │   └─ doi → citation-js plugin-doi (API call)
-   └─ Collect results (success/failure)
-   ↓
-4. For each successfully parsed item:
-   ├─ Check duplicates (unless --force)
-   │   ├─ Duplicate → add to skipped
-   │   └─ Not duplicate → continue
-   ├─ Generate/validate ID
-   └─ Add to library
-   ↓
-5. Save library
-   ↓
-6. Output summary
-   ├─ Added references
-   ├─ Failed fetches (if any)
-   └─ Skipped duplicates (if any)
+CLI: ref add [input...] --format --verbose
+  │
+  ├─ Server running? ──→ POST /references/add (server route)
+  │                              │
+  └─ Server stopped? ─────────────┼──→ Direct call
+                                  ↓
+            features/operations/add.ts
+            addReferences(inputs, library, config, options)
+                      │
+                      ↓
+            features/import/importer.ts
+            importFromInputs(inputs, options)
+              ├─ Classify inputs (file vs identifier)
+              ├─ Read files, detect format
+              ├─ importFromContent() or importFromIdentifiers()
+              └─ Return ImportResult (CslItem[] + errors)
+                      │
+                      ↓
+            For each successfully imported item:
+              ├─ Check duplicates (unless --force)
+              │   ├─ Duplicate → add to skipped
+              │   └─ Not duplicate → continue
+              ├─ Resolve ID collision
+              └─ Add to library
+                      │
+                      ↓
+            Library.save()
+                      │
+                      ↓
+            Return AddResult
+              ├─ added: { id, title }[]
+              ├─ failed: { source, error }[]
+              └─ skipped: { source, existingId }[]
+                      │
+                      ↓
+            CLI: formatOutput() + exit(getExitCode())
+            Server: Return JSON response
 ```
 
 ## Exit Codes

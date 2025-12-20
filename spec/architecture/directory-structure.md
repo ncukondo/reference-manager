@@ -8,13 +8,14 @@ reference-manager/
 │
 ├── src/
 │   ├── cli/                       # CLI-related
-│   │   ├── index.ts               # CLI entry point
-│   │   ├── commands/              # Command implementations
-│   │   │   ├── add.ts             # Add reference
+│   │   ├── index.ts               # CLI entry point (routing + command registration)
+│   │   ├── commands/              # Command implementations (output formatting)
+│   │   │   ├── add.ts             # Add reference (calls operations/add)
 │   │   │   ├── search.ts          # Search
 │   │   │   ├── list.ts            # List
 │   │   │   ├── remove.ts          # Remove
 │   │   │   ├── update.ts          # Update
+│   │   │   ├── cite.ts            # Citation generation
 │   │   │   └── server.ts          # Server management
 │   │   └── output/                # Output formats
 │   │       ├── json.ts
@@ -72,11 +73,29 @@ reference-manager/
 │   │   │   ├── three-way.ts
 │   │   │   ├── three-way.test.ts
 │   │   │   └── types.ts           # Merge type definitions
-│   │   └── file-watcher/          # File watching
+│   │   ├── file-watcher/          # File watching
+│   │   │   ├── index.ts
+│   │   │   ├── file-watcher.ts
+│   │   │   ├── file-watcher.test.ts
+│   │   │   └── types.ts           # File watcher type definitions
+│   │   ├── import/                # Multi-format import
+│   │   │   ├── index.ts
+│   │   │   ├── importer.ts        # Import orchestration
+│   │   │   ├── importer.test.ts
+│   │   │   ├── detector.ts        # Format detection
+│   │   │   ├── detector.test.ts
+│   │   │   ├── parser.ts          # BibTeX/RIS parsing
+│   │   │   ├── parser.test.ts
+│   │   │   ├── fetcher.ts         # PMID/DOI fetching
+│   │   │   ├── fetcher.test.ts
+│   │   │   ├── normalizer.ts      # DOI normalization
+│   │   │   ├── rate-limiter.ts    # Rate limiting
+│   │   │   └── cache.ts           # Response cache
+│   │   └── operations/            # Unified operations (CLI/Server共通)
 │   │       ├── index.ts
-│   │       ├── file-watcher.ts
-│   │       ├── file-watcher.test.ts
-│   │       └── types.ts           # File watcher type definitions
+│   │       ├── add.ts             # Add references
+│   │       ├── add.test.ts
+│   │       └── types.ts           # Operation result types
 │   │
 │   ├── config/                    # Configuration management
 │   │   ├── index.ts
@@ -118,10 +137,13 @@ reference-manager/
 
 | Directory | Responsibility |
 |-----------|----------------|
-| `src/cli/` | commander-based CLI with per-command files |
-| `src/server/` | Hono-based HTTP server with portfile management |
+| `src/cli/` | Command registration, server routing, output formatting |
+| `src/cli/commands/` | Per-command output formatting (thin wrappers) |
+| `src/server/` | HTTP server, routes call operations directly |
+| `src/features/operations/` | Unified operations (add, list, etc.) used by CLI and Server |
+| `src/features/import/` | Multi-format import (BibTeX, RIS, PMID, DOI) |
+| `src/features/` | Other features: search, duplicate, merge, file-watcher |
 | `src/core/` | CSL-JSON operations, ID generation, core logic |
-| `src/features/` | Feature modules: search, duplicate detection, merge |
 | `src/config/` | Config resolution (env → current dir → user config) |
 | `src/utils/` | Shared utilities: logging, file ops, hashing |
 | `tests/fixtures/` | Shared test fixtures (sample CSL-JSON files) |
@@ -154,30 +176,41 @@ Benefits:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                         CLI                             │
-│  (commands/, output/)                                   │
+│                    CLI / Server                         │
+│  CLI: routing (server vs direct) + output formatting    │
+│  Server: HTTP handling + call operations                │
 └─────────────────────┬───────────────────────────────────┘
                       │
-┌─────────────────────▼───────────────────────────────────┐
-│                       Server                            │
-│  (routes/, portfile)                                    │
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│              features/operations/                       │
+│  Unified operations: add, list, search, remove, etc.    │
+│  Used by both CLI and Server                            │
 └─────────────────────┬───────────────────────────────────┘
                       │
-┌─────────────────────▼───────────────────────────────────┐
+                      ↓
+┌─────────────────────────────────────────────────────────┐
 │                      Features                           │
-│  (search/, duplicate/, merge/, file-watcher/)           │
+│  import/, search/, duplicate/, merge/, file-watcher/    │
 └─────────────────────┬───────────────────────────────────┘
                       │
-┌─────────────────────▼───────────────────────────────────┐
+                      ↓
+┌─────────────────────────────────────────────────────────┐
 │                        Core                             │
-│  (library, reference, csl-json/, identifier/)           │
+│  library, reference, csl-json/, identifier/             │
 └─────────────────────┬───────────────────────────────────┘
                       │
-┌─────────────────────▼───────────────────────────────────┐
+                      ↓
+┌─────────────────────────────────────────────────────────┐
 │                 Config / Utils                          │
 └─────────────────────────────────────────────────────────┘
 ```
 
+**Dependency Rules**:
 - Upper layers may depend on lower layers
 - Lower layers must not depend on upper layers
+- `operations/` can import from other `features/*`
+- Other `features/*` cannot import from `operations/`
 - Types are colocated within each layer
+
+See [module-dependencies.md](./module-dependencies.md) for detailed rules.

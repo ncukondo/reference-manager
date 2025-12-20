@@ -35,37 +35,49 @@ Return loaded Library
 
 **Implementation**: `src/core/library.ts:35`
 
-## 2. Add Reference
+## 2. Add Reference (Multi-Format Import)
 
 ```
-User Input (CSL-JSON)
+User Input (file paths, identifiers, or stdin)
   ↓
-CLI: addCommand() / Server: POST /references
+CLI: add command [input...] --format --verbose
+  │
+  ├─ Server running? → POST /references/add
+  │                         │
+  └─ Server stopped? ───────┼──→ Direct call
+                            ↓
+features/operations/add.ts
+addReferences(inputs, library, config, options)
   ↓
-Library.add(item: CslItem)
+features/import/importer.ts
+importFromInputs(inputs, options)
+  ├─ Classify inputs (file vs identifier)
+  ├─ Files: Read content, detect format
+  │   └─ importFromContent() ← parser.ts (BibTeX, RIS, JSON)
+  └─ Identifiers: Fetch metadata
+      └─ importFromIdentifiers() ← fetcher.ts (PMID, DOI)
   ↓
-[Duplicate Detection] ← src/features/duplicate/detector.ts
-  ├─ Check DOI (if present)
-  ├─ Check PMID (if present)
-  └─ Check Title + Authors + Year
-  ├─ Duplicate found? → Throw DuplicateReferenceError
-  └─ No duplicate → Continue
+ImportResult { items: CslItem[], errors: [...] }
   ↓
-Reference.create(item, { existingIds })
-  ├─ Generate UUID (if missing)
-  ├─ Normalize metadata (DOI, PMID, etc.)
-  ├─ Generate ID (if missing) ← src/core/identifier/generator.ts
-  │   ├─ Format: Author-Year[-TitleSlug][suffix]
-  │   └─ Handle collisions (a, b, c, ...)
-  └─ Set timestamps (created_at, timestamp)
+For each successfully imported item:
+  ├─ [Duplicate Detection] ← src/features/duplicate/detector.ts
+  │   ├─ Check DOI (if present)
+  │   ├─ Check PMID (if present)
+  │   └─ Check Title + Authors + Year
+  │   ├─ Duplicate found (--force=false)? → Add to skipped
+  │   └─ No duplicate → Continue
+  │
+  └─ Reference.create(item, { existingIds })
+      ├─ Generate UUID (if missing)
+      ├─ Normalize metadata (DOI, PMID, etc.)
+      ├─ Generate ID (if missing) ← src/core/identifier/generator.ts
+      │   ├─ Format: Author-Year[-TitleSlug][suffix]
+      │   └─ Handle collisions (a, b, c, ...)
+      └─ Set timestamps (created_at, timestamp)
   ↓
-Reference instance
-  ↓
-Library.addToIndices(ref)
-  ├─ uuidIndex.set(uuid, ref)
-  ├─ idIndex.set(id, ref)
-  ├─ doiIndex.set(doi, ref) (if present)
-  └─ pmidIndex.set(pmid, ref) (if present)
+Library.add(ref) for each new reference
+  ├─ Add to references array
+  └─ Add to indices (uuid, id, doi, pmid)
   ↓
 Library.save()
   ↓
@@ -77,15 +89,19 @@ Library.save()
   ├─ Serialize to JSON
   └─ Atomic write (write-file-atomic)
   ↓
-[Update Hash] computeFileHash(filePath)
-  └─ Store new currentHash
+AddResult
+  ├─ added: { id, title }[]
+  ├─ failed: { source, error }[]
+  └─ skipped: { source, existingId }[]
   ↓
-Success
+CLI: formatOutput() + exit(getExitCode())
+Server: Return JSON response
 ```
 
 **Implementation**:
-- `src/cli/commands/add.ts`
-- `src/core/library.ts:56`
+- `src/features/operations/add.ts`
+- `src/features/import/importer.ts`
+- `src/core/library.ts`
 - `src/features/duplicate/detector.ts`
 
 ## 3. Search
@@ -295,12 +311,22 @@ Server continues with new data
 ```
 ┌──────────────────────────────────────────────┐
 │              CLI / Server                    │
-│  Entry points for user/API requests          │
+│  CLI: routing (server vs direct) + output   │
+│  Server: HTTP handling                       │
+└─────────────┬────────────────────────────────┘
+              │
+              ↓
+┌──────────────────────────────────────────────┐
+│         features/operations/                 │
+│  Unified operations (used by CLI & Server)  │
+│  ├─ add.ts (addReferences)                  │
+│  ├─ list.ts, search.ts, remove.ts, etc.     │
 └─────────────┬────────────────────────────────┘
               │
               ↓
 ┌──────────────────────────────────────────────┐
 │             Features                         │
+│  ├─ Import (multi-format import)            │
 │  ├─ Search (tokenize, match, sort)          │
 │  ├─ Duplicate (detect duplicates)           │
 │  ├─ Merge (3-way conflict resolution)       │
