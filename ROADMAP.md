@@ -71,7 +71,7 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - Keyed by identifier (PMID or DOI)
   - Avoid redundant API calls
   - Reset function for test isolation
-- [ ] Implement importer orchestration (`src/features/import/importer.ts`)
+- [x] Implement importer orchestration (`src/features/import/importer.ts`)
   - Coordinate detection, parsing, fetching
   - Aggregate results (success/failure/skipped)
 - [ ] Update CLI add command

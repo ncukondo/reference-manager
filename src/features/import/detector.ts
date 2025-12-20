@@ -84,7 +84,7 @@ function detectByExtension(input: string): InputFormat {
 /**
  * Detect format based on content patterns
  */
-function detectByContent(content: string): InputFormat {
+export function detectByContent(content: string): InputFormat {
   const trimmed = content.trim();
   if (!trimmed) return "unknown";
 
@@ -159,7 +159,7 @@ function detectSingleIdentifier(input: string): "pmid" | "doi" | "unknown" {
 /**
  * Check if string is a valid DOI
  */
-function isDoi(input: string): boolean {
+export function isDoi(input: string): boolean {
   // Check DOI URL formats
   for (const prefix of DOI_URL_PREFIXES) {
     if (input.toLowerCase().startsWith(prefix.toLowerCase())) {
@@ -199,7 +199,7 @@ function isDoiFormat(input: string): boolean {
 /**
  * Check if string is a valid PMID (numeric only)
  */
-function isPmid(input: string): boolean {
+export function isPmid(input: string): boolean {
   if (!input || input.length === 0) {
     return false;
   }
