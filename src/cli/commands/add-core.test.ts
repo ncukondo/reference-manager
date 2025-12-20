@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { add } from "./add.js";
+import { addSingleItem } from "./add-core.js";
 
-describe("add command", () => {
+describe("add-core: single item addition", () => {
   const createItem = (id: string, doi?: string): CslItem => ({
     id,
     type: "article",
@@ -19,7 +19,7 @@ describe("add command", () => {
     const existing: CslItem[] = [];
     const newItem = createItem("Smith-2020", "10.1234/new");
 
-    const result = await add(existing, newItem, { force: false });
+    const result = await addSingleItem(existing, newItem, { force: false });
 
     expect(result.added).toBe(true);
     expect(result.item.id).toBe("Smith-2020");
@@ -30,7 +30,7 @@ describe("add command", () => {
     const existing: CslItem[] = [createItem("Smith-2020", "10.1234/existing")];
     const newItem = createItem("Jones-2021", "10.1234/existing");
 
-    const result = await add(existing, newItem, { force: false });
+    const result = await addSingleItem(existing, newItem, { force: false });
 
     expect(result.added).toBe(false);
     expect(result.duplicate).toBeDefined();
@@ -41,7 +41,7 @@ describe("add command", () => {
     const existing: CslItem[] = [createItem("Smith-2020", "10.1234/existing")];
     const newItem = createItem("Jones-2021", "10.1234/existing");
 
-    const result = await add(existing, newItem, { force: true });
+    const result = await addSingleItem(existing, newItem, { force: true });
 
     expect(result.added).toBe(true);
     expect(result.item.id).toBe("Jones-2021");
@@ -51,7 +51,7 @@ describe("add command", () => {
     const existing: CslItem[] = [createItem("Smith-2020", "10.1234/existing")];
     const newItem = createItem("Smith-2020", "10.1234/new");
 
-    const result = await add(existing, newItem, { force: false });
+    const result = await addSingleItem(existing, newItem, { force: false });
 
     expect(result.added).toBe(true);
     expect(result.item.id).toBe("Smith-2020a");
@@ -67,7 +67,7 @@ describe("add command", () => {
     ];
     const newItem = createItem("Smith-2020", "10.1234/new");
 
-    const result = await add(existing, newItem, { force: false });
+    const result = await addSingleItem(existing, newItem, { force: false });
 
     expect(result.added).toBe(true);
     expect(result.item.id).toBe("Smith-2020c");

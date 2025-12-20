@@ -54,14 +54,14 @@ function resolveIdCollision(baseId: string, existing: CslItem[]): { id: string; 
 }
 
 /**
- * Add a new reference to the library.
+ * Add a single reference to the library.
  *
  * @param existing - Existing library items
  * @param newItem - New item to add
  * @param options - Add options
  * @returns Add result
  */
-export async function add(
+export async function addSingleItem(
   existing: CslItem[],
   newItem: CslItem,
   options: AddOptions

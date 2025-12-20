@@ -78,15 +78,27 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
 - [x] Implement importer orchestration (`src/features/import/importer.ts`)
   - Coordinate detection, parsing, fetching
   - Aggregate results (success/failure/skipped)
-- [ ] Update CLI add command
-  - Change `[file]` to `[input...]` (variadic)
-  - Add `--format` option
-  - Add `--verbose` option
-  - Update output formatting
+- [ ] Refactor CLI add command structure
+  - [x] Rename `add.ts` to `add-core.ts` (single item logic)
+  - [ ] Create new `add.ts` facade with:
+    - [ ] `classifyInputs()`: Separate file paths from identifiers
+    - [ ] `processFileInputs()`: Read files and call importer
+    - [ ] `processIdentifierInputs()`: Call importer for PMID/DOI
+    - [ ] `processStdinInput()`: Read stdin and call importer
+    - [ ] `formatOutput()`: Format summary (added/failed/skipped)
+    - [ ] `getExitCode()`: Determine exit code from results
+  - [ ] Write unit tests for each function (TDD)
+- [ ] Update CLI command registration (`index.ts`)
+  - [ ] Change `[file]` to `[input...]` (variadic)
+  - [ ] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
+  - [ ] Add `--verbose` option
+  - [ ] Wire up to new `add.ts` facade
 - [ ] Integration tests
-  - End-to-end import flow
-  - stdin handling
-  - Mixed input types
+  - [ ] End-to-end file import (JSON, BibTeX, RIS)
+  - [ ] End-to-end identifier import (PMID, DOI)
+  - [ ] stdin handling
+  - [ ] Mixed input types
+  - [ ] Error cases and exit codes
 
 #### Related ADRs
 

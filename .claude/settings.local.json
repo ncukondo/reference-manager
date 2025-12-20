@@ -47,7 +47,9 @@
       "Bash(npm view:*)",
       "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
       "Bash(npx biome check:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "mcp__serena__think_about_task_adherence",
+      "Bash(npm run test:unit:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

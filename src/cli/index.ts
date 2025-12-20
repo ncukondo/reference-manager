@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
-import { add as addCommand } from "./commands/add.js";
+import { addSingleItem } from "./commands/add-core.js";
 import { cite as citeCommand } from "./commands/cite.js";
 import { list } from "./commands/list.js";
 import { search as searchCommand } from "./commands/search.js";
@@ -182,7 +182,7 @@ async function addViaLibrary(items: CslItem[], libraryPath: string, force: boole
   const existingItems = library.getAll().map((ref) => ref.getItem());
 
   for (const item of items) {
-    const result = await addCommand(existingItems, item, { force });
+    const result = await addSingleItem(existingItems, item, { force });
 
     if (result.added) {
       library.add(result.item);

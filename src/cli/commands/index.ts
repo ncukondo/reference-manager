@@ -8,8 +8,8 @@ export type { ListOptions } from "./list.js";
 export { search } from "./search.js";
 export type { SearchOptions } from "./search.js";
 
-export { add } from "./add.js";
-export type { AddOptions, AddResult } from "./add.js";
+export { addSingleItem } from "./add-core.js";
+export type { AddOptions, AddResult } from "./add-core.js";
 
 export { remove } from "./remove.js";
 export type { RemoveOptions, RemoveResult } from "./remove.js";

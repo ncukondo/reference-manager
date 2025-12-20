@@ -68,7 +68,7 @@ export function detectFormat(input: string, content?: string): InputFormat {
 /**
  * Detect format based on file extension
  */
-function detectByExtension(input: string): InputFormat {
+export function detectByExtension(input: string): InputFormat {
   if (!input) return "unknown";
 
   // Extract extension (last dot and onwards)
@@ -142,7 +142,7 @@ function detectIdentifier(input: string): InputFormat {
 /**
  * Detect if a single string is a PMID or DOI
  */
-function detectSingleIdentifier(input: string): "pmid" | "doi" | "unknown" {
+export function detectSingleIdentifier(input: string): "pmid" | "doi" | "unknown" {
   // DOI: starts with 10. or is a DOI URL
   if (isDoi(input)) {
     return "doi";
