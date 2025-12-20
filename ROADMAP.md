@@ -39,16 +39,17 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - Add `[pubmed]` section to config schema
   - Support `email` and `api_key` fields
   - Environment variable priority: `PUBMED_EMAIL`, `PUBMED_API_KEY`
-- [ ] Implement rate limiter module (`src/features/import/rate-limiter.ts`)
+- [x] Implement rate limiter module (`src/features/import/rate-limiter.ts`)
   - Factory + lazy initialization singleton pattern
   - Shared between CLI and server modes
   - PubMed: 3 req/sec (without API key) or 10 req/sec (with API key)
   - Crossref: 50 req/sec
-- [ ] Implement format detection module (`src/features/import/detector.ts`)
+- [x] Implement format detection module (`src/features/import/detector.ts`)
   - File extension detection (.json, .bib, .ris)
   - Content-based detection
   - PMID detection (numeric)
   - DOI detection (10.xxx, URL formats)
+  - Multiple identifiers detection (whitespace-separated)
 - [ ] Implement DOI normalizer (`src/features/import/normalizer.ts`)
   - URL prefix removal (doi.org, dx.doi.org)
 - [ ] Implement parser module (`src/features/import/parser.ts`)
