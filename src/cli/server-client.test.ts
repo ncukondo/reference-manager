@@ -197,6 +197,100 @@ describe("ServerClient", () => {
     });
   });
 
+  describe("list", () => {
+    test("should list references without options", async () => {
+      const mockResult = { items: ["Author1 (2024) Title 1", "Author2 (2023) Title 2"] };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as Response);
+
+      const result = await client.list();
+
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/list`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    test("should pass format option", async () => {
+      const mockResult = { items: ["id1", "id2"] };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as Response);
+
+      const result = await client.list({ format: "ids-only" });
+
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/list`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: "ids-only" }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    test("should throw error on failure", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        text: async () => "Server error",
+      } as Response);
+
+      await expect(client.list()).rejects.toThrow("Server error");
+    });
+  });
+
+  describe("search", () => {
+    test("should search references with query", async () => {
+      const mockResult = { items: ["Author1 (2024) Title 1"] };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as Response);
+
+      const result = await client.search({ query: "test query" });
+
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "test query" }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    test("should pass format option", async () => {
+      const mockResult = { items: ["uuid-1", "uuid-2"] };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult,
+      } as Response);
+
+      const result = await client.search({ query: "author:Smith", format: "uuid" });
+
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "author:Smith", format: "uuid" }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    test("should throw error on failure", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        text: async () => "Search failed",
+      } as Response);
+
+      await expect(client.search({ query: "invalid" })).rejects.toThrow("Search failed");
+    });
+  });
+
   describe("addFromInputs", () => {
     test("should add references from inputs", async () => {
       const mockResult = {

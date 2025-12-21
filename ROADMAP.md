@@ -50,14 +50,14 @@ Tasks:
 - [x] Create `server/routes/search.ts` using searchReferences operation
 - [x] Mount routes in `server/index.ts`
 
-#### Step 8.3: ServerClient Methods
+#### Step 8.3: ServerClient Methods (DONE)
 
 Add methods to `cli/server-client.ts`:
 
 | Method | Status |
 |--------|--------|
-| `list(options)` | [ ] TODO |
-| `search(options)` | [ ] TODO |
+| `list(options)` | [x] Done |
+| `search(options)` | [x] Done |
 | `cite(options)` | [x] Done |
 
 #### Step 8.4: CLI Commands Pattern Update

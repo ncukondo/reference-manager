@@ -1,6 +1,8 @@
 import type { CslItem } from "../core/csl-json/types.js";
 import type { AddReferencesResult } from "../features/operations/add.js";
 import type { CiteResult } from "../features/operations/cite.js";
+import type { ListOptions, ListResult } from "../features/operations/list.js";
+import type { SearchOperationOptions, SearchResult } from "../features/operations/search.js";
 
 /**
  * Options for addFromInputs method.
@@ -162,5 +164,45 @@ export class ServerClient {
     }
 
     return (await response.json()) as CiteResult;
+  }
+
+  /**
+   * List all references with optional formatting.
+   * @param options - List options including format
+   * @returns List result with formatted items
+   */
+  async list(options?: ListOptions): Promise<ListResult> {
+    const url = `${this.baseUrl}/api/list`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options ?? {}),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as ListResult;
+  }
+
+  /**
+   * Search references with query.
+   * @param options - Search options including query and format
+   * @returns Search result with formatted items
+   */
+  async search(options: SearchOperationOptions): Promise<SearchResult> {
+    const url = `${this.baseUrl}/api/search`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as SearchResult;
   }
 }
