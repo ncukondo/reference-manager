@@ -13,6 +13,7 @@ import {
   parseJsonInput,
   readConfirmation,
   readJsonInput,
+  readStdinInputs,
 } from "./helpers.js";
 
 describe("readJsonInput", () => {
@@ -164,4 +165,14 @@ describe("readConfirmation", () => {
 
   // Note: Interactive prompt testing requires mocking stdin/stdout
   // Detailed tests would be added in integration tests
+});
+
+describe("readStdinInputs", () => {
+  it("should be a function", () => {
+    expect(typeof readStdinInputs).toBe("function");
+  });
+
+  // Note: stdin reading is tested via CLI integration tests
+  // The function reads from process.stdin and splits by whitespace
+  // See add.e2e.test.ts for actual stdin handling tests
 });

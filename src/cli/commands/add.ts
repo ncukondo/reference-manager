@@ -25,6 +25,8 @@ export interface AddCommandOptions {
   pubmedConfig?: PubmedConfig;
   /** Show verbose error output */
   verbose?: boolean;
+  /** Content from stdin */
+  stdinContent?: string;
 }
 
 /**
@@ -52,13 +54,16 @@ export async function executeAdd(
   library: Library,
   serverClient: ServerClient | undefined
 ): Promise<AddCommandResult> {
-  const { inputs, force, format, pubmedConfig } = options;
+  const { inputs, force, format, pubmedConfig, stdinContent } = options;
 
   if (serverClient) {
     // Route through server - build options without undefined values
-    const serverOptions: { force: boolean; format?: string } = { force };
+    const serverOptions: { force: boolean; format?: string; stdinContent?: string } = { force };
     if (format !== undefined) {
       serverOptions.format = format;
+    }
+    if (stdinContent !== undefined) {
+      serverOptions.stdinContent = stdinContent;
     }
     return serverClient.addFromInputs(inputs, serverOptions);
   }
@@ -70,6 +75,9 @@ export async function executeAdd(
   }
   if (pubmedConfig !== undefined) {
     addOptions.pubmedConfig = pubmedConfig;
+  }
+  if (stdinContent !== undefined) {
+    addOptions.stdinContent = stdinContent;
   }
 
   return addReferences(inputs, library, addOptions);

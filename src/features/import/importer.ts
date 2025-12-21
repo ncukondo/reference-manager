@@ -329,6 +329,8 @@ export async function importFromIdentifiers(
 export interface ImportInputsOptions extends ImportOptions {
   /** Explicit format specification (default: auto) */
   format?: InputFormat | "auto";
+  /** Content from stdin (if provided, processed before file/identifier inputs) */
+  stdinContent?: string;
 }
 
 /**
@@ -435,30 +437,83 @@ export async function importFromInputs(
   inputs: string[],
   options: ImportInputsOptions
 ): Promise<ImportResult> {
-  if (inputs.length === 0) {
-    return { results: [] };
+  const allResults: ImportItemResult[] = [];
+
+  // Process stdinContent if provided
+  if (options.stdinContent?.trim()) {
+    const stdinResults = await processStdinContent(options.stdinContent, options);
+    allResults.push(...stdinResults);
   }
 
-  const allResults: ImportItemResult[] = [];
-  const identifiersToFetch: string[] = [];
+  // Process file/identifier inputs
+  if (inputs.length > 0) {
+    const identifiersToFetch: string[] = [];
 
-  // Process each input
-  for (const input of inputs) {
-    if (existsSync(input)) {
-      // Input is an existing file
-      const fileResults = await processFile(input, options);
-      allResults.push(...fileResults);
-    } else {
-      // Input does not exist as file - treat as potential identifier
-      identifiersToFetch.push(input);
+    // Process each input
+    for (const input of inputs) {
+      if (existsSync(input)) {
+        // Input is an existing file
+        const fileResults = await processFile(input, options);
+        allResults.push(...fileResults);
+      } else {
+        // Input does not exist as file - treat as potential identifier
+        identifiersToFetch.push(input);
+      }
+    }
+
+    // Process identifiers
+    if (identifiersToFetch.length > 0) {
+      const identifierResults = await processIdentifiers(identifiersToFetch, options);
+      allResults.push(...identifierResults);
     }
   }
 
-  // Process identifiers
-  if (identifiersToFetch.length > 0) {
-    const identifierResults = await processIdentifiers(identifiersToFetch, options);
-    allResults.push(...identifierResults);
+  return { results: allResults };
+}
+
+/**
+ * Process stdin content based on format detection
+ * - For file formats (json/bibtex/ris): parse directly
+ * - For identifier formats (pmid/doi) or auto with identifiers: split and process
+ */
+async function processStdinContent(
+  content: string,
+  options: ImportInputsOptions
+): Promise<ImportItemResult[]> {
+  const format = options.format || "auto";
+
+  // If explicit file format specified, parse as content
+  if (format === "json" || format === "bibtex" || format === "ris") {
+    const result = await importFromContent(content, format, options);
+    return result.results.map((r) => ({
+      ...r,
+      source: r.source === "content" ? "stdin" : r.source,
+    }));
   }
 
-  return { results: allResults };
+  // If explicit identifier format, split and process
+  if (format === "pmid" || format === "doi") {
+    const identifiers = content.split(/\s+/).filter((s) => s.length > 0);
+    return processIdentifiers(identifiers, options);
+  }
+
+  // Auto-detect format from content
+  const detectedFormat = detectByContent(content);
+
+  if (detectedFormat === "json" || detectedFormat === "bibtex" || detectedFormat === "ris") {
+    // File format detected - parse as content
+    const result = await importFromContent(content, detectedFormat, options);
+    return result.results.map((r) => ({
+      ...r,
+      source: r.source === "content" ? "stdin" : r.source,
+    }));
+  }
+
+  // Not a file format - treat as whitespace-separated identifiers
+  const identifiers = content.split(/\s+/).filter((s) => s.length > 0);
+  if (identifiers.length === 0) {
+    return [];
+  }
+
+  return processIdentifiers(identifiers, options);
 }

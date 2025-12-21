@@ -20,7 +20,7 @@ import {
   parseJsonInput,
   readConfirmation,
   readJsonInput,
-  readStdinInputs,
+  readStdinContent,
 } from "./helpers.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
@@ -172,10 +172,10 @@ async function handleAddAction(
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    // If no inputs provided, read from stdin
-    let finalInputs = inputs;
+    // If no inputs provided, read content from stdin
+    let stdinContent: string | undefined;
     if (inputs.length === 0) {
-      finalInputs = await readStdinInputs();
+      stdinContent = await readStdinContent();
     }
 
     // Get server connection
@@ -187,7 +187,7 @@ async function handleAddAction(
 
     // Build add options - avoid undefined values for exactOptionalPropertyTypes
     const addOptions: Parameters<typeof executeAdd>[0] = {
-      inputs: finalInputs,
+      inputs,
       force: options.force ?? false,
     };
     if (options.format !== undefined) {
@@ -195,6 +195,9 @@ async function handleAddAction(
     }
     if (options.verbose !== undefined) {
       addOptions.verbose = options.verbose;
+    }
+    if (stdinContent?.trim()) {
+      addOptions.stdinContent = stdinContent;
     }
     // Build pubmedConfig only if values exist
     const pubmedConfig: { email?: string; apiKey?: string } = {};

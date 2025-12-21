@@ -9,7 +9,13 @@ export { search } from "./search.js";
 export type { SearchOptions } from "./search.js";
 
 export { executeAdd, formatAddOutput, getExitCode } from "./add.js";
-export type { AddCommandOptions, AddCommandResult, AddedItem, FailedItem, SkippedItem } from "./add.js";
+export type {
+  AddCommandOptions,
+  AddCommandResult,
+  AddedItem,
+  FailedItem,
+  SkippedItem,
+} from "./add.js";
 
 export { remove } from "./remove.js";
 export type { RemoveOptions, RemoveResult } from "./remove.js";

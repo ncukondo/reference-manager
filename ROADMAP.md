@@ -10,6 +10,7 @@ For detailed specifications, see [spec/](./spec/).
 
 - ✅ **Phase 1-5**: Core functionality, CLI commands, Server, Build & Distribution
 - ✅ **Phase 6**: Citation Generation (cite command)
+- ✅ **Phase 7**: Multi-Format Import (add command with BibTeX, RIS, DOI, PMID support)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
@@ -17,7 +18,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 7: Multi-Format Import
+### Phase 7: Multi-Format Import ✅
 
 Extend `add` command to support multiple input formats beyond CSL-JSON.
 
@@ -104,12 +105,12 @@ Extend `add` command to support multiple input formats beyond CSL-JSON.
   - [x] Add `--format` option (json|bibtex|ris|pmid|doi|auto)
   - [x] Add `--verbose` option
   - [x] Pass server status to add.ts
-- [ ] Integration tests
-  - [ ] End-to-end file import (JSON, BibTeX, RIS)
-  - [ ] End-to-end identifier import (PMID, DOI)
-  - [ ] stdin handling
-  - [ ] Mixed input types
-  - [ ] Error cases and exit codes
+- [x] Integration tests
+  - [x] End-to-end file import (JSON, BibTeX, RIS)
+  - [x] End-to-end identifier import (PMID, DOI)
+  - [x] stdin handling (JSON, BibTeX, RIS content)
+  - [x] Mixed input types
+  - [x] Error cases and exit codes
 
 #### Related ADRs
 

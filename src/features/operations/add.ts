@@ -19,6 +19,8 @@ export interface AddReferencesOptions {
   format?: InputFormat | "auto";
   /** PubMed API configuration */
   pubmedConfig?: PubmedConfig;
+  /** Content from stdin (if provided, processed before file/identifier inputs) */
+  stdinContent?: string;
 }
 
 /**
@@ -128,6 +130,9 @@ function buildImportOptions(options: AddReferencesOptions): ImportInputsOptions 
   }
   if (options.pubmedConfig !== undefined) {
     importOptions.pubmedConfig = options.pubmedConfig;
+  }
+  if (options.stdinContent !== undefined) {
+    importOptions.stdinContent = options.stdinContent;
   }
   return importOptions;
 }
