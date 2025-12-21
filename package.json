@@ -35,7 +35,7 @@
     "test:remote": "vitest --project remote",
     "test:all": "vitest",
     "test:watch": "vitest --watch --project unit",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --project unit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
