@@ -274,6 +274,153 @@ describe("Library", () => {
     });
   });
 
+  describe("update", () => {
+    beforeEach(async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+    });
+
+    it("should update reference by ID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = library.updateById("smith-2023", { title: "Updated Title" });
+
+      expect(result.updated).toBe(true);
+      const ref = library.findById("smith-2023");
+      expect(ref?.getTitle()).toBe("Updated Title");
+    });
+
+    it("should update reference by UUID", async () => {
+      const library = await Library.load(testFilePath);
+      const uuid = "550e8400-e29b-41d4-a716-446655440001";
+
+      const result = library.updateByUuid(uuid, { title: "Updated Title" });
+
+      expect(result.updated).toBe(true);
+      const ref = library.findByUuid(uuid);
+      expect(ref?.getTitle()).toBe("Updated Title");
+    });
+
+    it("should preserve uuid and created_at when updating", async () => {
+      const library = await Library.load(testFilePath);
+      const originalRef = library.findById("smith-2023");
+      const originalUuid = originalRef?.getUuid();
+      const originalCreatedAt = originalRef?.getCreatedAt();
+
+      library.updateById("smith-2023", { title: "Updated Title" });
+
+      const updatedRef = library.findById("smith-2023");
+      expect(updatedRef?.getUuid()).toBe(originalUuid);
+      expect(updatedRef?.getCreatedAt()).toBe(originalCreatedAt);
+    });
+
+    it("should update timestamp when updating", async () => {
+      const library = await Library.load(testFilePath);
+      const originalRef = library.findById("smith-2023");
+      const originalTimestamp = originalRef?.getTimestamp();
+
+      // Wait a bit to ensure timestamp changes
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      library.updateById("smith-2023", { title: "Updated Title" });
+
+      const updatedRef = library.findById("smith-2023");
+      expect(updatedRef?.getTimestamp()).not.toBe(originalTimestamp);
+    });
+
+    it("should update all indices when ID changes", async () => {
+      const library = await Library.load(testFilePath);
+      const uuid = "550e8400-e29b-41d4-a716-446655440001";
+
+      const result = library.updateById("smith-2023", { id: "smith-2023-updated" });
+
+      expect(result.updated).toBe(true);
+      expect(library.findById("smith-2023")).toBeUndefined();
+      expect(library.findById("smith-2023-updated")).toBeDefined();
+      expect(library.findByUuid(uuid)?.getId()).toBe("smith-2023-updated");
+    });
+
+    it("should return updated=false when updating non-existent ID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = library.updateById("non-existent", { title: "Updated" });
+
+      expect(result.updated).toBe(false);
+      expect(library.getAll()).toHaveLength(2);
+    });
+
+    it("should return updated=false when updating non-existent UUID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = library.updateByUuid("00000000-0000-0000-0000-000000000000", {
+        title: "Updated",
+      });
+
+      expect(result.updated).toBe(false);
+      expect(library.getAll()).toHaveLength(2);
+    });
+
+    describe("ID collision handling", () => {
+      it("should return collision result when ID conflicts with existing reference", async () => {
+        const library = await Library.load(testFilePath);
+
+        // Try to change smith-2023's ID to tanaka-2022 (which already exists)
+        const result = library.updateById("smith-2023", { id: "tanaka-2022" });
+
+        expect(result.updated).toBe(false);
+        expect(result.idCollision).toBe(true);
+        // Original reference should be unchanged
+        expect(library.findById("smith-2023")).toBeDefined();
+        expect(library.findById("tanaka-2022")?.getTitle()).toBe(
+          "Deep Learning for Image Recognition"
+        );
+      });
+
+      it("should add suffix when onIdCollision is 'suffix'", async () => {
+        const library = await Library.load(testFilePath);
+
+        const result = library.updateById(
+          "smith-2023",
+          { id: "tanaka-2022" },
+          { onIdCollision: "suffix" }
+        );
+
+        expect(result.updated).toBe(true);
+        expect(result.idChanged).toBe(true);
+        expect(result.newId).toBeDefined();
+        expect(result.newId).toMatch(/^tanaka-2022[a-z]+$/);
+        expect(library.findById("smith-2023")).toBeUndefined();
+        const updatedRef = library.findById(result.newId ?? "");
+        expect(updatedRef).toBeDefined();
+        expect(updatedRef?.getTitle()).toBe("Machine Learning in Medical Diagnosis");
+      });
+
+      it("should allow same ID (no change) without collision", async () => {
+        const library = await Library.load(testFilePath);
+
+        const result = library.updateById("smith-2023", { id: "smith-2023", title: "Updated" });
+
+        expect(result.updated).toBe(true);
+        expect(result.idCollision).toBeUndefined();
+        expect(library.findById("smith-2023")?.getTitle()).toBe("Updated");
+      });
+
+      it("should work with updateByUuid and collision handling", async () => {
+        const library = await Library.load(testFilePath);
+        const uuid = "550e8400-e29b-41d4-a716-446655440001";
+
+        const result = library.updateByUuid(
+          uuid,
+          { id: "tanaka-2022" },
+          { onIdCollision: "suffix" }
+        );
+
+        expect(result.updated).toBe(true);
+        expect(result.idChanged).toBe(true);
+        expect(library.findByUuid(uuid)?.getId()).toBe(result.newId);
+      });
+    });
+  });
+
   describe("find methods", () => {
     beforeEach(async () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");

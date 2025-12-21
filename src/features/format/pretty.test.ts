@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CslItem } from "../../core/csl-json/types";
-import { Reference } from "../../core/reference";
-import { formatPretty } from "./pretty";
+import type { CslItem } from "../../core/csl-json/types.js";
+import { formatPretty } from "./pretty.js";
 
 describe("Pretty Output Formatter", () => {
   const sampleItem1: CslItem = {
@@ -66,16 +65,14 @@ describe("Pretty Output Formatter", () => {
       expect(result).toBe("");
     });
 
-    it("should format single reference with header line", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+    it("should format single item with header line", () => {
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("[smith-2023] Machine Learning in Medical Diagnosis");
     });
 
     it("should indent field lines with 2 spaces", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       const lines = result.split("\n");
       // Check that field lines start with 2 spaces
@@ -85,94 +82,80 @@ describe("Pretty Output Formatter", () => {
     });
 
     it("should format authors as Family, Given-Initial", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("Authors: Smith, J.; Doe, A.");
     });
 
     it("should format single author correctly", () => {
-      const ref = new Reference(sampleItem2);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem2]);
 
       expect(result).toContain("Authors: Jones, B.");
     });
 
     it("should display year from issued.date-parts", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("Year: 2023");
     });
 
     it("should display (no year) when year is missing", () => {
-      const ref = new Reference(minimalItem);
-      const result = formatPretty([ref]);
+      const result = formatPretty([minimalItem]);
 
       expect(result).toContain("Year: (no year)");
     });
 
     it("should display CSL-JSON type", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("Type: article-journal");
     });
 
     it("should display DOI when present", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("DOI: 10.1234/jmi.2023.0045");
     });
 
     it("should display PMID when present", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("PMID: 12345678");
     });
 
     it("should display PMCID when present", () => {
-      const ref = new Reference(itemWithPMCID);
-      const result = formatPretty([ref]);
+      const result = formatPretty([itemWithPMCID]);
 
       expect(result).toContain("PMCID: PMC1234567");
     });
 
     it("should display URL when present", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("URL: https://example.com/article");
     });
 
     it("should always display UUID", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       expect(result).toContain("UUID: 550e8400-e29b-41d4-a716-446655440001");
     });
 
     it("should not display DOI when not present", () => {
-      const ref = new Reference(sampleItem2);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem2]);
 
       expect(result).not.toContain("DOI:");
     });
 
-    it("should separate multiple references with empty line", () => {
-      const ref1 = new Reference(sampleItem1);
-      const ref2 = new Reference(sampleItem2);
-      const result = formatPretty([ref1, ref2]);
+    it("should separate multiple items with empty line", () => {
+      const result = formatPretty([sampleItem1, sampleItem2]);
 
-      // Should have empty line between references
+      // Should have empty line between items
       expect(result).toContain("\n\n[jones-2022]");
     });
 
     it("should display fields in correct order", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatPretty([ref]);
+      const result = formatPretty([sampleItem1]);
 
       const lines = result.split("\n").filter((line) => line.trim());
       // Find indices of each field
@@ -193,27 +176,22 @@ describe("Pretty Output Formatter", () => {
       expect(urlIdx).toBeLessThan(uuidIdx);
     });
 
-    it("should handle reference with no title", () => {
-      const ref = new Reference(minimalItem);
-      const result = formatPretty([ref]);
+    it("should handle item with no title", () => {
+      const result = formatPretty([minimalItem]);
 
       // Should still have header with ID
       expect(result).toContain("[minimal-2024]");
     });
 
-    it("should handle reference with no authors", () => {
-      const ref = new Reference(minimalItem);
-      const result = formatPretty([ref]);
+    it("should handle item with no authors", () => {
+      const result = formatPretty([minimalItem]);
 
       // Should not include Authors line
       expect(result).not.toContain("Authors:");
     });
 
-    it("should format multiple references correctly", () => {
-      const ref1 = new Reference(sampleItem1);
-      const ref2 = new Reference(sampleItem2);
-      const ref3 = new Reference(itemWithPMCID);
-      const result = formatPretty([ref1, ref2, ref3]);
+    it("should format multiple items correctly", () => {
+      const result = formatPretty([sampleItem1, sampleItem2, itemWithPMCID]);
 
       // Should contain all three headers
       expect(result).toContain("[smith-2023]");
@@ -223,6 +201,16 @@ describe("Pretty Output Formatter", () => {
       // Should have proper separators
       const parts = result.split("\n\n");
       expect(parts.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("should display (no uuid) when uuid is missing", () => {
+      const itemWithoutUuid: CslItem = {
+        id: "no-uuid",
+        type: "article",
+      };
+      const result = formatPretty([itemWithoutUuid]);
+
+      expect(result).toContain("UUID: (no uuid)");
     });
   });
 });

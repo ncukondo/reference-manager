@@ -1,7 +1,11 @@
 import { isBuiltinStyle } from "../../config/csl-styles.js";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { formatBibliographyCSL, formatInTextCSL } from "../output/citation-csl.js";
-import { formatBibliography, formatInText } from "../output/citation-fallback.js";
+import {
+  formatBibliography,
+  formatBibliographyCSL,
+  formatInText,
+  formatInTextCSL,
+} from "../../features/format/index.js";
 
 export interface CiteOptions {
   uuid?: boolean;

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CslItem } from "../../core/csl-json/types";
-import { Reference } from "../../core/reference";
-import { formatJson } from "./json";
+import type { CslItem } from "../../core/csl-json/types.js";
+import { formatJson } from "./json.js";
 
 describe("JSON Output Formatter", () => {
   const sampleItem1: CslItem = {
@@ -41,9 +40,8 @@ describe("JSON Output Formatter", () => {
       expect(result).toBe("[]");
     });
 
-    it("should format single reference as JSON array", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatJson([ref]);
+    it("should format single item as JSON array", () => {
+      const result = formatJson([sampleItem1]);
 
       const parsed = JSON.parse(result);
       expect(Array.isArray(parsed)).toBe(true);
@@ -52,10 +50,8 @@ describe("JSON Output Formatter", () => {
       expect(parsed[0].title).toBe("Machine Learning in Medical Diagnosis");
     });
 
-    it("should format multiple references as JSON array", () => {
-      const ref1 = new Reference(sampleItem1);
-      const ref2 = new Reference(sampleItem2);
-      const result = formatJson([ref1, ref2]);
+    it("should format multiple items as JSON array", () => {
+      const result = formatJson([sampleItem1, sampleItem2]);
 
       const parsed = JSON.parse(result);
       expect(Array.isArray(parsed)).toBe(true);
@@ -65,8 +61,7 @@ describe("JSON Output Formatter", () => {
     });
 
     it("should include all CSL-JSON fields", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatJson([ref]);
+      const result = formatJson([sampleItem1]);
 
       const parsed = JSON.parse(result);
       expect(parsed[0]).toHaveProperty("id");
@@ -80,8 +75,7 @@ describe("JSON Output Formatter", () => {
     });
 
     it("should preserve custom fields including UUID", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatJson([ref]);
+      const result = formatJson([sampleItem1]);
 
       const parsed = JSON.parse(result);
       expect(parsed[0].custom.uuid).toBe("550e8400-e29b-41d4-a716-446655440001");
@@ -90,8 +84,7 @@ describe("JSON Output Formatter", () => {
     });
 
     it("should produce compact JSON without formatting", () => {
-      const ref = new Reference(sampleItem1);
-      const result = formatJson([ref]);
+      const result = formatJson([sampleItem1]);
 
       // Compact JSON should not have newlines or extra spaces
       expect(result).not.toContain("\n");
@@ -99,20 +92,17 @@ describe("JSON Output Formatter", () => {
     });
 
     it("should produce valid JSON that can be parsed", () => {
-      const ref1 = new Reference(sampleItem1);
-      const ref2 = new Reference(sampleItem2);
-      const result = formatJson([ref1, ref2]);
+      const result = formatJson([sampleItem1, sampleItem2]);
 
       expect(() => JSON.parse(result)).not.toThrow();
     });
 
-    it("should handle references with minimal fields", () => {
+    it("should handle items with minimal fields", () => {
       const minimalItem: CslItem = {
         id: "minimal-2024",
         type: "article",
       };
-      const ref = new Reference(minimalItem);
-      const result = formatJson([ref]);
+      const result = formatJson([minimalItem]);
 
       const parsed = JSON.parse(result);
       expect(parsed[0].id).toBe("minimal-2024");
@@ -120,9 +110,8 @@ describe("JSON Output Formatter", () => {
     });
 
     it("should preserve field order consistently", () => {
-      const ref = new Reference(sampleItem1);
-      const result1 = formatJson([ref]);
-      const result2 = formatJson([ref]);
+      const result1 = formatJson([sampleItem1]);
+      const result2 = formatJson([sampleItem1]);
 
       expect(result1).toBe(result2);
     });

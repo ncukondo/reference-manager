@@ -1,4 +1,4 @@
-import type { Reference } from "../../core/reference";
+import type { CslItem } from "../../core/csl-json/types.js";
 
 /**
  * Format a single author as "Family, Given-Initial."
@@ -31,8 +31,7 @@ function formatAuthors(
 /**
  * Format a single reference in pretty format
  */
-function formatSingleReference(ref: Reference): string {
-  const item = ref.getItem();
+function formatSingleReference(item: CslItem): string {
   const lines: string[] = [];
 
   // Header line: [id] title
@@ -72,7 +71,8 @@ function formatSingleReference(ref: Reference): string {
   }
 
   // UUID (always)
-  lines.push(`  UUID: ${ref.getUuid()}`);
+  const uuid = item.custom?.uuid || "(no uuid)";
+  lines.push(`  UUID: ${uuid}`);
 
   return lines.join("\n");
 }
@@ -80,10 +80,10 @@ function formatSingleReference(ref: Reference): string {
 /**
  * Format references in pretty-printed format
  */
-export function formatPretty(references: Reference[]): string {
-  if (references.length === 0) {
+export function formatPretty(items: CslItem[]): string {
+  if (items.length === 0) {
     return "";
   }
 
-  return references.map(formatSingleReference).join("\n\n");
+  return items.map(formatSingleReference).join("\n\n");
 }

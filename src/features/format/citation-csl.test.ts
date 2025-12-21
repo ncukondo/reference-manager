@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CslItem } from "../../core/csl-json/types";
-import { formatBibliographyCSL, formatInTextCSL } from "./citation-csl";
+import type { CslItem } from "../../core/csl-json/types.js";
+import { formatBibliographyCSL, formatInTextCSL } from "./citation-csl.js";
 
 describe("CSL Processor Wrapper", () => {
   const sampleItem1: CslItem = {

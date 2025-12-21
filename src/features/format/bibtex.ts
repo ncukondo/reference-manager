@@ -1,5 +1,4 @@
-import type { CslItem } from "../../core/csl-json/types";
-import type { Reference } from "../../core/reference";
+import type { CslItem } from "../../core/csl-json/types.js";
 
 /**
  * Map CSL-JSON type to BibTeX entry type
@@ -140,8 +139,7 @@ function addIdentifierFields(lines: string[], item: CslItem): void {
 /**
  * Format a single reference as BibTeX entry
  */
-function formatSingleBibtexEntry(ref: Reference): string {
-  const item: CslItem = ref.getItem();
+function formatSingleBibtexEntry(item: CslItem): string {
   const entryType = mapEntryType(item.type);
   const lines: string[] = [];
 
@@ -162,10 +160,10 @@ function formatSingleBibtexEntry(ref: Reference): string {
 /**
  * Format references as BibTeX
  */
-export function formatBibtex(references: Reference[]): string {
-  if (references.length === 0) {
+export function formatBibtex(items: CslItem[]): string {
+  if (items.length === 0) {
     return "";
   }
 
-  return references.map(formatSingleBibtexEntry).join("\n\n");
+  return items.map(formatSingleBibtexEntry).join("\n\n");
 }

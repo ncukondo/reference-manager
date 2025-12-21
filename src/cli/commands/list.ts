@@ -1,8 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import { Reference } from "../../core/reference.js";
-import { formatBibtex } from "../output/bibtex.js";
-import { formatJson } from "../output/json.js";
-import { formatPretty } from "../output/pretty.js";
+import { formatBibtex, formatJson, formatPretty } from "../../features/format/index.js";
 
 export interface ListOptions {
   json?: boolean;
@@ -29,12 +26,9 @@ export async function list(items: CslItem[], options: ListOptions): Promise<void
     );
   }
 
-  // Convert CslItems to References for output formatters
-  const references = items.map((item) => new Reference(item));
-
   // Output based on selected format
   if (options.json) {
-    process.stdout.write(formatJson(references));
+    process.stdout.write(formatJson(items));
   } else if (options.idsOnly) {
     for (const item of items) {
       process.stdout.write(`${item.id}\n`);
@@ -46,9 +40,9 @@ export async function list(items: CslItem[], options: ListOptions): Promise<void
       }
     }
   } else if (options.bibtex) {
-    process.stdout.write(formatBibtex(references));
+    process.stdout.write(formatBibtex(items));
   } else {
     // Default: pretty format
-    process.stdout.write(formatPretty(references));
+    process.stdout.write(formatPretty(items));
   }
 }

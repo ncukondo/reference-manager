@@ -1,7 +1,7 @@
 import { Cite } from "@citation-js/core";
 import "@citation-js/plugin-csl";
-import type { CslItem } from "../../core/csl-json/types";
-import { formatBibliography, formatInText } from "./citation-fallback";
+import type { CslItem } from "../../core/csl-json/types.js";
+import { formatBibliography, formatInText } from "./citation-fallback.js";
 
 /**
  * Options for CSL citation formatting

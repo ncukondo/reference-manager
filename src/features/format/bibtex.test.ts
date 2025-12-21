@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CslItem } from "../../core/csl-json/types";
-import { Reference } from "../../core/reference";
-import { formatBibtex } from "./bibtex";
+import type { CslItem } from "../../core/csl-json/types.js";
+import { formatBibtex } from "./bibtex.js";
 
 describe("BibTeX Output Formatter", () => {
   const articleJournal: CslItem = {
@@ -77,134 +76,115 @@ describe("BibTeX Output Formatter", () => {
     });
 
     it("should format article-journal as @article", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("@article{smith-2023,");
     });
 
     it("should format book as @book", () => {
-      const ref = new Reference(book);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([book]);
 
       expect(result).toContain("@book{jones-2022,");
     });
 
     it("should format chapter as @inbook", () => {
-      const ref = new Reference(inbook);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([inbook]);
 
       expect(result).toContain("@inbook{tanaka-2021,");
     });
 
     it("should use CSL-JSON id as citation key", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("@article{smith-2023,");
     });
 
     it("should format title field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("title = {Machine Learning in Medical Diagnosis}");
     });
 
     it("should format authors as Family, Given", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("author = {Smith, John and Doe, Alice}");
     });
 
     it("should format single author", () => {
-      const ref = new Reference(book);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([book]);
 
       expect(result).toContain("author = {Jones, Bob}");
     });
 
     it("should format year field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("year = {2023}");
     });
 
     it("should format journal field for article", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("journal = {Journal of AI}");
     });
 
     it("should format booktitle field for chapter", () => {
-      const ref = new Reference(inbook);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([inbook]);
 
       expect(result).toContain("booktitle = {Handbook of AI}");
     });
 
     it("should format volume field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("volume = {10}");
     });
 
     it("should format number field from issue", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("number = {3}");
     });
 
     it("should format pages field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("pages = {123-145}");
     });
 
     it("should format doi field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("doi = {10.1234/example}");
     });
 
     it("should format url field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("url = {https://example.com/article}");
     });
 
     it("should format PMID in note field", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result).toContain("note = {PMID: 12345678}");
     });
 
     it("should format PMCID in note field", () => {
-      const ref = new Reference(withPMCID);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([withPMCID]);
 
       expect(result).toContain("note = {PMCID: PMC1234567}");
     });
 
     it("should format publisher field", () => {
-      const ref = new Reference(book);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([book]);
 
       expect(result).toContain("publisher = {Tech Press}");
     });
 
     it("should indent fields with 2 spaces", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       const lines = result.split("\n");
       const fieldLines = lines.filter((line) => line.includes("=") && !line.startsWith("@"));
@@ -214,8 +194,7 @@ describe("BibTeX Output Formatter", () => {
     });
 
     it("should end each field with comma", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       const lines = result.split("\n");
       const fieldLines = lines.filter((line) => line.includes("=") && !line.startsWith("@"));
@@ -225,23 +204,19 @@ describe("BibTeX Output Formatter", () => {
     });
 
     it("should close entry with closing brace", () => {
-      const ref = new Reference(articleJournal);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([articleJournal]);
 
       expect(result.trim().endsWith("}")).toBe(true);
     });
 
     it("should separate multiple entries with empty line", () => {
-      const ref1 = new Reference(articleJournal);
-      const ref2 = new Reference(book);
-      const result = formatBibtex([ref1, ref2]);
+      const result = formatBibtex([articleJournal, book]);
 
       expect(result).toContain("}\n\n@book");
     });
 
     it("should not include fields that are not present", () => {
-      const ref = new Reference(book);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([book]);
 
       expect(result).not.toContain("doi =");
       expect(result).not.toContain("volume =");
@@ -259,8 +234,7 @@ describe("BibTeX Output Formatter", () => {
           timestamp: "2024-01-01T00:00:00.000Z",
         },
       };
-      const ref = new Reference(misc);
-      const result = formatBibtex([ref]);
+      const result = formatBibtex([misc]);
 
       expect(result).toContain("@misc{unknown-2024,");
     });

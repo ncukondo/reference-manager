@@ -1,11 +1,8 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import { Reference } from "../../core/reference.js";
+import { formatBibtex, formatJson, formatPretty } from "../../features/format/index.js";
 import { search as searchReferences } from "../../features/search/matcher.js";
 import { sortResults } from "../../features/search/sorter.js";
 import { tokenize } from "../../features/search/tokenizer.js";
-import { formatBibtex } from "../output/bibtex.js";
-import { formatJson } from "../output/json.js";
-import { formatPretty } from "../output/pretty.js";
 
 export interface SearchOptions {
   json?: boolean;
@@ -49,12 +46,9 @@ export async function search(
   // Extract items from results
   const matchedItems = sorted.map((result) => result.reference);
 
-  // Convert to References for output formatters
-  const references = matchedItems.map((item) => new Reference(item));
-
   // Output based on selected format
   if (options.json) {
-    process.stdout.write(formatJson(references));
+    process.stdout.write(formatJson(matchedItems));
   } else if (options.idsOnly) {
     for (const item of matchedItems) {
       process.stdout.write(`${item.id}\n`);
@@ -66,9 +60,9 @@ export async function search(
       }
     }
   } else if (options.bibtex) {
-    process.stdout.write(formatBibtex(references));
+    process.stdout.write(formatBibtex(matchedItems));
   } else {
     // Default: pretty format
-    process.stdout.write(formatPretty(references));
+    process.stdout.write(formatPretty(matchedItems));
   }
 }

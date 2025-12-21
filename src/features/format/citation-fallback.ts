@@ -1,4 +1,4 @@
-import type { CslItem } from "../../core/csl-json/types";
+import type { CslItem } from "../../core/csl-json/types.js";
 
 /**
  * Extract first author name with initial
