@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import type { Library } from "../../core/library.js";
+import { removeReference } from "../../features/operations/remove.js";
+import { updateReference } from "../../features/operations/update.js";
 
 /**
  * Create references CRUD route with the given library.
@@ -60,57 +62,50 @@ export function createReferencesRoute(library: Library) {
   route.put("/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
 
-    // Check if reference exists
-    const existing = library.findByUuid(uuid);
-    if (!existing) {
-      return c.json({ error: "Reference not found" }, 404);
-    }
-
+    let body: unknown;
     try {
-      const body = await c.req.json();
-
-      // Ensure UUID is preserved in the body
-      if (!body.custom) {
-        body.custom = {};
-      }
-      body.custom.uuid = uuid;
-
-      // Remove old reference and add updated one
-      library.removeByUuid(uuid);
-      library.add(body);
-
-      // Find the updated reference
-      const updatedRef = library.findByUuid(uuid);
-      if (!updatedRef) {
-        return c.json({ error: "Failed to update reference" }, 500);
-      }
-
-      return c.json(updatedRef.getItem());
-    } catch (error) {
-      return c.json(
-        {
-          error: "Invalid request body",
-          details: error instanceof Error ? error.message : String(error),
-        },
-        400
-      );
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON" }, 400);
     }
+
+    if (!body || typeof body !== "object") {
+      return c.json({ error: "Request body must be an object" }, 400);
+    }
+
+    // Use updateReference operation
+    const result = await updateReference(library, {
+      identifier: uuid,
+      byUuid: true,
+      updates: body as Partial<import("../../core/csl-json/types.js").CslItem>,
+      onIdCollision: "suffix",
+    });
+
+    // Return operation result with appropriate status code
+    if (!result.updated) {
+      const status = result.idCollision ? 409 : 404;
+      return c.json(result, status);
+    }
+
+    return c.json(result);
   });
 
   // DELETE /:uuid - Delete reference
-  route.delete("/:uuid", (c) => {
+  route.delete("/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
 
-    // Check if reference exists
-    const existing = library.findByUuid(uuid);
-    if (!existing) {
-      return c.json({ error: "Reference not found" }, 404);
+    // Use removeReference operation
+    const result = await removeReference(library, {
+      identifier: uuid,
+      byUuid: true,
+    });
+
+    // Return operation result with appropriate status code
+    if (!result.removed) {
+      return c.json(result, 404);
     }
 
-    // Remove reference
-    library.removeByUuid(uuid);
-
-    return c.body(null, 204);
+    return c.json(result);
   });
 
   return route;

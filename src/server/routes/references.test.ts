@@ -172,8 +172,9 @@ describe("References Route", () => {
       const res = await route.fetch(req);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as CslItem;
-      expect(data.title).toBe("Updated Title");
+      const data = (await res.json()) as { updated: boolean; item?: CslItem };
+      expect(data.updated).toBe(true);
+      expect(data.item?.title).toBe("Updated Title");
 
       // Verify it was updated in library
       const found = library.findByUuid(uuid);
@@ -216,7 +217,10 @@ describe("References Route", () => {
       });
       const res = await route.fetch(req);
 
-      expect(res.status).toBe(204);
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { removed: boolean; item?: CslItem };
+      expect(data.removed).toBe(true);
+      expect(data.item).toBeDefined();
 
       // Verify it was removed from library
       const found = library.findByUuid(uuid);

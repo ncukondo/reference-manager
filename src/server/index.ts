@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Config } from "../config/schema.js";
 import type { Library } from "../core/library.js";
 import { createAddRoute } from "./routes/add.js";
+import { createCiteRoute } from "./routes/cite.js";
 import { healthRoute } from "./routes/health.js";
 import { createReferencesRoute } from "./routes/references.js";
 
@@ -24,6 +25,10 @@ export function createServer(library: Library, config: Config) {
   // Add references route
   const addRoute = createAddRoute(library, config);
   app.route("/api/add", addRoute);
+
+  // Cite route
+  const citeRoute = createCiteRoute(library);
+  app.route("/api/cite", citeRoute);
 
   return app;
 }

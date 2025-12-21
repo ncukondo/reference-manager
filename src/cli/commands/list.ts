@@ -1,7 +1,17 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import type { Library } from "../../core/library.js";
 import { formatBibtex, formatJson, formatPretty } from "../../features/format/index.js";
+import {
+  type ListFormat,
+  type ListResult,
+  listReferences,
+} from "../../features/operations/list.js";
+import type { ServerClient } from "../server-client.js";
 
-export interface ListOptions {
+/**
+ * Options for the list command.
+ */
+export interface ListCommandOptions {
   json?: boolean;
   idsOnly?: boolean;
   uuid?: boolean;
@@ -9,13 +19,25 @@ export interface ListOptions {
 }
 
 /**
- * List all references in the library.
- *
- * @param items - Array of CSL items
- * @param options - Output format options
+ * Result from list command execution.
  */
-export async function list(items: CslItem[], options: ListOptions): Promise<void> {
-  // Check for conflicting output options
+export type ListCommandResult = ListResult;
+
+/**
+ * Convert CLI options to ListFormat.
+ */
+function getListFormat(options: ListCommandOptions): ListFormat {
+  if (options.json) return "json";
+  if (options.idsOnly) return "ids-only";
+  if (options.uuid) return "uuid";
+  if (options.bibtex) return "bibtex";
+  return "pretty";
+}
+
+/**
+ * Validate that only one output format is specified.
+ */
+function validateOptions(options: ListCommandOptions): void {
   const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
     Boolean
   );
@@ -25,8 +47,77 @@ export async function list(items: CslItem[], options: ListOptions): Promise<void
       "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
     );
   }
+}
 
-  // Output based on selected format
+/**
+ * Format items for a specific format (used for server mode).
+ */
+function formatItems(items: CslItem[], options: ListCommandOptions): string[] {
+  if (options.json) {
+    return items.map((item) => JSON.stringify(item));
+  }
+  if (options.idsOnly) {
+    return items.map((item) => item.id);
+  }
+  if (options.uuid) {
+    return items
+      .filter((item): item is CslItem & { custom: { uuid: string } } => Boolean(item.custom?.uuid))
+      .map((item) => item.custom.uuid);
+  }
+  if (options.bibtex) {
+    return items.map((item) => formatBibtex([item]));
+  }
+  // pretty
+  return items.map((item) => formatPretty([item]));
+}
+
+/**
+ * Execute list command.
+ * Routes to server API or direct library operation based on server availability.
+ *
+ * @param options - List command options
+ * @param library - Library instance (used when server is not available)
+ * @param serverClient - Server client (undefined if server is not running)
+ * @returns List result containing formatted items
+ */
+export async function executeList(
+  options: ListCommandOptions,
+  library: Library,
+  serverClient: ServerClient | undefined
+): Promise<ListCommandResult> {
+  validateOptions(options);
+  const format = getListFormat(options);
+
+  if (serverClient) {
+    // Get items from server, format locally
+    const items = await serverClient.getAll();
+    return { items: formatItems(items, options) };
+  }
+
+  // Direct library operation
+  return listReferences(library, { format });
+}
+
+/**
+ * Format list result for CLI output.
+ *
+ * @param result - List result
+ * @returns Formatted output string
+ */
+export function formatListOutput(result: ListCommandResult): string {
+  if (result.items.length === 0) {
+    return "";
+  }
+  return result.items.join("\n");
+}
+
+// Keep the old function for backwards compatibility during transition
+/**
+ * @deprecated Use executeList and formatListOutput instead
+ */
+export async function list(items: CslItem[], options: ListCommandOptions): Promise<void> {
+  validateOptions(options);
+
   if (options.json) {
     process.stdout.write(formatJson(items));
   } else if (options.idsOnly) {
@@ -42,7 +133,6 @@ export async function list(items: CslItem[], options: ListOptions): Promise<void
   } else if (options.bibtex) {
     process.stdout.write(formatBibtex(items));
   } else {
-    // Default: pretty format
     process.stdout.write(formatPretty(items));
   }
 }

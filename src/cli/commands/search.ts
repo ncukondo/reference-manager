@@ -1,10 +1,21 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import type { Library } from "../../core/library.js";
 import { formatBibtex, formatJson, formatPretty } from "../../features/format/index.js";
-import { search as searchReferences } from "../../features/search/matcher.js";
+import {
+  type SearchFormat,
+  type SearchResult,
+  searchReferences,
+} from "../../features/operations/search.js";
+import { search as searchMatcher } from "../../features/search/matcher.js";
 import { sortResults } from "../../features/search/sorter.js";
 import { tokenize } from "../../features/search/tokenizer.js";
+import type { ServerClient } from "../server-client.js";
 
-export interface SearchOptions {
+/**
+ * Options for the search command.
+ */
+export interface SearchCommandOptions {
+  query: string;
   json?: boolean;
   idsOnly?: boolean;
   uuid?: boolean;
@@ -12,18 +23,25 @@ export interface SearchOptions {
 }
 
 /**
- * Search references in the library.
- *
- * @param items - Array of CSL items
- * @param query - Search query string
- * @param options - Output format options
+ * Result from search command execution.
  */
-export async function search(
-  items: CslItem[],
-  query: string,
-  options: SearchOptions
-): Promise<void> {
-  // Check for conflicting output options
+export type SearchCommandResult = SearchResult;
+
+/**
+ * Convert CLI options to SearchFormat.
+ */
+function getSearchFormat(options: SearchCommandOptions): SearchFormat {
+  if (options.json) return "json";
+  if (options.idsOnly) return "ids-only";
+  if (options.uuid) return "uuid";
+  if (options.bibtex) return "bibtex";
+  return "pretty";
+}
+
+/**
+ * Validate that only one output format is specified.
+ */
+function validateOptions(options: SearchCommandOptions): void {
   const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
     Boolean
   );
@@ -33,20 +51,98 @@ export async function search(
       "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
     );
   }
+}
 
-  // Tokenize query
+/**
+ * Search and format items locally (used for server mode).
+ */
+function searchAndFormatItems(
+  items: CslItem[],
+  query: string,
+  options: SearchCommandOptions
+): string[] {
+  // Tokenize and search
   const searchQuery = tokenize(query);
-
-  // Search
-  const results = searchReferences(items, searchQuery.tokens);
-
-  // Sort results
+  const results = searchMatcher(items, searchQuery.tokens);
   const sorted = sortResults(results);
-
-  // Extract items from results
   const matchedItems = sorted.map((result) => result.reference);
 
-  // Output based on selected format
+  // Format
+  if (options.json) {
+    return matchedItems.map((item) => JSON.stringify(item));
+  }
+  if (options.idsOnly) {
+    return matchedItems.map((item) => item.id);
+  }
+  if (options.uuid) {
+    return matchedItems
+      .filter((item): item is CslItem & { custom: { uuid: string } } => Boolean(item.custom?.uuid))
+      .map((item) => item.custom.uuid);
+  }
+  if (options.bibtex) {
+    return matchedItems.map((item) => formatBibtex([item]));
+  }
+  // pretty
+  return matchedItems.map((item) => formatPretty([item]));
+}
+
+/**
+ * Execute search command.
+ * Routes to server API or direct library operation based on server availability.
+ *
+ * @param options - Search command options
+ * @param library - Library instance (used when server is not available)
+ * @param serverClient - Server client (undefined if server is not running)
+ * @returns Search result containing formatted items
+ */
+export async function executeSearch(
+  options: SearchCommandOptions,
+  library: Library,
+  serverClient: ServerClient | undefined
+): Promise<SearchCommandResult> {
+  validateOptions(options);
+  const format = getSearchFormat(options);
+
+  if (serverClient) {
+    // Get all items from server, search locally
+    const items = await serverClient.getAll();
+    return { items: searchAndFormatItems(items, options.query, options) };
+  }
+
+  // Direct library operation
+  return searchReferences(library, { query: options.query, format });
+}
+
+/**
+ * Format search result for CLI output.
+ *
+ * @param result - Search result
+ * @returns Formatted output string
+ */
+export function formatSearchOutput(result: SearchCommandResult): string {
+  if (result.items.length === 0) {
+    return "";
+  }
+  return result.items.join("\n");
+}
+
+// Keep the old function for backwards compatibility during transition
+/**
+ * @deprecated Use executeSearch and formatSearchOutput instead
+ */
+export async function search(
+  items: CslItem[],
+  query: string,
+  options: Omit<SearchCommandOptions, "query">
+): Promise<void> {
+  const fullOptions: SearchCommandOptions = { ...options, query };
+  validateOptions(fullOptions);
+
+  const searchQuery = tokenize(query);
+  const results = searchMatcher(items, searchQuery.tokens);
+  const sorted = sortResults(results);
+  const matchedItems = sorted.map((result) => result.reference);
+
   if (options.json) {
     process.stdout.write(formatJson(matchedItems));
   } else if (options.idsOnly) {
@@ -62,7 +158,6 @@ export async function search(
   } else if (options.bibtex) {
     process.stdout.write(formatBibtex(matchedItems));
   } else {
-    // Default: pretty format
     process.stdout.write(formatPretty(matchedItems));
   }
 }

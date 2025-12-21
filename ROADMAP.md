@@ -20,44 +20,94 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ### Phase 8: Operation Integration
 
-Refactor other commands to use `features/operations/` pattern.
+Refactor all commands to use unified `features/operations/` pattern.
 
-**Reference Implementation**: `features/operations/add.ts` (implemented in Phase 7)
+**Reference Implementation**: `cli/commands/add.ts` + `features/operations/add.ts` + `server/routes/add.ts`
 
-See: [spec/architecture/module-dependencies.md](./spec/architecture/module-dependencies.md) (Integration Functions Pattern)
+See: [spec/architecture/module-dependencies.md](./spec/architecture/module-dependencies.md)
 
-- [x] Create `features/operations/` for each command
-  - [x] `list.ts`: listReferences(library, options)
-  - [x] `search.ts`: searchReferences(library, query, options)
-  - [x] `remove.ts`: removeReference(library, id, options)
-  - [x] `update.ts`: updateReference(library, id, updates, options)
-  - [x] `cite.ts`: citeReferences(library, ids, options)
-- [ ] Add/update server routes to use operations
-- [ ] Simplify CLI commands
-  - [ ] Server running → call server API
-  - [ ] Server stopped → call operations directly
-  - [ ] Output formatting only
-- [ ] Simplify `cli/index.ts` to routing only
+#### Step 8.1: Operations Layer (DONE)
 
-#### Handoff Notes (Phase 8 operations completed)
+- [x] `features/operations/list.ts`
+- [x] `features/operations/search.ts`
+- [x] `features/operations/remove.ts`
+- [x] `features/operations/update.ts`
+- [x] `features/operations/cite.ts`
 
-**Completed work:**
-- All operation modules created in `src/features/operations/`
-- Each returns structured result objects (not raw output)
-- Output formatting is the operation layer's responsibility
-- CLI layer should only handle joining/display
+#### Step 8.2: Server Routes
 
-**Key implementation details:**
-- `Library.updateById/updateByUuid` added with ID collision handling
-  - Options: `{ onIdCollision: "fail" | "suffix" }`
-  - Returns: `UpdateResult { updated, idCollision?, idChanged?, newId? }`
-- `cite.ts` returns per-identifier results array for partial success handling
-- Formatters moved from `cli/output/` to `features/format/`
+Create dedicated routes using operations (pattern: `/api/{command}`):
 
-**Next steps:**
-1. Update server routes to call operations instead of CLI logic
-2. Simplify CLI commands to use operations directly
-3. CLI should only handle output joining (e.g., newline-separated)
+| Route | File | Status |
+|-------|------|--------|
+| POST /api/list | `server/routes/list.ts` | [ ] TODO |
+| POST /api/search | `server/routes/search.ts` | [ ] TODO |
+| POST /api/cite | `server/routes/cite.ts` | [x] Done |
+| PUT/DELETE /api/references/:uuid | `server/routes/references.ts` | [x] Done |
+
+Tasks:
+- [ ] Create `server/routes/list.ts` using listReferences operation
+- [ ] Create `server/routes/search.ts` using searchReferences operation
+- [ ] Mount routes in `server/index.ts`
+
+#### Step 8.3: ServerClient Methods
+
+Add methods to `cli/server-client.ts`:
+
+| Method | Status |
+|--------|--------|
+| `list(options)` | [ ] TODO |
+| `search(options)` | [ ] TODO |
+| `cite(options)` | [x] Done |
+
+#### Step 8.4: CLI Commands Pattern Update
+
+Update each command to follow unified pattern:
+- `executeXxx(options, library, serverClient)` - routes to server or direct
+- `formatXxxOutput(result)` - formats for CLI output
+- Remove deprecated functions
+
+| Command | executeXxx | formatOutput | deprecated removed |
+|---------|------------|--------------|-------------------|
+| list | [x] | [x] | [ ] |
+| search | [x] | [x] | [ ] |
+| cite | [x] | [x] | [ ] |
+| remove | [ ] | [ ] | [ ] |
+| update | [ ] | [ ] | [ ] |
+
+#### Step 8.5: cli/index.ts Simplification
+
+Extract action handlers for each command:
+
+- [ ] handleListAction → executeList + formatListOutput
+- [ ] handleSearchAction → executeSearch + formatSearchOutput
+- [ ] handleCiteAction → executeCite + formatCiteOutput
+- [ ] handleRemoveAction → executeRemove + formatRemoveOutput
+- [ ] handleUpdateAction → executeUpdate + formatUpdateOutput
+
+#### Step 8.6: Cleanup and Commit
+
+- [ ] Remove deprecated functions from cli/commands/*.ts
+- [ ] Update cli/commands/index.ts exports
+- [ ] Run tests and verify all pass
+- [ ] Commit Phase 8 changes
+
+#### Architecture Pattern
+
+```
+cli/index.ts           → registerXxxCommand() → routing only
+                         handleXxxAction()    → load config, get connection
+cli/commands/xxx.ts    → executeXxx()         → server API or operations
+cli/server-client.ts   → serverClient.xxx()   → HTTP call to server
+server/routes/xxx.ts   → POST /api/xxx        → call operation, return JSON
+features/operations/   → xxxOperation()       → library + save + format
+```
+
+#### Handoff Notes
+
+- `Library.updateById/updateByUuid` with ID collision handling
+- `cite.ts` returns per-identifier results for partial success
+- Formatters in `features/format/`
 
 ---
 

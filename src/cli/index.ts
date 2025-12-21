@@ -6,13 +6,17 @@ import { Command } from "commander";
 import { z } from "zod";
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
+import { citeReferences } from "../features/operations/cite.js";
+import { type ListFormat, listReferences } from "../features/operations/list.js";
+import { removeReference as removeReferenceOp } from "../features/operations/remove.js";
+import { type SearchFormat, searchReferences } from "../features/operations/search.js";
+import { updateReference as updateReferenceOp } from "../features/operations/update.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
 import { cite as citeCommand } from "./commands/cite.js";
 import { list } from "./commands/list.js";
 import { search as searchCommand } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
-import { update as updateCommand } from "./commands/update.js";
 import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
@@ -62,6 +66,22 @@ export function createProgram(): Command {
 }
 
 /**
+ * Convert CLI options to ListFormat
+ */
+function getListFormat(options: {
+  json?: boolean;
+  idsOnly?: boolean;
+  uuid?: boolean;
+  bibtex?: boolean;
+}): ListFormat {
+  if (options.json) return "json";
+  if (options.idsOnly) return "ids-only";
+  if (options.uuid) return "uuid";
+  if (options.bibtex) return "bibtex";
+  return "pretty";
+}
+
+/**
  * Register 'list' command
  */
 function registerListCommand(program: Command): void {
@@ -76,28 +96,30 @@ function registerListCommand(program: Command): void {
       try {
         const globalOpts = program.opts();
         const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+        const format = getListFormat(options);
 
         // Get items (server or direct)
         const server = await getServerConnection(config.library, config);
-        let items: CslItem[];
 
         if (server) {
-          // Use server API
+          // Use server API, then format locally
           const client = new ServerClient(server.baseUrl);
-          items = await client.getAll();
+          const items = await client.getAll();
+          await list(items, {
+            json: options.json,
+            idsOnly: options.idsOnly,
+            uuid: options.uuid,
+            bibtex: options.bibtex,
+          });
         } else {
-          // Direct file access
+          // Direct: use listReferences operation
           const library = await Library.load(config.library);
-          items = library.getAll().map((ref) => ref.getItem());
+          const result = listReferences(library, { format });
+          process.stdout.write(result.items.join("\n"));
+          if (result.items.length > 0) {
+            process.stdout.write("\n");
+          }
         }
-
-        // Execute list command
-        await list(items, {
-          json: options.json,
-          idsOnly: options.idsOnly,
-          uuid: options.uuid,
-          bibtex: options.bibtex,
-        });
 
         process.exit(0);
       } catch (error) {
@@ -123,28 +145,30 @@ function registerSearchCommand(program: Command): void {
       try {
         const globalOpts = program.opts();
         const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+        const format = getListFormat(options) as SearchFormat;
 
         // Get items (server or direct)
         const server = await getServerConnection(config.library, config);
-        let items: CslItem[];
 
         if (server) {
-          // Use server API
+          // Use server API, then search and format locally
           const client = new ServerClient(server.baseUrl);
-          items = await client.getAll();
+          const items = await client.getAll();
+          await searchCommand(items, query, {
+            json: options.json,
+            idsOnly: options.idsOnly,
+            uuid: options.uuid,
+            bibtex: options.bibtex,
+          });
         } else {
-          // Direct file access
+          // Direct: use searchReferences operation
           const library = await Library.load(config.library);
-          items = library.getAll().map((ref) => ref.getItem());
+          const result = searchReferences(library, { query, format });
+          process.stdout.write(result.items.join("\n"));
+          if (result.items.length > 0) {
+            process.stdout.write("\n");
+          }
         }
-
-        // Execute search command (handles search and output)
-        await searchCommand(items, query, {
-          json: options.json,
-          idsOnly: options.idsOnly,
-          uuid: options.uuid,
-          bibtex: options.bibtex,
-        });
 
         process.exit(0);
       } catch (error) {
@@ -291,14 +315,13 @@ async function removeReference(
     return;
   }
 
+  // Direct: use removeReference operation
   const library = await Library.load(libraryPath);
-  const removed = byUuid ? library.removeByUuid(identifier) : library.removeById(identifier);
+  const result = await removeReferenceOp(library, { identifier, byUuid });
 
-  if (!removed) {
+  if (!result.removed) {
     throw new Error("Reference not found");
   }
-
-  await library.save();
 }
 
 function handleRemoveError(error: unknown): never {
@@ -390,21 +413,25 @@ async function updateViaLibrary(
   byUuid: boolean,
   libraryPath: string
 ): Promise<void> {
+  // Direct: use updateReference operation
   const library = await Library.load(libraryPath);
-  const items = library.getAll().map((ref) => ref.getItem());
+  const result = await updateReferenceOp(library, {
+    identifier,
+    byUuid,
+    updates,
+    onIdCollision: "suffix",
+  });
 
-  const result = await updateCommand(items, identifier, updates, { byUuid });
-
-  if (!result.updated || !result.item) {
-    throw new Error("Reference not found");
+  if (!result.updated) {
+    if (result.idCollision) {
+      throw new Error(
+        `ID collision: The new ID '${updates.id}' already exists in the library. ` +
+          `Use a different ID or remove the existing reference first.`
+      );
+    }
+    const idType = byUuid ? "UUID" : "ID";
+    throw new Error(`Reference not found: No reference with ${idType} '${identifier}' exists.`);
   }
-
-  if (result.item.custom?.uuid) {
-    library.removeByUuid(result.item.custom.uuid);
-    library.add(result.item);
-  }
-
-  await library.save();
 }
 
 function handleUpdateError(error: unknown): never {
@@ -491,27 +518,47 @@ function registerCiteCommand(program: Command): void {
 
         // Get items (server or direct)
         const server = await getServerConnection(config.library, config);
-        let items: CslItem[];
 
         if (server) {
-          // Use server API
+          // Use server API, then cite locally
           const client = new ServerClient(server.baseUrl);
-          items = await client.getAll();
+          const items = await client.getAll();
+          await citeCommand(items, idsOrUuids, {
+            uuid: options.uuid,
+            style: options.style,
+            cslFile: options.cslFile,
+            locale: options.locale,
+            format: options.format,
+            inText: options.inText,
+          });
         } else {
-          // Direct file access
+          // Direct: use citeReferences operation
           const library = await Library.load(config.library);
-          items = library.getAll().map((ref) => ref.getItem());
-        }
+          const result = await citeReferences(library, {
+            identifiers: idsOrUuids,
+            byUuid: options.uuid,
+            style: options.style,
+            cslFile: options.cslFile,
+            locale: options.locale,
+            format: options.format,
+            inText: options.inText,
+          });
 
-        // Execute cite command
-        await citeCommand(items, idsOrUuids, {
-          uuid: options.uuid,
-          style: options.style,
-          cslFile: options.cslFile,
-          locale: options.locale,
-          format: options.format,
-          inText: options.inText,
-        });
+          // Output results
+          let hasError = false;
+          for (const r of result.results) {
+            if (r.success) {
+              process.stdout.write(r.citation + "\n");
+            } else {
+              process.stderr.write(`Error for '${r.identifier}': ${r.error}\n`);
+              hasError = true;
+            }
+          }
+
+          if (hasError && result.results.every((r) => !r.success)) {
+            process.exit(1);
+          }
+        }
 
         process.exit(0);
       } catch (error) {

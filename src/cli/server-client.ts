@@ -1,5 +1,6 @@
 import type { CslItem } from "../core/csl-json/types.js";
 import type { AddReferencesResult } from "../features/operations/add.js";
+import type { CiteResult } from "../features/operations/cite.js";
 
 /**
  * Options for addFromInputs method.
@@ -7,6 +8,19 @@ import type { AddReferencesResult } from "../features/operations/add.js";
 export interface AddFromInputsOptions {
   force?: boolean;
   format?: string;
+}
+
+/**
+ * Options for cite method.
+ */
+export interface CiteOptions {
+  identifiers: string[];
+  byUuid?: boolean;
+  inText?: boolean;
+  style?: string;
+  cslFile?: string;
+  locale?: string;
+  format?: "text" | "html";
 }
 
 /**
@@ -128,5 +142,25 @@ export class ServerClient {
     }
 
     return (await response.json()) as AddReferencesResult;
+  }
+
+  /**
+   * Generate citations for references.
+   * @param options - Cite options including identifiers and formatting
+   * @returns Cite result with per-identifier results
+   */
+  async cite(options: CiteOptions): Promise<CiteResult> {
+    const url = `${this.baseUrl}/api/cite`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as CiteResult;
   }
 }
