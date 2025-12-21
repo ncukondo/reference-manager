@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Multi-Format Import**: Extended `add` command to support multiple input formats
+  - BibTeX (`.bib`) and RIS (`.ris`) file parsing via citation-js plugins
+  - DOI lookup via Crossref API (supports `10.xxx` and URL formats)
+  - PMID lookup via PMC Citation Exporter API
+  - Automatic format detection by file extension and content
+  - DOI URL normalization (doi.org, dx.doi.org variants)
+  - Multiple identifiers support (whitespace-separated PMID/DOI mix)
+  - stdin content handling for piped input
+  - Variadic input: `add [input...]` accepts multiple files/identifiers
+  - `--format` option to explicitly specify input format
+  - `--verbose` option for detailed error information
+  - Response caching to avoid redundant API calls
+  - Rate limiting for PMID (3-10 req/sec) and DOI (50 req/sec) APIs
+  - PubMed configuration in `config.toml`:
+    - `pubmed.email`: Contact email (recommended by NCBI)
+    - `pubmed.api_key`: NCBI API key (increases rate limit to 10 req/sec)
+  - Environment variable support: `PUBMED_EMAIL`, `PUBMED_API_KEY`
+  - Server mode support: Uses server API when server is running
+
 - **Citation Generation**: New `cite` command for generating formatted citations
   - Generate bibliography entries using CSL (Citation Style Language) styles
   - Generate in-text citations with `--in-text` option
