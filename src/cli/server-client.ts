@@ -1,4 +1,13 @@
 import type { CslItem } from "../core/csl-json/types.js";
+import type { AddReferencesResult } from "../features/operations/add.js";
+
+/**
+ * Options for addFromInputs method.
+ */
+export interface AddFromInputsOptions {
+  force?: boolean;
+  format?: string;
+}
 
 /**
  * Client for communicating with the reference-manager HTTP server.
@@ -95,5 +104,29 @@ export class ServerClient {
     if (!response.ok) {
       throw new Error(await response.text());
     }
+  }
+
+  /**
+   * Add references from various input formats.
+   * @param inputs - Array of inputs (file paths, PMIDs, DOIs)
+   * @param options - Options for add operation
+   * @returns Result containing added, failed, and skipped items
+   */
+  async addFromInputs(
+    inputs: string[],
+    options?: AddFromInputsOptions
+  ): Promise<AddReferencesResult> {
+    const url = `${this.baseUrl}/api/add`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inputs, options }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as AddReferencesResult;
   }
 }

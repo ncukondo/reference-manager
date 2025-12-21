@@ -171,3 +171,32 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
   const input = Buffer.concat(chunks).toString("utf-8").trim().toLowerCase();
   return input === "y" || input === "yes";
 }
+
+/**
+ * Read stdin content and split into inputs.
+ * Used for reading identifiers from stdin.
+ * @returns Array of input strings (split by whitespace)
+ */
+export async function readStdinInputs(): Promise<string[]> {
+  const content = await readStdinContent();
+
+  if (!content) {
+    return [];
+  }
+
+  // Split by whitespace (space, tab, newline)
+  return content.split(/\s+/).filter((s) => s.length > 0);
+}
+
+/**
+ * Read raw stdin content without splitting.
+ * Used for reading file content (JSON, BibTeX, RIS) from stdin.
+ * @returns Raw stdin content as string
+ */
+export async function readStdinContent(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stdin) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString("utf-8").trim();
+}

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import packageJson from "../../package.json" with { type: "json" };
 import { createProgram } from "./index.js";
 
 describe("CLI Entry", () => {
@@ -10,15 +11,13 @@ describe("CLI Entry", () => {
 
     it("should have correct version", () => {
       const program = createProgram();
-      // Version is read from package.json (0.1.0)
-      expect(program.version()).toBe("0.1.0");
+      // Version is read from package.json
+      expect(program.version()).toBe(packageJson.version);
     });
 
     it("should have correct description", () => {
       const program = createProgram();
-      expect(program.description()).toBe(
-        "A local reference management tool using CSL-JSON as the single source of truth"
-      );
+      expect(program.description()).toBe(packageJson.description);
     });
 
     it("should register 'list' command", () => {

@@ -43,7 +43,14 @@
       "Bash(npx biome format:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
-      "Bash(gh pr checks:*)"
+      "Bash(gh pr checks:*)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "Bash(npx biome check:*)",
+      "Bash(npm ls:*)",
+      "mcp__serena__think_about_task_adherence",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test:e2e:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

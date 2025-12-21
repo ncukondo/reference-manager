@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Config } from "../config/schema.js";
 import { Library } from "../core/library.js";
 import { createServer } from "./index.js";
 
@@ -9,6 +10,7 @@ describe("Server", () => {
   let testLibraryPath: string;
   let testPortfilePath: string;
   let library: Library;
+  let config: Config;
 
   beforeAll(async () => {
     // Create test library
@@ -19,6 +21,17 @@ describe("Server", () => {
     // Initialize with empty library file
     await fs.writeFile(testLibraryPath, "[]", "utf-8");
     library = await Library.load(testLibraryPath);
+
+    // Create minimal config
+    config = {
+      library: testLibraryPath,
+      logLevel: "info",
+      backup: { enabled: true, maxBackups: 5 },
+      watch: { enabled: false, debounceMs: 1000 },
+      server: { host: "127.0.0.1", port: 0 },
+      citation: { style: "apa", locale: "en-US", format: "text" },
+      pubmed: {},
+    };
   });
 
   afterAll(async () => {
@@ -32,13 +45,13 @@ describe("Server", () => {
   });
 
   it("should create a Hono app", () => {
-    const app = createServer(library);
+    const app = createServer(library, config);
     expect(app).toBeDefined();
     expect(typeof app.fetch).toBe("function");
   });
 
   it("should have health route at /health", async () => {
-    const app = createServer(library);
+    const app = createServer(library, config);
     const req = new Request("http://localhost/health");
     const res = await app.fetch(req);
 
@@ -48,12 +61,25 @@ describe("Server", () => {
   });
 
   it("should have references routes at /api/references", async () => {
-    const app = createServer(library);
+    const app = createServer(library, config);
     const req = new Request("http://localhost/api/references");
     const res = await app.fetch(req);
 
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(Array.isArray(data)).toBe(true);
+  });
+
+  it("should have add route at /api/add", async () => {
+    const app = createServer(library, config);
+    const req = new Request("http://localhost/api/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inputs: [] }),
+    });
+    const res = await app.fetch(req);
+
+    // Empty inputs should return 400
+    expect(res.status).toBe(400);
   });
 });

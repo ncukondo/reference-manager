@@ -44,6 +44,8 @@
 | [search.md](features/search.md) | Search functionality |
 | [file-monitoring.md](features/file-monitoring.md) | File monitoring & reload |
 | [write-safety.md](features/write-safety.md) | Write safety & conflict handling |
+| [citation.md](features/citation.md) | Citation generation (cite command) |
+| [add-import.md](features/add-import.md) | Multi-format import (PMID, DOI, BibTeX, RIS) |
 
 ### guidelines/ - Development Guidelines
 

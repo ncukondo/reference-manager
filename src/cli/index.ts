@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
-import { add as addCommand } from "./commands/add.js";
+import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
 import { cite as citeCommand } from "./commands/cite.js";
 import { list } from "./commands/list.js";
 import { search as searchCommand } from "./commands/search.js";
@@ -20,6 +20,7 @@ import {
   parseJsonInput,
   readConfirmation,
   readJsonInput,
+  readStdinContent,
 } from "./helpers.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
@@ -156,86 +157,73 @@ function registerSearchCommand(program: Command): void {
 /**
  * Register 'add' command
  */
-async function addViaServer(
-  items: CslItem[],
-  server: { baseUrl: string },
-  force: boolean
-): Promise<void> {
-  const client = new ServerClient(server.baseUrl);
-
-  for (const item of items) {
-    try {
-      await client.add(item);
-      process.stderr.write(`Added reference: [${item.id}]\n`);
-    } catch (error) {
-      if (!force && error instanceof Error && error.message.includes("Duplicate")) {
-        process.stderr.write(`Error: ${error.message}\n`);
-        process.exit(1);
-      }
-      throw error;
-    }
-  }
-}
-
-async function addViaLibrary(items: CslItem[], libraryPath: string, force: boolean): Promise<void> {
-  const library = await Library.load(libraryPath);
-  const existingItems = library.getAll().map((ref) => ref.getItem());
-
-  for (const item of items) {
-    const result = await addCommand(existingItems, item, { force });
-
-    if (result.added) {
-      library.add(result.item);
-      process.stderr.write(`Added reference: [${result.item.id}]\n`);
-      existingItems.push(result.item);
-    } else if (result.duplicate) {
-      throw new Error(
-        `Duplicate detected: ${result.duplicate.type} match with existing reference [${result.duplicate.existing.id}]`
-      );
-    }
-  }
-
-  await library.save();
-}
-
-function handleAddError(error: unknown): never {
-  const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("Parse error")) {
-    process.stderr.write(`Error: ${message}\n`);
-    process.exit(3);
-  }
-  if (message.includes("Duplicate")) {
-    process.stderr.write(`Error: ${message}\n`);
-    process.exit(1);
-  }
-  process.stderr.write(`Error: ${message}\n`);
-  process.exit(4);
+interface AddCommandOptions extends CliOptions {
+  force?: boolean;
+  format?: string;
+  verbose?: boolean;
 }
 
 async function handleAddAction(
-  file: string | undefined,
-  options: CliOptions & { force?: boolean },
+  inputs: string[],
+  options: AddCommandOptions,
   program: Command
 ): Promise<void> {
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const inputStr = await readJsonInput(file);
-    const input = parseJsonInput(inputStr);
-    const items: CslItem[] = Array.isArray(input) ? input : [input as CslItem];
-
-    const server = await getServerConnection(config.library, config);
-
-    if (server) {
-      await addViaServer(items, server, options.force ?? false);
-    } else {
-      await addViaLibrary(items, config.library, options.force ?? false);
+    // If no inputs provided, read content from stdin
+    let stdinContent: string | undefined;
+    if (inputs.length === 0) {
+      stdinContent = await readStdinContent();
     }
 
-    process.exit(0);
+    // Get server connection
+    const server = await getServerConnection(config.library, config);
+    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+
+    // Load library for direct access
+    const library = await Library.load(config.library);
+
+    // Build add options - avoid undefined values for exactOptionalPropertyTypes
+    const addOptions: Parameters<typeof executeAdd>[0] = {
+      inputs,
+      force: options.force ?? false,
+    };
+    if (options.format !== undefined) {
+      addOptions.format = options.format;
+    }
+    if (options.verbose !== undefined) {
+      addOptions.verbose = options.verbose;
+    }
+    if (stdinContent?.trim()) {
+      addOptions.stdinContent = stdinContent;
+    }
+    // Build pubmedConfig only if values exist
+    const pubmedConfig: { email?: string; apiKey?: string } = {};
+    if (config.pubmed.email !== undefined) {
+      pubmedConfig.email = config.pubmed.email;
+    }
+    if (config.pubmed.apiKey !== undefined) {
+      pubmedConfig.apiKey = config.pubmed.apiKey;
+    }
+    if (Object.keys(pubmedConfig).length > 0) {
+      addOptions.pubmedConfig = pubmedConfig;
+    }
+
+    // Execute add command
+    const result = await executeAdd(addOptions, library, serverClient);
+
+    // Format and output result
+    const output = formatAddOutput(result, options.verbose ?? false);
+    process.stderr.write(`${output}\n`);
+
+    // Exit with appropriate code
+    process.exit(getExitCode(result));
   } catch (error) {
-    handleAddError(error);
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(1);
   }
 }
 
@@ -243,10 +231,12 @@ function registerAddCommand(program: Command): void {
   program
     .command("add")
     .description("Add new reference(s) to the library")
-    .argument("[file]", "JSON file to add (or use stdin)")
+    .argument("[input...]", "File paths or identifiers (PMID/DOI), or use stdin")
     .option("-f, --force", "Skip duplicate detection")
-    .action(async (file: string | undefined, options) => {
-      await handleAddAction(file, options, program);
+    .option("--format <format>", "Explicit input format: json|bibtex|ris|pmid|doi|auto", "auto")
+    .option("--verbose", "Show detailed error information")
+    .action(async (inputs: string[], options: AddCommandOptions) => {
+      await handleAddAction(inputs, options, program);
     });
 }
 

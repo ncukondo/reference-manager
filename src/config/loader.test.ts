@@ -12,25 +12,42 @@ import { loadConfig } from "./loader.js";
 describe("Config Loader", () => {
   let testDir: string;
   let originalEnv: string | undefined;
+  let originalPubmedEmail: string | undefined;
+  let originalPubmedApiKey: string | undefined;
 
   beforeEach(() => {
     // Create a temporary test directory
     testDir = join(tmpdir(), `config-test-${Date.now()}`);
     mkdirSync(testDir, { recursive: true });
 
-    // Save original environment variable
+    // Save original environment variables
     originalEnv = process.env.REFERENCE_MANAGER_CONFIG;
+    originalPubmedEmail = process.env.PUBMED_EMAIL;
+    originalPubmedApiKey = process.env.PUBMED_API_KEY;
   });
 
   afterEach(() => {
     // Clean up test directory
     rmSync(testDir, { recursive: true, force: true });
 
-    // Restore environment variable
+    // Restore environment variables
     if (originalEnv === undefined) {
-      process.env.REFERENCE_MANAGER_CONFIG = undefined;
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.REFERENCE_MANAGER_CONFIG;
     } else {
       process.env.REFERENCE_MANAGER_CONFIG = originalEnv;
+    }
+    if (originalPubmedEmail === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.PUBMED_EMAIL;
+    } else {
+      process.env.PUBMED_EMAIL = originalPubmedEmail;
+    }
+    if (originalPubmedApiKey === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.PUBMED_API_KEY;
+    } else {
+      process.env.PUBMED_API_KEY = originalPubmedApiKey;
     }
   });
 
@@ -493,6 +510,125 @@ default_style = "harvard"
       expect(config.citation.defaultStyle).toBe("harvard");
       expect(config.citation.defaultLocale).toBe("en-US"); // Default
       expect(config.citation.defaultFormat).toBe("text"); // Default
+    });
+  });
+
+  describe("PubMed configuration", () => {
+    it("should use default pubmed settings when not specified", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBeUndefined();
+      expect(config.pubmed.apiKey).toBeUndefined();
+    });
+
+    it("should load pubmed.email from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[pubmed]
+email = "user@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("user@example.com");
+    });
+
+    it("should load pubmed.api_key from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[pubmed]
+api_key = "my-api-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.apiKey).toBe("my-api-key");
+    });
+
+    it("should load both pubmed email and api_key from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[pubmed]
+email = "user@example.com"
+api_key = "my-api-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("user@example.com");
+      expect(config.pubmed.apiKey).toBe("my-api-key");
+    });
+
+    it("should load pubmed.email from PUBMED_EMAIL environment variable", () => {
+      process.env.PUBMED_EMAIL = "env@example.com";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("env@example.com");
+    });
+
+    it("should load pubmed.apiKey from PUBMED_API_KEY environment variable", () => {
+      process.env.PUBMED_API_KEY = "env-api-key";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.apiKey).toBe("env-api-key");
+    });
+
+    it("should prioritize environment variables over config file for pubmed", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[pubmed]
+email = "config@example.com"
+api_key = "config-api-key"
+`
+      );
+
+      process.env.PUBMED_EMAIL = "env@example.com";
+      process.env.PUBMED_API_KEY = "env-api-key";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("env@example.com");
+      expect(config.pubmed.apiKey).toBe("env-api-key");
+    });
+
+    it("should use config file value when environment variable is not set", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[pubmed]
+email = "config@example.com"
+api_key = "config-api-key"
+`
+      );
+
+      // Environment variables not set
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("config@example.com");
+      expect(config.pubmed.apiKey).toBe("config-api-key");
+    });
+
+    it("should support camelCase field names for pubmed config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[pubmed]
+email = "user@example.com"
+apiKey = "my-api-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("user@example.com");
+      expect(config.pubmed.apiKey).toBe("my-api-key");
     });
   });
 });

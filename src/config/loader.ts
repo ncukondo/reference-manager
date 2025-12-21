@@ -63,10 +63,12 @@ function mergeConfigs(
 ): DeepPartialConfig {
   const result: DeepPartialConfig = { ...base };
 
+  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed"] as const;
+
   for (const override of overrides) {
     if (!override) continue;
 
-    // Merge top-level fields
+    // Merge top-level primitive fields
     if (override.library !== undefined) {
       result.library = override.library;
     }
@@ -74,36 +76,14 @@ function mergeConfigs(
       result.logLevel = override.logLevel;
     }
 
-    // Merge backup config
-    if (override.backup !== undefined) {
-      result.backup = {
-        ...result.backup,
-        ...override.backup,
-      };
-    }
-
-    // Merge watch config
-    if (override.watch !== undefined) {
-      result.watch = {
-        ...result.watch,
-        ...override.watch,
-      };
-    }
-
-    // Merge server config
-    if (override.server !== undefined) {
-      result.server = {
-        ...result.server,
-        ...override.server,
-      };
-    }
-
-    // Merge citation config
-    if (override.citation !== undefined) {
-      result.citation = {
-        ...result.citation,
-        ...override.citation,
-      };
+    // Merge section configs
+    for (const key of sectionKeys) {
+      if (override[key] !== undefined) {
+        result[key] = {
+          ...result[key],
+          ...override[key],
+        };
+      }
     }
   }
 
@@ -134,6 +114,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       autoStopMinutes: partial.server?.autoStopMinutes ?? defaultConfig.server.autoStopMinutes,
     },
     citation: fillCitationDefaults(partial.citation),
+    pubmed: fillPubmedDefaults(partial.pubmed),
   };
 }
 
@@ -146,6 +127,21 @@ function fillCitationDefaults(partial: DeepPartialConfig["citation"]): Config["c
     cslDirectory: partial?.cslDirectory ?? defaultConfig.citation.cslDirectory,
     defaultLocale: partial?.defaultLocale ?? defaultConfig.citation.defaultLocale,
     defaultFormat: partial?.defaultFormat ?? defaultConfig.citation.defaultFormat,
+  };
+}
+
+/**
+ * Fill pubmed config with defaults
+ * Environment variables take priority over config file values
+ */
+function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubmed"] {
+  // Environment variables take priority
+  const email = process.env.PUBMED_EMAIL ?? partial?.email ?? defaultConfig.pubmed.email;
+  const apiKey = process.env.PUBMED_API_KEY ?? partial?.apiKey ?? defaultConfig.pubmed.apiKey;
+
+  return {
+    email,
+    apiKey,
   };
 }
 
