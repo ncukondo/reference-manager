@@ -150,8 +150,12 @@ After spec and technical decisions are clear:
 
 ### Current Status
 - [x] Completed task A
+  - [x] Subtask A1
+  - [x] Subtask A2
 - [x] Completed task B
 - [ ] Current task C ← **IN PROGRESS**
+  - [x] Subtask C1
+  - [ ] Subtask C2
 - [ ] Next task D
 - [ ] Future task E
 ```
@@ -246,11 +250,16 @@ npm test
 # All tests must pass
 ```
 
-### Step 7: Update Documentation
+### Step 7: Update Progress and Commit
 
-- Mark ROADMAP.md task as complete
-- Update relevant spec if behavior changed
-- Commit with descriptive message
+**After each task or subtask completion:**
+
+1. Update ROADMAP.md - Mark task/subtask as complete (`[x]`)
+2. Update relevant spec if behavior changed
+3. Commit with descriptive message
+4. Push to remote
+
+**Important**: Do not batch multiple tasks. Update ROADMAP and commit/push after **each** task completion to maintain accurate progress tracking.
 
 ## Quality Gates
 
@@ -262,6 +271,7 @@ Every implementation must pass:
 - ✅ Code formatted
 - ✅ ROADMAP.md updated
 - ✅ Specs updated (if needed)
+- ✅ Committed and pushed
 
 ## Example TDD Session
 
@@ -299,13 +309,14 @@ npm run format     # Code formatted
 vim ROADMAP.md
 # Mark task as complete
 
-# 9. Commit
+# 9. Commit and push
 git add .
 git commit -m "feat: implement example feature
 
 - Add example functionality with comprehensive tests
 - All quality checks pass
 - Update ROADMAP.md"
+git push
 ```
 
 ## Pre-release Development Notes

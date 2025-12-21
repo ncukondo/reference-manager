@@ -83,8 +83,8 @@ See `spec/guidelines/testing.md` section "When importing already-implemented fil
 | New feature | `spec/features/` (relevant), `spec/guidelines/testing.md`, `spec/patterns/` |
 | Bug fix | `spec/features/` (relevant), `spec/guidelines/testing.md` |
 | Refactoring | `spec/architecture/`, `spec/patterns/`, `spec/decisions/` |
-| CLI work | `spec/architecture/cli.md`, `spec/architecture/cli-commands.md` |
-| Server work | `spec/architecture/http-server.md`, `spec/architecture/cli-server-integration.md` |
+| CLI work | `spec/architecture/cli.md` |
+| Server work | `spec/architecture/http-server.md` |
 | Architecture change | `spec/core/`, `spec/architecture/`, create ADR in `spec/decisions/` |
 
 ## Pre-release Context

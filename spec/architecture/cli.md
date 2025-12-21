@@ -1,127 +1,123 @@
 # CLI Architecture
 
-## CLI Framework
+## Framework
 
-- `commander`
+- CLI framework: **Commander**
 
 ## Output & Logging
 
 - Command results: `stdout`
 - Logs and diagnostics: `stderr`
-- Log levels:
-  - `silent`
-  - `info` (default)
-  - `debug`
+- Log levels: `silent`, `info` (default), `debug`
 
-## Configuration File Format
+## Commands
 
-- **Format**: TOML
-- **Extension**: `.toml`
+| Command | Purpose |
+|---------|---------|
+| `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI) |
+| `list` | List all references |
+| `search <query>` | Search references |
+| `remove <id>` | Remove a reference |
+| `update <id>` | Update a reference |
+| `cite <id>...` | Generate formatted citations |
+| `server start\|stop\|status` | Manage HTTP server |
 
-## Configuration Resolution Order
+## Output Formats
 
-Configuration file is resolved in the following order (highest to lowest priority):
+Available for `list` and `search` commands (mutually exclusive):
 
-1. Current directory:
-   ```
-   .reference-manager.config.toml
-   ```
-2. Path specified by environment variable:
-   ```
-   REFERENCE_MANAGER_CONFIG
-   ```
-3. User config:
-   ```
-   ~/.reference-manager/config.toml
-   ```
+- Default: Pretty-printed format
+- `--json`: Compact JSON
+- `--ids-only`: Citation keys only
+- `--uuid`: Internal UUIDs only
+- `--bibtex`: BibTeX format
 
-Rules:
-- CLI arguments override config values
-- Library is specified as a **CSL-JSON file path** (not a directory)
-- Default library path: `~/.reference-manager/csl.library.json`
+## Exit Codes
 
-## Configuration Fields
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | General error (validation, not found, duplicate) |
+| `2` | Conflict (merge conflict, user cancelled) |
+| `3` | Parse error (invalid JSON) |
+| `4` | I/O error |
+
+## Configuration
+
+### File Format
+
+- Format: TOML
+- Extension: `.toml`
+
+### Resolution Order (highest to lowest)
+
+1. CLI arguments
+2. Environment variables
+3. Current directory: `.reference-manager.config.toml`
+4. `$REFERENCE_MANAGER_CONFIG`
+5. User config: `~/.reference-manager/config.toml`
+6. Built-in defaults
 
 ### Core Settings
 
 ```toml
-# Path to CSL-JSON library file (required in config file)
 library = "~/.reference-manager/csl.library.json"
-
-# Log level: "silent", "info", "debug" (default: "info")
 log_level = "info"
-```
 
-### Backup Settings
-
-```toml
 [backup]
-# Maximum number of backup generations (default: 50)
 max_generations = 50
-
-# Maximum age of backups in days (default: 365)
 max_age_days = 365
 
-# Backup directory (default: $TMPDIR/reference-manager/backups/)
-directory = "$TMPDIR/reference-manager/backups/"
-```
-
-### File Watching Settings
-
-```toml
-[watch]
-# Enable file watching (default: true)
-enabled = true
-
-# Debounce time in milliseconds (default: 500)
-debounce_ms = 500
-
-# Polling interval in milliseconds (default: 5000)
-poll_interval_ms = 5000
-
-# Retry interval in milliseconds (default: 200)
-retry_interval_ms = 200
-
-# Maximum number of retries (default: 10)
-max_retries = 10
-```
-
-### Server Auto-Start Settings
-
-```toml
 [server]
-# Auto-start server when not running (default: false)
 auto_start = false
-
-# Auto-stop server after idle time in minutes (default: 0 = disabled)
-# If > 0, server stops automatically after N minutes of no requests
 auto_stop_minutes = 0
+
+[pubmed]
+email = ""
+api_key = ""
+
+[citation]
+default_style = "apa"
+default_locale = "en-US"
+default_format = "text"
 ```
 
-**Behavior:**
+## Server Integration
 
-- `auto_start = false` (default):
-  - CLI uses direct file access if server not running
-  - User must manually start server with `reference-manager server start`
+### Two Modes of Operation
 
-- `auto_start = true`:
-  - CLI automatically starts server on first command if not running
-  - Server runs in daemon mode (background)
-  - Subsequent commands use the running server
-  - Optimal for large libraries (automatic performance optimization)
+1. **Direct file access**: When server not running
+2. **Server-backed**: When server running (faster for large libraries)
 
-- `auto_stop_minutes = 0` (default):
-  - Server runs until manually stopped
-  - Recommended if server is frequently used
+### Automatic Detection
 
-- `auto_stop_minutes = N` (N > 0):
-  - Server stops automatically after N minutes of inactivity
-  - Saves resources if server used infrequently
-  - Next command will auto-start again (if `auto_start = true`)
+CLI automatically detects running server via portfile (`~/.reference-manager/server.port`):
 
-### Future Extension
+- Server running and serving same library → Use server API
+- Server not running and `auto_start = true` → Start server, use API
+- Otherwise → Direct file access
 
-```toml
-# Fulltext directory (future feature, not yet implemented)
-# fulltext_directory = "~/.reference-manager/fulltext/"
+### Behavior
+
+- Users don't need to manage server manually
+- Automatic fallback if server unavailable
+- Write operations via server update in-memory index immediately
+
+## Global Options
+
 ```
+--library <path>      Override library file path
+--log-level <level>   Override log level
+--config <path>       Use specific config file
+--quiet / -q          Suppress non-error output
+--verbose / -v        Enable verbose output
+--no-backup           Disable backup for this operation
+--help / -h           Display help
+--version / -V        Display version
+```
+
+## Interactive Features
+
+- TTY detection for interactive prompts
+- `remove` command shows confirmation unless `--force`
+- Non-TTY: Prompts skipped, uses default behavior

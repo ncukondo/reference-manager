@@ -1,88 +1,100 @@
-# reference-manager Specifications
+# Spec Index
 
-## Overview
+This file provides an overview of all specification documents in this project.
 
-**reference-manager** is a local reference management tool that treats CSL-JSON files as the single source of truth.
+## Purpose
+
+These specifications serve as guidelines for AI-assisted development:
+- Define project goals and constraints
+- Establish architectural patterns
+- Document feature requirements
+- Guide implementation decisions
+
+**Principle**: Specs describe "what" and "why", not "how". Implementation details belong in source code comments.
 
 ## Directory Structure
 
-### meta/ - Development Process & AI Guides
+```
+spec/
+├── _index.md                    # This file
+├── meta/                        # Development process (always read first)
+│   ├── guide-for-ai.md          # AI context and conventions
+│   └── development-process.md   # Workflow from spec to implementation
+├── core/                        # Core specifications (always read)
+│   ├── overview.md              # Project goals and scope
+│   ├── data-model.md            # CSL-JSON structure, identifiers
+│   └── data-flow.md             # Conceptual data flows
+├── architecture/                # System architecture
+│   ├── runtime.md               # Node.js, distribution
+│   ├── build-system.md          # TypeScript, Vite, ESM
+│   ├── directory-structure.md   # Project layout
+│   ├── module-dependencies.md   # Layer rules
+│   ├── cli.md                   # CLI commands, config, server integration
+│   └── http-server.md           # HTTP server, portfile, API
+├── features/                    # Feature specifications
+│   ├── add.md                   # Multi-format import (PMID, DOI, BibTeX, RIS)
+│   ├── citation.md              # Citation generation
+│   ├── search.md                # Search query syntax
+│   ├── duplicate-detection.md   # Duplicate detection rules
+│   ├── file-monitoring.md       # File watching, reload
+│   ├── write-safety.md          # Atomic write, backup, merge
+│   └── metadata.md              # Standard and custom fields
+├── guidelines/                  # Development guidelines
+│   ├── testing.md               # TDD workflow
+│   ├── code-style.md            # Naming, formatting (ref: biome.json)
+│   ├── validation.md            # Zod schema validation
+│   ├── platform.md              # OS support
+│   ├── pandoc.md                # Pandoc compatibility
+│   ├── non-goals.md             # What we don't do
+│   └── future.md                # Future extensions (non-normative)
+├── patterns/                    # Implementation patterns
+│   └── error-handling.md        # Error classes, exit codes
+└── decisions/                   # Architecture Decision Records
+    ├── README.md                # ADR template and guidelines
+    └── ADR-*.md                 # Individual decisions
+```
 
-| File | Content |
-|------|---------|
-| [development-process.md](meta/development-process.md) | **Complete workflow** from specification to implementation |
-| [guide-for-ai.md](meta/guide-for-ai.md) | **Essential guide for AI assistants** working on this project |
-
-**Read first when starting any work.**
-
-### core/ - Core Specifications (Always Read)
-
-| File | Content |
-|------|---------|
-| [overview.md](core/overview.md) | Project overview & core principles |
-| [data-model.md](core/data-model.md) | Data model & identifiers |
-| [data-flow.md](core/data-flow.md) | Data flow diagrams for major operations |
-| [identifier-generation.md](core/identifier-generation.md) | ID generation rules |
-
-### architecture/ - Architecture Specifications
-
-| File | Content |
-|------|---------|
-| [runtime.md](architecture/runtime.md) | Runtime & distribution |
-| [build-system.md](architecture/build-system.md) | Build system & modules |
-| [module-dependencies.md](architecture/module-dependencies.md) | Module dependency rules & diagrams |
-| [cli.md](architecture/cli.md) | CLI architecture |
-| [http-server.md](architecture/http-server.md) | HTTP server |
-| [directory-structure.md](architecture/directory-structure.md) | Directory structure |
-
-### features/ - Feature Specifications
-
-| File | Content |
-|------|---------|
-| [metadata.md](features/metadata.md) | Metadata fields |
-| [duplicate-detection.md](features/duplicate-detection.md) | Duplicate detection |
-| [search.md](features/search.md) | Search functionality |
-| [file-monitoring.md](features/file-monitoring.md) | File monitoring & reload |
-| [write-safety.md](features/write-safety.md) | Write safety & conflict handling |
-| [citation.md](features/citation.md) | Citation generation (cite command) |
-| [add-import.md](features/add-import.md) | Multi-format import (PMID, DOI, BibTeX, RIS) |
-
-### guidelines/ - Development Guidelines
-
-| File | Content |
-|------|---------|
-| [validation.md](guidelines/validation.md) | Validation strategy |
-| [testing.md](guidelines/testing.md) | **TDD workflow & testing strategy** (Must-read) |
-| [code-style.md](guidelines/code-style.md) | Coding style & conventions |
-| [platform.md](guidelines/platform.md) | Platform support |
-| [pandoc.md](guidelines/pandoc.md) | Pandoc compatibility |
-| [future.md](guidelines/future.md) | Future extensions |
-| [non-goals.md](guidelines/non-goals.md) | Non-goals |
-
-### patterns/ - Implementation Patterns
-
-| File | Content |
-|------|---------|
-| [error-handling.md](patterns/error-handling.md) | Error handling patterns & examples |
-
-### decisions/ - Architecture Decision Records (ADRs)
-
-| File | Content |
-|------|---------|
-| [README.md](decisions/README.md) | ADR template & guidelines |
-| Individual ADR files | Recorded architectural decisions |
-
-## Reading Guide
+## Reading Guidelines
 
 | Directory | When to Read |
 |-----------|--------------|
-| `meta/` | **Always read first** - Development process & workflow |
-| `core/` | **Always read** - Foundation of the project |
+| `meta/` | **Always read first** - Development process |
+| `core/` | **Always read** - Core concepts |
 | `architecture/` | When implementing CLI/server, configuring builds |
-| `features/` | When implementing/modifying specific features (read relevant files only) |
-| `guidelines/` | When writing tests, setting up CI, checking compatibility |
-| `patterns/` | When implementing new code or refactoring |
-| `decisions/` | When understanding why certain technical choices were made |
+| `features/` | When implementing specific features |
+| `guidelines/` | When writing code, tests, or checking compatibility |
+| `patterns/` | When implementing error handling or common patterns |
+| `decisions/` | When understanding technical choices (ADRs) |
+
+## Quick Reference
+
+### Commands
+
+| Command | Spec |
+|---------|------|
+| `add` | `features/add.md` |
+| `cite` | `features/citation.md` |
+| `search` / `list` | `features/search.md` |
+| `server` | `architecture/http-server.md` |
+
+### Core Concepts
+
+| Concept | Spec |
+|---------|------|
+| CSL-JSON format | `core/data-model.md` |
+| ID generation | `core/data-model.md` |
+| Duplicate detection | `features/duplicate-detection.md` |
+| Conflict resolution | `features/write-safety.md` |
+| File watching | `features/file-monitoring.md` |
+
+### Development
+
+| Topic | Spec |
+|-------|------|
+| TDD workflow | `guidelines/testing.md` |
+| Code style | `guidelines/code-style.md` |
+| Error handling | `patterns/error-handling.md` |
+| Module layers | `architecture/module-dependencies.md` |
 
 ## Development Workflow
 
