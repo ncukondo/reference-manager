@@ -34,21 +34,21 @@ See: [spec/architecture/module-dependencies.md](./spec/architecture/module-depen
 - [x] `features/operations/update.ts`
 - [x] `features/operations/cite.ts`
 
-#### Step 8.2: Server Routes
+#### Step 8.2: Server Routes (DONE)
 
 Create dedicated routes using operations (pattern: `/api/{command}`):
 
 | Route | File | Status |
 |-------|------|--------|
-| POST /api/list | `server/routes/list.ts` | [ ] TODO |
-| POST /api/search | `server/routes/search.ts` | [ ] TODO |
+| POST /api/list | `server/routes/list.ts` | [x] Done |
+| POST /api/search | `server/routes/search.ts` | [x] Done |
 | POST /api/cite | `server/routes/cite.ts` | [x] Done |
 | PUT/DELETE /api/references/:uuid | `server/routes/references.ts` | [x] Done |
 
 Tasks:
-- [ ] Create `server/routes/list.ts` using listReferences operation
-- [ ] Create `server/routes/search.ts` using searchReferences operation
-- [ ] Mount routes in `server/index.ts`
+- [x] Create `server/routes/list.ts` using listReferences operation
+- [x] Create `server/routes/search.ts` using searchReferences operation
+- [x] Mount routes in `server/index.ts`
 
 #### Step 8.3: ServerClient Methods
 

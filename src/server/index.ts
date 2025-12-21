@@ -4,7 +4,9 @@ import type { Library } from "../core/library.js";
 import { createAddRoute } from "./routes/add.js";
 import { createCiteRoute } from "./routes/cite.js";
 import { healthRoute } from "./routes/health.js";
+import { createListRoute } from "./routes/list.js";
 import { createReferencesRoute } from "./routes/references.js";
+import { createSearchRoute } from "./routes/search.js";
 
 /**
  * Create the main Hono server application.
@@ -29,6 +31,14 @@ export function createServer(library: Library, config: Config) {
   // Cite route
   const citeRoute = createCiteRoute(library);
   app.route("/api/cite", citeRoute);
+
+  // List route
+  const listRoute = createListRoute(library);
+  app.route("/api/list", listRoute);
+
+  // Search route
+  const searchRoute = createSearchRoute(library);
+  app.route("/api/search", searchRoute);
 
   return app;
 }
