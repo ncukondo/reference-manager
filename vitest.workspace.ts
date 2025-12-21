@@ -6,7 +6,7 @@ export default defineWorkspace([
     test: {
       name: "unit",
       include: ["src/**/*.test.ts"],
-      exclude: ["src/**/*.remote.test.ts"],
+      exclude: ["src/**/*.remote.test.ts", "src/**/*.e2e.test.ts"],
     },
   },
   {
@@ -15,6 +15,14 @@ export default defineWorkspace([
       name: "remote",
       include: ["src/**/*.remote.test.ts"],
       testTimeout: 30000,
+    },
+  },
+  {
+    extends: "./vitest.config.ts",
+    test: {
+      name: "e2e",
+      include: ["src/**/*.e2e.test.ts"],
+      testTimeout: 60000,
     },
   },
 ]);
