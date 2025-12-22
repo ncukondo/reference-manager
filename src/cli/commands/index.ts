@@ -28,3 +28,21 @@ export type { ServerStartOptions, ServerInfo } from "./server.js";
 
 export { executeCite, formatCiteOutput, formatCiteErrors, getCiteExitCode } from "./cite.js";
 export type { CiteCommandOptions, CiteCommandResult } from "./cite.js";
+
+export {
+  executeFulltextAttach,
+  executeFulltextGet,
+  executeFulltextDetach,
+  formatFulltextAttachOutput,
+  formatFulltextGetOutput,
+  formatFulltextDetachOutput,
+  getFulltextExitCode,
+} from "./fulltext.js";
+export type {
+  FulltextAttachOptions,
+  FulltextAttachResult,
+  FulltextGetOptions,
+  FulltextGetResult,
+  FulltextDetachOptions,
+  FulltextDetachResult,
+} from "./fulltext.js";

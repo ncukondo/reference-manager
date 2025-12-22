@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Full-text Management (Phase 10)**: New `fulltext` command for PDF and Markdown file management
+  - `fulltext attach`: Attach PDF or Markdown files to references
+    - Auto-detect format by file extension
+    - Support stdin input with `--pdf` or `--markdown` flags
+    - Copy (default) or move (`--move`) files to fulltext directory
+    - Overwrite protection with `--force` option
+  - `fulltext get`: Retrieve attached file paths or content
+    - Output paths for PDF and/or Markdown files
+    - Output content to stdout with `--stdout` option
+  - `fulltext detach`: Remove file associations from references
+    - Detach metadata only (default) or delete files with `--delete`
+  - Auto-generated filenames: `{id}[-PMID{PMID}]-{uuid}.{ext}` format
+  - Configuration: `fulltext.directory` setting in `config.toml`
+  - Reference removal integration: Warn if fulltext attached, delete with `--force`
+  - Server mode support: Uses `executeUpdate` infrastructure
+
 ### Changed
 
 - **Server Mode Performance Optimization (Phase 9)**: Introduced `ExecutionContext` pattern

@@ -19,13 +19,22 @@ const CslDateSchema = z.object({
   literal: z.string().optional(),
 });
 
-// CSL-JSON Custom Metadata
-const CslCustomSchema = z.object({
-  uuid: z.string(),
-  created_at: z.string(),
-  timestamp: z.string(),
-  additional_urls: z.array(z.string()).optional(),
+// CSL-JSON Fulltext Metadata
+const CslFulltextSchema = z.object({
+  pdf: z.string().optional(),
+  markdown: z.string().optional(),
 });
+
+// CSL-JSON Custom Metadata
+const CslCustomSchema = z
+  .object({
+    uuid: z.string(),
+    created_at: z.string(),
+    timestamp: z.string(),
+    additional_urls: z.array(z.string()).optional(),
+    fulltext: CslFulltextSchema.optional(),
+  })
+  .passthrough();
 
 // CSL-JSON Item
 export const CslItemSchema = z

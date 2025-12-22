@@ -20,6 +20,7 @@
 | `remove <id>` | Remove a reference |
 | `update <id>` | Update a reference |
 | `cite <id>...` | Generate formatted citations |
+| `fulltext <subcommand>` | Manage full-text files (attach/get/detach) |
 | `server start\|stop\|status` | Manage HTTP server |
 
 ## Output Formats
@@ -80,6 +81,9 @@ api_key = ""
 default_style = "apa"
 default_locale = "en-US"
 default_format = "text"
+
+[fulltext]
+directory = "~/.reference-manager/fulltext"
 ```
 
 ## Server Integration

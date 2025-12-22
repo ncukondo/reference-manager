@@ -48,6 +48,14 @@ export function getDefaultCslDirectory(): string {
 }
 
 /**
+ * Get the default fulltext directory
+ * Uses ~/.reference-manager/fulltext/
+ */
+export function getDefaultFulltextDirectory(): string {
+  return join(homedir(), ".reference-manager", "fulltext");
+}
+
+/**
  * Default configuration
  */
 export const defaultConfig: Config = {
@@ -78,5 +86,8 @@ export const defaultConfig: Config = {
   pubmed: {
     email: undefined,
     apiKey: undefined,
+  },
+  fulltext: {
+    directory: getDefaultFulltextDirectory(),
   },
 };

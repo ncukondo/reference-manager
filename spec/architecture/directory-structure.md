@@ -16,6 +16,7 @@ reference-manager/
 │   │   │   ├── remove.ts          # Remove
 │   │   │   ├── update.ts          # Update
 │   │   │   ├── cite.ts            # Citation generation
+│   │   │   ├── fulltext.ts        # Full-text management (attach/get/detach)
 │   │   │   └── server.ts          # Server management
 │   │   └── output/                # Output formats
 │   │       ├── json.ts
@@ -78,6 +79,13 @@ reference-manager/
 │   │   │   ├── file-watcher.ts
 │   │   │   ├── file-watcher.test.ts
 │   │   │   └── types.ts           # File watcher type definitions
+│   │   ├── fulltext/              # Full-text file management
+│   │   │   ├── index.ts
+│   │   │   ├── manager.ts         # File attach/detach logic
+│   │   │   ├── manager.test.ts
+│   │   │   ├── filename.ts        # Filename generation
+│   │   │   ├── filename.test.ts
+│   │   │   └── types.ts           # Fulltext type definitions
 │   │   ├── import/                # Multi-format import
 │   │   │   ├── index.ts
 │   │   │   ├── importer.ts        # Import orchestration
@@ -142,6 +150,7 @@ reference-manager/
 | `src/server/` | HTTP server, routes call operations directly |
 | `src/features/operations/` | Unified operations (add, list, etc.) used by CLI and Server |
 | `src/features/import/` | Multi-format import (BibTeX, RIS, PMID, DOI) |
+| `src/features/fulltext/` | Full-text file management (attach, get, detach) |
 | `src/features/` | Other features: search, duplicate, merge, file-watcher |
 | `src/core/` | CSL-JSON operations, ID generation, core logic |
 | `src/config/` | Config resolution (env → current dir → user config) |

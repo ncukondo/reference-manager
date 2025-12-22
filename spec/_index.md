@@ -34,6 +34,7 @@ spec/
 ├── features/                    # Feature specifications
 │   ├── add.md                   # Multi-format import (PMID, DOI, BibTeX, RIS)
 │   ├── citation.md              # Citation generation
+│   ├── fulltext.md              # Full-text PDF/Markdown management
 │   ├── search.md                # Search query syntax
 │   ├── duplicate-detection.md   # Duplicate detection rules
 │   ├── file-monitoring.md       # File watching, reload
@@ -74,6 +75,7 @@ spec/
 |---------|------|
 | `add` | `features/add.md` |
 | `cite` | `features/citation.md` |
+| `fulltext` | `features/fulltext.md` |
 | `search` / `list` | `features/search.md` |
 | `server` | `architecture/http-server.md` |
 
@@ -83,6 +85,7 @@ spec/
 |---------|------|
 | CSL-JSON format | `core/data-model.md` |
 | ID generation | `core/data-model.md` |
+| Full-text files | `features/fulltext.md` |
 | Duplicate detection | `features/duplicate-detection.md` |
 | Conflict resolution | `features/write-safety.md` |
 | File watching | `features/file-monitoring.md` |

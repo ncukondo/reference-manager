@@ -13,19 +13,13 @@ For detailed specifications, see [spec/](./spec/).
 - ✅ **Phase 7**: Multi-Format Import (add command with BibTeX, RIS, DOI, PMID support)
 - ✅ **Phase 8**: Operation Integration (unified operations pattern)
 - ✅ **Phase 9**: Server Mode Performance Optimization (ExecutionContext pattern)
+- ✅ **Phase 10**: Full-text Management (attach, get, detach commands)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
 ## Future Phases
-
-### Phase 10: Full-text PDF Management
-
-- PDF file attachment and storage
-- Automatic metadata extraction from PDFs
-- Full-text search in attached PDFs
-- PDF viewer integration
 
 ### Phase 11: Citation Enhancements
 

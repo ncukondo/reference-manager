@@ -3,6 +3,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { parse as parseTOML } from "@iarna/toml";
 import {
@@ -63,7 +64,7 @@ function mergeConfigs(
 ): DeepPartialConfig {
   const result: DeepPartialConfig = { ...base };
 
-  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed"] as const;
+  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed", "fulltext"] as const;
 
   for (const override of overrides) {
     if (!override) continue;
@@ -115,6 +116,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     },
     citation: fillCitationDefaults(partial.citation),
     pubmed: fillPubmedDefaults(partial.pubmed),
+    fulltext: fillFulltextDefaults(partial.fulltext),
   };
 }
 
@@ -142,6 +144,32 @@ function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubme
   return {
     email,
     apiKey,
+  };
+}
+
+/**
+ * Expand ~ to home directory
+ */
+function expandTilde(path: string): string {
+  if (path.startsWith("~/")) {
+    return join(homedir(), path.slice(2));
+  }
+  return path;
+}
+
+/**
+ * Fill fulltext config with defaults
+ *
+ * Priority:
+ * 1. Environment variable REFERENCE_MANAGER_FULLTEXT_DIR
+ * 2. Config file setting
+ * 3. Default value
+ */
+function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
+  const envDir = process.env.REFERENCE_MANAGER_FULLTEXT_DIR;
+  const directory = envDir ?? partial?.directory ?? defaultConfig.fulltext.directory;
+  return {
+    directory: expandTilde(directory),
   };
 }
 

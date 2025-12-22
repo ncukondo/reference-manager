@@ -46,7 +46,11 @@ The `custom` field stores reference-manager-specific metadata:
   "uuid": "<uuid>",
   "created_at": "2024-01-01T00:00:00.000Z",
   "timestamp": "2024-01-02T10:30:00.000Z",
-  "additional_urls": ["https://example.com/resource"]
+  "additional_urls": ["https://example.com/resource"],
+  "fulltext": {
+    "pdf": "Smith-2024-PMID12345678-<uuid>.pdf",
+    "markdown": "Smith-2024-PMID12345678-<uuid>.md"
+  }
 }
 ```
 
@@ -56,6 +60,21 @@ The `custom` field stores reference-manager-specific metadata:
 | `created_at` | Creation time (immutable) |
 | `timestamp` | Last modification time (for LWW conflict resolution) |
 | `additional_urls` | Optional array of additional URLs |
+| `fulltext` | Attached full-text files (see `features/fulltext.md`) |
+| `fulltext.pdf` | PDF filename (stored in fulltext directory) |
+| `fulltext.markdown` | Markdown filename (stored in fulltext directory) |
+
+### Unknown Fields (Passthrough)
+
+Unknown keys in the `custom` field are preserved:
+
+- **Read**: Ignored by reference-manager, but kept in memory
+- **Write**: Preserved as-is in output
+
+This ensures:
+- Compatibility with external tools (e.g., Zotero)
+- Forward compatibility with future versions
+- User-added custom data is not lost
 
 ## Standard Metadata Fields
 

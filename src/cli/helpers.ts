@@ -200,3 +200,16 @@ export async function readStdinContent(): Promise<string> {
   }
   return Buffer.concat(chunks).toString("utf-8").trim();
 }
+
+/**
+ * Read raw stdin content as Buffer.
+ * Used for reading binary file content (PDF) from stdin.
+ * @returns Raw stdin content as Buffer
+ */
+export async function readStdinBuffer(): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stdin) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks);
+}
