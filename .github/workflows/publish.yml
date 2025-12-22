@@ -20,9 +20,7 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
-
-      - name: Configure npm for publishing
-        run: npm config set registry https://registry.npmjs.org/
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -41,3 +39,5 @@ jobs:
 
       - name: Publish to NPM with provenance
         run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # This secret is automatically populated by setup-node with the OIDC toke
