@@ -6,17 +6,36 @@ import { Command } from "commander";
 import { z } from "zod";
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
-import { citeReferences } from "../features/operations/cite.js";
-import { type ListFormat, listReferences } from "../features/operations/list.js";
-import { removeReference as removeReferenceOp } from "../features/operations/remove.js";
-import { type SearchFormat, searchReferences } from "../features/operations/search.js";
-import { updateReference as updateReferenceOp } from "../features/operations/update.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
-import { cite as citeCommand } from "./commands/cite.js";
-import { list } from "./commands/list.js";
-import { search as searchCommand } from "./commands/search.js";
+import {
+  type CiteCommandOptions,
+  executeCite,
+  formatCiteErrors,
+  formatCiteOutput,
+  getCiteExitCode,
+} from "./commands/cite.js";
+import {
+  type ListCommandOptions,
+  executeList,
+  formatListOutput,
+} from "./commands/list.js";
+import {
+  type SearchCommandOptions,
+  executeSearch,
+  formatSearchOutput,
+} from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
+import {
+  type RemoveCommandOptions,
+  executeRemove,
+  formatRemoveOutput,
+} from "./commands/remove.js";
+import {
+  type UpdateCommandOptions,
+  executeUpdate,
+  formatUpdateOutput,
+} from "./commands/update.js";
 import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
@@ -66,19 +85,32 @@ export function createProgram(): Command {
 }
 
 /**
- * Convert CLI options to ListFormat
+ * Handle 'list' command action
  */
-function getListFormat(options: {
-  json?: boolean;
-  idsOnly?: boolean;
-  uuid?: boolean;
-  bibtex?: boolean;
-}): ListFormat {
-  if (options.json) return "json";
-  if (options.idsOnly) return "ids-only";
-  if (options.uuid) return "uuid";
-  if (options.bibtex) return "bibtex";
-  return "pretty";
+async function handleListAction(
+  options: ListCommandOptions,
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const server = await getServerConnection(config.library, config);
+    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+    const library = await Library.load(config.library);
+
+    const result = await executeList(options, library, serverClient);
+    const output = formatListOutput(result);
+
+    if (output) {
+      process.stdout.write(`${output}\n`);
+    }
+
+    process.exit(0);
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
 }
 
 /**
@@ -93,40 +125,38 @@ function registerListCommand(program: Command): void {
     .option("--uuid", "Output only UUIDs")
     .option("--bibtex", "Output in BibTeX format")
     .action(async (options) => {
-      try {
-        const globalOpts = program.opts();
-        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-        const format = getListFormat(options);
-
-        // Get items (server or direct)
-        const server = await getServerConnection(config.library, config);
-
-        if (server) {
-          // Use server API, then format locally
-          const client = new ServerClient(server.baseUrl);
-          const items = await client.getAll();
-          await list(items, {
-            json: options.json,
-            idsOnly: options.idsOnly,
-            uuid: options.uuid,
-            bibtex: options.bibtex,
-          });
-        } else {
-          // Direct: use listReferences operation
-          const library = await Library.load(config.library);
-          const result = listReferences(library, { format });
-          process.stdout.write(result.items.join("\n"));
-          if (result.items.length > 0) {
-            process.stdout.write("\n");
-          }
-        }
-
-        process.exit(0);
-      } catch (error) {
-        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(4);
-      }
+      await handleListAction(options, program);
     });
+}
+
+/**
+ * Handle 'search' command action
+ */
+async function handleSearchAction(
+  query: string,
+  options: Omit<SearchCommandOptions, "query">,
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const server = await getServerConnection(config.library, config);
+    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+    const library = await Library.load(config.library);
+
+    const result = await executeSearch({ ...options, query }, library, serverClient);
+    const output = formatSearchOutput(result);
+
+    if (output) {
+      process.stdout.write(`${output}\n`);
+    }
+
+    process.exit(0);
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
 }
 
 /**
@@ -142,39 +172,7 @@ function registerSearchCommand(program: Command): void {
     .option("--uuid", "Output only UUIDs")
     .option("--bibtex", "Output in BibTeX format")
     .action(async (query: string, options) => {
-      try {
-        const globalOpts = program.opts();
-        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-        const format = getListFormat(options) as SearchFormat;
-
-        // Get items (server or direct)
-        const server = await getServerConnection(config.library, config);
-
-        if (server) {
-          // Use server API, then search and format locally
-          const client = new ServerClient(server.baseUrl);
-          const items = await client.getAll();
-          await searchCommand(items, query, {
-            json: options.json,
-            idsOnly: options.idsOnly,
-            uuid: options.uuid,
-            bibtex: options.bibtex,
-          });
-        } else {
-          // Direct: use searchReferences operation
-          const library = await Library.load(config.library);
-          const result = searchReferences(library, { query, format });
-          process.stdout.write(result.items.join("\n"));
-          if (result.items.length > 0) {
-            process.stdout.write("\n");
-          }
-        }
-
-        process.exit(0);
-      } catch (error) {
-        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(4);
-      }
+      await handleSearchAction(query, options, program);
     });
 }
 
@@ -299,31 +297,6 @@ async function confirmRemoval(refToRemove: CslItem, force: boolean): Promise<boo
   return await readConfirmation(confirmMsg);
 }
 
-async function removeReference(
-  identifier: string,
-  refToRemove: CslItem,
-  byUuid: boolean,
-  server: { baseUrl: string } | null,
-  libraryPath: string
-): Promise<void> {
-  if (server) {
-    const client = new ServerClient(server.baseUrl);
-    if (!refToRemove.custom?.uuid) {
-      throw new Error("Reference missing UUID");
-    }
-    await client.remove(refToRemove.custom.uuid);
-    return;
-  }
-
-  // Direct: use removeReference operation
-  const library = await Library.load(libraryPath);
-  const result = await removeReferenceOp(library, { identifier, byUuid });
-
-  if (!result.removed) {
-    throw new Error("Reference not found");
-  }
-}
-
 function handleRemoveError(error: unknown): never {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("not found")) {
@@ -343,7 +316,10 @@ async function handleRemoveAction(
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const server = await getServerConnection(config.library, config);
+    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+    const library = await Library.load(config.library);
 
+    // Find reference for confirmation display
     const refToRemove = await findReferenceToRemove(
       identifier,
       options.uuid ?? false,
@@ -356,16 +332,31 @@ async function handleRemoveAction(
       process.exit(1);
     }
 
+    // Interactive confirmation
     const confirmed = await confirmRemoval(refToRemove, options.force ?? false);
     if (!confirmed) {
       process.stderr.write("Cancelled.\n");
       process.exit(2);
     }
 
-    await removeReference(identifier, refToRemove, options.uuid ?? false, server, config.library);
+    // Execute removal using unified pattern
+    const removeOptions: RemoveCommandOptions = {
+      identifier,
+    };
+    if (options.uuid !== undefined) {
+      removeOptions.byUuid = options.uuid;
+    }
 
-    process.stderr.write(`Removed reference: [${refToRemove.id}]\n`);
-    process.exit(0);
+    const result = await executeRemove(removeOptions, library, serverClient);
+    const output = formatRemoveOutput(result, identifier);
+
+    if (result.removed) {
+      process.stderr.write(`${output}\n`);
+      process.exit(0);
+    } else {
+      process.stderr.write(`${output}\n`);
+      process.exit(1);
+    }
   } catch (error) {
     handleRemoveError(error);
   }
@@ -381,56 +372,6 @@ function registerRemoveCommand(program: Command): void {
     .action(async (identifier: string, options) => {
       await handleRemoveAction(identifier, options, program);
     });
-}
-
-/**
- * Register 'update' command
- */
-async function updateViaServer(
-  identifier: string,
-  updates: Record<string, unknown>,
-  byUuid: boolean,
-  server: { baseUrl: string }
-): Promise<void> {
-  const client = new ServerClient(server.baseUrl);
-  const items = await client.getAll();
-  const refToUpdate = byUuid
-    ? items.find((item) => item.custom?.uuid === identifier)
-    : items.find((item) => item.id === identifier);
-
-  if (!refToUpdate || !refToUpdate.custom?.uuid) {
-    process.stderr.write(`Error: Reference not found: ${identifier}\n`);
-    process.exit(1);
-  }
-
-  const updatedItem = { ...refToUpdate, ...updates } as CslItem;
-  await client.update(refToUpdate.custom.uuid, updatedItem);
-}
-
-async function updateViaLibrary(
-  identifier: string,
-  updates: Partial<CslItem>,
-  byUuid: boolean,
-  libraryPath: string
-): Promise<void> {
-  // Direct: use updateReference operation
-  const library = await Library.load(libraryPath);
-  const result = await updateReferenceOp(library, {
-    identifier,
-    byUuid,
-    updates,
-    onIdCollision: "suffix",
-  });
-
-  if (!result.updated) {
-    if (result.idCollision) {
-      throw new Error(
-        `ID collision: The new ID '${updates.id}' already exists in the library. Use a different ID or remove the existing reference first.`
-      );
-    }
-    const idType = byUuid ? "UUID" : "ID";
-    throw new Error(`Reference not found: No reference with ${idType} '${identifier}' exists.`);
-  }
 }
 
 function handleUpdateError(error: unknown): never {
@@ -465,20 +406,27 @@ async function handleUpdateAction(
     const validatedUpdates = updatesSchema.parse(updates);
 
     const server = await getServerConnection(config.library, config);
+    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+    const library = await Library.load(config.library);
 
-    if (server) {
-      await updateViaServer(identifier, validatedUpdates, options.uuid ?? false, server);
-    } else {
-      await updateViaLibrary(
-        identifier,
-        validatedUpdates as Partial<CslItem>,
-        options.uuid ?? false,
-        config.library
-      );
+    const updateOptions: UpdateCommandOptions = {
+      identifier,
+      updates: validatedUpdates as Partial<CslItem>,
+    };
+    if (options.uuid !== undefined) {
+      updateOptions.byUuid = options.uuid;
     }
 
-    process.stderr.write(`Updated reference: [${identifier}]\n`);
-    process.exit(0);
+    const result = await executeUpdate(updateOptions, library, serverClient);
+    const output = formatUpdateOutput(result, identifier);
+
+    if (result.updated) {
+      process.stderr.write(`${output}\n`);
+      process.exit(0);
+    } else {
+      process.stderr.write(`${output}\n`);
+      process.exit(1);
+    }
   } catch (error) {
     handleUpdateError(error);
   }
@@ -497,6 +445,43 @@ function registerUpdateCommand(program: Command): void {
 }
 
 /**
+ * Handle 'cite' command action
+ */
+async function handleCiteAction(
+  identifiers: string[],
+  options: Omit<CiteCommandOptions, "identifiers">,
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const server = await getServerConnection(config.library, config);
+    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+    const library = await Library.load(config.library);
+
+    const result = await executeCite({ ...options, identifiers }, library, serverClient);
+
+    // Output successful citations
+    const output = formatCiteOutput(result);
+    if (output) {
+      process.stdout.write(`${output}\n`);
+    }
+
+    // Output errors
+    const errors = formatCiteErrors(result);
+    if (errors) {
+      process.stderr.write(`${errors}\n`);
+    }
+
+    process.exit(getCiteExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
  * Register 'cite' command
  */
 function registerCiteCommand(program: Command): void {
@@ -510,60 +495,8 @@ function registerCiteCommand(program: Command): void {
     .option("--locale <locale>", "Locale code (e.g., en-US, ja-JP)")
     .option("--format <format>", "Output format: text|html|rtf")
     .option("--in-text", "Generate in-text citations instead of bibliography entries")
-    .action(async (idsOrUuids: string[], options) => {
-      try {
-        const globalOpts = program.opts();
-        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-
-        // Get items (server or direct)
-        const server = await getServerConnection(config.library, config);
-
-        if (server) {
-          // Use server API, then cite locally
-          const client = new ServerClient(server.baseUrl);
-          const items = await client.getAll();
-          await citeCommand(items, idsOrUuids, {
-            uuid: options.uuid,
-            style: options.style,
-            cslFile: options.cslFile,
-            locale: options.locale,
-            format: options.format,
-            inText: options.inText,
-          });
-        } else {
-          // Direct: use citeReferences operation
-          const library = await Library.load(config.library);
-          const result = await citeReferences(library, {
-            identifiers: idsOrUuids,
-            byUuid: options.uuid,
-            style: options.style,
-            cslFile: options.cslFile,
-            locale: options.locale,
-            format: options.format,
-            inText: options.inText,
-          });
-
-          // Output results
-          let hasError = false;
-          for (const r of result.results) {
-            if (r.success) {
-              process.stdout.write(`${r.citation}\n`);
-            } else {
-              process.stderr.write(`Error for '${r.identifier}': ${r.error}\n`);
-              hasError = true;
-            }
-          }
-
-          if (hasError && result.results.every((r) => !r.success)) {
-            process.exit(1);
-          }
-        }
-
-        process.exit(0);
-      } catch (error) {
-        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(4);
-      }
+    .action(async (identifiers: string[], options) => {
+      await handleCiteAction(identifiers, options, program);
     });
 }
 

@@ -78,15 +78,15 @@ Reference: `add.ts` uses `serverClient.addFromInputs()`, `cite.ts` uses `serverC
 | remove | [x] | [x] | [x] | ✅ Uses `serverClient.remove()` |
 | update | [x] | [x] | [x] | ✅ Uses `serverClient.update()` |
 
-#### Step 8.5: cli/index.ts Simplification
+#### Step 8.5: cli/index.ts Simplification (DONE)
 
 Extract action handlers for each command:
 
-- [ ] handleListAction → executeList + formatListOutput
-- [ ] handleSearchAction → executeSearch + formatSearchOutput
-- [ ] handleCiteAction → executeCite + formatCiteOutput
-- [ ] handleRemoveAction → executeRemove + formatRemoveOutput
-- [ ] handleUpdateAction → executeUpdate + formatUpdateOutput
+- [x] handleListAction → executeList + formatListOutput
+- [x] handleSearchAction → executeSearch + formatSearchOutput
+- [x] handleCiteAction → executeCite + formatCiteOutput
+- [x] handleRemoveAction → executeRemove + formatRemoveOutput
+- [x] handleUpdateAction → executeUpdate + formatUpdateOutput
 
 #### Step 8.6: Cleanup and Commit
 
