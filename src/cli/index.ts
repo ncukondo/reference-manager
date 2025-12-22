@@ -29,6 +29,18 @@ import {
 import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
+import {
+  type FulltextAttachOptions,
+  type FulltextDetachOptions,
+  type FulltextGetOptions,
+  executeFulltextAttach,
+  executeFulltextDetach,
+  executeFulltextGet,
+  formatFulltextAttachOutput,
+  formatFulltextDetachOutput,
+  formatFulltextGetOutput,
+  getFulltextExitCode,
+} from "./commands/fulltext.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
 import {
@@ -37,6 +49,7 @@ import {
   parseJsonInput,
   readConfirmation,
   readJsonInput,
+  readStdinBuffer,
   readStdinContent,
 } from "./helpers.js";
 
@@ -69,6 +82,7 @@ export function createProgram(): Command {
   registerUpdateCommand(program);
   registerCiteCommand(program);
   registerServerCommand(program);
+  registerFulltextCommand(program);
 
   return program;
 }
@@ -592,6 +606,212 @@ function registerServerCommand(program: Command): void {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
         process.exit(4);
       }
+    });
+}
+
+/**
+ * Handle 'fulltext attach' command action
+ */
+async function handleFulltextAttachAction(
+  identifier: string,
+  filePathArg: string | undefined,
+  options: {
+    pdf?: string;
+    markdown?: string;
+    move?: boolean;
+    force?: boolean;
+    uuid?: boolean;
+  },
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const context = await createExecutionContext(config, Library.load);
+
+    // Determine file path and type
+    let filePath = filePathArg;
+    let type: "pdf" | "markdown" | undefined;
+    let stdinContent: Buffer | undefined;
+
+    if (options.pdf) {
+      type = "pdf";
+      if (options.pdf !== "" && typeof options.pdf === "string" && options.pdf !== "true") {
+        filePath = options.pdf;
+      }
+    } else if (options.markdown) {
+      type = "markdown";
+      if (
+        options.markdown !== "" &&
+        typeof options.markdown === "string" &&
+        options.markdown !== "true"
+      ) {
+        filePath = options.markdown;
+      }
+    }
+
+    // If no file path and type is specified, read from stdin
+    if (!filePath && type) {
+      stdinContent = await readStdinBuffer();
+    }
+
+    const attachOptions: FulltextAttachOptions = {
+      identifier,
+      fulltextDirectory: config.fulltext.directory,
+      ...(filePath && { filePath }),
+      ...(type && { type }),
+      ...(options.move && { move: options.move }),
+      ...(options.force && { force: options.force }),
+      ...(options.uuid && { byUuid: options.uuid }),
+      ...(stdinContent && { stdinContent }),
+    };
+
+    const result = await executeFulltextAttach(attachOptions, context);
+    const output = formatFulltextAttachOutput(result);
+    process.stderr.write(`${output}\n`);
+    process.exit(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
+ * Handle 'fulltext get' command action
+ */
+async function handleFulltextGetAction(
+  identifier: string,
+  options: {
+    pdf?: boolean;
+    markdown?: boolean;
+    stdout?: boolean;
+    uuid?: boolean;
+  },
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const context = await createExecutionContext(config, Library.load);
+
+    const getOptions: FulltextGetOptions = {
+      identifier,
+      fulltextDirectory: config.fulltext.directory,
+      ...(options.pdf && { type: "pdf" as const }),
+      ...(options.markdown && { type: "markdown" as const }),
+      ...(options.stdout && { stdout: options.stdout }),
+      ...(options.uuid && { byUuid: options.uuid }),
+    };
+
+    const result = await executeFulltextGet(getOptions, context);
+
+    if (result.success && result.content && options.stdout) {
+      // Write raw content to stdout
+      process.stdout.write(result.content);
+    } else {
+      const output = formatFulltextGetOutput(result);
+      if (result.success) {
+        process.stdout.write(`${output}\n`);
+      } else {
+        process.stderr.write(`${output}\n`);
+      }
+    }
+
+    process.exit(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
+ * Handle 'fulltext detach' command action
+ */
+async function handleFulltextDetachAction(
+  identifier: string,
+  options: {
+    pdf?: boolean;
+    markdown?: boolean;
+    delete?: boolean;
+    force?: boolean;
+    uuid?: boolean;
+  },
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const context = await createExecutionContext(config, Library.load);
+
+    const detachOptions: FulltextDetachOptions = {
+      identifier,
+      fulltextDirectory: config.fulltext.directory,
+      ...(options.pdf && { type: "pdf" as const }),
+      ...(options.markdown && { type: "markdown" as const }),
+      ...(options.delete && { delete: options.delete }),
+      ...(options.force && { force: options.force }),
+      ...(options.uuid && { byUuid: options.uuid }),
+    };
+
+    const result = await executeFulltextDetach(detachOptions, context);
+    const output = formatFulltextDetachOutput(result);
+    process.stderr.write(`${output}\n`);
+
+    process.exit(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
+ * Register 'fulltext' command with subcommands
+ */
+function registerFulltextCommand(program: Command): void {
+  const fulltextCmd = program
+    .command("fulltext")
+    .description("Manage full-text files attached to references");
+
+  fulltextCmd
+    .command("attach")
+    .description("Attach a full-text file to a reference")
+    .argument("<identifier>", "Citation key or UUID")
+    .argument("[file-path]", "Path to the file to attach")
+    .option("--pdf [path]", "Attach as PDF (path optional if provided as argument)")
+    .option("--markdown [path]", "Attach as Markdown (path optional if provided as argument)")
+    .option("--move", "Move file instead of copy")
+    .option("-f, --force", "Overwrite existing attachment")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string, filePath: string | undefined, options) => {
+      await handleFulltextAttachAction(identifier, filePath, options, program);
+    });
+
+  fulltextCmd
+    .command("get")
+    .description("Get full-text file path or content")
+    .argument("<identifier>", "Citation key or UUID")
+    .option("--pdf", "Get PDF file only")
+    .option("--markdown", "Get Markdown file only")
+    .option("--stdout", "Output file content to stdout")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string, options) => {
+      await handleFulltextGetAction(identifier, options, program);
+    });
+
+  fulltextCmd
+    .command("detach")
+    .description("Detach full-text file from a reference")
+    .argument("<identifier>", "Citation key or UUID")
+    .option("--pdf", "Detach PDF only")
+    .option("--markdown", "Detach Markdown only")
+    .option("--delete", "Also delete the file from disk")
+    .option("-f, --force", "Skip confirmation for delete")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string, options) => {
+      await handleFulltextDetachAction(identifier, options, program);
     });
 }
 
