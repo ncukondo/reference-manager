@@ -29,6 +29,7 @@ import {
   readJsonInput,
   readStdinContent,
 } from "./helpers.js";
+import { createExecutionContext } from "./execution-context.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
 
@@ -76,11 +77,8 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
-
-    const result = await executeList(options, library, serverClient);
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeList(options, context);
     const output = formatListOutput(result);
 
     if (output) {
@@ -122,11 +120,8 @@ async function handleSearchAction(
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
-
-    const result = await executeSearch({ ...options, query }, library, serverClient);
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeSearch({ ...options, query }, context);
     const output = formatSearchOutput(result);
 
     if (output) {
@@ -181,12 +176,8 @@ async function handleAddAction(
       stdinContent = await readStdinContent();
     }
 
-    // Get server connection
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-
-    // Load library for direct access
-    const library = await Library.load(config.library);
+    // Create execution context
+    const context = await createExecutionContext(config, Library.load);
 
     // Build add options - avoid undefined values for exactOptionalPropertyTypes
     const addOptions: Parameters<typeof executeAdd>[0] = {
@@ -215,7 +206,7 @@ async function handleAddAction(
     }
 
     // Execute add command
-    const result = await executeAdd(addOptions, library, serverClient);
+    const result = await executeAdd(addOptions, context);
 
     // Format and output result
     const output = formatAddOutput(result, options.verbose ?? false);
@@ -437,11 +428,8 @@ async function handleCiteAction(
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
-
-    const result = await executeCite({ ...options, identifiers }, library, serverClient);
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeCite({ ...options, identifiers }, context);
 
     // Output successful citations
     const output = formatCiteOutput(result);

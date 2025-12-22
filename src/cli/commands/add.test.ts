@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Library } from "../../core/library.js";
 import type { AddReferencesResult } from "../../features/operations/add.js";
+import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
 import type { ServerClient } from "../server-client.js";
 import {
   type AddCommandOptions,
@@ -22,12 +23,22 @@ describe("add command", () => {
       addFromInputs: vi.fn(),
     } as unknown as ServerClient;
 
+    const serverContext: ServerExecutionContext = {
+      type: "server",
+      client: mockServerClient,
+    };
+
+    const localContext: LocalExecutionContext = {
+      type: "local",
+      library: mockLibrary,
+    };
+
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
     describe("via server", () => {
-      it("should call server addFromInputs when server is provided", async () => {
+      it("should call server addFromInputs when context is server", async () => {
         const mockResult: AddReferencesResult = {
           added: [{ id: "Smith-2024", title: "Test Paper" }],
           failed: [],
@@ -40,7 +51,7 @@ describe("add command", () => {
           force: false,
         };
 
-        const result = await executeAdd(options, mockLibrary, mockServerClient);
+        const result = await executeAdd(options, serverContext);
 
         expect(mockServerClient.addFromInputs).toHaveBeenCalledWith(["10.1234/test"], {
           force: false,
@@ -62,7 +73,7 @@ describe("add command", () => {
           format: "bibtex",
         };
 
-        await executeAdd(options, mockLibrary, mockServerClient);
+        await executeAdd(options, serverContext);
 
         expect(mockServerClient.addFromInputs).toHaveBeenCalledWith(["test.bib"], {
           force: true,
@@ -72,7 +83,7 @@ describe("add command", () => {
     });
 
     describe("via library", () => {
-      it("should call addReferences when server is not provided", async () => {
+      it("should call addReferences when context is local", async () => {
         const { addReferences } = await import("../../features/operations/add.js");
         const mockResult: AddReferencesResult = {
           added: [{ id: "Jones-2023", title: "Another Paper" }],
@@ -86,7 +97,7 @@ describe("add command", () => {
           force: false,
         };
 
-        const result = await executeAdd(options, mockLibrary, undefined);
+        const result = await executeAdd(options, localContext);
 
         expect(addReferences).toHaveBeenCalledWith(["12345678"], mockLibrary, {
           force: false,
@@ -110,7 +121,7 @@ describe("add command", () => {
           pubmedConfig: { email: "test@example.com" },
         };
 
-        await executeAdd(options, mockLibrary, undefined);
+        await executeAdd(options, localContext);
 
         expect(addReferences).toHaveBeenCalledWith(["12345678"], mockLibrary, {
           force: true,

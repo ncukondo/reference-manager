@@ -44,59 +44,48 @@ export type ExecutionContext =
   - Otherwise loads library and returns `{ type: "local", library }`
 - [x] Export from `cli/index.ts` or dedicated module
 
-#### Step 9.2: Update Execute Functions
+#### Step 9.2: Update Commands to Use ExecutionContext (Part 1)
 
-Update all `executeXxx` functions to use `ExecutionContext`:
+Update each command's `executeXxx` function and corresponding `handleXxxAction` together, testing after each command.
 
-**Before:**
+**Note:** `remove` and `update` commands depend on Step 9.3 (Server API refactoring) because they use `serverClient.getAll()` to find references by ID. These will be updated in Step 9.4.
+
+**Execute function change:**
 ```typescript
+// Before:
 executeList(options, library, serverClient)
-```
 
-**After:**
-```typescript
+// After:
 executeList(options, context: ExecutionContext)
 ```
 
-| Command | File | Status |
-|---------|------|--------|
-| list | `cli/commands/list.ts` | [ ] |
-| search | `cli/commands/search.ts` | [ ] |
-| add | `cli/commands/add.ts` | [ ] |
-| remove | `cli/commands/remove.ts` | [ ] |
-| update | `cli/commands/update.ts` | [ ] |
-| cite | `cli/commands/cite.ts` | [ ] |
-
-Each function:
-- [ ] Update signature to accept `ExecutionContext`
-- [ ] Use discriminated union pattern: `if (context.type === "server") { ... }`
-- [ ] Update tests
-
-#### Step 9.3: Update CLI Action Handlers
-
-Update `cli/index.ts` action handlers:
-
-**Before:**
+**Action handler change:**
 ```typescript
+// Before:
 const server = await getServerConnection(config.library, config);
 const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
 const library = await Library.load(config.library);  // Always loads!
-```
 
-**After:**
-```typescript
+// After:
 const context = await createExecutionContext(config);
 const result = await executeList(options, context);
 ```
 
-- [ ] `handleListAction`
-- [ ] `handleSearchAction`
-- [ ] `handleAddAction`
-- [ ] `handleRemoveAction`
-- [ ] `handleUpdateAction`
-- [ ] `handleCiteAction`
+| Command | Execute Function | Action Handler | Tests | Status |
+|---------|------------------|----------------|-------|--------|
+| list | `executeList` | `handleListAction` | `list.test.ts` | [x] |
+| search | `executeSearch` | `handleSearchAction` | `search.test.ts` | [x] |
+| add | `executeAdd` | `handleAddAction` | `add.test.ts` | [x] |
+| cite | `executeCite` | `handleCiteAction` | `cite.test.ts` | [x] |
 
-#### Step 9.4: Server API Refactoring for Single Item Lookup
+For each command:
+1. Update `executeXxx` signature to accept `ExecutionContext`
+2. Use discriminated union pattern: `if (context.type === "server") { ... }`
+3. Update `handleXxxAction` to use `createExecutionContext()`
+4. Update tests
+5. Run tests to verify
+
+#### Step 9.3: Server API Refactoring for Single Item Lookup
 
 `handleRemoveAction` requires fetching a single reference for confirmation display.
 Currently uses `client.getAll()` which is inefficient.
@@ -126,6 +115,22 @@ ServerClient updates (`cli/server-client.ts`):
 
 CLI updates:
 - [ ] Update `findReferenceToRemove()` to use `findByUuid()` / `findById()`
+
+#### Step 9.4: Update Commands to Use ExecutionContext (Part 2)
+
+Update `remove` and `update` commands after Step 9.3 completes (they depend on the new `findById()` API).
+
+| Command | Execute Function | Action Handler | Tests | Status |
+|---------|------------------|----------------|-------|--------|
+| remove | `executeRemove` | `handleRemoveAction` | `remove.test.ts` | [ ] |
+| update | `executeUpdate` | `handleUpdateAction` | `update.test.ts` | [ ] |
+
+For each command:
+1. Update `executeXxx` to use `findById()` instead of `getAll()`
+2. Update signature to accept `ExecutionContext`
+3. Update `handleXxxAction` to use `createExecutionContext()`
+4. Update tests
+5. Run tests to verify
 
 #### Step 9.5: Tests and Validation
 

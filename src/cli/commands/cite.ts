@@ -1,5 +1,5 @@
-import type { Library } from "../../core/library.js";
 import { type CiteResult, citeReferences } from "../../features/operations/cite.js";
+import type { ExecutionContext } from "../execution-context.js";
 import type { ServerClient } from "../server-client.js";
 
 /**
@@ -72,25 +72,23 @@ function buildOperationCiteOptions(
 
 /**
  * Execute cite command.
- * Routes to server API or direct library operation based on server availability.
+ * Routes to server API or direct library operation based on execution context.
  *
  * @param options - Cite command options
- * @param library - Library instance (used when server is not available)
- * @param serverClient - Server client (undefined if server is not running)
+ * @param context - Execution context (server or local)
  * @returns Cite result containing per-identifier results
  */
 export async function executeCite(
   options: CiteCommandOptions,
-  library: Library,
-  serverClient: ServerClient | undefined
+  context: ExecutionContext
 ): Promise<CiteCommandResult> {
   await validateOptions(options);
 
-  if (serverClient) {
-    return serverClient.cite(buildServerCiteOptions(options));
+  if (context.type === "server") {
+    return context.client.cite(buildServerCiteOptions(options));
   }
 
-  return citeReferences(library, buildOperationCiteOptions(options));
+  return citeReferences(context.library, buildOperationCiteOptions(options));
 }
 
 /**

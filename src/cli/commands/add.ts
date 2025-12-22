@@ -1,4 +1,3 @@
-import type { Library } from "../../core/library.js";
 import type { InputFormat } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
 import {
@@ -9,7 +8,7 @@ import {
   type SkippedItem,
   addReferences,
 } from "../../features/operations/add.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 
 /**
  * Options for the add command.
@@ -42,21 +41,19 @@ const MAX_ERROR_LENGTH = 80;
 
 /**
  * Execute add command.
- * Routes to server API or direct library operation based on server availability.
+ * Routes to server API or direct library operation based on execution context.
  *
  * @param options - Add command options
- * @param library - Library instance (used when server is not available)
- * @param serverClient - Server client (undefined if server is not running)
+ * @param context - Execution context (server or local)
  * @returns Add result containing added, failed, and skipped items
  */
 export async function executeAdd(
   options: AddCommandOptions,
-  library: Library,
-  serverClient: ServerClient | undefined
+  context: ExecutionContext
 ): Promise<AddCommandResult> {
   const { inputs, force, format, pubmedConfig, stdinContent } = options;
 
-  if (serverClient) {
+  if (context.type === "server") {
     // Route through server - build options without undefined values
     const serverOptions: { force: boolean; format?: string; stdinContent?: string } = { force };
     if (format !== undefined) {
@@ -65,7 +62,7 @@ export async function executeAdd(
     if (stdinContent !== undefined) {
       serverOptions.stdinContent = stdinContent;
     }
-    return serverClient.addFromInputs(inputs, serverOptions);
+    return context.client.addFromInputs(inputs, serverOptions);
   }
 
   // Direct library operation - build options without undefined values
@@ -80,7 +77,7 @@ export async function executeAdd(
     addOptions.stdinContent = stdinContent;
   }
 
-  return addReferences(inputs, library, addOptions);
+  return addReferences(inputs, context.library, addOptions);
 }
 
 /**
