@@ -1,52 +1,70 @@
-import type { CslItem } from "../../core/csl-json/types.js";
+import type { Library } from "../../core/library.js";
+import { type RemoveResult, removeReference } from "../../features/operations/remove.js";
+import type { ServerClient } from "../server-client.js";
 
-export interface RemoveOptions {
-  byUuid: boolean;
-}
-
-export interface RemoveResult {
-  removed: boolean;
-  item?: CslItem | undefined;
-  remaining: CslItem[];
+/**
+ * Options for the remove command.
+ */
+export interface RemoveCommandOptions {
+  identifier: string;
+  byUuid?: boolean;
 }
 
 /**
- * Remove a reference from the library.
+ * Result from remove command execution.
+ */
+export type RemoveCommandResult = RemoveResult;
+
+/**
+ * Execute remove command.
+ * Routes to server API or direct library operation based on server availability.
  *
- * @param items - Library items
- * @param identifier - Reference ID or UUID
- * @param options - Remove options
+ * @param options - Remove command options
+ * @param library - Library instance (used when server is not available)
+ * @param serverClient - Server client (undefined if server is not running)
  * @returns Remove result
  */
-export async function remove(
-  items: CslItem[],
-  identifier: string,
-  options: RemoveOptions
-): Promise<RemoveResult> {
-  let foundIndex = -1;
+export async function executeRemove(
+  options: RemoveCommandOptions,
+  library: Library,
+  serverClient: ServerClient | undefined
+): Promise<RemoveCommandResult> {
+  const { identifier, byUuid = false } = options;
 
-  if (options.byUuid) {
-    // Find by UUID
-    foundIndex = items.findIndex((item) => item.custom?.uuid === identifier);
-  } else {
-    // Find by ID
-    foundIndex = items.findIndex((item) => item.id === identifier);
+  if (serverClient) {
+    // Server mode requires UUID
+    if (byUuid) {
+      return serverClient.remove(identifier);
+    }
+    // Find UUID by ID first using server API
+    const items = await serverClient.getAll();
+    const found = items.find((item) => item.id === identifier);
+    if (!found?.custom?.uuid) {
+      return { removed: false };
+    }
+    return serverClient.remove(found.custom.uuid);
   }
 
-  if (foundIndex === -1) {
-    // Not found
-    return {
-      removed: false,
-      remaining: items,
-    };
+  // Direct library operation
+  return removeReference(library, { identifier, byUuid });
+}
+
+/**
+ * Format remove result for CLI output.
+ *
+ * @param result - Remove result
+ * @param identifier - The identifier that was used
+ * @returns Formatted output string
+ */
+export function formatRemoveOutput(result: RemoveCommandResult, identifier: string): string {
+  if (!result.removed) {
+    return `Reference not found: ${identifier}`;
   }
 
-  const foundItem = items[foundIndex];
-  const remaining = [...items.slice(0, foundIndex), ...items.slice(foundIndex + 1)];
+  const item = result.item;
+  if (item) {
+    return `Removed: [${item.id}] ${item.title || "(no title)"}`;
+  }
 
-  return {
-    removed: true,
-    item: foundItem,
-    remaining,
-  };
+  return `Removed reference: ${identifier}`;
 }

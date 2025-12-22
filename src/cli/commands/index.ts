@@ -17,11 +17,11 @@ export type {
   SkippedItem,
 } from "./add.js";
 
-export { remove } from "./remove.js";
-export type { RemoveOptions, RemoveResult } from "./remove.js";
+export { executeRemove, formatRemoveOutput } from "./remove.js";
+export type { RemoveCommandOptions, RemoveCommandResult } from "./remove.js";
 
-export { update } from "./update.js";
-export type { UpdateOptions, UpdateResult } from "./update.js";
+export { executeUpdate, formatUpdateOutput } from "./update.js";
+export type { UpdateCommandOptions, UpdateCommandResult } from "./update.js";
 
 export { serverStart, serverStop, serverStatus } from "./server.js";
 export type { ServerStartOptions, ServerInfo } from "./server.js";

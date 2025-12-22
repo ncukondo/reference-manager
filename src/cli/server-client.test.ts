@@ -137,63 +137,113 @@ describe("ServerClient", () => {
 
   describe("update", () => {
     test("should update reference", async () => {
-      const updatedItem: CslItem = {
-        type: "article-journal",
-        title: "Updated Article",
-        custom: { uuid: "uuid-1", timestamp: "2025-01-02T00:00:00Z" },
+      const updates = { title: "Updated Article" };
+      const updateResult = {
+        updated: true,
+        item: {
+          id: "test-1",
+          type: "article-journal",
+          title: "Updated Article",
+          custom: { uuid: "uuid-1", timestamp: "2025-01-02T00:00:00Z" },
+        },
       };
 
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => updatedItem,
+        json: async () => updateResult,
       } as Response);
 
-      const result = await client.update("uuid-1", updatedItem);
+      const result = await client.update("uuid-1", updates);
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid-1`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedItem),
+        body: JSON.stringify(updates),
       });
-      expect(result).toEqual(updatedItem);
+      expect(result).toEqual(updateResult);
     });
 
-    test("should throw error on update failure", async () => {
-      const updatedItem: CslItem = {
-        type: "article-journal",
-        title: "Updated Article",
-      };
+    test("should return not found result for 404", async () => {
+      const updates = { title: "Updated Article" };
+      const updateResult = { updated: false };
 
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
-        text: async () => "Reference not found",
+        status: 404,
+        json: async () => updateResult,
       } as Response);
 
-      await expect(client.update("uuid-1", updatedItem)).rejects.toThrow("Reference not found");
+      const result = await client.update("uuid-1", updates);
+
+      expect(result).toEqual(updateResult);
+    });
+
+    test("should return ID collision result for 409", async () => {
+      const updates = { id: "existing-id" };
+      const updateResult = { updated: false, idCollision: true };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => updateResult,
+      } as Response);
+
+      const result = await client.update("uuid-1", updates);
+
+      expect(result).toEqual(updateResult);
+    });
+
+    test("should throw error on update failure", async () => {
+      const updates = { title: "Updated Article" };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: async () => "Server error",
+      } as Response);
+
+      await expect(client.update("uuid-1", updates)).rejects.toThrow("Server error");
     });
   });
 
   describe("remove", () => {
     test("should remove reference", async () => {
+      const removeResult = { removed: true, item: { id: "test-1", type: "article" } };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
-        status: 204,
+        status: 200,
+        json: async () => removeResult,
       } as Response);
 
-      await client.remove("uuid-1");
+      const result = await client.remove("uuid-1");
 
+      expect(result).toEqual(removeResult);
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid-1`, {
         method: "DELETE",
       });
     });
 
+    test("should return not found result for 404", async () => {
+      const removeResult = { removed: false };
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => removeResult,
+      } as Response);
+
+      const result = await client.remove("uuid-1");
+
+      expect(result).toEqual(removeResult);
+    });
+
     test("should throw error on remove failure", async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
-        text: async () => "Reference not found",
+        status: 500,
+        text: async () => "Server error",
       } as Response);
 
-      await expect(client.remove("uuid-1")).rejects.toThrow("Reference not found");
+      await expect(client.remove("uuid-1")).rejects.toThrow("Server error");
     });
   });
 

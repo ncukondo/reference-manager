@@ -50,28 +50,6 @@ function validateOptions(options: ListCommandOptions): void {
 }
 
 /**
- * Format items for a specific format (used for server mode).
- */
-function formatItems(items: CslItem[], options: ListCommandOptions): string[] {
-  if (options.json) {
-    return items.map((item) => JSON.stringify(item));
-  }
-  if (options.idsOnly) {
-    return items.map((item) => item.id);
-  }
-  if (options.uuid) {
-    return items
-      .filter((item): item is CslItem & { custom: { uuid: string } } => Boolean(item.custom?.uuid))
-      .map((item) => item.custom.uuid);
-  }
-  if (options.bibtex) {
-    return items.map((item) => formatBibtex([item]));
-  }
-  // pretty
-  return items.map((item) => formatPretty([item]));
-}
-
-/**
  * Execute list command.
  * Routes to server API or direct library operation based on server availability.
  *
@@ -89,9 +67,8 @@ export async function executeList(
   const format = getListFormat(options);
 
   if (serverClient) {
-    // Get items from server, format locally
-    const items = await serverClient.getAll();
-    return { items: formatItems(items, options) };
+    // Use server's list API with format option
+    return serverClient.list({ format });
   }
 
   // Direct library operation

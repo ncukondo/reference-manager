@@ -1,84 +1,87 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { update } from "./update.js";
+import type { UpdateOperationResult } from "../../features/operations/update.js";
+import { formatUpdateOutput } from "./update.js";
 
 describe("update command", () => {
-  const createItem = (id: string, uuid: string, title: string): CslItem => ({
-    id,
-    type: "article",
-    title,
-    custom: {
-      uuid,
-      created_at: "2024-01-01T00:00:00.000Z",
-      timestamp: "2024-01-01T00:00:00.000Z",
-    },
-  });
+  describe("formatUpdateOutput", () => {
+    const createItem = (id: string, title: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid: "test-uuid",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    });
 
-  it("should update reference by ID", async () => {
-    const items: CslItem[] = [
-      createItem("Smith-2020", "uuid-1", "Original Title"),
-      createItem("Jones-2021", "uuid-2", "Another Title"),
-    ];
+    it("should format successful update with item", () => {
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: createItem("Smith-2020", "Updated Title"),
+      };
 
-    const result = await update(items, "Smith-2020", { title: "Updated Title" }, { byUuid: false });
+      const output = formatUpdateOutput(result, "Smith-2020");
 
-    expect(result.updated).toBe(true);
-    expect(result.item?.title).toBe("Updated Title");
-    expect(result.item?.id).toBe("Smith-2020");
-  });
+      expect(output).toBe("Updated: [Smith-2020] Updated Title");
+    });
 
-  it("should update reference by UUID", async () => {
-    const items: CslItem[] = [
-      createItem("Smith-2020", "uuid-1", "Original Title"),
-      createItem("Jones-2021", "uuid-2", "Another Title"),
-    ];
+    it("should format successful update without title", () => {
+      const item = createItem("Smith-2020", "");
+      item.title = undefined;
+      const result: UpdateOperationResult = {
+        updated: true,
+        item,
+      };
 
-    const result = await update(items, "uuid-1", { title: "Updated Title" }, { byUuid: true });
+      const output = formatUpdateOutput(result, "Smith-2020");
 
-    expect(result.updated).toBe(true);
-    expect(result.item?.title).toBe("Updated Title");
-    expect(result.item?.custom.uuid).toBe("uuid-1");
-  });
+      expect(output).toBe("Updated: [Smith-2020] (no title)");
+    });
 
-  it("should perform partial update", async () => {
-    const items: CslItem[] = [createItem("Smith-2020", "uuid-1", "Original Title")];
+    it("should format not found result", () => {
+      const result: UpdateOperationResult = {
+        updated: false,
+      };
 
-    const result = await update(
-      items,
-      "Smith-2020",
-      { abstract: "New abstract" },
-      { byUuid: false }
-    );
+      const output = formatUpdateOutput(result, "NonExistent");
 
-    expect(result.updated).toBe(true);
-    expect(result.item?.title).toBe("Original Title"); // Unchanged
-    expect(result.item?.abstract).toBe("New abstract"); // Updated
-  });
+      expect(output).toBe("Reference not found: NonExistent");
+    });
 
-  it("should return not found when ID doesn't exist", async () => {
-    const items: CslItem[] = [createItem("Smith-2020", "uuid-1", "Original Title")];
+    it("should format ID collision result", () => {
+      const result: UpdateOperationResult = {
+        updated: false,
+        idCollision: true,
+      };
 
-    const result = await update(items, "NonExistent", { title: "Updated" }, { byUuid: false });
+      const output = formatUpdateOutput(result, "Smith-2020");
 
-    expect(result.updated).toBe(false);
-    expect(result.item).toBeUndefined();
-  });
+      expect(output).toBe("Update failed: ID collision for Smith-2020");
+    });
 
-  it("should update timestamp automatically", async () => {
-    const items: CslItem[] = [createItem("Smith-2020", "uuid-1", "Original Title")];
+    it("should format update with ID change", () => {
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: createItem("Smith-2020-1", "Test Title"),
+        idChanged: true,
+        newId: "Smith-2020-1",
+      };
 
-    const result = await update(items, "Smith-2020", { title: "Updated" }, { byUuid: false });
+      const output = formatUpdateOutput(result, "Smith-2020");
 
-    expect(result.updated).toBe(true);
-    expect(result.item?.custom.timestamp).not.toBe("2024-01-01T00:00:00.000Z");
-  });
+      expect(output).toBe("Updated: [Smith-2020-1] Test Title\nID changed to: Smith-2020-1");
+    });
 
-  it("should preserve created_at", async () => {
-    const items: CslItem[] = [createItem("Smith-2020", "uuid-1", "Original Title")];
+    it("should format update without item details", () => {
+      const result: UpdateOperationResult = {
+        updated: true,
+      };
 
-    const result = await update(items, "Smith-2020", { title: "Updated" }, { byUuid: false });
+      const output = formatUpdateOutput(result, "test-uuid");
 
-    expect(result.updated).toBe(true);
-    expect(result.item?.custom.created_at).toBe("2024-01-01T00:00:00.000Z");
+      expect(output).toBe("Updated reference: test-uuid");
+    });
   });
 });

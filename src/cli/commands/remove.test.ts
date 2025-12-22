@@ -1,62 +1,63 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { remove } from "./remove.js";
+import type { RemoveResult } from "../../features/operations/remove.js";
+import { formatRemoveOutput } from "./remove.js";
 
 describe("remove command", () => {
-  const createItem = (id: string, uuid: string): CslItem => ({
-    id,
-    type: "article",
-    title: "Test Article",
-    custom: {
-      uuid,
-      created_at: "2024-01-01T00:00:00.000Z",
-      timestamp: "2024-01-01T00:00:00.000Z",
-    },
-  });
+  describe("formatRemoveOutput", () => {
+    const createItem = (id: string, title: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid: "test-uuid",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    });
 
-  it("should remove reference by ID", async () => {
-    const items: CslItem[] = [
-      createItem("Smith-2020", "uuid-1"),
-      createItem("Jones-2021", "uuid-2"),
-    ];
+    it("should format successful removal with item", () => {
+      const result: RemoveResult = {
+        removed: true,
+        item: createItem("Smith-2020", "Test Article"),
+      };
 
-    const result = await remove(items, "Smith-2020", { byUuid: false });
+      const output = formatRemoveOutput(result, "Smith-2020");
 
-    expect(result.removed).toBe(true);
-    expect(result.item?.id).toBe("Smith-2020");
-    expect(result.remaining).toHaveLength(1);
-    expect(result.remaining[0].id).toBe("Jones-2021");
-  });
+      expect(output).toBe("Removed: [Smith-2020] Test Article");
+    });
 
-  it("should remove reference by UUID", async () => {
-    const items: CslItem[] = [
-      createItem("Smith-2020", "uuid-1"),
-      createItem("Jones-2021", "uuid-2"),
-    ];
+    it("should format successful removal without title", () => {
+      const item = createItem("Smith-2020", "");
+      item.title = undefined;
+      const result: RemoveResult = {
+        removed: true,
+        item,
+      };
 
-    const result = await remove(items, "uuid-1", { byUuid: true });
+      const output = formatRemoveOutput(result, "Smith-2020");
 
-    expect(result.removed).toBe(true);
-    expect(result.item?.custom.uuid).toBe("uuid-1");
-    expect(result.remaining).toHaveLength(1);
-  });
+      expect(output).toBe("Removed: [Smith-2020] (no title)");
+    });
 
-  it("should return not found when ID doesn't exist", async () => {
-    const items: CslItem[] = [createItem("Smith-2020", "uuid-1")];
+    it("should format not found result", () => {
+      const result: RemoveResult = {
+        removed: false,
+      };
 
-    const result = await remove(items, "NonExistent", { byUuid: false });
+      const output = formatRemoveOutput(result, "NonExistent");
 
-    expect(result.removed).toBe(false);
-    expect(result.item).toBeUndefined();
-    expect(result.remaining).toHaveLength(1);
-  });
+      expect(output).toBe("Reference not found: NonExistent");
+    });
 
-  it("should return not found when UUID doesn't exist", async () => {
-    const items: CslItem[] = [createItem("Smith-2020", "uuid-1")];
+    it("should format removal without item details", () => {
+      const result: RemoveResult = {
+        removed: true,
+      };
 
-    const result = await remove(items, "uuid-nonexistent", { byUuid: true });
+      const output = formatRemoveOutput(result, "test-uuid");
 
-    expect(result.removed).toBe(false);
-    expect(result.item).toBeUndefined();
+      expect(output).toBe("Removed reference: test-uuid");
+    });
   });
 });

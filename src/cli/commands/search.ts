@@ -54,39 +54,6 @@ function validateOptions(options: SearchCommandOptions): void {
 }
 
 /**
- * Search and format items locally (used for server mode).
- */
-function searchAndFormatItems(
-  items: CslItem[],
-  query: string,
-  options: SearchCommandOptions
-): string[] {
-  // Tokenize and search
-  const searchQuery = tokenize(query);
-  const results = searchMatcher(items, searchQuery.tokens);
-  const sorted = sortResults(results);
-  const matchedItems = sorted.map((result) => result.reference);
-
-  // Format
-  if (options.json) {
-    return matchedItems.map((item) => JSON.stringify(item));
-  }
-  if (options.idsOnly) {
-    return matchedItems.map((item) => item.id);
-  }
-  if (options.uuid) {
-    return matchedItems
-      .filter((item): item is CslItem & { custom: { uuid: string } } => Boolean(item.custom?.uuid))
-      .map((item) => item.custom.uuid);
-  }
-  if (options.bibtex) {
-    return matchedItems.map((item) => formatBibtex([item]));
-  }
-  // pretty
-  return matchedItems.map((item) => formatPretty([item]));
-}
-
-/**
  * Execute search command.
  * Routes to server API or direct library operation based on server availability.
  *
@@ -104,9 +71,8 @@ export async function executeSearch(
   const format = getSearchFormat(options);
 
   if (serverClient) {
-    // Get all items from server, search locally
-    const items = await serverClient.getAll();
-    return { items: searchAndFormatItems(items, options.query, options) };
+    // Use server's search API with format option
+    return serverClient.search({ query: options.query, format });
   }
 
   // Direct library operation

@@ -2,7 +2,9 @@ import type { CslItem } from "../core/csl-json/types.js";
 import type { AddReferencesResult } from "../features/operations/add.js";
 import type { CiteResult } from "../features/operations/cite.js";
 import type { ListOptions, ListResult } from "../features/operations/list.js";
+import type { RemoveResult } from "../features/operations/remove.js";
 import type { SearchOperationOptions, SearchResult } from "../features/operations/search.js";
+import type { UpdateOperationResult } from "../features/operations/update.js";
 
 /**
  * Options for addFromInputs method.
@@ -92,34 +94,36 @@ export class ServerClient {
    * @param item - Updated CSL item
    * @returns Updated CSL item
    */
-  async update(uuid: string, item: CslItem): Promise<CslItem> {
+  async update(uuid: string, updates: Partial<CslItem>): Promise<UpdateOperationResult> {
     const url = `${this.baseUrl}/api/references/${uuid}`;
     const response = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item),
+      body: JSON.stringify(updates),
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 404 && response.status !== 409) {
       throw new Error(await response.text());
     }
 
-    return (await response.json()) as CslItem;
+    return (await response.json()) as UpdateOperationResult;
   }
 
   /**
    * Remove reference by UUID.
    * @param uuid - Reference UUID
    */
-  async remove(uuid: string): Promise<void> {
+  async remove(uuid: string): Promise<RemoveResult> {
     const url = `${this.baseUrl}/api/references/${uuid}`;
     const response = await fetch(url, {
       method: "DELETE",
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 404) {
       throw new Error(await response.text());
     }
+
+    return (await response.json()) as RemoveResult;
   }
 
   /**

@@ -1,80 +1,83 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import type { Library } from "../../core/library.js";
+import { type UpdateOperationResult, updateReference } from "../../features/operations/update.js";
+import type { ServerClient } from "../server-client.js";
 
-export interface UpdateOptions {
-  byUuid: boolean;
-}
-
-export interface UpdateResult {
-  updated: boolean;
-  item?: CslItem | undefined;
-  items: CslItem[];
+/**
+ * Options for the update command.
+ */
+export interface UpdateCommandOptions {
+  identifier: string;
+  updates: Partial<CslItem>;
+  byUuid?: boolean;
 }
 
 /**
- * Update a reference in the library.
+ * Result from update command execution.
+ */
+export type UpdateCommandResult = UpdateOperationResult;
+
+/**
+ * Execute update command.
+ * Routes to server API or direct library operation based on server availability.
  *
- * @param items - Library items
- * @param identifier - Reference ID or UUID
- * @param updates - Partial updates to apply
- * @param options - Update options
+ * @param options - Update command options
+ * @param library - Library instance (used when server is not available)
+ * @param serverClient - Server client (undefined if server is not running)
  * @returns Update result
  */
-export async function update(
-  items: CslItem[],
-  identifier: string,
-  updates: Partial<CslItem>,
-  options: UpdateOptions
-): Promise<UpdateResult> {
-  let foundIndex = -1;
+export async function executeUpdate(
+  options: UpdateCommandOptions,
+  library: Library,
+  serverClient: ServerClient | undefined
+): Promise<UpdateCommandResult> {
+  const { identifier, updates, byUuid = false } = options;
 
-  if (options.byUuid) {
-    // Find by UUID
-    foundIndex = items.findIndex((item) => item.custom?.uuid === identifier);
+  if (serverClient) {
+    // Server mode requires UUID
+    if (byUuid) {
+      return serverClient.update(identifier, updates);
+    }
+    // Find UUID by ID first using server API
+    const items = await serverClient.getAll();
+    const found = items.find((item) => item.id === identifier);
+    if (!found?.custom?.uuid) {
+      return { updated: false };
+    }
+    return serverClient.update(found.custom.uuid, updates);
+  }
+
+  // Direct library operation
+  return updateReference(library, { identifier, updates, byUuid });
+}
+
+/**
+ * Format update result for CLI output.
+ *
+ * @param result - Update result
+ * @param identifier - The identifier that was used
+ * @returns Formatted output string
+ */
+export function formatUpdateOutput(result: UpdateCommandResult, identifier: string): string {
+  if (!result.updated) {
+    if (result.idCollision) {
+      return `Update failed: ID collision for ${identifier}`;
+    }
+    return `Reference not found: ${identifier}`;
+  }
+
+  const item = result.item;
+  const parts: string[] = [];
+
+  if (item) {
+    parts.push(`Updated: [${item.id}] ${item.title || "(no title)"}`);
   } else {
-    // Find by ID
-    foundIndex = items.findIndex((item) => item.id === identifier);
+    parts.push(`Updated reference: ${identifier}`);
   }
 
-  if (foundIndex === -1) {
-    // Not found
-    return {
-      updated: false,
-      items,
-    };
+  if (result.idChanged && result.newId) {
+    parts.push(`ID changed to: ${result.newId}`);
   }
 
-  const existingItem = items[foundIndex];
-  if (!existingItem) {
-    // Should not happen, but TypeScript needs this
-    return {
-      updated: false,
-      items,
-    };
-  }
-
-  // Merge updates with existing item
-  const updatedItem: CslItem = {
-    ...existingItem,
-    ...updates,
-    // Ensure required fields
-    id: updates.id ?? existingItem.id,
-    type: updates.type ?? existingItem.type,
-    // Preserve UUID and created_at
-    custom: {
-      ...(existingItem.custom || {}),
-      ...(updates.custom || {}),
-      uuid: existingItem.custom?.uuid || "",
-      created_at: existingItem.custom?.created_at || new Date().toISOString(),
-      // Update timestamp
-      timestamp: new Date().toISOString(),
-    },
-  };
-
-  const updatedItems = [...items.slice(0, foundIndex), updatedItem, ...items.slice(foundIndex + 1)];
-
-  return {
-    updated: true,
-    item: updatedItem,
-    items: updatedItems,
-  };
+  return parts.join("\n");
 }

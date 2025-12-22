@@ -60,20 +60,23 @@ Add methods to `cli/server-client.ts`:
 | `search(options)` | [x] Done |
 | `cite(options)` | [x] Done |
 
-#### Step 8.4: CLI Commands Pattern Update
+#### Step 8.4: CLI Commands Pattern Update (DONE)
 
 Update each command to follow unified pattern:
 - `executeXxx(options, library, serverClient)` - routes to server or direct
+  - **Must use `serverClient.xxx()` methods** (not `serverClient.getAll()`)
 - `formatXxxOutput(result)` - formats for CLI output
 - Remove deprecated functions
 
-| Command | executeXxx | formatOutput | deprecated removed |
-|---------|------------|--------------|-------------------|
-| list | [x] | [x] | [ ] |
-| search | [x] | [x] | [ ] |
-| cite | [x] | [x] | [ ] |
-| remove | [ ] | [ ] | [ ] |
-| update | [ ] | [ ] | [ ] |
+Reference: `add.ts` uses `serverClient.addFromInputs()`, `cite.ts` uses `serverClient.cite()`
+
+| Command | executeXxx | formatOutput | deprecated removed | Notes |
+|---------|------------|--------------|-------------------|-------|
+| list | [x] | [x] | [ ] | ✅ Uses `serverClient.list()` |
+| search | [x] | [x] | [ ] | ✅ Uses `serverClient.search()` |
+| cite | [x] | [x] | [ ] | ✅ Uses `serverClient.cite()` |
+| remove | [x] | [x] | [x] | ✅ Uses `serverClient.remove()` |
+| update | [x] | [x] | [x] | ✅ Uses `serverClient.update()` |
 
 #### Step 8.5: cli/index.ts Simplification
 
