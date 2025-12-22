@@ -45,7 +45,7 @@ Pure utility functions with no dependencies on matcher logic.
 
 String matching utility that respects uppercase segments.
 
-- [ ] **11.2.1**: Test case-sensitive matching function
+- [x] **11.2.1**: Test case-sensitive matching function
   - File: `src/features/search/uppercase.test.ts`
   - Test `matchWithUppercaseSensitivity(query, target)`:
     - ("AI", "AI therapy") → true
@@ -55,7 +55,7 @@ String matching utility that respects uppercase segments.
     - ("api", "API endpoint") → true (no uppercase in query)
     - ("AI therapy", "AI Therapy") → true (mixed)
 
-- [ ] **11.2.2**: Implement case-sensitive matching function
+- [x] **11.2.2**: Implement case-sensitive matching function
   - File: `src/features/search/uppercase.ts`
   - Function: `matchWithUppercaseSensitivity(query: string, target: string): boolean`
   - Depends on: 11.1.2

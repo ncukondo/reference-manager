@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extractUppercaseSegments, hasConsecutiveUppercase } from "./uppercase.js";
+import {
+  extractUppercaseSegments,
+  hasConsecutiveUppercase,
+  matchWithUppercaseSensitivity,
+} from "./uppercase.js";
 
 describe("uppercase", () => {
   describe("hasConsecutiveUppercase", () => {
@@ -95,6 +99,83 @@ describe("uppercase", () => {
     it("should handle uppercase at end of string", () => {
       const result = extractUppercaseSegments("therapy AI");
       expect(result).toEqual([{ segment: "AI", start: 8, end: 10 }]);
+    });
+  });
+
+  describe("matchWithUppercaseSensitivity", () => {
+    describe("query with consecutive uppercase", () => {
+      it("should match when uppercase segment matches exactly", () => {
+        expect(matchWithUppercaseSensitivity("AI", "AI therapy")).toBe(true);
+        expect(matchWithUppercaseSensitivity("RNA", "RNA synthesis")).toBe(true);
+      });
+
+      it("should not match when uppercase segment has different case", () => {
+        expect(matchWithUppercaseSensitivity("AI", "ai therapy")).toBe(false);
+        expect(matchWithUppercaseSensitivity("AI", "Ai therapy")).toBe(false);
+        expect(matchWithUppercaseSensitivity("RNA", "rna synthesis")).toBe(false);
+      });
+
+      it("should match partial uppercase segment in target", () => {
+        expect(matchWithUppercaseSensitivity("RNA", "mRNA")).toBe(true);
+        expect(matchWithUppercaseSensitivity("RNA", "mRNA synthesis")).toBe(true);
+      });
+
+      it("should handle mixed case query with uppercase segment", () => {
+        expect(matchWithUppercaseSensitivity("AI therapy", "AI Therapy")).toBe(true);
+        expect(matchWithUppercaseSensitivity("AI therapy", "AI therapy works")).toBe(true);
+        expect(matchWithUppercaseSensitivity("AI therapy", "ai Therapy")).toBe(false);
+      });
+
+      it("should handle compound words with uppercase", () => {
+        expect(matchWithUppercaseSensitivity("AI-based", "AI-Based method")).toBe(true);
+        expect(matchWithUppercaseSensitivity("AI-based", "ai-Based method")).toBe(false);
+      });
+
+      it("should handle multiple uppercase segments in query", () => {
+        expect(matchWithUppercaseSensitivity("AI and RNA", "AI and RNA research")).toBe(true);
+        expect(matchWithUppercaseSensitivity("AI and RNA", "ai and RNA research")).toBe(false);
+        expect(matchWithUppercaseSensitivity("AI and RNA", "AI and rna research")).toBe(false);
+      });
+    });
+
+    describe("query without consecutive uppercase", () => {
+      it("should match case-insensitively when no uppercase in query", () => {
+        expect(matchWithUppercaseSensitivity("api", "API endpoint")).toBe(true);
+        expect(matchWithUppercaseSensitivity("api", "api endpoint")).toBe(true);
+        expect(matchWithUppercaseSensitivity("api", "Api endpoint")).toBe(true);
+      });
+
+      it("should match case-insensitively for regular words", () => {
+        expect(matchWithUppercaseSensitivity("machine", "Machine Learning")).toBe(true);
+        expect(matchWithUppercaseSensitivity("learning", "machine learning")).toBe(true);
+      });
+
+      it("should handle single uppercase letter in query", () => {
+        expect(matchWithUppercaseSensitivity("Ai", "AI therapy")).toBe(true);
+        expect(matchWithUppercaseSensitivity("Ai", "ai therapy")).toBe(true);
+      });
+    });
+
+    describe("edge cases", () => {
+      it("should handle empty strings", () => {
+        expect(matchWithUppercaseSensitivity("", "AI therapy")).toBe(true);
+        expect(matchWithUppercaseSensitivity("AI", "")).toBe(false);
+        expect(matchWithUppercaseSensitivity("", "")).toBe(true);
+      });
+
+      it("should handle query longer than target", () => {
+        expect(matchWithUppercaseSensitivity("AI therapy method", "AI")).toBe(false);
+      });
+
+      it("should handle exact match", () => {
+        expect(matchWithUppercaseSensitivity("AI", "AI")).toBe(true);
+        expect(matchWithUppercaseSensitivity("api", "api")).toBe(true);
+      });
+
+      it("should handle whitespace", () => {
+        expect(matchWithUppercaseSensitivity("AI  therapy", "AI therapy")).toBe(true);
+        expect(matchWithUppercaseSensitivity("AI therapy", "AI  therapy")).toBe(true);
+      });
     });
   });
 });
