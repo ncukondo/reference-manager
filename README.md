@@ -7,6 +7,7 @@ A local reference management tool using CSL-JSON as the single source of truth.
 - **CSL-JSON Native**: Uses CSL-JSON format as the primary data model
 - **Command-line Interface**: Comprehensive CLI with search, add, update, remove commands
 - **HTTP Server**: Optional background server for improved performance
+- **Fulltext Management**: Attach PDF and Markdown files to references
 - **Duplicate Detection**: Automatic detection via DOI, PMID, or title+author+year
 - **Smart Search**: Full-text search with field-specific queries
 - **File Monitoring**: Automatic reload on external changes
@@ -66,6 +67,39 @@ ref server status
 ref server stop
 ```
 
+### Fulltext Management
+
+Attach PDF and Markdown files to references for full-text storage.
+
+```bash
+# Attach a PDF to a reference
+ref fulltext attach smith-2020 ~/papers/smith-2020.pdf
+
+# Attach a Markdown notes file
+ref fulltext attach smith-2020 ~/notes/smith-2020.md
+
+# Attach with explicit type (when extension doesn't match)
+ref fulltext attach smith-2020 --pdf ~/downloads/paper.txt
+
+# Move file instead of copy
+ref fulltext attach smith-2020 ~/papers/smith-2020.pdf --move
+
+# Overwrite existing attachment
+ref fulltext attach smith-2020 ~/papers/smith-2020-revised.pdf --force
+
+# Get attached file path
+ref fulltext get smith-2020 --pdf
+
+# Output file content to stdout
+ref fulltext get smith-2020 --pdf --stdout
+
+# Detach file (keeps file on disk)
+ref fulltext detach smith-2020 --pdf
+
+# Detach and delete file
+ref fulltext detach smith-2020 --pdf --delete
+```
+
 ### Output Formats
 
 ```bash
@@ -98,7 +132,13 @@ max_age_days = 30
 [server]
 auto_start = true
 auto_stop_minutes = 60
+
+[fulltext]
+directory = "~/references/fulltext"
 ```
+
+Environment variables:
+- `REFERENCE_MANAGER_FULLTEXT_DIR`: Override fulltext directory
 
 See `spec/architecture/cli.md` for full configuration options.
 
