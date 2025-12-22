@@ -21,6 +21,9 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Upgrade npm for Trusted Publishers OIDC
+        run: npm install -g npm@latest
+
       - name: Check npm version
         run: npm --version
 
