@@ -13,12 +13,13 @@ For detailed specifications, see [spec/](./spec/).
 - ✅ **Phase 7**: Multi-Format Import (add command with BibTeX, RIS, DOI, PMID support)
 - ✅ **Phase 8**: Operation Integration (unified operations pattern)
 - ✅ **Phase 9**: Server Mode Performance Optimization (ExecutionContext pattern)
+- ✅ **Phase 10**: Full-text Management (attach, get, detach commands)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
-## Current Phase
+## Recently Completed Phase
 
 ### Phase 10: Full-text Management
 
@@ -65,8 +66,8 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 
 #### Step 10.6: E2E & Documentation
 
-- [ ] **10.6.1**: E2E tests for fulltext workflow
-- [ ] **10.6.2**: Update README.md
+- [x] **10.6.1**: E2E tests for fulltext workflow
+- [x] **10.6.2**: Update README.md
 
 ### Impact on Existing Features
 
