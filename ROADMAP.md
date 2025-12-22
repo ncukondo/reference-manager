@@ -145,8 +145,8 @@ Update `remove` and `update` commands using the new ServerClient API.
 
 | Command | Execute Function | Action Handler | Tests | Status |
 |---------|------------------|----------------|-------|--------|
-| remove | `executeRemove` | `handleRemoveAction` | `remove.test.ts` | [ ] |
-| update | `executeUpdate` | `handleUpdateAction` | `update.test.ts` | [ ] |
+| remove | `executeRemove` | `handleRemoveAction` | `remove.test.ts` | [x] |
+| update | `executeUpdate` | `handleUpdateAction` | `update.test.ts` | [x] |
 
 **Simplified implementation with byUuid option:**
 

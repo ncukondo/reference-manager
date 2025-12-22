@@ -1,6 +1,5 @@
-import type { Library } from "../../core/library.js";
 import { type RemoveResult, removeReference } from "../../features/operations/remove.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 
 /**
  * Options for the remove command.
@@ -17,36 +16,25 @@ export type RemoveCommandResult = RemoveResult;
 
 /**
  * Execute remove command.
- * Routes to server API or direct library operation based on server availability.
+ * Routes to server API or direct library operation based on execution context.
  *
  * @param options - Remove command options
- * @param library - Library instance (used when server is not available)
- * @param serverClient - Server client (undefined if server is not running)
+ * @param context - Execution context (server or local)
  * @returns Remove result
  */
 export async function executeRemove(
   options: RemoveCommandOptions,
-  library: Library,
-  serverClient: ServerClient | undefined
+  context: ExecutionContext
 ): Promise<RemoveCommandResult> {
   const { identifier, byUuid = false } = options;
 
-  if (serverClient) {
-    // Server mode requires UUID
-    if (byUuid) {
-      return serverClient.remove(identifier);
-    }
-    // Find UUID by ID first using server API
-    const items = await serverClient.getAll();
-    const found = items.find((item) => item.id === identifier);
-    if (!found?.custom?.uuid) {
-      return { removed: false };
-    }
-    return serverClient.remove(found.custom.uuid);
+  if (context.type === "server") {
+    // Server mode: use client with byUuid option for direct ID or UUID lookup
+    return context.client.remove(identifier, { byUuid });
   }
 
-  // Direct library operation
-  return removeReference(library, { identifier, byUuid });
+  // Local mode: direct library operation
+  return removeReference(context.library, { identifier, byUuid });
 }
 
 /**

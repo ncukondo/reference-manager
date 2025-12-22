@@ -20,7 +20,7 @@ import { type RemoveCommandOptions, executeRemove, formatRemoveOutput } from "./
 import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
-import { createExecutionContext } from "./execution-context.js";
+import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
@@ -30,9 +30,6 @@ import {
   readJsonInput,
   readStdinContent,
 } from "./helpers.js";
-import { ServerClient } from "./server-client.js";
-import { getServerConnection } from "./server-detection.js";
-
 // Import package.json for version and description
 import packageJson from "../../package.json" with { type: "json" };
 
@@ -240,17 +237,16 @@ function registerAddCommand(program: Command): void {
 async function findReferenceToRemove(
   identifier: string,
   byUuid: boolean,
-  server: { baseUrl: string } | null,
-  libraryPath: string
+  context: ExecutionContext
 ): Promise<CslItem | undefined> {
-  if (server) {
-    const client = new ServerClient(server.baseUrl);
-    const item = await client.find(identifier, { byUuid });
+  if (context.type === "server") {
+    const item = await context.client.find(identifier, { byUuid });
     return item ?? undefined;
   }
 
-  const library = await Library.load(libraryPath);
-  const ref = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  const ref = byUuid
+    ? context.library.findByUuid(identifier)
+    : context.library.findById(identifier);
   return ref?.getItem();
 }
 
@@ -285,17 +281,10 @@ async function handleRemoveAction(
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
+    const context = await createExecutionContext(config, Library.load);
 
     // Find reference for confirmation display
-    const refToRemove = await findReferenceToRemove(
-      identifier,
-      options.uuid ?? false,
-      server,
-      config.library
-    );
+    const refToRemove = await findReferenceToRemove(identifier, options.uuid ?? false, context);
 
     if (!refToRemove) {
       process.stderr.write(`Error: Reference not found: ${identifier}\n`);
@@ -317,7 +306,7 @@ async function handleRemoveAction(
       removeOptions.byUuid = options.uuid;
     }
 
-    const result = await executeRemove(removeOptions, library, serverClient);
+    const result = await executeRemove(removeOptions, context);
     const output = formatRemoveOutput(result, identifier);
 
     if (result.removed) {
@@ -375,9 +364,7 @@ async function handleUpdateAction(
     const updatesSchema = z.record(z.string(), z.unknown());
     const validatedUpdates = updatesSchema.parse(updates);
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
+    const context = await createExecutionContext(config, Library.load);
 
     const updateOptions: UpdateCommandOptions = {
       identifier,
@@ -387,7 +374,7 @@ async function handleUpdateAction(
       updateOptions.byUuid = options.uuid;
     }
 
-    const result = await executeUpdate(updateOptions, library, serverClient);
+    const result = await executeUpdate(updateOptions, context);
     const output = formatUpdateOutput(result, identifier);
 
     if (result.updated) {
