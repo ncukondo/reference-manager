@@ -631,4 +631,66 @@ apiKey = "my-api-key"
       expect(config.pubmed.apiKey).toBe("my-api-key");
     });
   });
+
+  describe("Fulltext configuration", () => {
+    it("should use default fulltext settings when not specified", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.directory).toBe(join(homedir(), ".reference-manager", "fulltext"));
+    });
+
+    it("should load fulltext.directory from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+directory = "/custom/fulltext"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.directory).toBe("/custom/fulltext");
+    });
+
+    it("should expand ~ in fulltext.directory", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+directory = "~/my-fulltext"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.directory).toBe(join(homedir(), "my-fulltext"));
+    });
+
+    it("should merge partial fulltext config with defaults", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+directory = "/custom/path"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.directory).toBe("/custom/path");
+    });
+
+    it("should throw error for empty fulltext.directory", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+directory = ""
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
+    });
+  });
 });

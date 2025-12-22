@@ -63,7 +63,7 @@ function mergeConfigs(
 ): DeepPartialConfig {
   const result: DeepPartialConfig = { ...base };
 
-  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed"] as const;
+  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed", "fulltext"] as const;
 
   for (const override of overrides) {
     if (!override) continue;
@@ -115,6 +115,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     },
     citation: fillCitationDefaults(partial.citation),
     pubmed: fillPubmedDefaults(partial.pubmed),
+    fulltext: fillFulltextDefaults(partial.fulltext),
   };
 }
 
@@ -142,6 +143,27 @@ function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubme
   return {
     email,
     apiKey,
+  };
+}
+
+/**
+ * Expand ~ to home directory
+ */
+function expandTilde(path: string): string {
+  const { homedir } = require("node:os");
+  if (path.startsWith("~/")) {
+    return join(homedir(), path.slice(2));
+  }
+  return path;
+}
+
+/**
+ * Fill fulltext config with defaults
+ */
+function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
+  const directory = partial?.directory ?? defaultConfig.fulltext.directory;
+  return {
+    directory: expandTilde(directory),
   };
 }
 

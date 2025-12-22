@@ -29,10 +29,10 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 - [x] **10.1.1**: Update `CslCustomSchema` in `src/core/csl-json/types.ts`
   - Add `fulltext` field, add `.passthrough()` for unknown fields
   - TDD: Update existing parser tests → verify fail → implement → verify pass
-- [ ] **10.1.2**: Add fulltext config in `src/config/schema.ts`
+- [x] **10.1.2**: Add fulltext config in `src/config/schema.ts`
   - Add `FulltextConfig`, update `configSchema`/`partialConfigSchema`
   - TDD: Write config tests → verify fail → implement → verify pass
-- [ ] **10.1.3**: Update `src/config/defaults.ts`
+- [x] **10.1.3**: Update `src/config/defaults.ts`
   - Add `getDefaultFulltextDirectory()`, add to `defaultConfig`
   - TDD: Write defaults tests → verify fail → implement → verify pass
 
