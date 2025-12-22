@@ -31,12 +31,12 @@ Enhanced search functionality with case-sensitive uppercase matching and custom 
 
 Pure utility functions with no dependencies on matcher logic.
 
-- [ ] **11.1.1**: Test consecutive uppercase detection
+- [x] **11.1.1**: Test consecutive uppercase detection
   - File: `src/features/search/uppercase.test.ts`
   - Test `hasConsecutiveUppercase`: "AI" → true, "api" → false, "Ai" → false
   - Test `extractUppercaseSegments`: "AI-based" → [{segment: "AI", start: 0, end: 2}]
 
-- [ ] **11.1.2**: Implement consecutive uppercase detection
+- [x] **11.1.2**: Implement consecutive uppercase detection
   - File: `src/features/search/uppercase.ts`
   - Function: `hasConsecutiveUppercase(text: string): boolean`
   - Function: `extractUppercaseSegments(text: string): UppercaseSegment[]`
