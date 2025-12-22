@@ -45,7 +45,7 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 
 #### Step 10.3: Fulltext Manager
 
-- [ ] **10.3.1**: Create `src/features/fulltext/manager.ts`
+- [x] **10.3.1**: Create `src/features/fulltext/manager.ts`
   - `attachFile()`, `getFilePath()`, `detachFile()`, `ensureDirectory()`
   - TDD: Write `manager.test.ts` → empty impl → verify fail → implement → verify pass
 
