@@ -425,8 +425,7 @@ async function updateViaLibrary(
   if (!result.updated) {
     if (result.idCollision) {
       throw new Error(
-        `ID collision: The new ID '${updates.id}' already exists in the library. ` +
-          `Use a different ID or remove the existing reference first.`
+        `ID collision: The new ID '${updates.id}' already exists in the library. Use a different ID or remove the existing reference first.`
       );
     }
     const idType = byUuid ? "UUID" : "ID";
@@ -548,7 +547,7 @@ function registerCiteCommand(program: Command): void {
           let hasError = false;
           for (const r of result.results) {
             if (r.success) {
-              process.stdout.write(r.citation + "\n");
+              process.stdout.write(`${r.citation}\n`);
             } else {
               process.stderr.write(`Error for '${r.identifier}': ${r.error}\n`);
               hasError = true;

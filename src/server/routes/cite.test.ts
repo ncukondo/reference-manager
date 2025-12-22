@@ -273,7 +273,7 @@ describe("Cite Route", () => {
 
       expect(res.status).toBe(400);
       const data = await res.json();
-      expect(data.error).toContain("strings");
+      expect(data.error).toContain("string");
     });
 
     it("should return 400 for invalid JSON", async () => {

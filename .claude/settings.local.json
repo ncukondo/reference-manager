@@ -7,7 +7,6 @@
       "mcp__serena__check_onboarding_performed",
       "mcp__serena__onboarding",
       "mcp__serena__write_memory",
-      "Bash(npm run test:run:*)",
       "Bash(npm run build:*)",
       "WebFetch(domain:github.com)",
       "mcp__serena__read_memory",
@@ -28,7 +27,6 @@
       "Bash(npx tsx:*)",
       "mcp__serena__find_referencing_symbols",
       "mcp__serena__initial_instructions",
-      "Bash(npm test:run:*)",
       "Bash(tree:*)",
       "Bash(npm run typecheck:*)",
       "Bash(grep:*)",
@@ -50,7 +48,8 @@
       "Bash(npm ls:*)",
       "mcp__serena__think_about_task_adherence",
       "Bash(npm run test:unit:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

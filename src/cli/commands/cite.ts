@@ -45,6 +45,40 @@ async function validateOptions(options: CiteCommandOptions): Promise<void> {
 }
 
 /**
+ * Build server cite options from command options.
+ */
+function buildServerCiteOptions(options: CiteCommandOptions): Parameters<ServerClient["cite"]>[0] {
+  return {
+    identifiers: options.identifiers,
+    ...(options.uuid !== undefined && { byUuid: options.uuid }),
+    ...(options.inText !== undefined && { inText: options.inText }),
+    ...(options.style !== undefined && { style: options.style }),
+    ...(options.cslFile !== undefined && { cslFile: options.cslFile }),
+    ...(options.locale !== undefined && { locale: options.locale }),
+    ...(options.format !== undefined && {
+      format: options.format === "rtf" ? "text" : options.format,
+    }),
+  };
+}
+
+/**
+ * Build operation cite options from command options.
+ */
+function buildOperationCiteOptions(
+  options: CiteCommandOptions
+): Parameters<typeof citeReferences>[1] {
+  return {
+    identifiers: options.identifiers,
+    ...(options.uuid !== undefined && { byUuid: options.uuid }),
+    ...(options.style !== undefined && { style: options.style }),
+    ...(options.cslFile !== undefined && { cslFile: options.cslFile }),
+    ...(options.locale !== undefined && { locale: options.locale }),
+    ...(options.format !== undefined && { format: options.format }),
+    ...(options.inText !== undefined && { inText: options.inText }),
+  };
+}
+
+/**
  * Execute cite command.
  * Routes to server API or direct library operation based on server availability.
  *
@@ -61,32 +95,10 @@ export async function executeCite(
   await validateOptions(options);
 
   if (serverClient) {
-    // Use server API - build options without undefined values
-    const serverOpts: Parameters<typeof serverClient.cite>[0] = {
-      identifiers: options.identifiers,
-    };
-    if (options.uuid !== undefined) serverOpts.byUuid = options.uuid;
-    if (options.inText !== undefined) serverOpts.inText = options.inText;
-    if (options.style !== undefined) serverOpts.style = options.style;
-    if (options.cslFile !== undefined) serverOpts.cslFile = options.cslFile;
-    if (options.locale !== undefined) serverOpts.locale = options.locale;
-    if (options.format !== undefined) {
-      serverOpts.format = options.format === "rtf" ? "text" : options.format;
-    }
-    return serverClient.cite(serverOpts);
+    return serverClient.cite(buildServerCiteOptions(options));
   }
 
-  // Direct library operation - build options without undefined values
-  const opOpts: Parameters<typeof citeReferences>[1] = {
-    identifiers: options.identifiers,
-  };
-  if (options.uuid !== undefined) opOpts.byUuid = options.uuid;
-  if (options.style !== undefined) opOpts.style = options.style;
-  if (options.cslFile !== undefined) opOpts.cslFile = options.cslFile;
-  if (options.locale !== undefined) opOpts.locale = options.locale;
-  if (options.format !== undefined) opOpts.format = options.format;
-  if (options.inText !== undefined) opOpts.inText = options.inText;
-  return citeReferences(library, opOpts);
+  return citeReferences(library, buildOperationCiteOptions(options));
 }
 
 /**
