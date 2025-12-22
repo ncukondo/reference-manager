@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Server Mode Performance Optimization (Phase 9)**: Introduced `ExecutionContext` pattern
+  - New discriminated union type `ExecutionContext` for server/local mode distinction
+  - `createExecutionContext()` function checks server availability before loading library
+  - In server mode, library is NOT loaded redundantly - commands use HTTP API instead
+  - All CLI commands updated to use `ExecutionContext` pattern
+  - New server routes with `byUuid` option: `/api/references/id/:id` and `/api/references/uuid/:uuid`
+  - `ServerClient` methods now support `{ byUuid?: boolean }` option for ID vs UUID lookup
+  - E2E tests for server/local mode transitions
+  - Performance tests validating server mode optimization
+
 - **Operation Integration (Phase 8)**: Refactored all commands to use unified pattern
   - Unified operation layer in `features/operations/` for all commands
   - Dedicated server routes (`POST /api/list`, `/api/search`, `/api/cite`)
