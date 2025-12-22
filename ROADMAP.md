@@ -64,24 +64,38 @@ String matching utility that respects uppercase segments.
 
 Modify existing matcher to use new uppercase-aware matching.
 
-- [ ] **11.3.1**: Test matchFieldValue with uppercase
+- [x] **11.3.1**: Test matchFieldValue with uppercase
   - File: `src/features/search/matcher.test.ts`
   - Add tests for title/author fields with uppercase queries
   - Test: title search "AI" matches "AI therapy" but not "ai therapy"
 
-- [ ] **11.3.2**: Modify matchFieldValue for uppercase
+- [x] **11.3.2**: Modify matchFieldValue for uppercase
   - File: `src/features/search/matcher.ts`
   - Import and use `matchWithUppercaseSensitivity` for content fields
   - Depends on: 11.2.2
 
-- [ ] **11.3.3**: Test matchKeyword with uppercase
+- [x] **11.3.3**: Test matchKeyword with uppercase
   - File: `src/features/search/matcher.test.ts`
   - Test: keyword "RNA" matches ["mRNA sequencing"] but not ["mrna sequencing"]
 
-- [ ] **11.3.4**: Modify matchKeyword for uppercase
+- [x] **11.3.4**: Modify matchKeyword for uppercase
   - File: `src/features/search/matcher.ts`
   - Apply uppercase-aware matching to keyword array
   - Depends on: 11.2.2
+
+#### 11.3.5 Author Full Given Name Search
+
+Improve author search to include full given name, not just initial.
+
+- [ ] **11.3.5.1**: Test author search with full given name
+  - File: `src/features/search/matcher.test.ts`
+  - Test: "author:Takeshi" matches author with given: "Takeshi"
+  - Test: "author:Takeshi" does NOT match author with given: "Takuma"
+
+- [ ] **11.3.5.2**: Modify extractAuthors to include full given name
+  - File: `src/features/search/matcher.ts`
+  - Change: Include full given name in searchable author string
+  - Format: "Family Given" (e.g., "Kondo Takeshi")
 
 #### 11.4 Schema & Type Update for `custom.tags`
 

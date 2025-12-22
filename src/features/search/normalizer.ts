@@ -31,3 +31,30 @@ export function normalize(text: string): string {
 
   return normalized;
 }
+
+/**
+ * Normalize text for matching while preserving case
+ *
+ * Applies the following transformations:
+ * 1. Unicode NFKC normalization
+ * 2. Remove diacritics (accents)
+ * 3. Normalize whitespace
+ *
+ * Unlike `normalize`, this function preserves letter case
+ * for use with uppercase-sensitive matching.
+ */
+export function normalizePreservingCase(text: string): string {
+  // Step 1: Unicode NFKC normalization (compatibility normalization)
+  let normalized = text.normalize("NFKC");
+
+  // Step 2: Remove diacritics
+  // Use NFD to decompose, then remove combining diacritical marks
+  normalized = normalized.normalize("NFD").replace(/\p{M}/gu, "");
+
+  // Step 3: Normalize whitespace
+  // - Replace all whitespace sequences (spaces, tabs, newlines) with a single space
+  // - Trim leading and trailing whitespace
+  normalized = normalized.replace(/\s+/g, " ").trim();
+
+  return normalized;
+}

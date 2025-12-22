@@ -1,6 +1,7 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import { normalize } from "./normalizer.js";
+import { normalizePreservingCase } from "./normalizer.js";
 import type { FieldMatch, MatchStrength, SearchResult, SearchToken } from "./types.js";
+import { matchWithUppercaseSensitivity } from "./uppercase.js";
 
 /**
  * ID fields require exact match (case-sensitive)
@@ -106,14 +107,15 @@ function matchKeyword(queryValue: string, reference: CslItem): FieldMatch | null
     return null;
   }
 
-  // Normalize query value
-  const normalizedQuery = normalize(queryValue);
+  // Normalize query value (preserving case for uppercase-sensitive matching)
+  const normalizedQuery = normalizePreservingCase(queryValue);
 
   // Search through each keyword element
   for (const keyword of reference.keyword) {
     if (typeof keyword === "string") {
-      const normalizedKeyword = normalize(keyword);
-      if (normalizedKeyword.includes(normalizedQuery)) {
+      const normalizedKeyword = normalizePreservingCase(keyword);
+      // Use uppercase-sensitive matching
+      if (matchWithUppercaseSensitivity(normalizedQuery, normalizedKeyword)) {
         return {
           field: "keyword",
           strength: "partial",
@@ -173,11 +175,14 @@ function matchFieldValue(field: string, tokenValue: string, reference: CslItem):
     return null;
   }
 
-  // Content field: partial match, case-insensitive with normalization
-  const normalizedFieldValue = normalize(fieldValue);
-  const normalizedQuery = normalize(tokenValue);
+  // Content field: use uppercase-sensitive matching
+  // Normalize both values (remove diacritics, normalize whitespace) while preserving case
+  const normalizedFieldValue = normalizePreservingCase(fieldValue);
+  const normalizedQuery = normalizePreservingCase(tokenValue);
 
-  if (normalizedFieldValue.includes(normalizedQuery)) {
+  // If query contains consecutive uppercase (e.g., "AI", "RNA"), match case-sensitively
+  // Otherwise, match case-insensitively
+  if (matchWithUppercaseSensitivity(normalizedQuery, normalizedFieldValue)) {
     return {
       field,
       strength: "partial",
