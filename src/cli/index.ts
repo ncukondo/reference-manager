@@ -18,7 +18,14 @@ import {
   getCiteExitCode,
 } from "./commands/cite.js";
 import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
-import { type RemoveCommandOptions, executeRemove, formatRemoveOutput } from "./commands/remove.js";
+import {
+  type RemoveCommandOptions,
+  deleteFulltextFiles,
+  executeRemove,
+  formatFulltextWarning,
+  formatRemoveOutput,
+  getFulltextAttachmentTypes,
+} from "./commands/remove.js";
 import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
@@ -250,7 +257,11 @@ async function findReferenceToRemove(
   return ref?.getItem();
 }
 
-async function confirmRemoval(refToRemove: CslItem, force: boolean): Promise<boolean> {
+async function confirmRemoval(
+  refToRemove: CslItem,
+  force: boolean,
+  fulltextWarning?: string
+): Promise<boolean> {
   if (force || !isTTY()) {
     return true;
   }
@@ -258,7 +269,13 @@ async function confirmRemoval(refToRemove: CslItem, force: boolean): Promise<boo
   const authors = Array.isArray(refToRemove.author)
     ? refToRemove.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
     : "(no authors)";
-  const confirmMsg = `Remove reference [${refToRemove.id}]?\nTitle: ${refToRemove.title || "(no title)"}\nAuthors: ${authors}\nContinue?`;
+  let confirmMsg = `Remove reference [${refToRemove.id}]?\nTitle: ${refToRemove.title || "(no title)"}\nAuthors: ${authors}`;
+
+  if (fulltextWarning) {
+    confirmMsg += `\n\n${fulltextWarning}`;
+  }
+
+  confirmMsg += "\nContinue?";
 
   return await readConfirmation(confirmMsg);
 }
@@ -271,6 +288,28 @@ function handleRemoveError(error: unknown): never {
   }
   process.stderr.write(`Error: ${message}\n`);
   process.exit(4);
+}
+
+/**
+ * Format type labels for fulltext files.
+ */
+function formatTypeLabels(types: ("pdf" | "markdown")[]): string {
+  return types.map((t) => (t === "pdf" ? "PDF" : "Markdown")).join(" and ");
+}
+
+/**
+ * Handle fulltext deletion and output.
+ */
+async function handleFulltextDeletion(
+  item: CslItem,
+  fulltextDirectory: string,
+  types: ("pdf" | "markdown")[],
+  output: string
+): Promise<void> {
+  await deleteFulltextFiles(item, fulltextDirectory);
+  const typeLabels = formatTypeLabels(types);
+  process.stderr.write(`${output}\n`);
+  process.stderr.write(`Deleted fulltext files: ${typeLabels}\n`);
 }
 
 async function handleRemoveAction(
@@ -291,8 +330,21 @@ async function handleRemoveAction(
       process.exit(1);
     }
 
-    // Interactive confirmation
-    const confirmed = await confirmRemoval(refToRemove, options.force ?? false);
+    // Check for fulltext attachments
+    const fulltextTypes = getFulltextAttachmentTypes(refToRemove);
+    const hasFulltext = fulltextTypes.length > 0;
+
+    // If fulltext attached and not TTY without --force, require --force
+    if (hasFulltext && !isTTY() && !options.force) {
+      const warning = formatFulltextWarning(fulltextTypes);
+      process.stderr.write(`Error: ${warning}\n`);
+      process.exit(1);
+    }
+
+    // Interactive confirmation (with fulltext warning if applicable)
+    const fulltextWarning =
+      hasFulltext && !options.force ? formatFulltextWarning(fulltextTypes) : undefined;
+    const confirmed = await confirmRemoval(refToRemove, options.force ?? false, fulltextWarning);
     if (!confirmed) {
       process.stderr.write("Cancelled.\n");
       process.exit(2);
@@ -309,13 +361,18 @@ async function handleRemoveAction(
     const result = await executeRemove(removeOptions, context);
     const output = formatRemoveOutput(result, identifier);
 
-    if (result.removed) {
-      process.stderr.write(`${output}\n`);
-      process.exit(0);
-    } else {
+    if (!result.removed) {
       process.stderr.write(`${output}\n`);
       process.exit(1);
     }
+
+    // Delete fulltext files if --force and fulltext was attached
+    if (hasFulltext && options.force) {
+      await handleFulltextDeletion(refToRemove, config.fulltext.directory, fulltextTypes, output);
+    } else {
+      process.stderr.write(`${output}\n`);
+    }
+    process.exit(0);
   } catch (error) {
     handleRemoveError(error);
   }

@@ -59,7 +59,7 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 
 #### Step 10.5: Remove Command Integration
 
-- [ ] **10.5.1**: Update `src/cli/commands/remove.ts`
+- [x] **10.5.1**: Update `src/cli/commands/remove.ts`
   - Warn if fulltext attached, delete with `--force`
   - TDD: Write tests → verify fail → implement → verify pass
 
