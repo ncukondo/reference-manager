@@ -4,6 +4,8 @@
 
 import { Command } from "commander";
 import { z } from "zod";
+// Import package.json for version and description
+import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
@@ -30,8 +32,6 @@ import {
   readJsonInput,
   readStdinContent,
 } from "./helpers.js";
-// Import package.json for version and description
-import packageJson from "../../package.json" with { type: "json" };
 
 /**
  * Create Commander program instance
