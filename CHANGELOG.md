@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Operation Integration (Phase 8)**: Refactored all commands to use unified pattern
+  - Unified operation layer in `features/operations/` for all commands
+  - Dedicated server routes (`POST /api/list`, `/api/search`, `/api/cite`)
+  - ServerClient methods (`list()`, `search()`, `cite()`, `remove()`, `update()`)
+  - Consistent `executeXxx()` + `formatXxxOutput()` pattern across CLI commands
+  - Architecture: CLI → operations → server API or direct library access
+
 ### Added
 
 - **Multi-Format Import**: Extended `add` command to support multiple input formats

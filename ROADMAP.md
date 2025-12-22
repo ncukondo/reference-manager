@@ -17,133 +17,173 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
-## Completed Phase 8 Reference
-
-### Phase 8: Operation Integration (COMPLETED)
-
-Refactor all commands to use unified `features/operations/` pattern.
-
-**Reference Implementation**: `cli/commands/add.ts` + `features/operations/add.ts` + `server/routes/add.ts`
-
-See: [spec/architecture/module-dependencies.md](./spec/architecture/module-dependencies.md)
-
-#### Step 8.1: Operations Layer (DONE)
-
-- [x] `features/operations/list.ts`
-- [x] `features/operations/search.ts`
-- [x] `features/operations/remove.ts`
-- [x] `features/operations/update.ts`
-- [x] `features/operations/cite.ts`
-
-#### Step 8.2: Server Routes (DONE)
-
-Create dedicated routes using operations (pattern: `/api/{command}`):
-
-| Route | File | Status |
-|-------|------|--------|
-| POST /api/list | `server/routes/list.ts` | [x] Done |
-| POST /api/search | `server/routes/search.ts` | [x] Done |
-| POST /api/cite | `server/routes/cite.ts` | [x] Done |
-| PUT/DELETE /api/references/:uuid | `server/routes/references.ts` | [x] Done |
-
-Tasks:
-- [x] Create `server/routes/list.ts` using listReferences operation
-- [x] Create `server/routes/search.ts` using searchReferences operation
-- [x] Mount routes in `server/index.ts`
-
-#### Step 8.3: ServerClient Methods (DONE)
-
-Add methods to `cli/server-client.ts`:
-
-| Method | Status |
-|--------|--------|
-| `list(options)` | [x] Done |
-| `search(options)` | [x] Done |
-| `cite(options)` | [x] Done |
-
-#### Step 8.4: CLI Commands Pattern Update (DONE)
-
-Update each command to follow unified pattern:
-- `executeXxx(options, library, serverClient)` - routes to server or direct
-  - **Must use `serverClient.xxx()` methods** (not `serverClient.getAll()`)
-- `formatXxxOutput(result)` - formats for CLI output
-- Remove deprecated functions
-
-Reference: `add.ts` uses `serverClient.addFromInputs()`, `cite.ts` uses `serverClient.cite()`
-
-| Command | executeXxx | formatOutput | deprecated removed | Notes |
-|---------|------------|--------------|-------------------|-------|
-| list | [x] | [x] | [x] | ✅ Uses `serverClient.list()` |
-| search | [x] | [x] | [x] | ✅ Uses `serverClient.search()` |
-| cite | [x] | [x] | [x] | ✅ Uses `serverClient.cite()` |
-| remove | [x] | [x] | [x] | ✅ Uses `serverClient.remove()` |
-| update | [x] | [x] | [x] | ✅ Uses `serverClient.update()` |
-
-#### Step 8.5: cli/index.ts Simplification (DONE)
-
-Extract action handlers for each command:
-
-- [x] handleListAction → executeList + formatListOutput
-- [x] handleSearchAction → executeSearch + formatSearchOutput
-- [x] handleCiteAction → executeCite + formatCiteOutput
-- [x] handleRemoveAction → executeRemove + formatRemoveOutput
-- [x] handleUpdateAction → executeUpdate + formatUpdateOutput
-
-#### Step 8.6: Cleanup and Commit (DONE)
-
-- [x] Remove deprecated functions from cli/commands/*.ts
-- [x] Update cli/commands/index.ts exports
-- [x] Run tests and verify all pass
-- [x] Commit Phase 8 changes
-
-#### Architecture Pattern
-
-```
-cli/index.ts           → registerXxxCommand() → routing only
-                         handleXxxAction()    → load config, get connection
-cli/commands/xxx.ts    → executeXxx()         → server API or operations
-cli/server-client.ts   → serverClient.xxx()   → HTTP call to server
-server/routes/xxx.ts   → POST /api/xxx        → call operation, return JSON
-features/operations/   → xxxOperation()       → library + save + format
-```
-
-#### Handoff Notes
-
-- `Library.updateById/updateByUuid` with ID collision handling
-- `cite.ts` returns per-identifier results for partial success
-- Formatters in `features/format/`
-
----
-
 ## Current Phase
 
-### Phase 9: Citation Enhancements
+### Phase 9: Server Mode Performance Optimization
+
+**Goal**: Eliminate redundant library loading in server mode to realize performance benefits.
+
+**Problem**: Currently, all CLI action handlers load the library before executing commands, even when using server mode. Since the server already holds the library in memory, this defeats the purpose of server mode.
+
+**Solution**: Introduce discriminated union type `ExecutionContext` to clearly distinguish between server and local execution modes.
+
+#### Step 9.1: Define ExecutionContext Type
+
+Create `src/cli/execution-context.ts`:
+
+```typescript
+export type ExecutionContext =
+  | { type: "server"; client: ServerClient }
+  | { type: "local"; library: Library };
+```
+
+- [ ] Create `ExecutionContext` type definition
+- [ ] Add helper function `createExecutionContext(config)` that:
+  - Checks for server connection first
+  - Returns `{ type: "server", client }` if server available
+  - Otherwise loads library and returns `{ type: "local", library }`
+- [ ] Export from `cli/index.ts` or dedicated module
+
+#### Step 9.2: Update Execute Functions
+
+Update all `executeXxx` functions to use `ExecutionContext`:
+
+**Before:**
+```typescript
+executeList(options, library, serverClient)
+```
+
+**After:**
+```typescript
+executeList(options, context: ExecutionContext)
+```
+
+| Command | File | Status |
+|---------|------|--------|
+| list | `cli/commands/list.ts` | [ ] |
+| search | `cli/commands/search.ts` | [ ] |
+| add | `cli/commands/add.ts` | [ ] |
+| remove | `cli/commands/remove.ts` | [ ] |
+| update | `cli/commands/update.ts` | [ ] |
+| cite | `cli/commands/cite.ts` | [ ] |
+
+Each function:
+- [ ] Update signature to accept `ExecutionContext`
+- [ ] Use discriminated union pattern: `if (context.type === "server") { ... }`
+- [ ] Update tests
+
+#### Step 9.3: Update CLI Action Handlers
+
+Update `cli/index.ts` action handlers:
+
+**Before:**
+```typescript
+const server = await getServerConnection(config.library, config);
+const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
+const library = await Library.load(config.library);  // Always loads!
+```
+
+**After:**
+```typescript
+const context = await createExecutionContext(config);
+const result = await executeList(options, context);
+```
+
+- [ ] `handleListAction`
+- [ ] `handleSearchAction`
+- [ ] `handleAddAction`
+- [ ] `handleRemoveAction`
+- [ ] `handleUpdateAction`
+- [ ] `handleCiteAction`
+
+#### Step 9.4: Server API Refactoring for Single Item Lookup
+
+`handleRemoveAction` requires fetching a single reference for confirmation display.
+Currently uses `client.getAll()` which is inefficient.
+
+**Route Naming Convention Update:**
+
+Rename existing routes for clarity and add ID-based lookup:
+
+| Before | After | Description |
+|--------|-------|-------------|
+| `GET /:uuid` | `GET /uuid/:uuid` | Get by UUID |
+| `PUT /:uuid` | `PUT /uuid/:uuid` | Update by UUID |
+| `DELETE /:uuid` | `DELETE /uuid/:uuid` | Remove by UUID |
+| (new) | `GET /id/:id` | Get by citation ID |
+
+Server routes (`server/routes/references.ts`):
+- [ ] Rename `GET /:uuid` → `GET /uuid/:uuid`
+- [ ] Rename `PUT /:uuid` → `PUT /uuid/:uuid`
+- [ ] Rename `DELETE /:uuid` → `DELETE /uuid/:uuid`
+- [ ] Add `GET /id/:id` route
+
+ServerClient updates (`cli/server-client.ts`):
+- [ ] Update `findByUuid()` URL: `/api/references/uuid/${uuid}`
+- [ ] Update `update()` URL: `/api/references/uuid/${uuid}`
+- [ ] Update `remove()` URL: `/api/references/uuid/${uuid}`
+- [ ] Add `findById(id: string): Promise<CslItem | null>`
+
+CLI updates:
+- [ ] Update `findReferenceToRemove()` to use `findByUuid()` / `findById()`
+
+#### Step 9.5: Tests and Validation
+
+- [ ] Update existing unit tests for new signatures
+- [ ] Add tests verifying library is NOT loaded in server mode
+- [ ] Performance test: Measure CLI startup time with/without server
+- [ ] E2E tests for both modes
+
+#### Step 9.6: Documentation
+
+- [ ] Update spec/architecture/module-dependencies.md
+- [ ] Add inline documentation for ExecutionContext
+- [ ] Commit and update CHANGELOG
+
+#### Architecture (Updated)
+
+```
+cli/index.ts
+  handleXxxAction()
+    → createExecutionContext(config)
+      → server available? { type: "server", client }
+      → otherwise:        { type: "local", library }
+    → executeXxx(options, context)
+
+cli/commands/xxx.ts
+  executeXxx(options, context)
+    → context.type === "server" ? client.xxx() : localOperation()
+```
+
+## Future Phases
+
+### Phase 10: Full-text PDF Management
+
+- PDF file attachment and storage
+- Automatic metadata extraction from PDFs
+- Full-text search in attached PDFs
+- PDF viewer integration
+
+### Phase 11: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
 - Clipboard support (`--clipboard`)
 - Pandoc cite key generation (`--cite-key`)
-- Numbered citation style (`--numbered`)
 - Custom sort order (`--sort <field>`)
 - Group by field (`--group-by <field>`)
-- Interactive style selection
-- Citation preview in server mode
 - Batch citation generation from file
-- LSP integration for text editors
 
-## Future Phases
-
-### Phase 10: Advanced Features
+### Phase 12: Advanced Features
 
 Additional features beyond core functionality:
 
-- Full-text PDF management
-- Automatic metadata extraction from PDFs
 - Citation graph visualization
 - Duplicate detection improvements
 - Advanced search operators
 - Tag management
 - Note-taking integration
+- LSP integration for text editors
 
 ---
 
