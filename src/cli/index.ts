@@ -17,18 +17,6 @@ import {
   formatCiteOutput,
   getCiteExitCode,
 } from "./commands/cite.js";
-import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
-import {
-  type RemoveCommandOptions,
-  deleteFulltextFiles,
-  executeRemove,
-  formatFulltextWarning,
-  formatRemoveOutput,
-  getFulltextAttachmentTypes,
-} from "./commands/remove.js";
-import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
-import { serverStart, serverStatus, serverStop } from "./commands/server.js";
-import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
 import {
   type FulltextAttachOptions,
   type FulltextDetachOptions,
@@ -41,6 +29,18 @@ import {
   formatFulltextGetOutput,
   getFulltextExitCode,
 } from "./commands/fulltext.js";
+import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
+import {
+  type RemoveCommandOptions,
+  deleteFulltextFiles,
+  executeRemove,
+  formatFulltextWarning,
+  formatRemoveOutput,
+  getFulltextAttachmentTypes,
+} from "./commands/remove.js";
+import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
+import { serverStart, serverStatus, serverStop } from "./commands/server.js";
+import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
 import {
@@ -610,6 +610,24 @@ function registerServerCommand(program: Command): void {
 }
 
 /**
+ * Parse fulltext attach options to determine file type and path
+ */
+function parseFulltextAttachTypeAndPath(
+  filePathArg: string | undefined,
+  options: { pdf?: string; markdown?: string }
+): { type: "pdf" | "markdown" | undefined; filePath: string | undefined } {
+  if (options.pdf) {
+    const isValidPath = options.pdf !== "" && options.pdf !== "true";
+    return { type: "pdf", filePath: isValidPath ? options.pdf : filePathArg };
+  }
+  if (options.markdown) {
+    const isValidPath = options.markdown !== "" && options.markdown !== "true";
+    return { type: "markdown", filePath: isValidPath ? options.markdown : filePathArg };
+  }
+  return { type: undefined, filePath: filePathArg };
+}
+
+/**
  * Handle 'fulltext attach' command action
  */
 async function handleFulltextAttachAction(
@@ -627,34 +645,12 @@ async function handleFulltextAttachAction(
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-
     const context = await createExecutionContext(config, Library.load);
 
-    // Determine file path and type
-    let filePath = filePathArg;
-    let type: "pdf" | "markdown" | undefined;
-    let stdinContent: Buffer | undefined;
-
-    if (options.pdf) {
-      type = "pdf";
-      if (options.pdf !== "" && typeof options.pdf === "string" && options.pdf !== "true") {
-        filePath = options.pdf;
-      }
-    } else if (options.markdown) {
-      type = "markdown";
-      if (
-        options.markdown !== "" &&
-        typeof options.markdown === "string" &&
-        options.markdown !== "true"
-      ) {
-        filePath = options.markdown;
-      }
-    }
+    const { type, filePath } = parseFulltextAttachTypeAndPath(filePathArg, options);
 
     // If no file path and type is specified, read from stdin
-    if (!filePath && type) {
-      stdinContent = await readStdinBuffer();
-    }
+    const stdinContent = !filePath && type ? await readStdinBuffer() : undefined;
 
     const attachOptions: FulltextAttachOptions = {
       identifier,
