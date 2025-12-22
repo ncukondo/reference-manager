@@ -85,49 +85,91 @@ For each command:
 4. Update tests
 5. Run tests to verify
 
-#### Step 9.3: Server API Refactoring for Single Item Lookup
+#### Step 9.3: Server API Refactoring with byUuid Option
 
-`handleRemoveAction` requires fetching a single reference for confirmation display.
-Currently uses `client.getAll()` which is inefficient.
+**Problem:** Currently `executeRemove`/`executeUpdate` use `client.getAll()` to find references by ID, which is inefficient.
 
-**Route Naming Convention Update:**
+**Solution:** Add `byUuid` option to ServerClient methods, allowing direct ID or UUID lookup.
 
-Rename existing routes for clarity and add ID-based lookup:
+**Route Updates** (`server/routes/references.ts`):
 
-| Before | After | Description |
-|--------|-------|-------------|
-| `GET /:uuid` | `GET /uuid/:uuid` | Get by UUID |
-| `PUT /:uuid` | `PUT /uuid/:uuid` | Update by UUID |
-| `DELETE /:uuid` | `DELETE /uuid/:uuid` | Remove by UUID |
-| (new) | `GET /id/:id` | Get by citation ID |
+Add ID-based routes alongside existing UUID routes:
 
-Server routes (`server/routes/references.ts`):
-- [ ] Rename `GET /:uuid` → `GET /uuid/:uuid`
-- [ ] Rename `PUT /:uuid` → `PUT /uuid/:uuid`
-- [ ] Rename `DELETE /:uuid` → `DELETE /uuid/:uuid`
-- [ ] Add `GET /id/:id` route
+| Route | Description |
+|-------|-------------|
+| `GET /uuid/:uuid` | Get by UUID (rename from `/:uuid`) |
+| `PUT /uuid/:uuid` | Update by UUID (rename from `/:uuid`) |
+| `DELETE /uuid/:uuid` | Remove by UUID (rename from `/:uuid`) |
+| `GET /id/:id` | Get by citation ID (new) |
+| `PUT /id/:id` | Update by citation ID (new) |
+| `DELETE /id/:id` | Remove by citation ID (new) |
 
-ServerClient updates (`cli/server-client.ts`):
-- [ ] Update `findByUuid()` URL: `/api/references/uuid/${uuid}`
-- [ ] Update `update()` URL: `/api/references/uuid/${uuid}`
-- [ ] Update `remove()` URL: `/api/references/uuid/${uuid}`
-- [ ] Add `findById(id: string): Promise<CslItem | null>`
+Tasks:
+- [ ] Rename existing routes: `/:uuid` → `/uuid/:uuid`
+- [ ] Add new routes: `/id/:id` for GET, PUT, DELETE
 
-CLI updates:
-- [ ] Update `findReferenceToRemove()` to use `findByUuid()` / `findById()`
+**ServerClient Updates** (`cli/server-client.ts`):
+
+Add `byUuid` option to methods:
+
+```typescript
+// Before:
+remove(uuid: string): Promise<RemoveResult>
+update(uuid: string, updates): Promise<UpdateResult>
+
+// After:
+remove(identifier: string, options?: { byUuid?: boolean }): Promise<RemoveResult>
+update(identifier: string, updates, options?: { byUuid?: boolean }): Promise<UpdateResult>
+findByUuid(uuid: string) → find(identifier: string, options?: { byUuid?: boolean })
+```
+
+Internal URL routing:
+```typescript
+const path = options?.byUuid
+  ? `/api/references/uuid/${identifier}`
+  : `/api/references/id/${identifier}`;
+```
+
+Tasks:
+- [ ] Update `remove()` to accept `{ byUuid?: boolean }` option
+- [ ] Update `update()` to accept `{ byUuid?: boolean }` option
+- [ ] Rename `findByUuid()` → `find()` with `{ byUuid?: boolean }` option
+- [ ] Update tests
+
+**CLI Updates**:
+- [ ] Update `findReferenceToRemove()` to use new `find()` method
 
 #### Step 9.4: Update Commands to Use ExecutionContext (Part 2)
 
-Update `remove` and `update` commands after Step 9.3 completes (they depend on the new `findById()` API).
+Update `remove` and `update` commands using the new ServerClient API.
 
 | Command | Execute Function | Action Handler | Tests | Status |
 |---------|------------------|----------------|-------|--------|
 | remove | `executeRemove` | `handleRemoveAction` | `remove.test.ts` | [ ] |
 | update | `executeUpdate` | `handleUpdateAction` | `update.test.ts` | [ ] |
 
+**Simplified implementation with byUuid option:**
+
+```typescript
+// Before (complex):
+if (serverClient) {
+  if (byUuid) {
+    return serverClient.remove(identifier);
+  }
+  const items = await serverClient.getAll();  // Inefficient!
+  const found = items.find((item) => item.id === identifier);
+  return serverClient.remove(found.custom.uuid);
+}
+
+// After (simple):
+if (context.type === "server") {
+  return context.client.remove(identifier, { byUuid });
+}
+```
+
 For each command:
-1. Update `executeXxx` to use `findById()` instead of `getAll()`
-2. Update signature to accept `ExecutionContext`
+1. Update signature to accept `ExecutionContext`
+2. Simplify server mode to use `client.remove/update(identifier, { byUuid })`
 3. Update `handleXxxAction` to use `createExecutionContext()`
 4. Update tests
 5. Run tests to verify
