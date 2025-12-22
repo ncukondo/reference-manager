@@ -26,7 +26,7 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 
 #### Step 10.1: Schema & Type Updates
 
-- [ ] **10.1.1**: Update `CslCustomSchema` in `src/core/csl-json/types.ts`
+- [x] **10.1.1**: Update `CslCustomSchema` in `src/core/csl-json/types.ts`
   - Add `fulltext` field, add `.passthrough()` for unknown fields
   - TDD: Update existing parser tests → verify fail → implement → verify pass
 - [ ] **10.1.2**: Add fulltext config in `src/config/schema.ts`
