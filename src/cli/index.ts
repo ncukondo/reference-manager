@@ -610,19 +610,27 @@ function registerServerCommand(program: Command): void {
 }
 
 /**
+ * Check if an option value is a valid file path (not a boolean flag)
+ */
+function isValidFilePath(value: string | boolean | undefined): value is string {
+  return typeof value === "string" && value !== "" && value !== "true";
+}
+
+/**
  * Parse fulltext attach options to determine file type and path
  */
 function parseFulltextAttachTypeAndPath(
   filePathArg: string | undefined,
-  options: { pdf?: string; markdown?: string }
+  options: { pdf?: string | boolean; markdown?: string | boolean }
 ): { type: "pdf" | "markdown" | undefined; filePath: string | undefined } {
   if (options.pdf) {
-    const isValidPath = options.pdf !== "" && options.pdf !== "true";
-    return { type: "pdf", filePath: isValidPath ? options.pdf : filePathArg };
+    return { type: "pdf", filePath: isValidFilePath(options.pdf) ? options.pdf : filePathArg };
   }
   if (options.markdown) {
-    const isValidPath = options.markdown !== "" && options.markdown !== "true";
-    return { type: "markdown", filePath: isValidPath ? options.markdown : filePathArg };
+    return {
+      type: "markdown",
+      filePath: isValidFilePath(options.markdown) ? options.markdown : filePathArg,
+    };
   }
   return { type: undefined, filePath: filePathArg };
 }
