@@ -20,6 +20,7 @@ import { type RemoveCommandOptions, executeRemove, formatRemoveOutput } from "./
 import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
+import { createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
@@ -29,7 +30,6 @@ import {
   readJsonInput,
   readStdinContent,
 } from "./helpers.js";
-import { createExecutionContext } from "./execution-context.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
 
@@ -245,10 +245,8 @@ async function findReferenceToRemove(
 ): Promise<CslItem | undefined> {
   if (server) {
     const client = new ServerClient(server.baseUrl);
-    const items = await client.getAll();
-    return byUuid
-      ? items.find((item) => item.custom?.uuid === identifier)
-      : items.find((item) => item.id === identifier);
+    const item = await client.find(identifier, { byUuid });
+    return item ?? undefined;
   }
 
   const library = await Library.load(libraryPath);

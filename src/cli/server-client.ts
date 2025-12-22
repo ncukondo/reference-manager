@@ -49,12 +49,17 @@ export class ServerClient {
   }
 
   /**
-   * Find reference by UUID.
-   * @param uuid - Reference UUID
+   * Find reference by identifier.
+   * @param identifier - Citation ID or UUID
+   * @param options - Options object
+   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
    * @returns CSL item or null if not found
    */
-  async findByUuid(uuid: string): Promise<CslItem | null> {
-    const url = `${this.baseUrl}/api/references/${uuid}`;
+  async find(identifier: string, options?: { byUuid?: boolean }): Promise<CslItem | null> {
+    const path = options?.byUuid
+      ? `/api/references/uuid/${identifier}`
+      : `/api/references/id/${identifier}`;
+    const url = `${this.baseUrl}${path}`;
     const response = await fetch(url);
 
     if (response.status === 404) {
@@ -90,12 +95,21 @@ export class ServerClient {
 
   /**
    * Update existing reference.
-   * @param uuid - Reference UUID
-   * @param item - Updated CSL item
-   * @returns Updated CSL item
+   * @param identifier - Citation ID or UUID
+   * @param updates - Partial CSL item with fields to update
+   * @param options - Options object
+   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
+   * @returns Update operation result
    */
-  async update(uuid: string, updates: Partial<CslItem>): Promise<UpdateOperationResult> {
-    const url = `${this.baseUrl}/api/references/${uuid}`;
+  async update(
+    identifier: string,
+    updates: Partial<CslItem>,
+    options?: { byUuid?: boolean }
+  ): Promise<UpdateOperationResult> {
+    const path = options?.byUuid
+      ? `/api/references/uuid/${identifier}`
+      : `/api/references/id/${identifier}`;
+    const url = `${this.baseUrl}${path}`;
     const response = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -110,11 +124,17 @@ export class ServerClient {
   }
 
   /**
-   * Remove reference by UUID.
-   * @param uuid - Reference UUID
+   * Remove reference by identifier.
+   * @param identifier - Citation ID or UUID
+   * @param options - Options object
+   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
+   * @returns Remove operation result
    */
-  async remove(uuid: string): Promise<RemoveResult> {
-    const url = `${this.baseUrl}/api/references/${uuid}`;
+  async remove(identifier: string, options?: { byUuid?: boolean }): Promise<RemoveResult> {
+    const path = options?.byUuid
+      ? `/api/references/uuid/${identifier}`
+      : `/api/references/id/${identifier}`;
+    const url = `${this.baseUrl}${path}`;
     const response = await fetch(url, {
       method: "DELETE",
     });

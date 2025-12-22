@@ -18,10 +18,22 @@ export function createReferencesRoute(library: Library) {
     return c.json(items);
   });
 
-  // GET /:uuid - Get reference by UUID
-  route.get("/:uuid", (c) => {
+  // GET /uuid/:uuid - Get reference by UUID
+  route.get("/uuid/:uuid", (c) => {
     const uuid = c.req.param("uuid");
     const ref = library.findByUuid(uuid);
+
+    if (!ref) {
+      return c.json({ error: "Reference not found" }, 404);
+    }
+
+    return c.json(ref.getItem());
+  });
+
+  // GET /id/:id - Get reference by citation ID
+  route.get("/id/:id", (c) => {
+    const id = c.req.param("id");
+    const ref = library.findById(id);
 
     if (!ref) {
       return c.json({ error: "Reference not found" }, 404);
@@ -58,8 +70,8 @@ export function createReferencesRoute(library: Library) {
     }
   });
 
-  // PUT /:uuid - Update reference
-  route.put("/:uuid", async (c) => {
+  // PUT /uuid/:uuid - Update reference by UUID
+  route.put("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
 
     let body: unknown;
@@ -90,14 +102,64 @@ export function createReferencesRoute(library: Library) {
     return c.json(result);
   });
 
-  // DELETE /:uuid - Delete reference
-  route.delete("/:uuid", async (c) => {
+  // PUT /id/:id - Update reference by citation ID
+  route.put("/id/:id", async (c) => {
+    const id = c.req.param("id");
+
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON" }, 400);
+    }
+
+    if (!body || typeof body !== "object") {
+      return c.json({ error: "Request body must be an object" }, 400);
+    }
+
+    // Use updateReference operation with byUuid: false
+    const result = await updateReference(library, {
+      identifier: id,
+      byUuid: false,
+      updates: body as Partial<import("../../core/csl-json/types.js").CslItem>,
+      onIdCollision: "suffix",
+    });
+
+    // Return operation result with appropriate status code
+    if (!result.updated) {
+      const status = result.idCollision ? 409 : 404;
+      return c.json(result, status);
+    }
+
+    return c.json(result);
+  });
+
+  // DELETE /uuid/:uuid - Delete reference by UUID
+  route.delete("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
 
     // Use removeReference operation
     const result = await removeReference(library, {
       identifier: uuid,
       byUuid: true,
+    });
+
+    // Return operation result with appropriate status code
+    if (!result.removed) {
+      return c.json(result, 404);
+    }
+
+    return c.json(result);
+  });
+
+  // DELETE /id/:id - Delete reference by citation ID
+  route.delete("/id/:id", async (c) => {
+    const id = c.req.param("id");
+
+    // Use removeReference operation with byUuid: false
+    const result = await removeReference(library, {
+      identifier: id,
+      byUuid: false,
     });
 
     // Return operation result with appropriate status code

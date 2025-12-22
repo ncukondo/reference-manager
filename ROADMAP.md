@@ -105,8 +105,8 @@ Add ID-based routes alongside existing UUID routes:
 | `DELETE /id/:id` | Remove by citation ID (new) |
 
 Tasks:
-- [ ] Rename existing routes: `/:uuid` → `/uuid/:uuid`
-- [ ] Add new routes: `/id/:id` for GET, PUT, DELETE
+- [x] Rename existing routes: `/:uuid` → `/uuid/:uuid`
+- [x] Add new routes: `/id/:id` for GET, PUT, DELETE
 
 **ServerClient Updates** (`cli/server-client.ts`):
 
@@ -131,13 +131,13 @@ const path = options?.byUuid
 ```
 
 Tasks:
-- [ ] Update `remove()` to accept `{ byUuid?: boolean }` option
-- [ ] Update `update()` to accept `{ byUuid?: boolean }` option
-- [ ] Rename `findByUuid()` → `find()` with `{ byUuid?: boolean }` option
-- [ ] Update tests
+- [x] Update `remove()` to accept `{ byUuid?: boolean }` option
+- [x] Update `update()` to accept `{ byUuid?: boolean }` option
+- [x] Rename `findByUuid()` → `find()` with `{ byUuid?: boolean }` option
+- [x] Update tests
 
 **CLI Updates**:
-- [ ] Update `findReferenceToRemove()` to use new `find()` method
+- [x] Update `findReferenceToRemove()` to use new `find()` method
 
 #### Step 9.4: Update Commands to Use ExecutionContext (Part 2)
 
