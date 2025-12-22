@@ -49,7 +49,8 @@
       "mcp__serena__think_about_task_adherence",
       "Bash(npm run test:unit:*)",
       "Bash(npm run test:e2e:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(gh run view:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
