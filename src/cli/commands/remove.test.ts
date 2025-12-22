@@ -1,3 +1,4 @@
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { RemoveResult } from "../../features/operations/remove.js";
@@ -212,7 +213,7 @@ describe("remove command", () => {
       await deleteFulltextFiles(item, fulltextDirectory);
 
       expect(mockUnlink).toHaveBeenCalledTimes(1);
-      expect(mockUnlink).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.pdf`);
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.pdf"));
     });
 
     it("should delete markdown file when markdown attached", async () => {
@@ -232,7 +233,7 @@ describe("remove command", () => {
       await deleteFulltextFiles(item, fulltextDirectory);
 
       expect(mockUnlink).toHaveBeenCalledTimes(1);
-      expect(mockUnlink).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.md`);
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.md"));
     });
 
     it("should delete both files when both attached", async () => {
@@ -253,8 +254,8 @@ describe("remove command", () => {
       await deleteFulltextFiles(item, fulltextDirectory);
 
       expect(mockUnlink).toHaveBeenCalledTimes(2);
-      expect(mockUnlink).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.pdf`);
-      expect(mockUnlink).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.md`);
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.pdf"));
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.md"));
     });
 
     it("should not call unlink when no fulltext attached", async () => {
