@@ -1,182 +1,137 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CslItem } from "../../core/csl-json/types.js";
-import { list } from "./list.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Library } from "../../core/library.js";
+import type { ListResult } from "../../features/operations/list.js";
+import type { ServerClient } from "../server-client.js";
+import {
+  type ListCommandOptions,
+  type ListCommandResult,
+  executeList,
+  formatListOutput,
+} from "./list.js";
+
+// Mock dependencies
+vi.mock("../../features/operations/list.js", () => ({
+  listReferences: vi.fn(),
+}));
 
 describe("list command", () => {
-  let mockStdout: string[];
-  let mockStderr: string[];
-  let originalStdoutWrite: typeof process.stdout.write;
-  let originalStderrWrite: typeof process.stderr.write;
+  describe("executeList", () => {
+    const mockLibrary = {} as Library;
+    const mockServerClient = {
+      list: vi.fn(),
+    } as unknown as ServerClient;
 
-  beforeEach(() => {
-    mockStdout = [];
-    mockStderr = [];
-
-    // Mock stdout/stderr
-    originalStdoutWrite = process.stdout.write;
-    originalStderrWrite = process.stderr.write;
-
-    // @ts-expect-error - mocking stdout.write
-    process.stdout.write = vi.fn((chunk: string) => {
-      mockStdout.push(chunk);
-      return true;
+    beforeEach(() => {
+      vi.clearAllMocks();
     });
 
-    // @ts-expect-error - mocking stderr.write
-    process.stderr.write = vi.fn((chunk: string) => {
-      mockStderr.push(chunk);
-      return true;
+    describe("via server", () => {
+      it("should call server list when server is provided", async () => {
+        const mockResult: ListResult = {
+          items: ["[ref1] Test Article"],
+        };
+        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
+
+        const options: ListCommandOptions = {};
+
+        const result = await executeList(options, mockLibrary, mockServerClient);
+
+        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "pretty" });
+        expect(result).toEqual(mockResult);
+      });
+
+      it("should pass json format option to server", async () => {
+        const mockResult: ListResult = { items: ['{"id":"ref1"}'] };
+        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
+
+        const options: ListCommandOptions = { json: true };
+
+        await executeList(options, mockLibrary, mockServerClient);
+
+        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "json" });
+      });
+
+      it("should pass ids-only format option to server", async () => {
+        const mockResult: ListResult = { items: ["ref1", "ref2"] };
+        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
+
+        const options: ListCommandOptions = { idsOnly: true };
+
+        await executeList(options, mockLibrary, mockServerClient);
+
+        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "ids-only" });
+      });
+
+      it("should pass uuid format option to server", async () => {
+        const mockResult: ListResult = { items: ["uuid-1", "uuid-2"] };
+        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
+
+        const options: ListCommandOptions = { uuid: true };
+
+        await executeList(options, mockLibrary, mockServerClient);
+
+        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "uuid" });
+      });
+
+      it("should pass bibtex format option to server", async () => {
+        const mockResult: ListResult = { items: ["@article{ref1,}"] };
+        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
+
+        const options: ListCommandOptions = { bibtex: true };
+
+        await executeList(options, mockLibrary, mockServerClient);
+
+        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "bibtex" });
+      });
+    });
+
+    describe("via library", () => {
+      it("should call listReferences when server is not provided", async () => {
+        const { listReferences } = await import("../../features/operations/list.js");
+        const mockResult: ListResult = {
+          items: ["[ref1] Test Article"],
+        };
+        vi.mocked(listReferences).mockReturnValue(mockResult);
+
+        const options: ListCommandOptions = {};
+
+        const result = await executeList(options, mockLibrary, undefined);
+
+        expect(listReferences).toHaveBeenCalledWith(mockLibrary, { format: "pretty" });
+        expect(result).toEqual(mockResult);
+      });
+    });
+
+    describe("option validation", () => {
+      it("should throw error for conflicting output options", async () => {
+        const options: ListCommandOptions = { json: true, bibtex: true };
+
+        await expect(executeList(options, mockLibrary, undefined)).rejects.toThrow(
+          "Multiple output formats specified"
+        );
+      });
     });
   });
 
-  afterEach(() => {
-    process.stdout.write = originalStdoutWrite;
-    process.stderr.write = originalStderrWrite;
-  });
+  describe("formatListOutput", () => {
+    it("should join items with newlines", () => {
+      const result: ListCommandResult = {
+        items: ["line1", "line2", "line3"],
+      };
 
-  it("should list all references in pretty format by default", async () => {
-    const items: CslItem[] = [
-      {
-        id: "Smith-2020",
-        type: "article",
-        title: "Test Article",
-        author: [{ family: "Smith", given: "John" }],
-        issued: { "date-parts": [[2020]] },
-        custom: {
-          uuid: "550e8400-e29b-41d4-a716-446655440000",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-    ];
+      const output = formatListOutput(result);
 
-    await list(items, {});
+      expect(output).toBe("line1\nline2\nline3");
+    });
 
-    const output = mockStdout.join("");
-    expect(output).toContain("[Smith-2020] Test Article");
-    expect(output).toContain("Authors: Smith, J.");
-    expect(output).toContain("Year: 2020");
-  });
+    it("should return empty string for empty items", () => {
+      const result: ListCommandResult = {
+        items: [],
+      };
 
-  it("should list all references in JSON format", async () => {
-    const items: CslItem[] = [
-      {
-        id: "Smith-2020",
-        type: "article",
-        title: "Test Article",
-        custom: {
-          uuid: "550e8400-e29b-41d4-a716-446655440000",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-    ];
+      const output = formatListOutput(result);
 
-    await list(items, { json: true });
-
-    const output = mockStdout.join("");
-    const parsed = JSON.parse(output);
-    expect(parsed).toEqual(items);
-  });
-
-  it("should list only IDs when ids-only option is set", async () => {
-    const items: CslItem[] = [
-      {
-        id: "Smith-2020",
-        type: "article",
-        custom: {
-          uuid: "550e8400-e29b-41d4-a716-446655440000",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-      {
-        id: "Jones-2021",
-        type: "book",
-        custom: {
-          uuid: "660e8400-e29b-41d4-a716-446655440001",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-    ];
-
-    await list(items, { idsOnly: true });
-
-    const output = mockStdout.join("");
-    expect(output).toBe("Smith-2020\nJones-2021\n");
-  });
-
-  it("should list only UUIDs when uuid option is set", async () => {
-    const items: CslItem[] = [
-      {
-        id: "Smith-2020",
-        type: "article",
-        custom: {
-          uuid: "550e8400-e29b-41d4-a716-446655440000",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-      {
-        id: "Jones-2021",
-        type: "book",
-        custom: {
-          uuid: "660e8400-e29b-41d4-a716-446655440001",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-    ];
-
-    await list(items, { uuid: true });
-
-    const output = mockStdout.join("");
-    expect(output).toBe(
-      "550e8400-e29b-41d4-a716-446655440000\n660e8400-e29b-41d4-a716-446655440001\n"
-    );
-  });
-
-  it("should list in BibTeX format when bibtex option is set", async () => {
-    const items: CslItem[] = [
-      {
-        id: "Smith-2020",
-        type: "article",
-        title: "Test Article",
-        author: [{ family: "Smith", given: "John" }],
-        issued: { "date-parts": [[2020]] },
-        custom: {
-          uuid: "550e8400-e29b-41d4-a716-446655440000",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      },
-    ];
-
-    await list(items, { bibtex: true });
-
-    const output = mockStdout.join("");
-    expect(output).toContain("@article{Smith-2020,");
-    expect(output).toContain("title = {Test Article}");
-    expect(output).toContain("author = {Smith, John}");
-  });
-
-  it("should handle empty library", async () => {
-    await list([], {});
-
-    const output = mockStdout.join("");
-    expect(output).toBe("");
-  });
-
-  it("should throw error for conflicting output options", async () => {
-    const items: CslItem[] = [];
-
-    await expect(list(items, { json: true, bibtex: true })).rejects.toThrow(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
-    );
-
-    await expect(list(items, { idsOnly: true, uuid: true })).rejects.toThrow(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
-    );
+      expect(output).toBe("");
+    });
   });
 });

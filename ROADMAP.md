@@ -11,14 +11,15 @@ For detailed specifications, see [spec/](./spec/).
 - ✅ **Phase 1-5**: Core functionality, CLI commands, Server, Build & Distribution
 - ✅ **Phase 6**: Citation Generation (cite command)
 - ✅ **Phase 7**: Multi-Format Import (add command with BibTeX, RIS, DOI, PMID support)
+- ✅ **Phase 8**: Operation Integration (unified operations pattern)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
-## Current Phase
+## Completed Phase 8 Reference
 
-### Phase 8: Operation Integration
+### Phase 8: Operation Integration (COMPLETED)
 
 Refactor all commands to use unified `features/operations/` pattern.
 
@@ -72,9 +73,9 @@ Reference: `add.ts` uses `serverClient.addFromInputs()`, `cite.ts` uses `serverC
 
 | Command | executeXxx | formatOutput | deprecated removed | Notes |
 |---------|------------|--------------|-------------------|-------|
-| list | [x] | [x] | [ ] | ✅ Uses `serverClient.list()` |
-| search | [x] | [x] | [ ] | ✅ Uses `serverClient.search()` |
-| cite | [x] | [x] | [ ] | ✅ Uses `serverClient.cite()` |
+| list | [x] | [x] | [x] | ✅ Uses `serverClient.list()` |
+| search | [x] | [x] | [x] | ✅ Uses `serverClient.search()` |
+| cite | [x] | [x] | [x] | ✅ Uses `serverClient.cite()` |
 | remove | [x] | [x] | [x] | ✅ Uses `serverClient.remove()` |
 | update | [x] | [x] | [x] | ✅ Uses `serverClient.update()` |
 
@@ -88,12 +89,12 @@ Extract action handlers for each command:
 - [x] handleRemoveAction → executeRemove + formatRemoveOutput
 - [x] handleUpdateAction → executeUpdate + formatUpdateOutput
 
-#### Step 8.6: Cleanup and Commit
+#### Step 8.6: Cleanup and Commit (DONE)
 
-- [ ] Remove deprecated functions from cli/commands/*.ts
-- [ ] Update cli/commands/index.ts exports
-- [ ] Run tests and verify all pass
-- [ ] Commit Phase 8 changes
+- [x] Remove deprecated functions from cli/commands/*.ts
+- [x] Update cli/commands/index.ts exports
+- [x] Run tests and verify all pass
+- [x] Commit Phase 8 changes
 
 #### Architecture Pattern
 
@@ -114,7 +115,7 @@ features/operations/   → xxxOperation()       → library + save + format
 
 ---
 
-## Future Phases
+## Current Phase
 
 ### Phase 9: Citation Enhancements
 
@@ -129,6 +130,8 @@ Post-MVP enhancements for citation functionality:
 - Citation preview in server mode
 - Batch citation generation from file
 - LSP integration for text editors
+
+## Future Phases
 
 ### Phase 10: Advanced Features
 

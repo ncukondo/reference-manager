@@ -2,10 +2,10 @@
  * CLI commands
  */
 
-export { executeList, formatListOutput, list } from "./list.js";
+export { executeList, formatListOutput } from "./list.js";
 export type { ListCommandOptions, ListCommandResult } from "./list.js";
 
-export { executeSearch, formatSearchOutput, search } from "./search.js";
+export { executeSearch, formatSearchOutput } from "./search.js";
 export type { SearchCommandOptions, SearchCommandResult } from "./search.js";
 
 export { executeAdd, formatAddOutput, getExitCode } from "./add.js";
@@ -26,5 +26,5 @@ export type { UpdateCommandOptions, UpdateCommandResult } from "./update.js";
 export { serverStart, serverStop, serverStatus } from "./server.js";
 export type { ServerStartOptions, ServerInfo } from "./server.js";
 
-export { cite, executeCite, formatCiteOutput, formatCiteErrors, getCiteExitCode } from "./cite.js";
+export { executeCite, formatCiteOutput, formatCiteErrors, getCiteExitCode } from "./cite.js";
 export type { CiteCommandOptions, CiteCommandResult } from "./cite.js";

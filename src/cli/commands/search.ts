@@ -1,14 +1,9 @@
-import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import { formatBibtex, formatJson, formatPretty } from "../../features/format/index.js";
 import {
   type SearchFormat,
   type SearchResult,
   searchReferences,
 } from "../../features/operations/search.js";
-import { search as searchMatcher } from "../../features/search/matcher.js";
-import { sortResults } from "../../features/search/sorter.js";
-import { tokenize } from "../../features/search/tokenizer.js";
 import type { ServerClient } from "../server-client.js";
 
 /**
@@ -90,40 +85,4 @@ export function formatSearchOutput(result: SearchCommandResult): string {
     return "";
   }
   return result.items.join("\n");
-}
-
-// Keep the old function for backwards compatibility during transition
-/**
- * @deprecated Use executeSearch and formatSearchOutput instead
- */
-export async function search(
-  items: CslItem[],
-  query: string,
-  options: Omit<SearchCommandOptions, "query">
-): Promise<void> {
-  const fullOptions: SearchCommandOptions = { ...options, query };
-  validateOptions(fullOptions);
-
-  const searchQuery = tokenize(query);
-  const results = searchMatcher(items, searchQuery.tokens);
-  const sorted = sortResults(results);
-  const matchedItems = sorted.map((result) => result.reference);
-
-  if (options.json) {
-    process.stdout.write(formatJson(matchedItems));
-  } else if (options.idsOnly) {
-    for (const item of matchedItems) {
-      process.stdout.write(`${item.id}\n`);
-    }
-  } else if (options.uuid) {
-    for (const item of matchedItems) {
-      if (item.custom) {
-        process.stdout.write(`${item.custom.uuid}\n`);
-      }
-    }
-  } else if (options.bibtex) {
-    process.stdout.write(formatBibtex(matchedItems));
-  } else {
-    process.stdout.write(formatPretty(matchedItems));
-  }
 }

@@ -1,6 +1,4 @@
-import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import { formatBibtex, formatJson, formatPretty } from "../../features/format/index.js";
 import {
   type ListFormat,
   type ListResult,
@@ -86,30 +84,4 @@ export function formatListOutput(result: ListCommandResult): string {
     return "";
   }
   return result.items.join("\n");
-}
-
-// Keep the old function for backwards compatibility during transition
-/**
- * @deprecated Use executeList and formatListOutput instead
- */
-export async function list(items: CslItem[], options: ListCommandOptions): Promise<void> {
-  validateOptions(options);
-
-  if (options.json) {
-    process.stdout.write(formatJson(items));
-  } else if (options.idsOnly) {
-    for (const item of items) {
-      process.stdout.write(`${item.id}\n`);
-    }
-  } else if (options.uuid) {
-    for (const item of items) {
-      if (item.custom) {
-        process.stdout.write(`${item.custom.uuid}\n`);
-      }
-    }
-  } else if (options.bibtex) {
-    process.stdout.write(formatBibtex(items));
-  } else {
-    process.stdout.write(formatPretty(items));
-  }
 }

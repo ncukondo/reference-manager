@@ -15,27 +15,11 @@ import {
   formatCiteOutput,
   getCiteExitCode,
 } from "./commands/cite.js";
-import {
-  type ListCommandOptions,
-  executeList,
-  formatListOutput,
-} from "./commands/list.js";
-import {
-  type SearchCommandOptions,
-  executeSearch,
-  formatSearchOutput,
-} from "./commands/search.js";
+import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
+import { type RemoveCommandOptions, executeRemove, formatRemoveOutput } from "./commands/remove.js";
+import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
-import {
-  type RemoveCommandOptions,
-  executeRemove,
-  formatRemoveOutput,
-} from "./commands/remove.js";
-import {
-  type UpdateCommandOptions,
-  executeUpdate,
-  formatUpdateOutput,
-} from "./commands/update.js";
+import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
 import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
@@ -87,10 +71,7 @@ export function createProgram(): Command {
 /**
  * Handle 'list' command action
  */
-async function handleListAction(
-  options: ListCommandOptions,
-  program: Command
-): Promise<void> {
+async function handleListAction(options: ListCommandOptions, program: Command): Promise<void> {
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });

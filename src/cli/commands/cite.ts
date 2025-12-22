@@ -1,12 +1,4 @@
-import { isBuiltinStyle } from "../../config/csl-styles.js";
-import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import {
-  formatBibliography,
-  formatBibliographyCSL,
-  formatInText,
-  formatInTextCSL,
-} from "../../features/format/index.js";
 import { type CiteResult, citeReferences } from "../../features/operations/cite.js";
 import type { ServerClient } from "../server-client.js";
 
@@ -150,60 +142,4 @@ export function getCiteExitCode(result: CiteCommandResult): number {
     return 1;
   }
   return 0;
-}
-
-// Keep the old function for backwards compatibility during transition
-/**
- * @deprecated Use executeCite and formatCiteOutput instead
- */
-export async function cite(
-  items: CslItem[],
-  idsOrUuids: string[],
-  options: Omit<CiteCommandOptions, "identifiers">
-): Promise<void> {
-  const fullOptions: CiteCommandOptions = { ...options, identifiers: idsOrUuids };
-  await validateOptions(fullOptions);
-
-  // Resolve references
-  const resolved: CslItem[] = [];
-  for (const identifier of idsOrUuids) {
-    const found = options.uuid
-      ? items.find((item) => item.custom?.uuid === identifier)
-      : items.find((item) => item.id === identifier);
-    if (!found) {
-      const msg = options.uuid
-        ? `Reference with UUID '${identifier}' not found`
-        : `Reference '${identifier}' not found`;
-      throw new Error(msg);
-    }
-    resolved.push(found);
-  }
-
-  // Check if fallback should be used
-  let useFallback = false;
-  if (!options.cslFile && options.style && !isBuiltinStyle(options.style)) {
-    process.stderr.write(
-      `Warning: CSL style '${options.style}' not found, falling back to simplified format\n`
-    );
-    useFallback = true;
-  }
-
-  // Generate citation
-  const format = options.format || "text";
-  const locale = options.locale || "en-US";
-  const style = options.cslFile || options.style || "apa";
-
-  let output: string;
-  if (useFallback) {
-    output = options.inText ? formatInText(resolved) : formatBibliography(resolved);
-  } else {
-    output = options.inText
-      ? formatInTextCSL(resolved, { style, locale, format })
-      : formatBibliographyCSL(resolved, { style, locale, format });
-  }
-
-  process.stdout.write(output);
-  if (!output.endsWith("\n")) {
-    process.stdout.write("\n");
-  }
 }
