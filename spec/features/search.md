@@ -22,7 +22,32 @@
   - `pmcid:` - Search in PMCID field
   - `url:` - Search in URL field (both primary `URL` and `custom.additional_urls`)
   - `keyword:` - Search in keyword field
+  - `tag:` - Search in custom tags field (`custom.tags`)
 - If no field prefix is specified, search all fields
+
+### Case Sensitivity for Consecutive Uppercase
+
+Tokens containing **2 or more consecutive uppercase letters** (e.g., AI, API, RNA, CRISPR) are treated specially:
+
+- **The consecutive uppercase portion is matched case-sensitively**
+- The remaining portion of the token is matched case-insensitively (with normalization)
+- This applies to all search contexts: bare tokens, field-specified, and phrase searches
+
+**Detection pattern:** `/[A-Z]{2,}/g`
+
+**Examples:**
+
+| Query | Target | Match? | Reason |
+|-------|--------|--------|--------|
+| `AI` | "AI therapy" | ✓ | Exact case match for "AI" |
+| `AI` | "ai therapy" | ✗ | "ai" ≠ "AI" |
+| `AI` | "Ai therapy" | ✗ | "Ai" ≠ "AI" |
+| `api` | "API endpoint" | ✓ | No consecutive uppercase in query |
+| `RNA` | "mRNA synthesis" | ✓ | Partial match, "RNA" found in "mRNA" |
+| `AI therapy` | "AI Therapy" | ✓ | "AI" case-sensitive, "therapy" case-insensitive |
+| `AI-based` | "AI-Based method" | ✓ | "AI" case-sensitive, "based" case-insensitive |
+| `title:AI` | "AI model" | ✓ | Field prefix does not change behavior |
+| `"AI model"` | "AI Model" | ✓ | Phrase search: "AI" case-sensitive, "model" case-insensitive |
 
 ### Boolean Logic
 
@@ -53,6 +78,7 @@
 - `title` - Title
 - `author` - Authors (all author names, normalized as `family` + given initial)
 - `keyword` - Keywords (array in memory, each element searched individually)
+- `custom.tags` - User-defined tags (array, each element searched individually)
 - `container-title` - Journal/book title
 - `publisher` - Publisher name
 - `abstract` - Abstract text
@@ -64,12 +90,15 @@
 - Normalization applied (see below)
 
 **Array field handling:**
-- For array fields (e.g., `keyword`), each array element is treated as a separate searchable value
+- For array fields (e.g., `keyword`, `custom.tags`), each array element is treated as a separate searchable value
 - A match occurs if the query matches any element in the array
 - Example: For `keyword: ["machine learning", "deep learning", "neural networks"]`:
   - Query `"machine"` matches (found in "machine learning")
   - Query `"deep"` matches (found in "deep learning")
   - Query `"keyword:neural"` matches (found in "neural networks")
+- Example: For `custom.tags: ["review", "important", "to-read"]`:
+  - Query `"tag:review"` matches
+  - Query `"important"` matches (in multi-field search)
 
 ## Normalization
 
@@ -79,6 +108,8 @@ For content fields (non-ID fields), the following normalization is applied:
 - Lowercase
 - Punctuation removed
 - Whitespace normalized
+
+**Exception:** When the query contains consecutive uppercase letters (2+), those portions are matched case-sensitively against the original (non-normalized) field value. See "Case Sensitivity for Consecutive Uppercase" above.
 
 Authors:
 - All authors
