@@ -51,11 +51,11 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 
 #### Step 10.4: CLI Commands
 
-- [ ] **10.4.1**: Create `src/cli/commands/fulltext.ts`
+- [x] **10.4.1**: Create `src/cli/commands/fulltext.ts`
   - `fulltext attach`, `fulltext get`, `fulltext detach` subcommands
   - TDD: Write command tests → empty impl → verify fail → implement → verify pass
-- [ ] **10.4.2**: Add stdin support for attach
-- [ ] **10.4.3**: Add stdout support for get
+- [x] **10.4.2**: Add stdin support for attach
+- [x] **10.4.3**: Add stdout support for get
 
 #### Step 10.5: Remove Command Integration
 
