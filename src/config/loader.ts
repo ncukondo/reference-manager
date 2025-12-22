@@ -3,6 +3,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { parse as parseTOML } from "@iarna/toml";
 import {
@@ -150,7 +151,6 @@ function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubme
  * Expand ~ to home directory
  */
 function expandTilde(path: string): string {
-  const { homedir } = require("node:os");
   if (path.startsWith("~/")) {
     return join(homedir(), path.slice(2));
   }
