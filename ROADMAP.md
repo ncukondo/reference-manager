@@ -38,10 +38,10 @@ Full-text PDF and Markdown file management. See `spec/features/fulltext.md`.
 
 #### Step 10.2: Filename Generation
 
-- [ ] **10.2.1**: Create `src/features/fulltext/types.ts`
-- [ ] **10.2.2**: Create `src/features/fulltext/filename.ts`
+- [x] **10.2.1**: Create `src/features/fulltext/types.ts`
+- [x] **10.2.2**: Create `src/features/fulltext/filename.ts`
   - TDD: Write `filename.test.ts` → empty impl → verify fail → implement → verify pass
-- [ ] **10.2.3**: Create `src/features/fulltext/index.ts`
+- [x] **10.2.3**: Create `src/features/fulltext/index.ts`
 
 #### Step 10.3: Fulltext Manager
 
