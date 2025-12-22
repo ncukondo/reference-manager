@@ -87,12 +87,12 @@ Modify existing matcher to use new uppercase-aware matching.
 
 Improve author search to include full given name, not just initial.
 
-- [ ] **11.3.5.1**: Test author search with full given name
+- [x] **11.3.5.1**: Test author search with full given name
   - File: `src/features/search/matcher.test.ts`
   - Test: "author:Takeshi" matches author with given: "Takeshi"
   - Test: "author:Takeshi" does NOT match author with given: "Takuma"
 
-- [ ] **11.3.5.2**: Modify extractAuthors to include full given name
+- [x] **11.3.5.2**: Modify extractAuthors to include full given name
   - File: `src/features/search/matcher.ts`
   - Change: Include full given name in searchable author string
   - Format: "Family Given" (e.g., "Kondo Takeshi")

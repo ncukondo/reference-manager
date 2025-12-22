@@ -190,6 +190,54 @@ describe("matchToken", () => {
       expect(matches[0].field).toBe("author");
     });
 
+    it("should match author with full given name", () => {
+      const refWithTakeshi: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test Article",
+        author: [{ family: "Kondo", given: "Takeshi" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:Takeshi",
+        value: "Takeshi",
+        field: "author",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTakeshi);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("author");
+    });
+
+    it("should NOT match author whose given name starts differently", () => {
+      const refWithTakuma: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test Article",
+        author: [{ family: "Kondo", given: "Takuma" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:Takeshi",
+        value: "Takeshi",
+        field: "author",
+        isPhrase: false,
+      };
+
+      // "Takeshi" should NOT match "Takuma" (different given name, only initial T matches)
+      const matches = matchToken(token, refWithTakuma);
+      expect(matches).toHaveLength(0);
+    });
+
     it("should match container-title", () => {
       const token: SearchToken = {
         raw: "medical informatics",

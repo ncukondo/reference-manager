@@ -20,7 +20,7 @@ function extractYear(reference: CslItem): string {
 
 /**
  * Extract and format author names
- * Returns "family given-initial" format for all authors
+ * Returns "family given" format for all authors
  */
 function extractAuthors(reference: CslItem): string {
   if (!reference.author || reference.author.length === 0) {
@@ -30,8 +30,8 @@ function extractAuthors(reference: CslItem): string {
   return reference.author
     .map((author) => {
       const family = author.family || "";
-      const givenInitial = author.given ? author.given[0] : "";
-      return givenInitial ? `${family} ${givenInitial}` : family;
+      const given = author.given || "";
+      return given ? `${family} ${given}` : family;
     })
     .join(" ");
 }
