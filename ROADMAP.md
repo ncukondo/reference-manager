@@ -101,13 +101,13 @@ Improve author search to include full given name, not just initial.
 
 Add `tags` field to CslCustomSchema for type safety.
 
-- [ ] **11.4.1**: Test schema accepts tags field
+- [x] **11.4.1**: Test schema accepts tags field
   - File: `src/core/csl-json/validator.test.ts`
   - Test: Validate entry with `custom.tags: ["tag1", "tag2"]`
   - Test: Validate entry with empty `custom.tags: []`
   - Test: Validate entry without `custom.tags` (optional)
 
-- [ ] **11.4.2**: Add tags to CslCustomSchema
+- [x] **11.4.2**: Add tags to CslCustomSchema
   - File: `src/core/csl-json/types.ts`
   - Modify: Add `tags: z.array(z.string()).optional()` to CslCustomSchema
   - Result: `CslCustom` type now includes `tags?: string[]`

@@ -33,6 +33,7 @@ const CslCustomSchema = z
     timestamp: z.string(),
     additional_urls: z.array(z.string()).optional(),
     fulltext: CslFulltextSchema.optional(),
+    tags: z.array(z.string()).optional(),
   })
   .passthrough();
 
