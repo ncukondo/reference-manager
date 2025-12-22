@@ -37,12 +37,12 @@ export type ExecutionContext =
   | { type: "local"; library: Library };
 ```
 
-- [ ] Create `ExecutionContext` type definition
-- [ ] Add helper function `createExecutionContext(config)` that:
+- [x] Create `ExecutionContext` type definition
+- [x] Add helper function `createExecutionContext(config)` that:
   - Checks for server connection first
   - Returns `{ type: "server", client }` if server available
   - Otherwise loads library and returns `{ type: "local", library }`
-- [ ] Export from `cli/index.ts` or dedicated module
+- [x] Export from `cli/index.ts` or dedicated module
 
 #### Step 9.2: Update Execute Functions
 
