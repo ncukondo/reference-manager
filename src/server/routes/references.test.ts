@@ -70,7 +70,7 @@ describe("References Route", () => {
     });
   });
 
-  describe("GET /:uuid", () => {
+  describe("GET /uuid/:uuid", () => {
     it("should return reference by UUID", async () => {
       const refItem = {
         type: "article-journal" as const,
@@ -84,7 +84,7 @@ describe("References Route", () => {
       const addedRef = library.getAll()[0];
       const uuid = addedRef.getUuid();
 
-      const req = new Request(`http://localhost/${uuid}`);
+      const req = new Request(`http://localhost/uuid/${uuid}`);
       const res = await route.fetch(req);
 
       expect(res.status).toBe(200);
@@ -94,7 +94,40 @@ describe("References Route", () => {
     });
 
     it("should return 404 for non-existent UUID", async () => {
-      const req = new Request("http://localhost/00000000-0000-0000-0000-000000000000");
+      const req = new Request("http://localhost/uuid/00000000-0000-0000-0000-000000000000");
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(404);
+      const data = await res.json();
+      expect(data).toHaveProperty("error");
+    });
+  });
+
+  describe("GET /id/:id", () => {
+    it("should return reference by citation ID", async () => {
+      const refItem = {
+        type: "article-journal" as const,
+        title: "Test Article",
+        author: [{ family: "Doe", given: "John" }],
+      };
+
+      library.add(refItem);
+
+      // Get the ID from the added reference
+      const addedRef = library.getAll()[0];
+      const id = addedRef.getId();
+
+      const req = new Request(`http://localhost/id/${id}`);
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as CslItem;
+      expect(data.title).toBe("Test Article");
+      expect(data.id).toBe(id);
+    });
+
+    it("should return 404 for non-existent ID", async () => {
+      const req = new Request("http://localhost/id/non-existent-id");
       const res = await route.fetch(req);
 
       expect(res.status).toBe(404);
@@ -143,8 +176,8 @@ describe("References Route", () => {
     });
   });
 
-  describe("PUT /:uuid", () => {
-    it("should update existing reference", async () => {
+  describe("PUT /uuid/:uuid", () => {
+    it("should update existing reference by UUID", async () => {
       const refItem = {
         type: "article-journal" as const,
         title: "Original Title",
@@ -164,7 +197,7 @@ describe("References Route", () => {
         custom: { uuid },
       };
 
-      const req = new Request(`http://localhost/${uuid}`, {
+      const req = new Request(`http://localhost/uuid/${uuid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
@@ -187,7 +220,7 @@ describe("References Route", () => {
         title: "Updated Title",
       };
 
-      const req = new Request("http://localhost/00000000-0000-0000-0000-000000000000", {
+      const req = new Request("http://localhost/uuid/00000000-0000-0000-0000-000000000000", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
@@ -198,8 +231,59 @@ describe("References Route", () => {
     });
   });
 
-  describe("DELETE /:uuid", () => {
-    it("should delete reference", async () => {
+  describe("PUT /id/:id", () => {
+    it("should update existing reference by citation ID", async () => {
+      const refItem = {
+        type: "article-journal" as const,
+        title: "Original Title",
+        author: [{ family: "Doe", given: "John" }],
+      };
+
+      library.add(refItem);
+
+      // Get the ID from the added reference
+      const addedRef = library.getAll()[0];
+      const id = addedRef.getId();
+
+      const updatedData = {
+        title: "Updated Title",
+      };
+
+      const req = new Request(`http://localhost/id/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { updated: boolean; item?: CslItem };
+      expect(data.updated).toBe(true);
+      expect(data.item?.title).toBe("Updated Title");
+
+      // Verify it was updated in library
+      const found = library.findById(id);
+      expect(found?.getTitle()).toBe("Updated Title");
+    });
+
+    it("should return 404 for non-existent ID", async () => {
+      const updatedData = {
+        title: "Updated Title",
+      };
+
+      const req = new Request("http://localhost/id/non-existent-id", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("DELETE /uuid/:uuid", () => {
+    it("should delete reference by UUID", async () => {
       const refItem = {
         type: "article-journal" as const,
         title: "To Delete",
@@ -212,7 +296,7 @@ describe("References Route", () => {
       const addedRef = library.getAll()[0];
       const uuid = addedRef.getUuid();
 
-      const req = new Request(`http://localhost/${uuid}`, {
+      const req = new Request(`http://localhost/uuid/${uuid}`, {
         method: "DELETE",
       });
       const res = await route.fetch(req);
@@ -228,7 +312,46 @@ describe("References Route", () => {
     });
 
     it("should return 404 for non-existent UUID", async () => {
-      const req = new Request("http://localhost/00000000-0000-0000-0000-000000000000", {
+      const req = new Request("http://localhost/uuid/00000000-0000-0000-0000-000000000000", {
+        method: "DELETE",
+      });
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("DELETE /id/:id", () => {
+    it("should delete reference by citation ID", async () => {
+      const refItem = {
+        type: "article-journal" as const,
+        title: "To Delete",
+        author: [{ family: "Doe", given: "John" }],
+      };
+
+      library.add(refItem);
+
+      // Get the ID from the added reference
+      const addedRef = library.getAll()[0];
+      const id = addedRef.getId();
+
+      const req = new Request(`http://localhost/id/${id}`, {
+        method: "DELETE",
+      });
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { removed: boolean; item?: CslItem };
+      expect(data.removed).toBe(true);
+      expect(data.item).toBeDefined();
+
+      // Verify it was removed from library
+      const found = library.findById(id);
+      expect(found).toBeUndefined();
+    });
+
+    it("should return 404 for non-existent ID", async () => {
+      const req = new Request("http://localhost/id/non-existent-id", {
         method: "DELETE",
       });
       const res = await route.fetch(req);

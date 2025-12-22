@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Library } from "../../core/library.js";
 import type { CiteResult } from "../../features/operations/cite.js";
+import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
 import type { ServerClient } from "../server-client.js";
 import {
   type CiteCommandOptions,
@@ -28,12 +29,22 @@ describe("cite command", () => {
       cite: vi.fn(),
     } as unknown as ServerClient;
 
+    const serverContext: ServerExecutionContext = {
+      type: "server",
+      client: mockServerClient,
+    };
+
+    const localContext: LocalExecutionContext = {
+      type: "local",
+      library: mockLibrary,
+    };
+
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
     describe("via server", () => {
-      it("should call server cite when server is provided", async () => {
+      it("should call server cite when context is server", async () => {
         const mockResult: CiteResult = {
           results: [{ identifier: "Smith-2023", success: true, citation: "Smith (2023)" }],
         };
@@ -41,7 +52,7 @@ describe("cite command", () => {
 
         const options: CiteCommandOptions = { identifiers: ["Smith-2023"] };
 
-        const result = await executeCite(options, mockLibrary, mockServerClient);
+        const result = await executeCite(options, serverContext);
 
         expect(mockServerClient.cite).toHaveBeenCalledWith({
           identifiers: ["Smith-2023"],
@@ -64,7 +75,7 @@ describe("cite command", () => {
           inText: true,
         };
 
-        await executeCite(options, mockLibrary, mockServerClient);
+        await executeCite(options, serverContext);
 
         expect(mockServerClient.cite).toHaveBeenCalledWith({
           identifiers: ["abc-123"],
@@ -78,7 +89,7 @@ describe("cite command", () => {
     });
 
     describe("via library", () => {
-      it("should call citeReferences when server is not provided", async () => {
+      it("should call citeReferences when context is local", async () => {
         const { citeReferences } = await import("../../features/operations/cite.js");
         const mockResult: CiteResult = {
           results: [{ identifier: "Smith-2023", success: true, citation: "Smith (2023)" }],
@@ -87,7 +98,7 @@ describe("cite command", () => {
 
         const options: CiteCommandOptions = { identifiers: ["Smith-2023"] };
 
-        const result = await executeCite(options, mockLibrary, undefined);
+        const result = await executeCite(options, localContext);
 
         expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
           identifiers: ["Smith-2023"],
@@ -111,7 +122,7 @@ describe("cite command", () => {
           inText: true,
         };
 
-        await executeCite(options, mockLibrary, undefined);
+        await executeCite(options, localContext);
 
         expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
           identifiers: ["abc-123"],
@@ -132,7 +143,7 @@ describe("cite command", () => {
           format: "invalid",
         };
 
-        await expect(executeCite(options, mockLibrary, undefined)).rejects.toThrow(
+        await expect(executeCite(options, localContext)).rejects.toThrow(
           "Invalid format 'invalid'"
         );
       });
@@ -146,7 +157,7 @@ describe("cite command", () => {
           cslFile: "/nonexistent/style.csl",
         };
 
-        await expect(executeCite(options, mockLibrary, undefined)).rejects.toThrow(
+        await expect(executeCite(options, localContext)).rejects.toThrow(
           "CSL file '/nonexistent/style.csl' not found"
         );
       });

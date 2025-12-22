@@ -1,10 +1,9 @@
-import type { Library } from "../../core/library.js";
 import {
   type SearchFormat,
   type SearchResult,
   searchReferences,
 } from "../../features/operations/search.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 
 /**
  * Options for the search command.
@@ -50,28 +49,26 @@ function validateOptions(options: SearchCommandOptions): void {
 
 /**
  * Execute search command.
- * Routes to server API or direct library operation based on server availability.
+ * Routes to server API or direct library operation based on execution context.
  *
  * @param options - Search command options
- * @param library - Library instance (used when server is not available)
- * @param serverClient - Server client (undefined if server is not running)
+ * @param context - Execution context (server or local)
  * @returns Search result containing formatted items
  */
 export async function executeSearch(
   options: SearchCommandOptions,
-  library: Library,
-  serverClient: ServerClient | undefined
+  context: ExecutionContext
 ): Promise<SearchCommandResult> {
   validateOptions(options);
   const format = getSearchFormat(options);
 
-  if (serverClient) {
+  if (context.type === "server") {
     // Use server's search API with format option
-    return serverClient.search({ query: options.query, format });
+    return context.client.search({ query: options.query, format });
   }
 
   // Direct library operation
-  return searchReferences(library, { query: options.query, format });
+  return searchReferences(context.library, { query: options.query, format });
 }
 
 /**

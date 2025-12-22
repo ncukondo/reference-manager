@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Library } from "../../core/library.js";
 import type { ListResult } from "../../features/operations/list.js";
+import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
 import type { ServerClient } from "../server-client.js";
 import {
   type ListCommandOptions,
@@ -21,12 +22,22 @@ describe("list command", () => {
       list: vi.fn(),
     } as unknown as ServerClient;
 
+    const serverContext: ServerExecutionContext = {
+      type: "server",
+      client: mockServerClient,
+    };
+
+    const localContext: LocalExecutionContext = {
+      type: "local",
+      library: mockLibrary,
+    };
+
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
     describe("via server", () => {
-      it("should call server list when server is provided", async () => {
+      it("should call server list when context is server", async () => {
         const mockResult: ListResult = {
           items: ["[ref1] Test Article"],
         };
@@ -34,7 +45,7 @@ describe("list command", () => {
 
         const options: ListCommandOptions = {};
 
-        const result = await executeList(options, mockLibrary, mockServerClient);
+        const result = await executeList(options, serverContext);
 
         expect(mockServerClient.list).toHaveBeenCalledWith({ format: "pretty" });
         expect(result).toEqual(mockResult);
@@ -46,7 +57,7 @@ describe("list command", () => {
 
         const options: ListCommandOptions = { json: true };
 
-        await executeList(options, mockLibrary, mockServerClient);
+        await executeList(options, serverContext);
 
         expect(mockServerClient.list).toHaveBeenCalledWith({ format: "json" });
       });
@@ -57,7 +68,7 @@ describe("list command", () => {
 
         const options: ListCommandOptions = { idsOnly: true };
 
-        await executeList(options, mockLibrary, mockServerClient);
+        await executeList(options, serverContext);
 
         expect(mockServerClient.list).toHaveBeenCalledWith({ format: "ids-only" });
       });
@@ -68,7 +79,7 @@ describe("list command", () => {
 
         const options: ListCommandOptions = { uuid: true };
 
-        await executeList(options, mockLibrary, mockServerClient);
+        await executeList(options, serverContext);
 
         expect(mockServerClient.list).toHaveBeenCalledWith({ format: "uuid" });
       });
@@ -79,14 +90,14 @@ describe("list command", () => {
 
         const options: ListCommandOptions = { bibtex: true };
 
-        await executeList(options, mockLibrary, mockServerClient);
+        await executeList(options, serverContext);
 
         expect(mockServerClient.list).toHaveBeenCalledWith({ format: "bibtex" });
       });
     });
 
     describe("via library", () => {
-      it("should call listReferences when server is not provided", async () => {
+      it("should call listReferences when context is local", async () => {
         const { listReferences } = await import("../../features/operations/list.js");
         const mockResult: ListResult = {
           items: ["[ref1] Test Article"],
@@ -95,7 +106,7 @@ describe("list command", () => {
 
         const options: ListCommandOptions = {};
 
-        const result = await executeList(options, mockLibrary, undefined);
+        const result = await executeList(options, localContext);
 
         expect(listReferences).toHaveBeenCalledWith(mockLibrary, { format: "pretty" });
         expect(result).toEqual(mockResult);
@@ -106,7 +117,7 @@ describe("list command", () => {
       it("should throw error for conflicting output options", async () => {
         const options: ListCommandOptions = { json: true, bibtex: true };
 
-        await expect(executeList(options, mockLibrary, undefined)).rejects.toThrow(
+        await expect(executeList(options, localContext)).rejects.toThrow(
           "Multiple output formats specified"
         );
       });

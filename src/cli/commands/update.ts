@@ -1,7 +1,6 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
 import { type UpdateOperationResult, updateReference } from "../../features/operations/update.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 
 /**
  * Options for the update command.
@@ -19,36 +18,25 @@ export type UpdateCommandResult = UpdateOperationResult;
 
 /**
  * Execute update command.
- * Routes to server API or direct library operation based on server availability.
+ * Routes to server API or direct library operation based on execution context.
  *
  * @param options - Update command options
- * @param library - Library instance (used when server is not available)
- * @param serverClient - Server client (undefined if server is not running)
+ * @param context - Execution context (server or local)
  * @returns Update result
  */
 export async function executeUpdate(
   options: UpdateCommandOptions,
-  library: Library,
-  serverClient: ServerClient | undefined
+  context: ExecutionContext
 ): Promise<UpdateCommandResult> {
   const { identifier, updates, byUuid = false } = options;
 
-  if (serverClient) {
-    // Server mode requires UUID
-    if (byUuid) {
-      return serverClient.update(identifier, updates);
-    }
-    // Find UUID by ID first using server API
-    const items = await serverClient.getAll();
-    const found = items.find((item) => item.id === identifier);
-    if (!found?.custom?.uuid) {
-      return { updated: false };
-    }
-    return serverClient.update(found.custom.uuid, updates);
+  if (context.type === "server") {
+    // Server mode: use client with byUuid option for direct ID or UUID lookup
+    return context.client.update(identifier, updates, { byUuid });
   }
 
-  // Direct library operation
-  return updateReference(library, { identifier, updates, byUuid });
+  // Local mode: direct library operation
+  return updateReference(context.library, { identifier, updates, byUuid });
 }
 
 /**

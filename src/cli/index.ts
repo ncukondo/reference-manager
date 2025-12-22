@@ -4,6 +4,8 @@
 
 import { Command } from "commander";
 import { z } from "zod";
+// Import package.json for version and description
+import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
@@ -20,6 +22,7 @@ import { type RemoveCommandOptions, executeRemove, formatRemoveOutput } from "./
 import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
+import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
 import {
   isTTY,
@@ -29,11 +32,6 @@ import {
   readJsonInput,
   readStdinContent,
 } from "./helpers.js";
-import { ServerClient } from "./server-client.js";
-import { getServerConnection } from "./server-detection.js";
-
-// Import package.json for version and description
-import packageJson from "../../package.json" with { type: "json" };
 
 /**
  * Create Commander program instance
@@ -76,11 +74,8 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
-
-    const result = await executeList(options, library, serverClient);
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeList(options, context);
     const output = formatListOutput(result);
 
     if (output) {
@@ -122,11 +117,8 @@ async function handleSearchAction(
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
-
-    const result = await executeSearch({ ...options, query }, library, serverClient);
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeSearch({ ...options, query }, context);
     const output = formatSearchOutput(result);
 
     if (output) {
@@ -181,12 +173,8 @@ async function handleAddAction(
       stdinContent = await readStdinContent();
     }
 
-    // Get server connection
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-
-    // Load library for direct access
-    const library = await Library.load(config.library);
+    // Create execution context
+    const context = await createExecutionContext(config, Library.load);
 
     // Build add options - avoid undefined values for exactOptionalPropertyTypes
     const addOptions: Parameters<typeof executeAdd>[0] = {
@@ -215,7 +203,7 @@ async function handleAddAction(
     }
 
     // Execute add command
-    const result = await executeAdd(addOptions, library, serverClient);
+    const result = await executeAdd(addOptions, context);
 
     // Format and output result
     const output = formatAddOutput(result, options.verbose ?? false);
@@ -249,19 +237,16 @@ function registerAddCommand(program: Command): void {
 async function findReferenceToRemove(
   identifier: string,
   byUuid: boolean,
-  server: { baseUrl: string } | null,
-  libraryPath: string
+  context: ExecutionContext
 ): Promise<CslItem | undefined> {
-  if (server) {
-    const client = new ServerClient(server.baseUrl);
-    const items = await client.getAll();
-    return byUuid
-      ? items.find((item) => item.custom?.uuid === identifier)
-      : items.find((item) => item.id === identifier);
+  if (context.type === "server") {
+    const item = await context.client.find(identifier, { byUuid });
+    return item ?? undefined;
   }
 
-  const library = await Library.load(libraryPath);
-  const ref = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  const ref = byUuid
+    ? context.library.findByUuid(identifier)
+    : context.library.findById(identifier);
   return ref?.getItem();
 }
 
@@ -296,17 +281,10 @@ async function handleRemoveAction(
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
+    const context = await createExecutionContext(config, Library.load);
 
     // Find reference for confirmation display
-    const refToRemove = await findReferenceToRemove(
-      identifier,
-      options.uuid ?? false,
-      server,
-      config.library
-    );
+    const refToRemove = await findReferenceToRemove(identifier, options.uuid ?? false, context);
 
     if (!refToRemove) {
       process.stderr.write(`Error: Reference not found: ${identifier}\n`);
@@ -328,7 +306,7 @@ async function handleRemoveAction(
       removeOptions.byUuid = options.uuid;
     }
 
-    const result = await executeRemove(removeOptions, library, serverClient);
+    const result = await executeRemove(removeOptions, context);
     const output = formatRemoveOutput(result, identifier);
 
     if (result.removed) {
@@ -386,9 +364,7 @@ async function handleUpdateAction(
     const updatesSchema = z.record(z.string(), z.unknown());
     const validatedUpdates = updatesSchema.parse(updates);
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
+    const context = await createExecutionContext(config, Library.load);
 
     const updateOptions: UpdateCommandOptions = {
       identifier,
@@ -398,7 +374,7 @@ async function handleUpdateAction(
       updateOptions.byUuid = options.uuid;
     }
 
-    const result = await executeUpdate(updateOptions, library, serverClient);
+    const result = await executeUpdate(updateOptions, context);
     const output = formatUpdateOutput(result, identifier);
 
     if (result.updated) {
@@ -437,11 +413,8 @@ async function handleCiteAction(
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const server = await getServerConnection(config.library, config);
-    const serverClient = server ? new ServerClient(server.baseUrl) : undefined;
-    const library = await Library.load(config.library);
-
-    const result = await executeCite({ ...options, identifiers }, library, serverClient);
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeCite({ ...options, identifiers }, context);
 
     // Output successful citations
     const output = formatCiteOutput(result);

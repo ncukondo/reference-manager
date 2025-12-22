@@ -1,10 +1,9 @@
-import type { Library } from "../../core/library.js";
 import {
   type ListFormat,
   type ListResult,
   listReferences,
 } from "../../features/operations/list.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 
 /**
  * Options for the list command.
@@ -49,28 +48,26 @@ function validateOptions(options: ListCommandOptions): void {
 
 /**
  * Execute list command.
- * Routes to server API or direct library operation based on server availability.
+ * Routes to server API or direct library operation based on execution context.
  *
  * @param options - List command options
- * @param library - Library instance (used when server is not available)
- * @param serverClient - Server client (undefined if server is not running)
+ * @param context - Execution context (server or local)
  * @returns List result containing formatted items
  */
 export async function executeList(
   options: ListCommandOptions,
-  library: Library,
-  serverClient: ServerClient | undefined
+  context: ExecutionContext
 ): Promise<ListCommandResult> {
   validateOptions(options);
   const format = getListFormat(options);
 
-  if (serverClient) {
+  if (context.type === "server") {
     // Use server's list API with format option
-    return serverClient.list({ format });
+    return context.client.list({ format });
   }
 
   // Direct library operation
-  return listReferences(library, { format });
+  return listReferences(context.library, { format });
 }
 
 /**

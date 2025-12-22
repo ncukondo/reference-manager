@@ -283,10 +283,46 @@ export function createReferencesRouter(library: Library) {
 
 **Exports**:
 - `index.ts`: CLI entry point (commander setup)
+- `execution-context.ts`: ExecutionContext type and factory (`createExecutionContext`)
+- `server-client.ts`: HTTP client for server mode communication
+- `server-detection.ts`: Server availability detection
 - `commands/`: Command implementations
 - `output/`: Output formatters (JSON, BibTeX, pretty)
 
 **Dependencies**: `core/`, `features/`, `server/` (for server commands), `utils/`, `config/`
+
+#### ExecutionContext Pattern
+
+The `ExecutionContext` type enables server mode optimization by eliminating redundant library loading:
+
+```typescript
+// cli/execution-context.ts
+export type ExecutionContext =
+  | { type: "server"; client: ServerClient }
+  | { type: "local"; library: Library };
+
+export async function createExecutionContext(config: Config): Promise<ExecutionContext>
+```
+
+**Benefits**:
+- In server mode, commands communicate via HTTP API (library stays loaded in server process)
+- In local mode, library is loaded once and passed to commands
+- Discriminated union pattern enables type-safe mode-specific logic
+
+**Usage in commands**:
+```typescript
+// cli/commands/list.ts
+export async function executeList(
+  options: ListOptions,
+  context: ExecutionContext
+): Promise<ListResult> {
+  if (context.type === "server") {
+    return context.client.list(options);
+  }
+  // Local mode: use library directly
+  return listReferences(context.library, options);
+}
+```
 
 **Example**:
 ```typescript

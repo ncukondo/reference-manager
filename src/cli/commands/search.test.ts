@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Library } from "../../core/library.js";
 import type { SearchResult } from "../../features/operations/search.js";
+import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
 import type { ServerClient } from "../server-client.js";
 import {
   type SearchCommandOptions,
@@ -21,12 +22,22 @@ describe("search command", () => {
       search: vi.fn(),
     } as unknown as ServerClient;
 
+    const serverContext: ServerExecutionContext = {
+      type: "server",
+      client: mockServerClient,
+    };
+
+    const localContext: LocalExecutionContext = {
+      type: "local",
+      library: mockLibrary,
+    };
+
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
     describe("via server", () => {
-      it("should call server search when server is provided", async () => {
+      it("should call server search when context is server", async () => {
         const mockResult: SearchResult = {
           items: ["[ref1] Test Article"],
         };
@@ -34,7 +45,7 @@ describe("search command", () => {
 
         const options: SearchCommandOptions = { query: "test" };
 
-        const result = await executeSearch(options, mockLibrary, mockServerClient);
+        const result = await executeSearch(options, serverContext);
 
         expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "pretty" });
         expect(result).toEqual(mockResult);
@@ -46,7 +57,7 @@ describe("search command", () => {
 
         const options: SearchCommandOptions = { query: "test", json: true };
 
-        await executeSearch(options, mockLibrary, mockServerClient);
+        await executeSearch(options, serverContext);
 
         expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "json" });
       });
@@ -57,7 +68,7 @@ describe("search command", () => {
 
         const options: SearchCommandOptions = { query: "test", idsOnly: true };
 
-        await executeSearch(options, mockLibrary, mockServerClient);
+        await executeSearch(options, serverContext);
 
         expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "ids-only" });
       });
@@ -68,7 +79,7 @@ describe("search command", () => {
 
         const options: SearchCommandOptions = { query: "test", uuid: true };
 
-        await executeSearch(options, mockLibrary, mockServerClient);
+        await executeSearch(options, serverContext);
 
         expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "uuid" });
       });
@@ -79,14 +90,14 @@ describe("search command", () => {
 
         const options: SearchCommandOptions = { query: "test", bibtex: true };
 
-        await executeSearch(options, mockLibrary, mockServerClient);
+        await executeSearch(options, serverContext);
 
         expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "bibtex" });
       });
     });
 
     describe("via library", () => {
-      it("should call searchReferences when server is not provided", async () => {
+      it("should call searchReferences when context is local", async () => {
         const { searchReferences } = await import("../../features/operations/search.js");
         const mockResult: SearchResult = {
           items: ["[ref1] Test Article"],
@@ -95,7 +106,7 @@ describe("search command", () => {
 
         const options: SearchCommandOptions = { query: "machine learning" };
 
-        const result = await executeSearch(options, mockLibrary, undefined);
+        const result = await executeSearch(options, localContext);
 
         expect(searchReferences).toHaveBeenCalledWith(mockLibrary, {
           query: "machine learning",
@@ -109,7 +120,7 @@ describe("search command", () => {
       it("should throw error for conflicting output options", async () => {
         const options: SearchCommandOptions = { query: "test", json: true, bibtex: true };
 
-        await expect(executeSearch(options, mockLibrary, undefined)).rejects.toThrow(
+        await expect(executeSearch(options, localContext)).rejects.toThrow(
           "Multiple output formats specified"
         );
       });
