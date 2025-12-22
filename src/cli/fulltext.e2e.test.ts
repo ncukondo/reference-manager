@@ -1,6 +1,9 @@
 /**
  * End-to-end tests for fulltext commands
  * Tests actual CLI execution with file operations
+ *
+ * Note: Uses REFERENCE_MANAGER_FULLTEXT_DIR environment variable
+ * to set the fulltext directory for testing in isolation.
  */
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
@@ -13,12 +16,16 @@ describe("Fulltext Command E2E", () => {
   let libraryPath: string;
   let fulltextDir: string;
 
+  // Helper to run CLI with test fulltext directory
+  const runWithFulltext = (args: string[], stdinData?: string) =>
+    runCli(args, stdinData, fulltextDir);
+
   beforeEach(async () => {
     // Create test directory
     testDir = path.join(os.tmpdir(), `fulltext-e2e-test-${Date.now()}`);
     await fs.mkdir(testDir, { recursive: true });
 
-    // Create fulltext directory
+    // Create fulltext directory for testing
     fulltextDir = path.join(testDir, "fulltext");
     await fs.mkdir(fulltextDir, { recursive: true });
 
@@ -68,7 +75,7 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content here", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -91,7 +98,7 @@ describe("Fulltext Command E2E", () => {
       const mdPath = path.join(testDir, "notes.md");
       await fs.writeFile(mdPath, "# Notes\n\nSome content", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -113,7 +120,7 @@ describe("Fulltext Command E2E", () => {
       const filePath = path.join(testDir, "document.txt");
       await fs.writeFile(filePath, "Some content", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -131,7 +138,7 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "NonExistent",
@@ -148,7 +155,7 @@ describe("Fulltext Command E2E", () => {
       const txtPath = path.join(testDir, "document.txt");
       await fs.writeFile(txtPath, "Some content", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -165,7 +172,7 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -191,13 +198,13 @@ describe("Fulltext Command E2E", () => {
       const pdf1 = path.join(testDir, "paper1.pdf");
       await fs.writeFile(pdf1, "First PDF", "utf-8");
 
-      await runCli(["fulltext", "attach", "Smith-2024", pdf1, "--library", libraryPath]);
+      await runWithFulltext(["fulltext", "attach", "Smith-2024", pdf1, "--library", libraryPath]);
 
       // Second attachment without --force
       const pdf2 = path.join(testDir, "paper2.pdf");
       await fs.writeFile(pdf2, "Second PDF", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -216,13 +223,13 @@ describe("Fulltext Command E2E", () => {
       const pdf1 = path.join(testDir, "paper1.pdf");
       await fs.writeFile(pdf1, "First PDF", "utf-8");
 
-      await runCli(["fulltext", "attach", "Smith-2024", pdf1, "--library", libraryPath]);
+      await runWithFulltext(["fulltext", "attach", "Smith-2024", pdf1, "--library", libraryPath]);
 
       // Second attachment with --force
       const pdf2 = path.join(testDir, "paper2.pdf");
       await fs.writeFile(pdf2, "Second PDF", "utf-8");
 
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -237,7 +244,7 @@ describe("Fulltext Command E2E", () => {
     });
 
     it("should attach from stdin with explicit type", async () => {
-      const result = await runCli(
+      const result = await runWithFulltext(
         ["fulltext", "attach", "Smith-2024", "--markdown", "--library", libraryPath],
         "# Notes from stdin"
       );
@@ -253,11 +260,18 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content here", "utf-8");
 
-      await runCli(["fulltext", "attach", "Smith-2024", pdfPath, "--library", libraryPath]);
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
     });
 
     it("should get file path for attached PDF", async () => {
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "get",
         "Smith-2024",
@@ -272,14 +286,20 @@ describe("Fulltext Command E2E", () => {
     });
 
     it("should get all attached file paths", async () => {
-      const result = await runCli(["fulltext", "get", "Smith-2024", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "fulltext",
+        "get",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("pdf:");
     });
 
     it("should output content to stdout with --stdout", async () => {
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "get",
         "Smith-2024",
@@ -294,21 +314,33 @@ describe("Fulltext Command E2E", () => {
     });
 
     it("should return error for non-existent reference", async () => {
-      const result = await runCli(["fulltext", "get", "NonExistent", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "fulltext",
+        "get",
+        "NonExistent",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("not found");
     });
 
     it("should return error for reference without fulltext", async () => {
-      const result = await runCli(["fulltext", "get", "Jones-2023", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "fulltext",
+        "get",
+        "Jones-2023",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("No fulltext attached");
     });
 
     it("should return error for non-attached type", async () => {
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "get",
         "Smith-2024",
@@ -327,15 +359,22 @@ describe("Fulltext Command E2E", () => {
       // Attach both PDF and Markdown files
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content", "utf-8");
-      await runCli(["fulltext", "attach", "Smith-2024", pdfPath, "--library", libraryPath]);
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
 
       const mdPath = path.join(testDir, "notes.md");
       await fs.writeFile(mdPath, "# Notes", "utf-8");
-      await runCli(["fulltext", "attach", "Smith-2024", mdPath, "--library", libraryPath]);
+      await runWithFulltext(["fulltext", "attach", "Smith-2024", mdPath, "--library", libraryPath]);
     });
 
     it("should detach PDF only", async () => {
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "detach",
         "Smith-2024",
@@ -353,7 +392,7 @@ describe("Fulltext Command E2E", () => {
     });
 
     it("should detach and delete with --delete option", async () => {
-      const result = await runCli([
+      const result = await runWithFulltext([
         "fulltext",
         "detach",
         "Smith-2024",
@@ -373,7 +412,13 @@ describe("Fulltext Command E2E", () => {
     });
 
     it("should detach all attached files", async () => {
-      const result = await runCli(["fulltext", "detach", "Smith-2024", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "fulltext",
+        "detach",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Detached pdf");
@@ -381,14 +426,26 @@ describe("Fulltext Command E2E", () => {
     });
 
     it("should return error for non-existent reference", async () => {
-      const result = await runCli(["fulltext", "detach", "NonExistent", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "fulltext",
+        "detach",
+        "NonExistent",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("not found");
     });
 
     it("should return error for reference without fulltext", async () => {
-      const result = await runCli(["fulltext", "detach", "Jones-2023", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "fulltext",
+        "detach",
+        "Jones-2023",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("No fulltext");
@@ -401,7 +458,7 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF workflow test content", "utf-8");
 
-      const attachResult = await runCli([
+      const attachResult = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -412,7 +469,7 @@ describe("Fulltext Command E2E", () => {
       expect(attachResult.exitCode).toBe(0);
 
       // 2. Get the file path
-      const getResult = await runCli([
+      const getResult = await runWithFulltext([
         "fulltext",
         "get",
         "Smith-2024",
@@ -424,7 +481,7 @@ describe("Fulltext Command E2E", () => {
       expect(getResult.stdout).toContain("pdf:");
 
       // 3. Get content via stdout
-      const contentResult = await runCli([
+      const contentResult = await runWithFulltext([
         "fulltext",
         "get",
         "Smith-2024",
@@ -437,7 +494,7 @@ describe("Fulltext Command E2E", () => {
       expect(contentResult.stdout).toBe("PDF workflow test content");
 
       // 4. Detach and delete
-      const detachResult = await runCli([
+      const detachResult = await runWithFulltext([
         "fulltext",
         "detach",
         "Smith-2024",
@@ -449,7 +506,7 @@ describe("Fulltext Command E2E", () => {
       expect(detachResult.exitCode).toBe(0);
 
       // 5. Verify get now fails
-      const getAfterResult = await runCli([
+      const getAfterResult = await runWithFulltext([
         "fulltext",
         "get",
         "Smith-2024",
@@ -464,7 +521,7 @@ describe("Fulltext Command E2E", () => {
       // Attach PDF
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content", "utf-8");
-      const pdfResult = await runCli([
+      const pdfResult = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -477,7 +534,7 @@ describe("Fulltext Command E2E", () => {
       // Attach Markdown
       const mdPath = path.join(testDir, "notes.md");
       await fs.writeFile(mdPath, "# Notes", "utf-8");
-      const mdResult = await runCli([
+      const mdResult = await runWithFulltext([
         "fulltext",
         "attach",
         "Smith-2024",
@@ -488,7 +545,13 @@ describe("Fulltext Command E2E", () => {
       expect(mdResult.exitCode).toBe(0);
 
       // Get both paths
-      const getResult = await runCli(["fulltext", "get", "Smith-2024", "--library", libraryPath]);
+      const getResult = await runWithFulltext([
+        "fulltext",
+        "get",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
       expect(getResult.exitCode).toBe(0);
       expect(getResult.stdout).toContain("pdf:");
       expect(getResult.stdout).toContain("markdown:");
@@ -501,10 +564,17 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content", "utf-8");
 
-      await runCli(["fulltext", "attach", "Smith-2024", pdfPath, "--library", libraryPath]);
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
 
       // Try to remove without --force (non-TTY mode)
-      const result = await runCli(["remove", "Smith-2024", "--library", libraryPath]);
+      const result = await runWithFulltext(["remove", "Smith-2024", "--library", libraryPath]);
 
       // Should require --force when fulltext attached in non-TTY
       expect(result.exitCode).toBe(1);
@@ -516,10 +586,23 @@ describe("Fulltext Command E2E", () => {
       const pdfPath = path.join(testDir, "paper.pdf");
       await fs.writeFile(pdfPath, "PDF content", "utf-8");
 
-      await runCli(["fulltext", "attach", "Smith-2024", pdfPath, "--library", libraryPath]);
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
 
       // Remove with --force
-      const result = await runCli(["remove", "Smith-2024", "--force", "--library", libraryPath]);
+      const result = await runWithFulltext([
+        "remove",
+        "Smith-2024",
+        "--force",
+        "--library",
+        libraryPath,
+      ]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Removed");
@@ -536,16 +619,21 @@ const CLI_PATH = path.resolve("bin/reference-manager.js");
 
 /**
  * Run CLI command with optional stdin input
+ * @param args CLI arguments
+ * @param stdinData Optional stdin input
+ * @param fulltextDir Optional fulltext directory to use via environment variable
  */
 function runCli(
   args: string[],
-  stdinData?: string
+  stdinData?: string,
+  fulltextDir?: string
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    // Set FULLTEXT_DIR env var to use test directory
+    // Set fulltext directory via environment variable for testing
     const env = {
       ...process.env,
       NODE_ENV: "test",
+      ...(fulltextDir && { REFERENCE_MANAGER_FULLTEXT_DIR: fulltextDir }),
     };
 
     const proc = spawn("node", [CLI_PATH, ...args], { env });
