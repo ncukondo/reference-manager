@@ -116,12 +116,12 @@ Add `tags` field to CslCustomSchema for type safety.
 
 Add `tag:` prefix to tokenizer.
 
-- [ ] **11.5.1**: Test tag field tokenization
+- [x] **11.5.1**: Test tag field tokenization
   - File: `src/features/search/tokenizer.test.ts`
   - Test: "tag:review" → {field: "tag", value: "review"}
   - Test: "tag:important" → {field: "tag", value: "important"}
 
-- [ ] **11.5.2**: Add tag to VALID_FIELDS
+- [x] **11.5.2**: Add tag to VALID_FIELDS
   - File: `src/features/search/tokenizer.ts`
   - Modify: Add `"tag"` to VALID_FIELDS set
   - Depends on: 11.5.1
