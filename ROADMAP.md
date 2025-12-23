@@ -6,6 +6,12 @@ For completed features and changes, see [CHANGELOG.md](./CHANGELOG.md).
 
 For detailed specifications, see [spec/](./spec/).
 
+## Before Implementation
+
+**Always read [`spec/meta/development-process.md`](./spec/meta/development-process.md) before starting any implementation work.**
+
+This document defines the workflow including TDD process, quality checks, and commit guidelines.
+
 ## Completed Phases
 
 - ✅ **Phase 1-5**: Core functionality, CLI commands, Server, Build & Distribution
