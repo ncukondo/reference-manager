@@ -2,29 +2,11 @@ import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
+import type { UpdateOptions, UpdateResult } from "./library-interface.js";
 import { Reference } from "./reference";
 
-/**
- * Options for update operations
- */
-export interface UpdateOptions {
-  /** How to handle ID collision: 'fail' (default) or 'suffix' */
-  onIdCollision?: "fail" | "suffix";
-}
-
-/**
- * Result of an update operation
- */
-export interface UpdateResult {
-  /** Whether the update was successful */
-  updated: boolean;
-  /** True if ID collision occurred (only when updated=false and onIdCollision='fail') */
-  idCollision?: boolean;
-  /** True if the ID was changed due to collision resolution */
-  idChanged?: boolean;
-  /** The new ID after collision resolution (only when idChanged=true) */
-  newId?: string;
-}
+// Re-export types from library-interface for backward compatibility
+export type { UpdateOptions, UpdateResult } from "./library-interface.js";
 
 /**
  * Library manager for CSL-JSON references

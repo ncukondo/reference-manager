@@ -154,8 +154,8 @@ Currently fulltext logic is in `cli/commands/fulltext.ts`. Move core logic to `f
 
 Introduce `ILibrary` interface so that both `Library` (local) and `ServerClient` (HTTP) can be used interchangeably with operations. This eliminates duplicate logic in CLI commands.
 
-- [ ] **12.4.6.1**: Define `ILibrary` interface
-  - File: `src/core/library-interface.ts`, `src/core/library-interface.test.ts`
+- [x] **12.4.6.1**: Define `ILibrary` interface
+  - File: `src/core/library-interface.ts`
   - Acceptance: Interface defines common methods (findById, findByUuid, getAll, add, updateById, save, etc.)
   - Dependencies: 12.4.5.5
 
