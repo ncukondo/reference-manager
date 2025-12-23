@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import type { Reference } from "../../core/reference.js";
 import { type RemoveOperationOptions, removeReference } from "./remove.js";
 
 // Mock Library
@@ -17,10 +16,6 @@ describe("removeReference", () => {
     issued: { "date-parts": [[2023]] },
     custom: { uuid: "uuid-1", created_at: "", timestamp: "" },
   };
-  const mockReference = {
-    getItem: () => mockItem,
-    getId: () => mockItem.id,
-  } as unknown as Reference;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -35,7 +30,7 @@ describe("removeReference", () => {
 
   describe("remove by ID", () => {
     it("should remove reference by ID successfully", async () => {
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockItem);
       (mockLibrary.removeById as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const options: RemoveOperationOptions = { identifier: "smith-2023", byUuid: false };
@@ -62,7 +57,7 @@ describe("removeReference", () => {
 
   describe("remove by UUID", () => {
     it("should remove reference by UUID successfully", async () => {
-      (mockLibrary.findByUuid as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findByUuid as ReturnType<typeof vi.fn>).mockReturnValue(mockItem);
       (mockLibrary.removeByUuid as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const options: RemoveOperationOptions = { identifier: "uuid-1", byUuid: true };
@@ -89,7 +84,7 @@ describe("removeReference", () => {
 
   describe("byUuid default", () => {
     it("should use byUuid=false by default", async () => {
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockItem);
       (mockLibrary.removeById as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const options: RemoveOperationOptions = { identifier: "smith-2023" };

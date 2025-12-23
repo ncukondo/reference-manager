@@ -30,11 +30,7 @@ describe("listReferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      getAll: vi.fn().mockReturnValue(
-        mockItems.map((item) => ({
-          getItem: () => item,
-        }))
-      ),
+      getAll: vi.fn().mockReturnValue(mockItems),
     } as unknown as Library;
   });
 
@@ -99,9 +95,7 @@ describe("listReferences", () => {
         { id: "ref2", type: "article" }, // no custom
         { id: "ref3", type: "article", custom: {} }, // no uuid
       ];
-      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockReturnValue(
-        itemsWithMissingUuid.map((item) => ({ getItem: () => item }))
-      );
+      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockReturnValue(itemsWithMissingUuid);
 
       const options: ListOptions = { format: "uuid" };
       const result = listReferences(mockLibrary, options);

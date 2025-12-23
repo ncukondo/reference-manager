@@ -647,8 +647,8 @@ ER  - `,
       const items = reloadedLibrary.getAll();
 
       expect(items).toHaveLength(2);
-      expect(items.map((r) => r.getItem().title)).toContain("Persist Test 1");
-      expect(items.map((r) => r.getItem().title)).toContain("Persist Test 2");
+      expect(items.map((item) => item.title)).toContain("Persist Test 1");
+      expect(items.map((item) => item.title)).toContain("Persist Test 2");
     });
 
     it("should not save when nothing was added", async () => {

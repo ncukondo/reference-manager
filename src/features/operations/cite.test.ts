@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import type { Reference } from "../../core/reference.js";
 import { type CiteOperationOptions, citeReferences } from "./cite.js";
 
 // Mock Library
@@ -28,24 +27,11 @@ describe("citeReferences", () => {
     },
   ];
 
-  const createMockReference = (item: CslItem) =>
-    ({
-      getItem: () => item,
-      getId: () => item.id,
-      getUuid: () => item.custom?.uuid,
-    }) as unknown as Reference;
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      findById: vi.fn((id: string) => {
-        const item = mockItems.find((i) => i.id === id);
-        return item ? createMockReference(item) : undefined;
-      }),
-      findByUuid: vi.fn((uuid: string) => {
-        const item = mockItems.find((i) => i.custom?.uuid === uuid);
-        return item ? createMockReference(item) : undefined;
-      }),
+      findById: vi.fn((id: string) => mockItems.find((i) => i.id === id)),
+      findByUuid: vi.fn((uuid: string) => mockItems.find((i) => i.custom?.uuid === uuid)),
     } as unknown as Library;
   });
 

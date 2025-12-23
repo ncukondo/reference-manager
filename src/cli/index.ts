@@ -266,9 +266,7 @@ async function findReferenceToRemove(
   }
 
   // findById/findByUuid now return CslItem directly
-  return byUuid
-    ? context.library.findByUuid(identifier)
-    : context.library.findById(identifier);
+  return byUuid ? context.library.findByUuid(identifier) : context.library.findById(identifier);
 }
 
 async function confirmRemoval(

@@ -101,10 +101,10 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(itemsWithoutUuid, null, 2), "utf-8");
 
       const library = await Library.load(testFilePath);
-      const refs = library.getAll();
-      expect(refs).toHaveLength(1);
-      expect(refs[0].getUuid()).toBeDefined();
-      expect(refs[0].getUuid()).toMatch(
+      const items = library.getAll();
+      expect(items).toHaveLength(1);
+      expect(items[0].custom?.uuid).toBeDefined();
+      expect(items[0].custom?.uuid).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       );
     });
@@ -137,11 +137,11 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      const originalUuid = library.findById("smith-2023")?.getUuid();
+      const originalUuid = library.findById("smith-2023")?.custom?.uuid;
       await library.save();
 
       const reloadedLibrary = await Library.load(testFilePath);
-      const reloadedUuid = reloadedLibrary.findById("smith-2023")?.getUuid();
+      const reloadedUuid = reloadedLibrary.findById("smith-2023")?.custom?.uuid;
       expect(reloadedUuid).toBe(originalUuid);
     });
   });
@@ -174,9 +174,9 @@ describe("Library", () => {
       };
 
       library.add(newItem);
-      const refs = library.getAll();
-      expect(refs).toHaveLength(1);
-      expect(refs[0].getId()).toMatch(/test-2024/);
+      const items = library.getAll();
+      expect(items).toHaveLength(1);
+      expect(items[0].id).toMatch(/test-2024/);
     });
 
     it("should avoid ID collision when adding", async () => {
@@ -200,10 +200,10 @@ describe("Library", () => {
       library.add(item1);
       library.add(item2);
 
-      const refs = library.getAll();
-      expect(refs).toHaveLength(2);
-      expect(refs[0].getId()).not.toBe(refs[1].getId());
-      expect(refs[1].getId()).toMatch(/smith-2023[a-z]+/);
+      const items = library.getAll();
+      expect(items).toHaveLength(2);
+      expect(items[0].id).not.toBe(items[1].id);
+      expect(items[1].id).toMatch(/smith-2023[a-z]+/);
     });
 
     it("should update all indices when adding", async () => {
@@ -285,8 +285,8 @@ describe("Library", () => {
       const result = library.updateById("smith-2023", { title: "Updated Title" });
 
       expect(result.updated).toBe(true);
-      const ref = library.findById("smith-2023");
-      expect(ref?.getTitle()).toBe("Updated Title");
+      const item = library.findById("smith-2023");
+      expect(item?.title).toBe("Updated Title");
     });
 
     it("should update reference by UUID", async () => {
@@ -296,35 +296,35 @@ describe("Library", () => {
       const result = library.updateByUuid(uuid, { title: "Updated Title" });
 
       expect(result.updated).toBe(true);
-      const ref = library.findByUuid(uuid);
-      expect(ref?.getTitle()).toBe("Updated Title");
+      const item = library.findByUuid(uuid);
+      expect(item?.title).toBe("Updated Title");
     });
 
     it("should preserve uuid and created_at when updating", async () => {
       const library = await Library.load(testFilePath);
-      const originalRef = library.findById("smith-2023");
-      const originalUuid = originalRef?.getUuid();
-      const originalCreatedAt = originalRef?.getCreatedAt();
+      const originalItem = library.findById("smith-2023");
+      const originalUuid = originalItem?.custom?.uuid;
+      const originalCreatedAt = originalItem?.custom?.created_at;
 
       library.updateById("smith-2023", { title: "Updated Title" });
 
-      const updatedRef = library.findById("smith-2023");
-      expect(updatedRef?.getUuid()).toBe(originalUuid);
-      expect(updatedRef?.getCreatedAt()).toBe(originalCreatedAt);
+      const updatedItem = library.findById("smith-2023");
+      expect(updatedItem?.custom?.uuid).toBe(originalUuid);
+      expect(updatedItem?.custom?.created_at).toBe(originalCreatedAt);
     });
 
     it("should update timestamp when updating", async () => {
       const library = await Library.load(testFilePath);
-      const originalRef = library.findById("smith-2023");
-      const originalTimestamp = originalRef?.getTimestamp();
+      const originalItem = library.findById("smith-2023");
+      const originalTimestamp = originalItem?.custom?.timestamp;
 
       // Wait a bit to ensure timestamp changes
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       library.updateById("smith-2023", { title: "Updated Title" });
 
-      const updatedRef = library.findById("smith-2023");
-      expect(updatedRef?.getTimestamp()).not.toBe(originalTimestamp);
+      const updatedItem = library.findById("smith-2023");
+      expect(updatedItem?.custom?.timestamp).not.toBe(originalTimestamp);
     });
 
     it("should update all indices when ID changes", async () => {
@@ -336,7 +336,7 @@ describe("Library", () => {
       expect(result.updated).toBe(true);
       expect(library.findById("smith-2023")).toBeUndefined();
       expect(library.findById("smith-2023-updated")).toBeDefined();
-      expect(library.findByUuid(uuid)?.getId()).toBe("smith-2023-updated");
+      expect(library.findByUuid(uuid)?.id).toBe("smith-2023-updated");
     });
 
     it("should return updated=false when updating non-existent ID", async () => {
@@ -370,9 +370,7 @@ describe("Library", () => {
         expect(result.idCollision).toBe(true);
         // Original reference should be unchanged
         expect(library.findById("smith-2023")).toBeDefined();
-        expect(library.findById("tanaka-2022")?.getTitle()).toBe(
-          "Deep Learning for Image Recognition"
-        );
+        expect(library.findById("tanaka-2022")?.title).toBe("Deep Learning for Image Recognition");
       });
 
       it("should add suffix when onIdCollision is 'suffix'", async () => {
@@ -389,9 +387,9 @@ describe("Library", () => {
         expect(result.newId).toBeDefined();
         expect(result.newId).toMatch(/^tanaka-2022[a-z]+$/);
         expect(library.findById("smith-2023")).toBeUndefined();
-        const updatedRef = library.findById(result.newId ?? "");
-        expect(updatedRef).toBeDefined();
-        expect(updatedRef?.getTitle()).toBe("Machine Learning in Medical Diagnosis");
+        const updatedItem = library.findById(result.newId ?? "");
+        expect(updatedItem).toBeDefined();
+        expect(updatedItem?.title).toBe("Machine Learning in Medical Diagnosis");
       });
 
       it("should allow same ID (no change) without collision", async () => {
@@ -401,7 +399,7 @@ describe("Library", () => {
 
         expect(result.updated).toBe(true);
         expect(result.idCollision).toBeUndefined();
-        expect(library.findById("smith-2023")?.getTitle()).toBe("Updated");
+        expect(library.findById("smith-2023")?.title).toBe("Updated");
       });
 
       it("should work with updateByUuid and collision handling", async () => {
@@ -416,7 +414,7 @@ describe("Library", () => {
 
         expect(result.updated).toBe(true);
         expect(result.idChanged).toBe(true);
-        expect(library.findByUuid(uuid)?.getId()).toBe(result.newId);
+        expect(library.findByUuid(uuid)?.id).toBe(result.newId);
       });
     });
   });
@@ -428,16 +426,16 @@ describe("Library", () => {
 
     it("should find by UUID", async () => {
       const library = await Library.load(testFilePath);
-      const ref = library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
-      expect(ref).toBeDefined();
-      expect(ref?.getId()).toBe("smith-2023");
+      const item = library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
+      expect(item).toBeDefined();
+      expect(item?.id).toBe("smith-2023");
     });
 
     it("should find by ID", async () => {
       const library = await Library.load(testFilePath);
-      const ref = library.findById("tanaka-2022");
-      expect(ref).toBeDefined();
-      expect(ref?.getTitle()).toBe("Deep Learning for Image Recognition");
+      const item = library.findById("tanaka-2022");
+      expect(item).toBeDefined();
+      expect(item?.title).toBe("Deep Learning for Image Recognition");
     });
 
     it("should find by DOI", async () => {
@@ -484,18 +482,18 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      const refs = library.getAll();
-      expect(refs).toHaveLength(2);
-      expect(refs[0].getId()).toBe("smith-2023");
-      expect(refs[1].getId()).toBe("tanaka-2022");
+      const items = library.getAll();
+      expect(items).toHaveLength(2);
+      expect(items[0].id).toBe("smith-2023");
+      expect(items[1].id).toBe("tanaka-2022");
     });
 
     it("should return empty array for empty library", async () => {
       await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      const refs = library.getAll();
-      expect(refs).toHaveLength(0);
+      const items = library.getAll();
+      expect(items).toHaveLength(0);
     });
   });
 

@@ -81,8 +81,8 @@ describe("References Route", () => {
       library.add(refItem);
 
       // Get the UUID from the added reference
-      const addedRef = library.getAll()[0];
-      const uuid = addedRef.getUuid();
+      const addedItem = library.getAll()[0];
+      const uuid = addedItem.custom?.uuid;
 
       const req = new Request(`http://localhost/uuid/${uuid}`);
       const res = await route.fetch(req);
@@ -114,8 +114,8 @@ describe("References Route", () => {
       library.add(refItem);
 
       // Get the ID from the added reference
-      const addedRef = library.getAll()[0];
-      const id = addedRef.getId();
+      const addedItem = library.getAll()[0];
+      const id = addedItem.id;
 
       const req = new Request(`http://localhost/id/${id}`);
       const res = await route.fetch(req);
@@ -187,8 +187,8 @@ describe("References Route", () => {
       library.add(refItem);
 
       // Get the UUID from the added reference
-      const addedRef = library.getAll()[0];
-      const uuid = addedRef.getUuid();
+      const addedItem = library.getAll()[0];
+      const uuid = addedItem.custom?.uuid;
 
       const updatedData = {
         type: "article-journal",
@@ -210,8 +210,8 @@ describe("References Route", () => {
       expect(data.item?.title).toBe("Updated Title");
 
       // Verify it was updated in library
-      const found = library.findByUuid(uuid);
-      expect(found?.getTitle()).toBe("Updated Title");
+      const found = library.findByUuid(uuid ?? "");
+      expect(found?.title).toBe("Updated Title");
     });
 
     it("should return 404 for non-existent UUID", async () => {
@@ -242,8 +242,8 @@ describe("References Route", () => {
       library.add(refItem);
 
       // Get the ID from the added reference
-      const addedRef = library.getAll()[0];
-      const id = addedRef.getId();
+      const addedItem = library.getAll()[0];
+      const id = addedItem.id;
 
       const updatedData = {
         title: "Updated Title",
@@ -263,7 +263,7 @@ describe("References Route", () => {
 
       // Verify it was updated in library
       const found = library.findById(id);
-      expect(found?.getTitle()).toBe("Updated Title");
+      expect(found?.title).toBe("Updated Title");
     });
 
     it("should return 404 for non-existent ID", async () => {
@@ -293,8 +293,8 @@ describe("References Route", () => {
       library.add(refItem);
 
       // Get the UUID from the added reference
-      const addedRef = library.getAll()[0];
-      const uuid = addedRef.getUuid();
+      const addedItem = library.getAll()[0];
+      const uuid = addedItem.custom?.uuid;
 
       const req = new Request(`http://localhost/uuid/${uuid}`, {
         method: "DELETE",
@@ -332,8 +332,8 @@ describe("References Route", () => {
       library.add(refItem);
 
       // Get the ID from the added reference
-      const addedRef = library.getAll()[0];
-      const id = addedRef.getId();
+      const addedItem = library.getAll()[0];
+      const id = addedItem.id;
 
       const req = new Request(`http://localhost/id/${id}`, {
         method: "DELETE",

@@ -37,7 +37,7 @@ describe("addReferences", () => {
 
     // Create a mock library
     mockLibrary = {
-      getAll: vi.fn(() => existingItems.map((item) => ({ getItem: () => item }))),
+      getAll: vi.fn(() => existingItems),
       add: vi.fn((item: CslItem) => {
         existingItems.push(item);
       }),

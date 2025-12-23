@@ -131,9 +131,9 @@ describe("McpServer", () => {
       });
 
       try {
-        const refs = context.library.getAll();
-        expect(refs).toHaveLength(1);
-        expect(refs[0].getId()).toBe("override2024");
+        const items = context.library.getAll();
+        expect(items).toHaveLength(1);
+        expect(items[0].id).toBe("override2024");
       } finally {
         await dispose();
         mockStdin.destroy();

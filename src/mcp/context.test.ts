@@ -56,9 +56,9 @@ describe("McpContext", () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
-        const refs = ctx.library.getAll();
-        expect(refs).toHaveLength(1);
-        expect(refs[0].getId()).toBe("test2024");
+        const items = ctx.library.getAll();
+        expect(items).toHaveLength(1);
+        expect(items[0].id).toBe("test2024");
       } finally {
         await ctx.dispose();
       }
@@ -79,9 +79,9 @@ describe("McpContext", () => {
       });
 
       try {
-        const refs = ctx.library.getAll();
-        expect(refs).toHaveLength(1);
-        expect(refs[0].getId()).toBe("override2024");
+        const items = ctx.library.getAll();
+        expect(items).toHaveLength(1);
+        expect(items[0].id).toBe("override2024");
       } finally {
         await ctx.dispose();
       }

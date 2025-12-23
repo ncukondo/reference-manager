@@ -38,11 +38,7 @@ describe("searchReferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      getAll: vi.fn().mockReturnValue(
-        mockItems.map((item) => ({
-          getItem: () => item,
-        }))
-      ),
+      getAll: vi.fn().mockReturnValue(mockItems),
     } as unknown as Library;
   });
 

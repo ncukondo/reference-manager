@@ -154,54 +154,30 @@ Currently fulltext logic is in `cli/commands/fulltext.ts`. Move core logic to `f
 
 Introduce `ILibrary` interface so that both `Library` (local) and `ServerClient` (HTTP) can be used interchangeably with operations. This eliminates duplicate logic in CLI commands.
 
-**⚠️ WORK IN PROGRESS - Resume Notes:**
-
-Implementation status:
-- ✅ `src/core/library-interface.ts` created with ILibrary, UpdateOptions, UpdateResult
-- ✅ `src/core/library.ts` updated: `implements ILibrary`, findById/findByUuid/getAll now return CslItem directly
-- ✅ Operations updated to use ILibrary: list.ts, search.ts, remove.ts, cite.ts, update.ts, add.ts, fulltext/*.ts
-- ✅ `src/server/routes/references.ts` updated
-- ✅ `src/mcp/resources/library.ts` updated
-- ✅ `src/cli/index.ts` updated (findReferenceToRemove function)
-- ✅ Type check passes (`npm run typecheck`)
-- ❌ Tests failing (61 tests) - need to update test mocks
-
-Remaining work:
-1. Update test files to use CslItem properties instead of Reference methods:
-   - `library.test.ts`: Change `ref.getId()` → `item.id`, `ref.getUuid()` → `item.custom?.uuid`, etc.
-   - `operations/*.test.ts`: Update mock returns from `{ getItem: () => item }` to just `item`
-   - Other test files with similar patterns
-2. After tests pass: commit 12.4.6.2 + 12.4.6.4 (done together due to breaking change)
-3. Then proceed to 12.4.6.3 (ServerClient) and 12.4.6.5 (CLI fulltext)
-
 Key design decision:
 - ILibrary methods return CslItem directly (not Reference)
 - Library internally still uses Reference for ID generation and indexing
 - findByDoi/findByPmid remain Library-specific (still return Reference)
-
----
 
 - [x] **12.4.6.1**: Define `ILibrary` interface
   - File: `src/core/library-interface.ts`
   - Acceptance: Interface defines common methods (findById, findByUuid, getAll, add, updateById, save, etc.)
   - Dependencies: 12.4.5.5
 
-- [ ] **12.4.6.2**: Update `Library` to implement `ILibrary` ← **IN PROGRESS**
+- [x] **12.4.6.2**: Update `Library` to implement `ILibrary`
   - File: `src/core/library.ts`
   - Acceptance: Library class implements ILibrary interface
   - Dependencies: 12.4.6.1
-  - Note: Code changes done, tests need updating
 
 - [ ] **12.4.6.3**: Update `ServerClient` to implement `ILibrary`
   - File: `src/cli/server-client.ts` (not src/server/client.ts)
   - Acceptance: ServerClient implements ILibrary interface (HTTP calls behind the scenes)
   - Dependencies: 12.4.6.1
 
-- [ ] **12.4.6.4**: Update operations to accept `ILibrary` ← **IN PROGRESS (done with 12.4.6.2)**
+- [x] **12.4.6.4**: Update operations to accept `ILibrary`
   - File: `src/features/operations/*.ts`
   - Acceptance: All operations use ILibrary instead of Library
   - Dependencies: 12.4.6.2, 12.4.6.3
-  - Note: Code changes done, tests need updating
 
 - [ ] **12.4.6.5**: Simplify CLI fulltext commands
   - File: `src/cli/commands/fulltext.ts`, `src/cli/execution-context.ts`

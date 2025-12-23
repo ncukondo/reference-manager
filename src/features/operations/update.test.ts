@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library, UpdateResult } from "../../core/library.js";
-import type { Reference } from "../../core/reference.js";
 import { type UpdateOperationOptions, updateReference } from "./update.js";
 
 // Mock Library
@@ -25,11 +24,6 @@ describe("updateReference", () => {
     ...mockItem,
     title: "Updated Title",
   };
-  const mockReference = {
-    getItem: () => updatedMockItem,
-    getId: () => mockItem.id,
-    getUuid: () => mockItem.custom?.uuid,
-  } as unknown as Reference;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -46,7 +40,7 @@ describe("updateReference", () => {
     it("should update reference by ID successfully", async () => {
       const updateResult: UpdateResult = { updated: true };
       (mockLibrary.updateById as ReturnType<typeof vi.fn>).mockReturnValue(updateResult);
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(updatedMockItem);
 
       const options: UpdateOperationOptions = {
         identifier: "smith-2023",
@@ -86,7 +80,7 @@ describe("updateReference", () => {
     it("should update reference by UUID successfully", async () => {
       const updateResult: UpdateResult = { updated: true };
       (mockLibrary.updateByUuid as ReturnType<typeof vi.fn>).mockReturnValue(updateResult);
-      (mockLibrary.findByUuid as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findByUuid as ReturnType<typeof vi.fn>).mockReturnValue(updatedMockItem);
 
       const options: UpdateOperationOptions = {
         identifier: "uuid-1",
@@ -126,7 +120,7 @@ describe("updateReference", () => {
     it("should add suffix when collision occurs with suffix option", async () => {
       const updateResult: UpdateResult = { updated: true, idChanged: true, newId: "existing-ida" };
       (mockLibrary.updateById as ReturnType<typeof vi.fn>).mockReturnValue(updateResult);
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(updatedMockItem);
 
       const options: UpdateOperationOptions = {
         identifier: "smith-2023",
@@ -150,7 +144,7 @@ describe("updateReference", () => {
     it("should use byUuid=false by default", async () => {
       const updateResult: UpdateResult = { updated: true };
       (mockLibrary.updateById as ReturnType<typeof vi.fn>).mockReturnValue(updateResult);
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockReference);
+      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(updatedMockItem);
 
       const options: UpdateOperationOptions = {
         identifier: "smith-2023",
