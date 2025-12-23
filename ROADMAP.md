@@ -130,46 +130,46 @@ Add `tag:` prefix to tokenizer.
 
 Add matching logic for `custom.tags` array.
 
-- [ ] **11.6.1**: Test matchTag function
+- [x] **11.6.1**: Test matchTag function
   - File: `src/features/search/matcher.test.ts`
   - Test: matchTag("review", {custom: {tags: ["review", "important"]}}) → match
   - Test: matchTag("rev", {custom: {tags: ["review"]}}) → partial match
   - Test: matchTag("review", {custom: {}}) → null
   - Test: matchTag("review", {}) → null
 
-- [ ] **11.6.2**: Implement matchTag function
+- [x] **11.6.2**: Implement matchTag function
   - File: `src/features/search/matcher.ts`
   - Function: `matchTag(queryValue: string, reference: CslItem): FieldMatch | null`
   - Logic: Similar to matchKeyword, access `reference.custom?.tags`
   - Depends on: 11.4.2, 11.2.2
 
-- [ ] **11.6.3**: Test matchSpecificField with tag
+- [x] **11.6.3**: Test matchSpecificField with tag
   - File: `src/features/search/matcher.test.ts`
   - Test: field "tag" routes to matchTag
 
-- [ ] **11.6.4**: Integrate matchTag into matchSpecificField
+- [x] **11.6.4**: Integrate matchTag into matchSpecificField
   - File: `src/features/search/matcher.ts`
   - Add case for `fieldToSearch === "tag"`
   - Depends on: 11.6.2
 
-- [ ] **11.6.5**: Test matchAllFields includes tags
+- [x] **11.6.5**: Test matchAllFields includes tags
   - File: `src/features/search/matcher.test.ts`
   - Test: bare search "review" matches reference with custom.tags: ["review"]
 
-- [ ] **11.6.6**: Integrate matchTag into matchAllFields
+- [x] **11.6.6**: Integrate matchTag into matchAllFields
   - File: `src/features/search/matcher.ts`
   - Add "tag" to specialFields array
   - Depends on: 11.6.2
 
 #### 11.7 Quality Checks
 
-- [ ] **11.7.1**: Full test suite passes
+- [x] **11.7.1**: Full test suite passes
   - Command: `npm test`
 
-- [ ] **11.7.2**: Type check passes
+- [x] **11.7.2**: Type check passes
   - Command: `npm run typecheck`
 
-- [ ] **11.7.3**: Lint and format
+- [x] **11.7.3**: Lint and format
   - Command: `npm run lint && npm run format`
 
 ---

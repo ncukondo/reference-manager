@@ -474,6 +474,211 @@ describe("matchToken", () => {
     });
   });
 
+  describe("Tag field matching (custom.tags array)", () => {
+    it("should match tag in array with field specifier", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review", "important"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+      expect(matches[0].strength).toBe("partial");
+    });
+
+    it("should match partial tag value", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:rev",
+        value: "rev",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+      expect(matches[0].value).toBe("review");
+    });
+
+    it("should return no match when custom is empty", () => {
+      const refWithEmptyCustom: CslItem = {
+        ...reference,
+        custom: {},
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithEmptyCustom);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should return no match when custom is missing", () => {
+      const refWithoutCustom: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test Title",
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithoutCustom);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should handle empty tags array", () => {
+      const refWithEmptyTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: [],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithEmptyTags);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should match any tag element in array", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["important", "urgent", "review"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:urgent",
+        value: "urgent",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+      expect(matches[0].value).toBe("urgent");
+    });
+
+    it("should not match when tag not in array", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review", "important"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:urgent",
+        value: "urgent",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should search tag in multi-field search", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review", "methodology"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "methodology",
+        value: "methodology",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      const tagMatch = matches.find((m) => m.field === "tag");
+      expect(tagMatch).toBeDefined();
+      expect(tagMatch?.strength).toBe("partial");
+    });
+
+    it("should match uppercase query in tag with uppercase-sensitivity", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["AI research", "methodology"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:AI",
+        value: "AI",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+    });
+
+    it("should NOT match uppercase query when tag has lowercase", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["ai research", "methodology"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:AI",
+        value: "AI",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(0);
+    });
+  });
+
   describe("Multi-field search (no field specifier)", () => {
     it("should search across all fields when no field specified", () => {
       const token: SearchToken = {

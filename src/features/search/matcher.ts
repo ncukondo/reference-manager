@@ -129,6 +129,37 @@ function matchKeyword(queryValue: string, reference: CslItem): FieldMatch | null
 }
 
 /**
+ * Match a tag field against custom.tags array
+ * Similar to matchKeyword but accesses custom.tags
+ */
+function matchTag(queryValue: string, reference: CslItem): FieldMatch | null {
+  // Check if custom.tags field exists and is an array
+  if (!reference.custom?.tags || !Array.isArray(reference.custom.tags)) {
+    return null;
+  }
+
+  // Normalize query value (preserving case for uppercase-sensitive matching)
+  const normalizedQuery = normalizePreservingCase(queryValue);
+
+  // Search through each tag element
+  for (const tag of reference.custom.tags) {
+    if (typeof tag === "string") {
+      const normalizedTag = normalizePreservingCase(tag);
+      // Use uppercase-sensitive matching
+      if (matchWithUppercaseSensitivity(normalizedQuery, normalizedTag)) {
+        return {
+          field: "tag",
+          strength: "partial",
+          value: tag,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Map field specifier to actual CSL-JSON field name
  */
 const FIELD_MAP: Record<string, string> = {
@@ -220,6 +251,13 @@ function matchSpecificField(token: SearchToken, reference: CslItem): FieldMatch[
     return matches;
   }
 
+  // Handle tag field specially (search custom.tags array)
+  if (fieldToSearch === "tag") {
+    const tagMatch = matchTag(token.value, reference);
+    if (tagMatch) matches.push(tagMatch);
+    return matches;
+  }
+
   // Standard field matching
   const actualField = FIELD_MAP[fieldToSearch] || fieldToSearch;
   const match = matchFieldValue(actualField, token.value, reference);
@@ -259,6 +297,9 @@ function matchSingleField(
   if (field === "keyword") {
     return matchKeyword(tokenValue, reference);
   }
+  if (field === "tag") {
+    return matchTag(tokenValue, reference);
+  }
   return matchFieldValue(field, tokenValue, reference);
 }
 
@@ -269,7 +310,7 @@ function matchAllFields(token: SearchToken, reference: CslItem): FieldMatch[] {
   const matches: FieldMatch[] = [];
 
   // Match special fields
-  const specialFields = ["year", "URL", "keyword"];
+  const specialFields = ["year", "URL", "keyword", "tag"];
   for (const field of specialFields) {
     const match = matchSingleField(field, token.value, reference);
     if (match) matches.push(match);
