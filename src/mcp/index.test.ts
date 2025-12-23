@@ -131,7 +131,7 @@ describe("McpServer", () => {
       });
 
       try {
-        const items = context.library.getAll();
+        const items = await context.library.getAll();
         expect(items).toHaveLength(1);
         expect(items[0].id).toBe("override2024");
       } finally {

@@ -35,14 +35,14 @@ export async function removeReference(
   const { identifier, byUuid = false } = options;
 
   // Find the reference first (returns CslItem directly)
-  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  const item = byUuid ? await library.findByUuid(identifier) : await library.findById(identifier);
 
   if (!item) {
     return { removed: false };
   }
 
   // Remove from library
-  const removed = byUuid ? library.removeByUuid(identifier) : library.removeById(identifier);
+  const removed = byUuid ? await library.removeByUuid(identifier) : await library.removeById(identifier);
 
   if (removed) {
     await library.save();

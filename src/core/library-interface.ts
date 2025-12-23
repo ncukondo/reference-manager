@@ -5,6 +5,7 @@
  * allowing operations to work with either implementation interchangeably.
  *
  * Design notes:
+ * - All methods are async to support HTTP-based implementations (ServerClient)
  * - Methods return CslItem directly (not Reference) for simplicity and HTTP compatibility
  * - Library internally uses Reference for ID generation and indexing, but exposes CslItem via ILibrary
  * - ServerClient naturally returns CslItem from HTTP responses
@@ -47,20 +48,20 @@ export interface ILibrary {
    * @param id - The citation ID (Pandoc cite key / BibTeX key)
    * @returns The CSL item if found, undefined otherwise
    */
-  findById(id: string): CslItem | undefined;
+  findById(id: string): Promise<CslItem | undefined>;
 
   /**
    * Find a reference by UUID.
    * @param uuid - The internal UUID
    * @returns The CSL item if found, undefined otherwise
    */
-  findByUuid(uuid: string): CslItem | undefined;
+  findByUuid(uuid: string): Promise<CslItem | undefined>;
 
   /**
    * Get all references.
    * @returns Array of all CSL items in the library
    */
-  getAll(): CslItem[];
+  getAll(): Promise<CslItem[]>;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Write methods
@@ -70,7 +71,7 @@ export interface ILibrary {
    * Add a new reference to the library.
    * @param item - The CSL item to add
    */
-  add(item: CslItem): void;
+  add(item: CslItem): Promise<void>;
 
   /**
    * Update a reference by citation ID.
@@ -79,7 +80,7 @@ export interface ILibrary {
    * @param options - Update options (e.g., ID collision handling)
    * @returns Update result indicating success/failure and any ID changes
    */
-  updateById(id: string, updates: Partial<CslItem>, options?: UpdateOptions): UpdateResult;
+  updateById(id: string, updates: Partial<CslItem>, options?: UpdateOptions): Promise<UpdateResult>;
 
   /**
    * Update a reference by UUID.
@@ -88,21 +89,21 @@ export interface ILibrary {
    * @param options - Update options (e.g., ID collision handling)
    * @returns Update result indicating success/failure and any ID changes
    */
-  updateByUuid(uuid: string, updates: Partial<CslItem>, options?: UpdateOptions): UpdateResult;
+  updateByUuid(uuid: string, updates: Partial<CslItem>, options?: UpdateOptions): Promise<UpdateResult>;
 
   /**
    * Remove a reference by citation ID.
    * @param id - The citation ID of the reference to remove
    * @returns true if removed, false if not found
    */
-  removeById(id: string): boolean;
+  removeById(id: string): Promise<boolean>;
 
   /**
    * Remove a reference by UUID.
    * @param uuid - The UUID of the reference to remove
    * @returns true if removed, false if not found
    */
-  removeByUuid(uuid: string): boolean;
+  removeByUuid(uuid: string): Promise<boolean>;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Persistence

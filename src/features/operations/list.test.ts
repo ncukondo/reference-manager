@@ -30,14 +30,14 @@ describe("listReferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      getAll: vi.fn().mockReturnValue(mockItems),
+      getAll: vi.fn().mockResolvedValue(mockItems),
     } as unknown as Library;
   });
 
   describe("format: pretty", () => {
-    it("should return formatted strings for each reference", () => {
+    it("should return formatted strings for each reference", async () => {
       const options: ListOptions = { format: "pretty" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
       expect(result.items[0]).toContain("[ref1]");
@@ -48,9 +48,9 @@ describe("listReferences", () => {
   });
 
   describe("format: json", () => {
-    it("should return JSON string for each reference", () => {
+    it("should return JSON string for each reference", async () => {
       const options: ListOptions = { format: "json" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
       // Each item should be valid JSON
@@ -62,9 +62,9 @@ describe("listReferences", () => {
   });
 
   describe("format: bibtex", () => {
-    it("should return BibTeX entry for each reference", () => {
+    it("should return BibTeX entry for each reference", async () => {
       const options: ListOptions = { format: "bibtex" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
       expect(result.items[0]).toContain("@article{ref1,");
@@ -73,52 +73,52 @@ describe("listReferences", () => {
   });
 
   describe("format: ids-only", () => {
-    it("should return only IDs", () => {
+    it("should return only IDs", async () => {
       const options: ListOptions = { format: "ids-only" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toEqual(["ref1", "ref2"]);
     });
   });
 
   describe("format: uuid", () => {
-    it("should return only UUIDs", () => {
+    it("should return only UUIDs", async () => {
       const options: ListOptions = { format: "uuid" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toEqual(["uuid-1", "uuid-2"]);
     });
 
-    it("should skip items without UUID", () => {
+    it("should skip items without UUID", async () => {
       const itemsWithMissingUuid: CslItem[] = [
         { id: "ref1", type: "article", custom: { uuid: "uuid-1" } },
         { id: "ref2", type: "article" }, // no custom
         { id: "ref3", type: "article", custom: {} }, // no uuid
       ];
-      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockReturnValue(itemsWithMissingUuid);
+      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockResolvedValue(itemsWithMissingUuid);
 
       const options: ListOptions = { format: "uuid" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toEqual(["uuid-1"]);
     });
   });
 
   describe("empty library", () => {
-    it("should return empty array when library is empty", () => {
-      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    it("should return empty array when library is empty", async () => {
+      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const options: ListOptions = { format: "pretty" };
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toEqual([]);
     });
   });
 
   describe("default format", () => {
-    it("should use pretty format by default", () => {
+    it("should use pretty format by default", async () => {
       const options: ListOptions = {};
-      const result = listReferences(mockLibrary, options);
+      const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
       expect(result.items[0]).toContain("[ref1]");

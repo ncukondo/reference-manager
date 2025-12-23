@@ -11,16 +11,16 @@ import { updateReference } from "../../features/operations/update.js";
 export function createReferencesRoute(library: Library) {
   const route = new Hono();
 
-  // GET / - Get all references (getAll now returns CslItem[] directly)
-  route.get("/", (c) => {
-    const items = library.getAll();
+  // GET / - Get all references (getAll now returns Promise<CslItem[]>)
+  route.get("/", async (c) => {
+    const items = await library.getAll();
     return c.json(items);
   });
 
   // GET /uuid/:uuid - Get reference by UUID
-  route.get("/uuid/:uuid", (c) => {
+  route.get("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
-    const item = library.findByUuid(uuid);
+    const item = await library.findByUuid(uuid);
 
     if (!item) {
       return c.json({ error: "Reference not found" }, 404);
@@ -30,9 +30,9 @@ export function createReferencesRoute(library: Library) {
   });
 
   // GET /id/:id - Get reference by citation ID
-  route.get("/id/:id", (c) => {
+  route.get("/id/:id", async (c) => {
     const id = c.req.param("id");
-    const item = library.findById(id);
+    const item = await library.findById(id);
 
     if (!item) {
       return c.json({ error: "Reference not found" }, 404);
@@ -47,10 +47,10 @@ export function createReferencesRoute(library: Library) {
       const body = await c.req.json();
 
       // Create and add reference (library.add handles validation)
-      library.add(body);
+      await library.add(body);
 
       // Find the newly added item (it was just added, so it's the last one)
-      const allItems = library.getAll();
+      const allItems = await library.getAll();
       const addedItem = allItems[allItems.length - 1];
 
       if (!addedItem) {

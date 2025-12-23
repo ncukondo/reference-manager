@@ -54,7 +54,7 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
 
       const library = await Library.load(testFilePath);
-      expect(library.getAll()).toHaveLength(2);
+      expect(await library.getAll()).toHaveLength(2);
     });
 
     it("should build indices on load", async () => {
@@ -62,13 +62,13 @@ describe("Library", () => {
 
       const library = await Library.load(testFilePath);
 
-      // Check UUID index (findByUuid now returns CslItem directly)
-      const item1 = library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
+      // Check UUID index (findByUuid now returns Promise<CslItem | undefined>)
+      const item1 = await library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
       expect(item1).toBeDefined();
       expect(item1?.id).toBe("smith-2023");
 
-      // Check ID index (findById now returns CslItem directly)
-      const item2 = library.findById("tanaka-2022");
+      // Check ID index (findById now returns Promise<CslItem | undefined>)
+      const item2 = await library.findById("tanaka-2022");
       expect(item2).toBeDefined();
       expect(item2?.title).toBe("Deep Learning for Image Recognition");
 
@@ -87,7 +87,7 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
 
       const library = await Library.load(testFilePath);
-      expect(library.getAll()).toHaveLength(0);
+      expect(await library.getAll()).toHaveLength(0);
     });
 
     it("should generate UUIDs for items without them", async () => {
@@ -101,7 +101,7 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(itemsWithoutUuid, null, 2), "utf-8");
 
       const library = await Library.load(testFilePath);
-      const items = library.getAll();
+      const items = await library.getAll();
       expect(items).toHaveLength(1);
       expect(items[0].custom?.uuid).toBeDefined();
       expect(items[0].custom?.uuid).toMatch(
@@ -124,24 +124,24 @@ describe("Library", () => {
         issued: { "date-parts": [[2021]] },
       };
 
-      library.add(newItem);
+      await library.add(newItem);
       await library.save();
 
       // Reload and verify
       const reloadedLibrary = await Library.load(testFilePath);
-      expect(reloadedLibrary.getAll()).toHaveLength(1);
-      expect(reloadedLibrary.findById("wilson-2021")).toBeDefined();
+      expect(await reloadedLibrary.getAll()).toHaveLength(1);
+      expect(await reloadedLibrary.findById("wilson-2021")).toBeDefined();
     });
 
     it("should preserve UUIDs when saving", async () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      const originalUuid = library.findById("smith-2023")?.custom?.uuid;
+      const originalUuid = (await library.findById("smith-2023"))?.custom?.uuid;
       await library.save();
 
       const reloadedLibrary = await Library.load(testFilePath);
-      const reloadedUuid = reloadedLibrary.findById("smith-2023")?.custom?.uuid;
+      const reloadedUuid = (await reloadedLibrary.findById("smith-2023"))?.custom?.uuid;
       expect(reloadedUuid).toBe(originalUuid);
     });
   });
@@ -157,9 +157,9 @@ describe("Library", () => {
         title: "Test Article",
       };
 
-      library.add(newItem);
-      expect(library.getAll()).toHaveLength(1);
-      expect(library.findById("test-2024")).toBeDefined();
+      await library.add(newItem);
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.findById("test-2024")).toBeDefined();
     });
 
     it("should auto-generate ID if not provided", async () => {
@@ -173,8 +173,8 @@ describe("Library", () => {
         issued: { "date-parts": [[2024]] },
       };
 
-      library.add(newItem);
-      const items = library.getAll();
+      await library.add(newItem);
+      const items = await library.getAll();
       expect(items).toHaveLength(1);
       expect(items[0].id).toMatch(/test-2024/);
     });
@@ -197,10 +197,10 @@ describe("Library", () => {
         issued: { "date-parts": [[2023]] },
       };
 
-      library.add(item1);
-      library.add(item2);
+      await library.add(item1);
+      await library.add(item2);
 
-      const items = library.getAll();
+      const items = await library.getAll();
       expect(items).toHaveLength(2);
       expect(items[0].id).not.toBe(items[1].id);
       expect(items[1].id).toMatch(/smith-2023[a-z]+/);
@@ -217,9 +217,9 @@ describe("Library", () => {
         PMID: "98765432",
       };
 
-      library.add(newItem);
+      await library.add(newItem);
 
-      expect(library.findById("test-2024")).toBeDefined();
+      expect(await library.findById("test-2024")).toBeDefined();
       expect(library.findByDoi("10.1234/test.2024")).toBeDefined();
       expect(library.findByPmid("98765432")).toBeDefined();
     });
@@ -234,25 +234,25 @@ describe("Library", () => {
       const library = await Library.load(testFilePath);
       const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-      library.removeByUuid(uuid);
-      expect(library.getAll()).toHaveLength(1);
-      expect(library.findByUuid(uuid)).toBeUndefined();
+      await library.removeByUuid(uuid);
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.findByUuid(uuid)).toBeUndefined();
     });
 
     it("should remove reference by ID", async () => {
       const library = await Library.load(testFilePath);
 
-      library.removeById("smith-2023");
-      expect(library.getAll()).toHaveLength(1);
-      expect(library.findById("smith-2023")).toBeUndefined();
+      await library.removeById("smith-2023");
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.findById("smith-2023")).toBeUndefined();
     });
 
     it("should update all indices when removing", async () => {
       const library = await Library.load(testFilePath);
 
-      library.removeById("smith-2023");
+      await library.removeById("smith-2023");
 
-      expect(library.findByUuid("550e8400-e29b-41d4-a716-446655440001")).toBeUndefined();
+      expect(await library.findByUuid("550e8400-e29b-41d4-a716-446655440001")).toBeUndefined();
       expect(library.findByDoi("10.1234/jmi.2023.0045")).toBeUndefined();
       expect(library.findByPmid("12345678")).toBeUndefined();
     });
@@ -260,17 +260,17 @@ describe("Library", () => {
     it("should return false when removing non-existent reference", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = library.removeById("non-existent");
+      const result = await library.removeById("non-existent");
       expect(result).toBe(false);
-      expect(library.getAll()).toHaveLength(2);
+      expect(await library.getAll()).toHaveLength(2);
     });
 
     it("should return true when successfully removing reference", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = library.removeById("smith-2023");
+      const result = await library.removeById("smith-2023");
       expect(result).toBe(true);
-      expect(library.getAll()).toHaveLength(1);
+      expect(await library.getAll()).toHaveLength(1);
     });
   });
 
@@ -282,10 +282,10 @@ describe("Library", () => {
     it("should update reference by ID", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = library.updateById("smith-2023", { title: "Updated Title" });
+      const result = await library.updateById("smith-2023", { title: "Updated Title" });
 
       expect(result.updated).toBe(true);
-      const item = library.findById("smith-2023");
+      const item = await library.findById("smith-2023");
       expect(item?.title).toBe("Updated Title");
     });
 
@@ -293,37 +293,37 @@ describe("Library", () => {
       const library = await Library.load(testFilePath);
       const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-      const result = library.updateByUuid(uuid, { title: "Updated Title" });
+      const result = await library.updateByUuid(uuid, { title: "Updated Title" });
 
       expect(result.updated).toBe(true);
-      const item = library.findByUuid(uuid);
+      const item = await library.findByUuid(uuid);
       expect(item?.title).toBe("Updated Title");
     });
 
     it("should preserve uuid and created_at when updating", async () => {
       const library = await Library.load(testFilePath);
-      const originalItem = library.findById("smith-2023");
+      const originalItem = await library.findById("smith-2023");
       const originalUuid = originalItem?.custom?.uuid;
       const originalCreatedAt = originalItem?.custom?.created_at;
 
-      library.updateById("smith-2023", { title: "Updated Title" });
+      await library.updateById("smith-2023", { title: "Updated Title" });
 
-      const updatedItem = library.findById("smith-2023");
+      const updatedItem = await library.findById("smith-2023");
       expect(updatedItem?.custom?.uuid).toBe(originalUuid);
       expect(updatedItem?.custom?.created_at).toBe(originalCreatedAt);
     });
 
     it("should update timestamp when updating", async () => {
       const library = await Library.load(testFilePath);
-      const originalItem = library.findById("smith-2023");
+      const originalItem = await library.findById("smith-2023");
       const originalTimestamp = originalItem?.custom?.timestamp;
 
       // Wait a bit to ensure timestamp changes
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      library.updateById("smith-2023", { title: "Updated Title" });
+      await library.updateById("smith-2023", { title: "Updated Title" });
 
-      const updatedItem = library.findById("smith-2023");
+      const updatedItem = await library.findById("smith-2023");
       expect(updatedItem?.custom?.timestamp).not.toBe(originalTimestamp);
     });
 
@@ -331,32 +331,32 @@ describe("Library", () => {
       const library = await Library.load(testFilePath);
       const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-      const result = library.updateById("smith-2023", { id: "smith-2023-updated" });
+      const result = await library.updateById("smith-2023", { id: "smith-2023-updated" });
 
       expect(result.updated).toBe(true);
-      expect(library.findById("smith-2023")).toBeUndefined();
-      expect(library.findById("smith-2023-updated")).toBeDefined();
-      expect(library.findByUuid(uuid)?.id).toBe("smith-2023-updated");
+      expect(await library.findById("smith-2023")).toBeUndefined();
+      expect(await library.findById("smith-2023-updated")).toBeDefined();
+      expect((await library.findByUuid(uuid))?.id).toBe("smith-2023-updated");
     });
 
     it("should return updated=false when updating non-existent ID", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = library.updateById("non-existent", { title: "Updated" });
+      const result = await library.updateById("non-existent", { title: "Updated" });
 
       expect(result.updated).toBe(false);
-      expect(library.getAll()).toHaveLength(2);
+      expect(await library.getAll()).toHaveLength(2);
     });
 
     it("should return updated=false when updating non-existent UUID", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = library.updateByUuid("00000000-0000-0000-0000-000000000000", {
+      const result = await library.updateByUuid("00000000-0000-0000-0000-000000000000", {
         title: "Updated",
       });
 
       expect(result.updated).toBe(false);
-      expect(library.getAll()).toHaveLength(2);
+      expect(await library.getAll()).toHaveLength(2);
     });
 
     describe("ID collision handling", () => {
@@ -364,19 +364,19 @@ describe("Library", () => {
         const library = await Library.load(testFilePath);
 
         // Try to change smith-2023's ID to tanaka-2022 (which already exists)
-        const result = library.updateById("smith-2023", { id: "tanaka-2022" });
+        const result = await library.updateById("smith-2023", { id: "tanaka-2022" });
 
         expect(result.updated).toBe(false);
         expect(result.idCollision).toBe(true);
         // Original reference should be unchanged
-        expect(library.findById("smith-2023")).toBeDefined();
-        expect(library.findById("tanaka-2022")?.title).toBe("Deep Learning for Image Recognition");
+        expect(await library.findById("smith-2023")).toBeDefined();
+        expect((await library.findById("tanaka-2022"))?.title).toBe("Deep Learning for Image Recognition");
       });
 
       it("should add suffix when onIdCollision is 'suffix'", async () => {
         const library = await Library.load(testFilePath);
 
-        const result = library.updateById(
+        const result = await library.updateById(
           "smith-2023",
           { id: "tanaka-2022" },
           { onIdCollision: "suffix" }
@@ -386,8 +386,8 @@ describe("Library", () => {
         expect(result.idChanged).toBe(true);
         expect(result.newId).toBeDefined();
         expect(result.newId).toMatch(/^tanaka-2022[a-z]+$/);
-        expect(library.findById("smith-2023")).toBeUndefined();
-        const updatedItem = library.findById(result.newId ?? "");
+        expect(await library.findById("smith-2023")).toBeUndefined();
+        const updatedItem = await library.findById(result.newId ?? "");
         expect(updatedItem).toBeDefined();
         expect(updatedItem?.title).toBe("Machine Learning in Medical Diagnosis");
       });
@@ -395,18 +395,18 @@ describe("Library", () => {
       it("should allow same ID (no change) without collision", async () => {
         const library = await Library.load(testFilePath);
 
-        const result = library.updateById("smith-2023", { id: "smith-2023", title: "Updated" });
+        const result = await library.updateById("smith-2023", { id: "smith-2023", title: "Updated" });
 
         expect(result.updated).toBe(true);
         expect(result.idCollision).toBeUndefined();
-        expect(library.findById("smith-2023")?.title).toBe("Updated");
+        expect((await library.findById("smith-2023"))?.title).toBe("Updated");
       });
 
       it("should work with updateByUuid and collision handling", async () => {
         const library = await Library.load(testFilePath);
         const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-        const result = library.updateByUuid(
+        const result = await library.updateByUuid(
           uuid,
           { id: "tanaka-2022" },
           { onIdCollision: "suffix" }
@@ -414,7 +414,7 @@ describe("Library", () => {
 
         expect(result.updated).toBe(true);
         expect(result.idChanged).toBe(true);
-        expect(library.findByUuid(uuid)?.id).toBe(result.newId);
+        expect((await library.findByUuid(uuid))?.id).toBe(result.newId);
       });
     });
   });
@@ -426,14 +426,14 @@ describe("Library", () => {
 
     it("should find by UUID", async () => {
       const library = await Library.load(testFilePath);
-      const item = library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
+      const item = await library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
       expect(item).toBeDefined();
       expect(item?.id).toBe("smith-2023");
     });
 
     it("should find by ID", async () => {
       const library = await Library.load(testFilePath);
-      const item = library.findById("tanaka-2022");
+      const item = await library.findById("tanaka-2022");
       expect(item).toBeDefined();
       expect(item?.title).toBe("Deep Learning for Image Recognition");
     });
@@ -454,13 +454,13 @@ describe("Library", () => {
 
     it("should return undefined for non-existent UUID", async () => {
       const library = await Library.load(testFilePath);
-      const ref = library.findByUuid("00000000-0000-0000-0000-000000000000");
+      const ref = await library.findByUuid("00000000-0000-0000-0000-000000000000");
       expect(ref).toBeUndefined();
     });
 
     it("should return undefined for non-existent ID", async () => {
       const library = await Library.load(testFilePath);
-      const ref = library.findById("non-existent");
+      const ref = await library.findById("non-existent");
       expect(ref).toBeUndefined();
     });
 
@@ -482,7 +482,7 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      const items = library.getAll();
+      const items = await library.getAll();
       expect(items).toHaveLength(2);
       expect(items[0].id).toBe("smith-2023");
       expect(items[1].id).toBe("tanaka-2022");
@@ -492,7 +492,7 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      const items = library.getAll();
+      const items = await library.getAll();
       expect(items).toHaveLength(0);
     });
   });
@@ -530,7 +530,7 @@ describe("Library", () => {
         type: "article-journal",
         title: "New Item",
       };
-      library.add(newItem);
+      await library.add(newItem);
 
       // Save
       await library.save();
@@ -565,7 +565,7 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
       const library = await Library.load(testFilePath);
 
-      expect(library.getAll()).toHaveLength(2);
+      expect(await library.getAll()).toHaveLength(2);
 
       // Modify file externally
       const newItems = [
@@ -581,9 +581,9 @@ describe("Library", () => {
       const reloaded = await library.reload();
 
       expect(reloaded).toBe(true);
-      expect(library.getAll()).toHaveLength(1);
-      expect(library.findById("external-2024")).toBeDefined();
-      expect(library.findById("smith-2023")).toBeUndefined();
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.findById("external-2024")).toBeDefined();
+      expect(await library.findById("smith-2023")).toBeUndefined();
     });
 
     it("should update file hash after reload", async () => {
@@ -625,16 +625,16 @@ describe("Library", () => {
       await library.reload();
 
       // Old indices should be cleared
-      expect(library.findById("smith-2023")).toBeUndefined();
+      expect(await library.findById("smith-2023")).toBeUndefined();
       expect(library.findByDoi("10.1234/jmi.2023.0045")).toBeUndefined();
       expect(library.findByPmid("12345678")).toBeUndefined();
-      expect(library.findByUuid("550e8400-e29b-41d4-a716-446655440001")).toBeUndefined();
+      expect(await library.findByUuid("550e8400-e29b-41d4-a716-446655440001")).toBeUndefined();
 
       // New indices should be built
-      expect(library.findById("new-ref-2024")).toBeDefined();
+      expect(await library.findById("new-ref-2024")).toBeDefined();
       expect(library.findByDoi("10.5555/new.doi")).toBeDefined();
       expect(library.findByPmid("99999999")).toBeDefined();
-      expect(library.findByUuid("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).toBeDefined();
+      expect(await library.findByUuid("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).toBeDefined();
     });
 
     it("should skip reload if file hash matches (self-write detection)", async () => {
@@ -648,7 +648,7 @@ describe("Library", () => {
       const reloaded = await library.reload();
 
       expect(reloaded).toBe(false);
-      expect(library.getAll()).toHaveLength(2);
+      expect(await library.getAll()).toHaveLength(2);
     });
 
     it("should reload after external modification following self-write", async () => {
@@ -661,10 +661,10 @@ describe("Library", () => {
         type: "article-journal",
         title: "Added Item",
       };
-      library.add(newItem);
+      await library.add(newItem);
       await library.save();
 
-      expect(library.getAll()).toHaveLength(3);
+      expect(await library.getAll()).toHaveLength(3);
 
       // reload() should skip (self-write)
       const reloaded1 = await library.reload();
@@ -678,8 +678,8 @@ describe("Library", () => {
       const reloaded2 = await library.reload();
 
       expect(reloaded2).toBe(true);
-      expect(library.getAll()).toHaveLength(1);
-      expect(library.findById("external-2024")).toBeDefined();
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.findById("external-2024")).toBeDefined();
     });
   });
 });

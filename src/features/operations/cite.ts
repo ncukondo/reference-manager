@@ -84,14 +84,14 @@ function formatCitation(item: CslItem, inText: boolean, options: FormatOptions):
 /**
  * Generate citation for a single identifier.
  */
-function generateCitationForIdentifier(
+async function generateCitationForIdentifier(
   library: ILibrary,
   identifier: string,
   byUuid: boolean,
   inText: boolean,
   options: FormatOptions
-): CiteItemResult {
-  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+): Promise<CiteItemResult> {
+  const item = byUuid ? await library.findByUuid(identifier) : await library.findById(identifier);
 
   if (!item) {
     const lookupType = byUuid ? "UUID" : "ID";
@@ -126,7 +126,7 @@ export async function citeReferences(
   const results: CiteItemResult[] = [];
 
   for (const identifier of identifiers) {
-    const result = generateCitationForIdentifier(library, identifier, byUuid, inText, {
+    const result = await generateCitationForIdentifier(library, identifier, byUuid, inText, {
       style,
       cslFile,
       locale,

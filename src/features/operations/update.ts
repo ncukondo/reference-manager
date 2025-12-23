@@ -46,8 +46,8 @@ export async function updateReference(
 
   // Update the reference
   const updateResult = byUuid
-    ? library.updateByUuid(identifier, updates, { onIdCollision })
-    : library.updateById(identifier, updates, { onIdCollision });
+    ? await library.updateByUuid(identifier, updates, { onIdCollision })
+    : await library.updateById(identifier, updates, { onIdCollision });
 
   if (!updateResult.updated) {
     const result: UpdateOperationResult = { updated: false };
@@ -62,8 +62,8 @@ export async function updateReference(
 
   // Get the updated item (findById/findByUuid now returns CslItem directly)
   const item = byUuid
-    ? library.findByUuid(identifier)
-    : library.findById(updateResult.newId ?? identifier);
+    ? await library.findByUuid(identifier)
+    : await library.findById(updateResult.newId ?? identifier);
 
   const result: UpdateOperationResult = { updated: true };
 

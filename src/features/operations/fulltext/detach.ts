@@ -103,7 +103,7 @@ export async function fulltextDetach(
   const { identifier, type, delete: deleteFile, byUuid = false, fulltextDirectory } = options;
 
   // Find reference (returns CslItem directly)
-  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  const item = byUuid ? await library.findByUuid(identifier) : await library.findById(identifier);
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };

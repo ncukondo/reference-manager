@@ -56,8 +56,8 @@ describe("References Route", () => {
         author: [{ family: "Smith", given: "Jane" }],
       };
 
-      library.add(ref1Item);
-      library.add(ref2Item);
+      await library.add(ref1Item);
+      await library.add(ref2Item);
 
       const req = new Request("http://localhost/");
       const res = await route.fetch(req);
@@ -78,10 +78,10 @@ describe("References Route", () => {
         author: [{ family: "Doe", given: "John" }],
       };
 
-      library.add(refItem);
+      await library.add(refItem);
 
       // Get the UUID from the added reference
-      const addedItem = library.getAll()[0];
+      const addedItem = (await library.getAll())[0];
       const uuid = addedItem.custom?.uuid;
 
       const req = new Request(`http://localhost/uuid/${uuid}`);
@@ -111,10 +111,10 @@ describe("References Route", () => {
         author: [{ family: "Doe", given: "John" }],
       };
 
-      library.add(refItem);
+      await library.add(refItem);
 
       // Get the ID from the added reference
-      const addedItem = library.getAll()[0];
+      const addedItem = (await library.getAll())[0];
       const id = addedItem.id;
 
       const req = new Request(`http://localhost/id/${id}`);
@@ -157,7 +157,7 @@ describe("References Route", () => {
       expect(data.custom?.uuid).toBeDefined();
 
       // Verify it was added to library
-      const all = library.getAll();
+      const all = await library.getAll();
       expect(all).toHaveLength(1);
     });
 
@@ -184,10 +184,10 @@ describe("References Route", () => {
         author: [{ family: "Doe", given: "John" }],
       };
 
-      library.add(refItem);
+      await library.add(refItem);
 
       // Get the UUID from the added reference
-      const addedItem = library.getAll()[0];
+      const addedItem = (await library.getAll())[0];
       const uuid = addedItem.custom?.uuid;
 
       const updatedData = {
@@ -210,7 +210,7 @@ describe("References Route", () => {
       expect(data.item?.title).toBe("Updated Title");
 
       // Verify it was updated in library
-      const found = library.findByUuid(uuid ?? "");
+      const found = await library.findByUuid(uuid ?? "");
       expect(found?.title).toBe("Updated Title");
     });
 
@@ -239,10 +239,10 @@ describe("References Route", () => {
         author: [{ family: "Doe", given: "John" }],
       };
 
-      library.add(refItem);
+      await library.add(refItem);
 
       // Get the ID from the added reference
-      const addedItem = library.getAll()[0];
+      const addedItem = (await library.getAll())[0];
       const id = addedItem.id;
 
       const updatedData = {
@@ -262,7 +262,7 @@ describe("References Route", () => {
       expect(data.item?.title).toBe("Updated Title");
 
       // Verify it was updated in library
-      const found = library.findById(id);
+      const found = await library.findById(id);
       expect(found?.title).toBe("Updated Title");
     });
 
@@ -290,10 +290,10 @@ describe("References Route", () => {
         author: [{ family: "Doe", given: "John" }],
       };
 
-      library.add(refItem);
+      await library.add(refItem);
 
       // Get the UUID from the added reference
-      const addedItem = library.getAll()[0];
+      const addedItem = (await library.getAll())[0];
       const uuid = addedItem.custom?.uuid;
 
       const req = new Request(`http://localhost/uuid/${uuid}`, {
@@ -307,7 +307,7 @@ describe("References Route", () => {
       expect(data.item).toBeDefined();
 
       // Verify it was removed from library
-      const found = library.findByUuid(uuid);
+      const found = await library.findByUuid(uuid);
       expect(found).toBeUndefined();
     });
 
@@ -329,10 +329,10 @@ describe("References Route", () => {
         author: [{ family: "Doe", given: "John" }],
       };
 
-      library.add(refItem);
+      await library.add(refItem);
 
       // Get the ID from the added reference
-      const addedItem = library.getAll()[0];
+      const addedItem = (await library.getAll())[0];
       const id = addedItem.id;
 
       const req = new Request(`http://localhost/id/${id}`, {
@@ -346,7 +346,7 @@ describe("References Route", () => {
       expect(data.item).toBeDefined();
 
       // Verify it was removed from library
-      const found = library.findById(id);
+      const found = await library.findById(id);
       expect(found).toBeUndefined();
     });
 

@@ -86,7 +86,7 @@ describe("Add Integration Tests", () => {
 
         // Verify library persistence
         const reloadedLibrary = await Library.load(libraryPath);
-        expect(reloadedLibrary.getAll()).toHaveLength(1);
+        expect(await reloadedLibrary.getAll()).toHaveLength(1);
       });
 
       it("should import multiple references from JSON file", async () => {
@@ -108,7 +108,7 @@ describe("Add Integration Tests", () => {
 
         // Verify persistence
         const reloadedLibrary = await Library.load(libraryPath);
-        expect(reloadedLibrary.getAll()).toHaveLength(3);
+        expect(await reloadedLibrary.getAll()).toHaveLength(3);
       });
 
       it("should import from multiple JSON files", async () => {
@@ -531,7 +531,7 @@ ER  - `,
   describe("Duplicate detection", () => {
     it("should skip duplicates when force is false", async () => {
       // Add existing reference
-      library.add({
+      await library.add({
         id: "existing2024",
         type: "article-journal",
         title: "Existing Article",
@@ -563,7 +563,7 @@ ER  - `,
 
     it("should add duplicates when force is true", async () => {
       // Add existing reference
-      library.add({
+      await library.add({
         id: "existing2024",
         type: "article-journal",
         title: "Existing Article",
@@ -596,7 +596,7 @@ ER  - `,
   describe("ID collision resolution", () => {
     it("should resolve ID collision by appending suffix", async () => {
       // Add existing reference
-      library.add({
+      await library.add({
         id: "smith2024",
         type: "article-journal",
         title: "First Smith",
@@ -644,7 +644,7 @@ ER  - `,
 
       // Reload library from file
       const reloadedLibrary = await Library.load(libraryPath);
-      const items = reloadedLibrary.getAll();
+      const items = await reloadedLibrary.getAll();
 
       expect(items).toHaveLength(2);
       expect(items.map((item) => item.title)).toContain("Persist Test 1");

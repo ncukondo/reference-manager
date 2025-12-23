@@ -56,7 +56,7 @@ describe("McpContext", () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
-        const items = ctx.library.getAll();
+        const items = await ctx.library.getAll();
         expect(items).toHaveLength(1);
         expect(items[0].id).toBe("test2024");
       } finally {
@@ -79,7 +79,7 @@ describe("McpContext", () => {
       });
 
       try {
-        const items = ctx.library.getAll();
+        const items = await ctx.library.getAll();
         expect(items).toHaveLength(1);
         expect(items[0].id).toBe("override2024");
       } finally {
@@ -147,8 +147,8 @@ describe("McpContext", () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
-        expect(ctx.library.getAll()).toHaveLength(1);
-        expect(ctx.library.findById("initial2024")).toBeDefined();
+        expect(await ctx.library.getAll()).toHaveLength(1);
+        expect(await ctx.library.findById("initial2024")).toBeDefined();
 
         // Simulate external file change
         const newRef = {
@@ -165,9 +165,9 @@ describe("McpContext", () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Library should be reloaded with new content
-        expect(ctx.library.getAll()).toHaveLength(1);
-        expect(ctx.library.findById("external2024")).toBeDefined();
-        expect(ctx.library.findById("initial2024")).toBeUndefined();
+        expect(await ctx.library.getAll()).toHaveLength(1);
+        expect(await ctx.library.findById("external2024")).toBeDefined();
+        expect(await ctx.library.findById("initial2024")).toBeUndefined();
       } finally {
         await ctx.dispose();
       }
@@ -190,10 +190,10 @@ describe("McpContext", () => {
           type: "article-journal" as const,
           title: "Added Item",
         };
-        ctx.library.add(newItem);
+        await ctx.library.add(newItem);
         await ctx.library.save();
 
-        expect(ctx.library.getAll()).toHaveLength(2);
+        expect(await ctx.library.getAll()).toHaveLength(2);
 
         // Emit change event (as if file watcher detected the self-write)
         ctx.fileWatcher.emit("change");
@@ -203,9 +203,9 @@ describe("McpContext", () => {
 
         // Library should NOT be reloaded (self-write detected)
         // Both references should still be present
-        expect(ctx.library.getAll()).toHaveLength(2);
-        expect(ctx.library.findById("test2024")).toBeDefined();
-        expect(ctx.library.findById("added2024")).toBeDefined();
+        expect(await ctx.library.getAll()).toHaveLength(2);
+        expect(await ctx.library.findById("test2024")).toBeDefined();
+        expect(await ctx.library.findById("added2024")).toBeDefined();
       } finally {
         await ctx.dispose();
       }

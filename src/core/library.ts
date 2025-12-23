@@ -93,7 +93,7 @@ export class Library implements ILibrary {
   /**
    * Add a reference to the library
    */
-  add(item: CslItem): void {
+  async add(item: CslItem): Promise<void> {
     // Collect existing IDs for collision check
     const existingIds = new Set(this.references.map((ref) => ref.getId()));
 
@@ -108,7 +108,7 @@ export class Library implements ILibrary {
   /**
    * Remove a reference by UUID
    */
-  removeByUuid(uuid: string): boolean {
+  async removeByUuid(uuid: string): Promise<boolean> {
     const ref = this.uuidIndex.get(uuid);
     if (!ref) {
       return false;
@@ -120,7 +120,7 @@ export class Library implements ILibrary {
   /**
    * Remove a reference by ID
    */
-  removeById(id: string): boolean {
+  async removeById(id: string): Promise<boolean> {
     const ref = this.idIndex.get(id);
     if (!ref) {
       return false;
@@ -135,7 +135,7 @@ export class Library implements ILibrary {
    * @param updates - Partial updates to apply to the reference
    * @returns true if the reference was found and updated, false otherwise
    */
-  updateByUuid(uuid: string, updates: Partial<CslItem>, options: UpdateOptions = {}): UpdateResult {
+  async updateByUuid(uuid: string, updates: Partial<CslItem>, options: UpdateOptions = {}): Promise<UpdateResult> {
     const ref = this.uuidIndex.get(uuid);
     if (!ref) {
       return { updated: false };
@@ -150,7 +150,7 @@ export class Library implements ILibrary {
    * @param updates - Partial updates to apply to the reference
    * @returns true if the reference was found and updated, false otherwise
    */
-  updateById(id: string, updates: Partial<CslItem>, options: UpdateOptions = {}): UpdateResult {
+  async updateById(id: string, updates: Partial<CslItem>, options: UpdateOptions = {}): Promise<UpdateResult> {
     const ref = this.idIndex.get(id);
     if (!ref) {
       return { updated: false };
@@ -162,14 +162,14 @@ export class Library implements ILibrary {
   /**
    * Find a reference by UUID
    */
-  findByUuid(uuid: string): CslItem | undefined {
+  async findByUuid(uuid: string): Promise<CslItem | undefined> {
     return this.uuidIndex.get(uuid)?.getItem();
   }
 
   /**
    * Find a reference by ID
    */
-  findById(id: string): CslItem | undefined {
+  async findById(id: string): Promise<CslItem | undefined> {
     return this.idIndex.get(id)?.getItem();
   }
 
@@ -190,7 +190,7 @@ export class Library implements ILibrary {
   /**
    * Get all references
    */
-  getAll(): CslItem[] {
+  async getAll(): Promise<CslItem[]> {
     return this.references.map((ref) => ref.getItem());
   }
 

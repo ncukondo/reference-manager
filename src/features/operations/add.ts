@@ -88,14 +88,14 @@ export async function addReferences(
   const importResult = await importFromInputs(inputs, importOptions);
 
   // Get existing items for duplicate/collision checks (getAll now returns CslItem[] directly)
-  const existingItems = library.getAll();
+  const existingItems = await library.getAll();
 
   // Track IDs we've added in this batch (for collision detection within batch)
   const addedIds = new Set<string>();
 
   // 2. Process each import result
   for (const result of importResult.results) {
-    const processed = processImportResult(
+    const processed = await processImportResult(
       result,
       existingItems,
       addedIds,
@@ -145,13 +145,13 @@ type ProcessResult =
 /**
  * Process a single import result
  */
-function processImportResult(
+async function processImportResult(
   result: ImportItemResult,
   existingItems: CslItem[],
   addedIds: Set<string>,
   force: boolean,
   library: ILibrary
-): ProcessResult {
+): Promise<ProcessResult> {
   if (!result.success) {
     return { type: "failed", item: { source: result.source, error: result.error } };
   }
@@ -177,7 +177,7 @@ function processImportResult(
   const finalItem: CslItem = { ...item, id };
 
   // Add to library
-  library.add(finalItem);
+  await library.add(finalItem);
   addedIds.add(id);
 
   // Build result

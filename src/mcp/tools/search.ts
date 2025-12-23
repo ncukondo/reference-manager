@@ -25,7 +25,7 @@ export function registerSearchTool(server: McpServer, getLibrary: () => Library)
     },
     async (args: SearchToolParams) => {
       const library = getLibrary();
-      const result = searchReferences(library, {
+      const result = await searchReferences(library, {
         query: args.query,
         format: "pretty",
       });

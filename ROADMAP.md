@@ -154,35 +154,57 @@ Currently fulltext logic is in `cli/commands/fulltext.ts`. Move core logic to `f
 
 Introduce `ILibrary` interface so that both `Library` (local) and `ServerClient` (HTTP) can be used interchangeably with operations. This eliminates duplicate logic in CLI commands.
 
-Key design decision:
+Key design decisions:
 - ILibrary methods return CslItem directly (not Reference)
+- **All ILibrary methods are async** (to support HTTP-based ServerClient)
 - Library internally still uses Reference for ID generation and indexing
 - findByDoi/findByPmid remain Library-specific (still return Reference)
 
-- [x] **12.4.6.1**: Define `ILibrary` interface
+- [x] **12.4.6.1**: Define `ILibrary` interface (sync version)
   - File: `src/core/library-interface.ts`
   - Acceptance: Interface defines common methods (findById, findByUuid, getAll, add, updateById, save, etc.)
   - Dependencies: 12.4.5.5
 
-- [x] **12.4.6.2**: Update `Library` to implement `ILibrary`
+- [x] **12.4.6.2**: Update `Library` to implement `ILibrary` (sync version)
   - File: `src/core/library.ts`
   - Acceptance: Library class implements ILibrary interface
   - Dependencies: 12.4.6.1
 
-- [ ] **12.4.6.3**: Update `ServerClient` to implement `ILibrary`
-  - File: `src/cli/server-client.ts` (not src/server/client.ts)
-  - Acceptance: ServerClient implements ILibrary interface (HTTP calls behind the scenes)
-  - Dependencies: 12.4.6.1
+- [x] **12.4.6.2a**: Make `ILibrary` interface fully async
+  - File: `src/core/library-interface.ts`
+  - Acceptance: All methods return Promise (findById, findByUuid, getAll, add, updateById, etc.)
+  - Dependencies: 12.4.6.2
 
-- [x] **12.4.6.4**: Update operations to accept `ILibrary`
+- [x] **12.4.6.2b**: Update `Library` for async `ILibrary`
+  - File: `src/core/library.ts`, `src/core/library.test.ts`
+  - Acceptance: Library methods return Promises (wrap sync operations with Promise.resolve)
+  - Dependencies: 12.4.6.2a
+
+- [x] **12.4.6.2c**: Update operations for async `ILibrary`
+  - Files: `src/features/operations/*.ts`, `src/features/operations/*.test.ts`
+  - Acceptance: All operations await ILibrary method calls
+  - Dependencies: 12.4.6.2b
+
+- [x] **12.4.6.2d**: Update consumers for async `ILibrary`
+  - Files: `src/cli/index.ts`, `src/server/routes/*.ts`, `src/mcp/*.ts`
+  - Acceptance: All consumers await ILibrary method calls
+  - Dependencies: 12.4.6.2c
+
+- [ ] **12.4.6.3**: Update `ServerClient` to implement `ILibrary`
+  - File: `src/cli/server-client.ts`
+  - Acceptance: ServerClient implements async ILibrary interface (HTTP calls behind the scenes)
+  - Dependencies: 12.4.6.2d
+
+- [x] **12.4.6.4**: Update operations to accept `ILibrary` (type parameter)
   - File: `src/features/operations/*.ts`
   - Acceptance: All operations use ILibrary instead of Library
   - Dependencies: 12.4.6.2, 12.4.6.3
+  - Note: Already done in 12.4.6.2, will need async updates in 12.4.6.2c
 
 - [ ] **12.4.6.5**: Simplify CLI fulltext commands
   - File: `src/cli/commands/fulltext.ts`, `src/cli/execution-context.ts`
   - Acceptance: CLI fulltext commands pass ILibrary to operations, no mode branching needed
-  - Dependencies: 12.4.6.4
+  - Dependencies: 12.4.6.3
 
 #### 12.4.7 Unify CLI and MCP with ILibrary
 

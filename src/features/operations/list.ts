@@ -30,9 +30,9 @@ export interface ListResult {
  * @param options - Formatting options
  * @returns Formatted strings for each reference
  */
-export function listReferences(library: ILibrary, options: ListOptions): ListResult {
+export async function listReferences(library: ILibrary, options: ListOptions): Promise<ListResult> {
   const format = options.format ?? "pretty";
-  const items = library.getAll();
+  const items = await library.getAll();
 
   switch (format) {
     case "json":

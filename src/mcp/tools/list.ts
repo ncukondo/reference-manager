@@ -27,7 +27,7 @@ export function registerListTool(server: McpServer, getLibrary: () => Library): 
     },
     async (args: ListToolParams) => {
       const library = getLibrary();
-      const result = listReferences(library, {
+      const result = await listReferences(library, {
         format: args.format ?? "pretty",
       });
 
