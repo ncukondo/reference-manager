@@ -51,7 +51,8 @@
       "Bash(npm run test:e2e:*)",
       "Bash(cat:*)",
       "Bash(gh run view:*)",
-      "WebFetch(domain:docs.npmjs.com)"
+      "WebFetch(domain:docs.npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "enableAllProjectMcpServers": true,
