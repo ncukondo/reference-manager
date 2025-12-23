@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
+import type { ILibrary } from "../../core/library-interface.js";
 
 /**
  * Options for removeReference operation
@@ -29,20 +29,17 @@ export interface RemoveResult {
  * @returns Result indicating success and the removed item
  */
 export async function removeReference(
-  library: Library,
+  library: ILibrary,
   options: RemoveOperationOptions
 ): Promise<RemoveResult> {
   const { identifier, byUuid = false } = options;
 
-  // Find the reference first
-  const reference = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  // Find the reference first (returns CslItem directly)
+  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
 
-  if (!reference) {
+  if (!item) {
     return { removed: false };
   }
-
-  // Get the item before removal
-  const item = reference.getItem();
 
   // Remove from library
   const removed = byUuid ? library.removeByUuid(identifier) : library.removeById(identifier);

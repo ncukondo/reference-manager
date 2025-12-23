@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
+import type { ILibrary } from "../../core/library-interface.js";
 import { formatBibtex, formatPretty } from "../format/index.js";
 import { search } from "../search/matcher.js";
 import { sortResults } from "../search/sorter.js";
@@ -35,13 +35,12 @@ export interface SearchResult {
  * @param options - Search query and formatting options
  * @returns Formatted strings for each matching reference
  */
-export function searchReferences(library: Library, options: SearchOperationOptions): SearchResult {
+export function searchReferences(library: ILibrary, options: SearchOperationOptions): SearchResult {
   const format = options.format ?? "pretty";
   const query = options.query;
 
   // Get all references
-  const references = library.getAll();
-  const allItems = references.map((ref) => ref.getItem());
+  const allItems = library.getAll();
 
   // If query is empty, return all items
   let matchedItems: CslItem[];

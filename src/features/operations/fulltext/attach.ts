@@ -7,7 +7,7 @@ import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
-import type { Library } from "../../../core/library.js";
+import type { ILibrary } from "../../../core/library-interface.js";
 import { FulltextIOError, FulltextManager, type FulltextType } from "../../fulltext/index.js";
 import { updateReference } from "../update.js";
 
@@ -171,7 +171,7 @@ async function performAttach(
  * @returns Result of the attach operation
  */
 export async function fulltextAttach(
-  library: Library,
+  library: ILibrary,
   options: FulltextAttachOptions
 ): Promise<FulltextAttachResult> {
   const {
@@ -185,9 +185,8 @@ export async function fulltextAttach(
     stdinContent,
   } = options;
 
-  // Find reference
-  const ref = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
-  const item = ref?.getItem();
+  // Find reference (returns CslItem directly)
+  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };

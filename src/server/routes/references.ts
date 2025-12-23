@@ -11,35 +11,34 @@ import { updateReference } from "../../features/operations/update.js";
 export function createReferencesRoute(library: Library) {
   const route = new Hono();
 
-  // GET / - Get all references
+  // GET / - Get all references (getAll now returns CslItem[] directly)
   route.get("/", (c) => {
-    const references = library.getAll();
-    const items = references.map((ref) => ref.getItem());
+    const items = library.getAll();
     return c.json(items);
   });
 
   // GET /uuid/:uuid - Get reference by UUID
   route.get("/uuid/:uuid", (c) => {
     const uuid = c.req.param("uuid");
-    const ref = library.findByUuid(uuid);
+    const item = library.findByUuid(uuid);
 
-    if (!ref) {
+    if (!item) {
       return c.json({ error: "Reference not found" }, 404);
     }
 
-    return c.json(ref.getItem());
+    return c.json(item);
   });
 
   // GET /id/:id - Get reference by citation ID
   route.get("/id/:id", (c) => {
     const id = c.req.param("id");
-    const ref = library.findById(id);
+    const item = library.findById(id);
 
-    if (!ref) {
+    if (!item) {
       return c.json({ error: "Reference not found" }, 404);
     }
 
-    return c.json(ref.getItem());
+    return c.json(item);
   });
 
   // POST / - Create new reference
@@ -50,15 +49,15 @@ export function createReferencesRoute(library: Library) {
       // Create and add reference (library.add handles validation)
       library.add(body);
 
-      // Find the newly added reference by UUID (it was just added)
-      const allRefs = library.getAll();
-      const addedRef = allRefs[allRefs.length - 1];
+      // Find the newly added item (it was just added, so it's the last one)
+      const allItems = library.getAll();
+      const addedItem = allItems[allItems.length - 1];
 
-      if (!addedRef) {
+      if (!addedItem) {
         return c.json({ error: "Failed to add reference" }, 500);
       }
 
-      return c.json(addedRef.getItem(), 201);
+      return c.json(addedItem, 201);
     } catch (error) {
       return c.json(
         {

@@ -1,6 +1,6 @@
 import { isBuiltinStyle } from "../../config/csl-styles.js";
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
+import type { ILibrary } from "../../core/library-interface.js";
 import {
   formatBibliography,
   formatBibliographyCSL,
@@ -85,15 +85,15 @@ function formatCitation(item: CslItem, inText: boolean, options: FormatOptions):
  * Generate citation for a single identifier.
  */
 function generateCitationForIdentifier(
-  library: Library,
+  library: ILibrary,
   identifier: string,
   byUuid: boolean,
   inText: boolean,
   options: FormatOptions
 ): CiteItemResult {
-  const reference = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
+  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
 
-  if (!reference) {
+  if (!item) {
     const lookupType = byUuid ? "UUID" : "ID";
     return {
       success: false,
@@ -102,7 +102,6 @@ function generateCitationForIdentifier(
     };
   }
 
-  const item = reference.getItem();
   const citation = formatCitation(item, inText, options);
 
   return {
@@ -120,7 +119,7 @@ function generateCitationForIdentifier(
  * @returns Results array with citation or error for each identifier
  */
 export async function citeReferences(
-  library: Library,
+  library: ILibrary,
   options: CiteOperationOptions
 ): Promise<CiteResult> {
   const { identifiers, byUuid = false, inText = false, style, cslFile, locale, format } = options;

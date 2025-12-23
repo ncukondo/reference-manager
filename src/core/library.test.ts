@@ -62,22 +62,22 @@ describe("Library", () => {
 
       const library = await Library.load(testFilePath);
 
-      // Check UUID index
-      const ref1 = library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
-      expect(ref1).toBeDefined();
-      expect(ref1?.getId()).toBe("smith-2023");
+      // Check UUID index (findByUuid now returns CslItem directly)
+      const item1 = library.findByUuid("550e8400-e29b-41d4-a716-446655440001");
+      expect(item1).toBeDefined();
+      expect(item1?.id).toBe("smith-2023");
 
-      // Check ID index
-      const ref2 = library.findById("tanaka-2022");
-      expect(ref2).toBeDefined();
-      expect(ref2?.getTitle()).toBe("Deep Learning for Image Recognition");
+      // Check ID index (findById now returns CslItem directly)
+      const item2 = library.findById("tanaka-2022");
+      expect(item2).toBeDefined();
+      expect(item2?.title).toBe("Deep Learning for Image Recognition");
 
-      // Check DOI index
+      // Check DOI index (findByDoi still returns Reference)
       const ref3 = library.findByDoi("10.1234/jmi.2023.0045");
       expect(ref3).toBeDefined();
       expect(ref3?.getId()).toBe("smith-2023");
 
-      // Check PMID index
+      // Check PMID index (findByPmid still returns Reference)
       const ref4 = library.findByPmid("12345678");
       expect(ref4).toBeDefined();
       expect(ref4?.getId()).toBe("smith-2023");

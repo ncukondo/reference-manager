@@ -2,16 +2,17 @@ import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
-import type { UpdateOptions, UpdateResult } from "./library-interface.js";
+import type { ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
 import { Reference } from "./reference";
 
 // Re-export types from library-interface for backward compatibility
-export type { UpdateOptions, UpdateResult } from "./library-interface.js";
+export type { ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
 
 /**
- * Library manager for CSL-JSON references
+ * Library manager for CSL-JSON references.
+ * Implements ILibrary interface for use with operations layer.
  */
-export class Library {
+export class Library implements ILibrary {
   private filePath: string;
   private references: Reference[] = [];
   private currentHash: string | null = null;
@@ -161,15 +162,15 @@ export class Library {
   /**
    * Find a reference by UUID
    */
-  findByUuid(uuid: string): Reference | undefined {
-    return this.uuidIndex.get(uuid);
+  findByUuid(uuid: string): CslItem | undefined {
+    return this.uuidIndex.get(uuid)?.getItem();
   }
 
   /**
    * Find a reference by ID
    */
-  findById(id: string): Reference | undefined {
-    return this.idIndex.get(id);
+  findById(id: string): CslItem | undefined {
+    return this.idIndex.get(id)?.getItem();
   }
 
   /**
@@ -189,8 +190,8 @@ export class Library {
   /**
    * Get all references
    */
-  getAll(): Reference[] {
-    return [...this.references];
+  getAll(): CslItem[] {
+    return this.references.map((ref) => ref.getItem());
   }
 
   /**

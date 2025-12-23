@@ -20,8 +20,8 @@ export function registerReferencesResource(server: McpServer, getLibrary: () => 
     },
     async (uri) => {
       const library = getLibrary();
-      const references = library.getAll();
-      const items = references.map((ref) => ref.getItem());
+      // getAll() now returns CslItem[] directly
+      const items = library.getAll();
 
       return {
         contents: [
@@ -47,12 +47,13 @@ export function registerReferenceResource(server: McpServer, getLibrary: () => L
   const template = new ResourceTemplate("library://reference/{id}", {
     list: async () => {
       const library = getLibrary();
-      const references = library.getAll();
+      // getAll() now returns CslItem[] directly
+      const items = library.getAll();
 
       return {
-        resources: references.map((ref) => ({
-          uri: `library://reference/${ref.getId()}`,
-          name: ref.getId(),
+        resources: items.map((item) => ({
+          uri: `library://reference/${item.id}`,
+          name: item.id,
         })),
       };
     },
@@ -68,9 +69,10 @@ export function registerReferenceResource(server: McpServer, getLibrary: () => L
     async (uri, variables) => {
       const library = getLibrary();
       const id = variables.id as string;
-      const reference = library.findById(id);
+      // findById() now returns CslItem directly
+      const item = library.findById(id);
 
-      if (!reference) {
+      if (!item) {
         throw new Error(`Reference not found: ${id}`);
       }
 
@@ -79,7 +81,7 @@ export function registerReferenceResource(server: McpServer, getLibrary: () => L
           {
             uri: uri.href,
             mimeType: "application/json",
-            text: JSON.stringify(reference.getItem(), null, 2),
+            text: JSON.stringify(item, null, 2),
           },
         ],
       };

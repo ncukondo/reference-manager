@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
+import type { ILibrary } from "../../core/library-interface.js";
 import { detectDuplicate } from "../duplicate/detector.js";
 import type { InputFormat } from "../import/detector.js";
 import type { PubmedConfig } from "../import/fetcher.js";
@@ -76,7 +76,7 @@ export interface AddReferencesResult {
  */
 export async function addReferences(
   inputs: string[],
-  library: Library,
+  library: ILibrary,
   options: AddReferencesOptions
 ): Promise<AddReferencesResult> {
   const added: AddedItem[] = [];
@@ -87,8 +87,8 @@ export async function addReferences(
   const importOptions = buildImportOptions(options);
   const importResult = await importFromInputs(inputs, importOptions);
 
-  // Get existing items for duplicate/collision checks
-  const existingItems = library.getAll().map((ref) => ref.getItem());
+  // Get existing items for duplicate/collision checks (getAll now returns CslItem[] directly)
+  const existingItems = library.getAll();
 
   // Track IDs we've added in this batch (for collision detection within batch)
   const addedIds = new Set<string>();
@@ -150,7 +150,7 @@ function processImportResult(
   existingItems: CslItem[],
   addedIds: Set<string>,
   force: boolean,
-  library: Library
+  library: ILibrary
 ): ProcessResult {
   if (!result.success) {
     return { type: "failed", item: { source: result.source, error: result.error } };

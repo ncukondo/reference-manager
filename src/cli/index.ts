@@ -265,10 +265,10 @@ async function findReferenceToRemove(
     return item ?? undefined;
   }
 
-  const ref = byUuid
+  // findById/findByUuid now return CslItem directly
+  return byUuid
     ? context.library.findByUuid(identifier)
     : context.library.findById(identifier);
-  return ref?.getItem();
 }
 
 async function confirmRemoval(

@@ -3,7 +3,7 @@
  */
 
 import type { CslItem } from "../../../core/csl-json/types.js";
-import type { Library } from "../../../core/library.js";
+import type { ILibrary } from "../../../core/library-interface.js";
 import {
   FulltextIOError,
   FulltextManager,
@@ -97,14 +97,13 @@ function handleDetachError(error: unknown): FulltextDetachResult {
  * @returns Result of the detach operation
  */
 export async function fulltextDetach(
-  library: Library,
+  library: ILibrary,
   options: FulltextDetachOptions
 ): Promise<FulltextDetachResult> {
   const { identifier, type, delete: deleteFile, byUuid = false, fulltextDirectory } = options;
 
-  // Find reference
-  const ref = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
-  const item = ref?.getItem();
+  // Find reference (returns CslItem directly)
+  const item = byUuid ? library.findByUuid(identifier) : library.findById(identifier);
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
