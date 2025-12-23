@@ -190,7 +190,7 @@ describe("References Route", () => {
       const addedItem = (await library.getAll())[0];
       const uuid = addedItem.custom?.uuid;
 
-      const updatedData = {
+      const updates = {
         type: "article-journal",
         title: "Updated Title",
         author: [{ family: "Doe", given: "John" }],
@@ -200,7 +200,7 @@ describe("References Route", () => {
       const req = new Request(`http://localhost/uuid/${uuid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify({ updates }),
       });
       const res = await route.fetch(req);
 
@@ -215,7 +215,7 @@ describe("References Route", () => {
     });
 
     it("should return 404 for non-existent UUID", async () => {
-      const updatedData = {
+      const updates = {
         type: "article-journal",
         title: "Updated Title",
       };
@@ -223,7 +223,7 @@ describe("References Route", () => {
       const req = new Request("http://localhost/uuid/00000000-0000-0000-0000-000000000000", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify({ updates }),
       });
       const res = await route.fetch(req);
 
@@ -245,14 +245,14 @@ describe("References Route", () => {
       const addedItem = (await library.getAll())[0];
       const id = addedItem.id;
 
-      const updatedData = {
+      const updates = {
         title: "Updated Title",
       };
 
       const req = new Request(`http://localhost/id/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify({ updates }),
       });
       const res = await route.fetch(req);
 
@@ -267,14 +267,14 @@ describe("References Route", () => {
     });
 
     it("should return 404 for non-existent ID", async () => {
-      const updatedData = {
+      const updates = {
         title: "Updated Title",
       };
 
       const req = new Request("http://localhost/id/non-existent-id", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify({ updates }),
       });
       const res = await route.fetch(req);
 

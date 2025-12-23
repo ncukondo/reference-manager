@@ -70,6 +70,7 @@ export function createReferencesRoute(library: Library) {
   });
 
   // PUT /uuid/:uuid - Update reference by UUID
+  // Request body: { updates: Partial<CslItem>, onIdCollision?: "fail" | "suffix" }
   route.put("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
 
@@ -84,12 +85,21 @@ export function createReferencesRoute(library: Library) {
       return c.json({ error: "Request body must be an object" }, 400);
     }
 
+    const { updates, onIdCollision } = body as {
+      updates?: Partial<import("../../core/csl-json/types.js").CslItem>;
+      onIdCollision?: "fail" | "suffix";
+    };
+
+    if (!updates || typeof updates !== "object") {
+      return c.json({ error: "Request body must contain 'updates' object" }, 400);
+    }
+
     // Use updateReference operation
     const result = await updateReference(library, {
       identifier: uuid,
       byUuid: true,
-      updates: body as Partial<import("../../core/csl-json/types.js").CslItem>,
-      onIdCollision: "suffix",
+      updates,
+      onIdCollision: onIdCollision ?? "suffix",
     });
 
     // Return operation result with appropriate status code
@@ -102,6 +112,7 @@ export function createReferencesRoute(library: Library) {
   });
 
   // PUT /id/:id - Update reference by citation ID
+  // Request body: { updates: Partial<CslItem>, onIdCollision?: "fail" | "suffix" }
   route.put("/id/:id", async (c) => {
     const id = c.req.param("id");
 
@@ -116,12 +127,21 @@ export function createReferencesRoute(library: Library) {
       return c.json({ error: "Request body must be an object" }, 400);
     }
 
+    const { updates, onIdCollision } = body as {
+      updates?: Partial<import("../../core/csl-json/types.js").CslItem>;
+      onIdCollision?: "fail" | "suffix";
+    };
+
+    if (!updates || typeof updates !== "object") {
+      return c.json({ error: "Request body must contain 'updates' object" }, 400);
+    }
+
     // Use updateReference operation with byUuid: false
     const result = await updateReference(library, {
       identifier: id,
       byUuid: false,
-      updates: body as Partial<import("../../core/csl-json/types.js").CslItem>,
-      onIdCollision: "suffix",
+      updates,
+      onIdCollision: onIdCollision ?? "suffix",
     });
 
     // Return operation result with appropriate status code

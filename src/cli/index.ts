@@ -261,8 +261,9 @@ async function findReferenceToRemove(
   context: ExecutionContext
 ): Promise<CslItem | undefined> {
   if (context.type === "server") {
-    const item = await context.client.find(identifier, { byUuid });
-    return item ?? undefined;
+    return byUuid
+      ? context.client.findByUuid(identifier)
+      : context.client.findById(identifier);
   }
 
   // findById/findByUuid now return CslItem directly

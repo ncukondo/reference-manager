@@ -191,9 +191,46 @@ Key design decisions:
   - Dependencies: 12.4.6.2c
 
 - [ ] **12.4.6.3**: Update `ServerClient` to implement `ILibrary`
-  - File: `src/cli/server-client.ts`
-  - Acceptance: ServerClient implements async ILibrary interface (HTTP calls behind the scenes)
   - Dependencies: 12.4.6.2d
+
+  - [x] **12.4.6.3a**: Extend server PUT endpoints for onIdCollision option
+    - File: `src/server/routes/references.ts`, `src/server/routes/references.test.ts`
+    - Acceptance: PUT endpoints accept `{ updates, onIdCollision? }` body format
+
+  - [x] **12.4.6.3b**: Add ILibrary methods to ServerClient
+    - File: `src/cli/server-client.ts`
+    - Acceptance: ServerClient has findById, findByUuid, updateById, updateByUuid, removeById, removeByUuid, save
+    - Note: Currently UpdateResult lacks `item` field, causing performance issue
+
+  - [ ] **12.4.6.3c**: Add `item` field to ILibrary.UpdateResult
+    - File: `src/core/library-interface.ts`
+    - Acceptance: UpdateResult includes `item?: CslItem` for returning updated item
+
+  - [ ] **12.4.6.3d**: Update Library.updateById/updateByUuid to return item
+    - File: `src/core/library.ts`, `src/core/library.test.ts`
+    - Acceptance: Library update methods return item in UpdateResult
+    - Dependencies: 12.4.6.3c
+
+  - [ ] **12.4.6.3e**: Update ServerClient.updateById/updateByUuid to return item
+    - File: `src/cli/server-client.ts`
+    - Acceptance: ServerClient returns item from server response (1 HTTP request)
+    - Dependencies: 12.4.6.3c
+
+  - [ ] **12.4.6.3f**: Simplify updateReference operation
+    - File: `src/features/operations/update.ts`, `src/features/operations/update.test.ts`
+    - Acceptance: Remove redundant findById call, use item from UpdateResult
+    - Dependencies: 12.4.6.3d, 12.4.6.3e
+
+  - [ ] **12.4.6.3g**: Update CLI commands for new ILibrary methods
+    - File: `src/cli/commands/update.ts`, `src/cli/commands/remove.ts`
+    - Acceptance: CLI commands use ILibrary methods directly
+    - Dependencies: 12.4.6.3f
+    - Note: src/cli/index.ts and fulltext.ts already updated
+
+  - [ ] **12.4.6.3h**: Update server-client.test.ts for new API
+    - File: `src/cli/server-client.test.ts`
+    - Acceptance: Tests updated for new method signatures
+    - Dependencies: 12.4.6.3g
 
 - [x] **12.4.6.4**: Update operations to accept `ILibrary` (type parameter)
   - File: `src/features/operations/*.ts`

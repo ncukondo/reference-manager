@@ -160,7 +160,10 @@ async function findReferenceServer(
   context: Extract<ExecutionContext, { type: "server" }>,
   byUuid: boolean
 ): Promise<CslItem | null> {
-  return context.client.find(identifier, { byUuid });
+  const result = byUuid
+    ? await context.client.findByUuid(identifier)
+    : await context.client.findById(identifier);
+  return result ?? null;
 }
 
 async function updateFulltextMetadataServer(
@@ -170,7 +173,11 @@ async function updateFulltextMetadataServer(
   byUuid: boolean
 ): Promise<void> {
   const updates = { custom: { fulltext } } as Partial<CslItem>;
-  await context.client.update(identifier, updates, { byUuid });
+  if (byUuid) {
+    await context.client.updateByUuid(identifier, updates);
+  } else {
+    await context.client.updateById(identifier, updates);
+  }
 }
 
 async function cleanupTempDir(tempDir: string | undefined): Promise<void> {

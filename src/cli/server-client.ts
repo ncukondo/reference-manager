@@ -1,4 +1,5 @@
 import type { CslItem } from "../core/csl-json/types.js";
+import type { ILibrary, UpdateOptions, UpdateResult } from "../core/library-interface.js";
 import type { AddReferencesResult } from "../features/operations/add.js";
 import type { CiteResult } from "../features/operations/cite.js";
 import type { ListOptions, ListResult } from "../features/operations/list.js";
@@ -30,8 +31,12 @@ export interface CiteOptions {
 /**
  * Client for communicating with the reference-manager HTTP server.
  */
-export class ServerClient {
+export class ServerClient implements ILibrary {
   constructor(private baseUrl: string) {}
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ILibrary Query methods
+  // ─────────────────────────────────────────────────────────────────────────
 
   /**
    * Get all references from the server.
@@ -49,21 +54,16 @@ export class ServerClient {
   }
 
   /**
-   * Find reference by identifier.
-   * @param identifier - Citation ID or UUID
-   * @param options - Options object
-   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
-   * @returns CSL item or null if not found
+   * Find reference by citation ID.
+   * @param id - Citation ID
+   * @returns CSL item or undefined if not found
    */
-  async find(identifier: string, options?: { byUuid?: boolean }): Promise<CslItem | null> {
-    const path = options?.byUuid
-      ? `/api/references/uuid/${identifier}`
-      : `/api/references/id/${identifier}`;
-    const url = `${this.baseUrl}${path}`;
+  async findById(id: string): Promise<CslItem | undefined> {
+    const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
     const response = await fetch(url);
 
     if (response.status === 404) {
-      return null;
+      return undefined;
     }
 
     if (!response.ok) {
@@ -74,11 +74,34 @@ export class ServerClient {
   }
 
   /**
+   * Find reference by UUID.
+   * @param uuid - UUID
+   * @returns CSL item or undefined if not found
+   */
+  async findByUuid(uuid: string): Promise<CslItem | undefined> {
+    const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;
+    const response = await fetch(url);
+
+    if (response.status === 404) {
+      return undefined;
+    }
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as CslItem;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ILibrary Write methods
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
    * Add new reference to the library.
    * @param item - CSL item to add
-   * @returns Created CSL item with UUID
    */
-  async add(item: CslItem): Promise<CslItem> {
+  async add(item: CslItem): Promise<void> {
     const url = `${this.baseUrl}/api/references`;
     const response = await fetch(url, {
       method: "POST",
@@ -90,51 +113,81 @@ export class ServerClient {
       throw new Error(await response.text());
     }
 
-    return (await response.json()) as CslItem;
+    // Consume response but don't return (ILibrary.add returns void)
+    await response.json();
   }
 
   /**
-   * Update existing reference.
-   * @param identifier - Citation ID or UUID
+   * Update reference by citation ID.
+   * @param id - Citation ID
    * @param updates - Partial CSL item with fields to update
-   * @param options - Options object
-   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
-   * @returns Update operation result
+   * @param options - Update options
+   * @returns Update result
    */
-  async update(
-    identifier: string,
+  async updateById(
+    id: string,
     updates: Partial<CslItem>,
-    options?: { byUuid?: boolean }
-  ): Promise<UpdateOperationResult> {
-    const path = options?.byUuid
-      ? `/api/references/uuid/${identifier}`
-      : `/api/references/id/${identifier}`;
-    const url = `${this.baseUrl}${path}`;
+    options?: UpdateOptions
+  ): Promise<UpdateResult> {
+    const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
     const response = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ updates, onIdCollision: options?.onIdCollision }),
     });
 
     if (!response.ok && response.status !== 404 && response.status !== 409) {
       throw new Error(await response.text());
     }
 
-    return (await response.json()) as UpdateOperationResult;
+    const result = (await response.json()) as UpdateOperationResult;
+    // Return UpdateResult (without item), only include defined properties
+    const updateResult: UpdateResult = { updated: result.updated };
+    if (result.idCollision !== undefined) updateResult.idCollision = result.idCollision;
+    if (result.idChanged !== undefined) updateResult.idChanged = result.idChanged;
+    if (result.newId !== undefined) updateResult.newId = result.newId;
+    return updateResult;
   }
 
   /**
-   * Remove reference by identifier.
-   * @param identifier - Citation ID or UUID
-   * @param options - Options object
-   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
-   * @returns Remove operation result
+   * Update reference by UUID.
+   * @param uuid - UUID
+   * @param updates - Partial CSL item with fields to update
+   * @param options - Update options
+   * @returns Update result
    */
-  async remove(identifier: string, options?: { byUuid?: boolean }): Promise<RemoveResult> {
-    const path = options?.byUuid
-      ? `/api/references/uuid/${identifier}`
-      : `/api/references/id/${identifier}`;
-    const url = `${this.baseUrl}${path}`;
+  async updateByUuid(
+    uuid: string,
+    updates: Partial<CslItem>,
+    options?: UpdateOptions
+  ): Promise<UpdateResult> {
+    const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ updates, onIdCollision: options?.onIdCollision }),
+    });
+
+    if (!response.ok && response.status !== 404 && response.status !== 409) {
+      throw new Error(await response.text());
+    }
+
+    const result = (await response.json()) as UpdateOperationResult;
+    // Return UpdateResult (without item), only include defined properties
+    const updateResult: UpdateResult = { updated: result.updated };
+    if (result.idCollision !== undefined) updateResult.idCollision = result.idCollision;
+    if (result.idChanged !== undefined) updateResult.idChanged = result.idChanged;
+    if (result.newId !== undefined) updateResult.newId = result.newId;
+    return updateResult;
+  }
+
+  /**
+   * Remove reference by citation ID.
+   * @param id - Citation ID
+   * @returns true if removed, false if not found
+   */
+  async removeById(id: string): Promise<boolean> {
+    const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
     const response = await fetch(url, {
       method: "DELETE",
     });
@@ -143,8 +196,43 @@ export class ServerClient {
       throw new Error(await response.text());
     }
 
-    return (await response.json()) as RemoveResult;
+    const result = (await response.json()) as RemoveResult;
+    return result.removed;
   }
+
+  /**
+   * Remove reference by UUID.
+   * @param uuid - UUID
+   * @returns true if removed, false if not found
+   */
+  async removeByUuid(uuid: string): Promise<boolean> {
+    const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+
+    if (!response.ok && response.status !== 404) {
+      throw new Error(await response.text());
+    }
+
+    const result = (await response.json()) as RemoveResult;
+    return result.removed;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ILibrary Persistence
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Save is a no-op for ServerClient (HTTP requests are already persisted).
+   */
+  async save(): Promise<void> {
+    // No-op: HTTP requests are immediately persisted by the server
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // High-level methods (not part of ILibrary)
+  // ─────────────────────────────────────────────────────────────────────────
 
   /**
    * Add references from various input formats.
