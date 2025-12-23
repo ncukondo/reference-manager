@@ -100,22 +100,22 @@ Write operation tools.
 
 MCP resources for library data access.
 
-- [ ] **12.4.1**: Implement `library://references` resource
+- [x] **12.4.1**: Implement `library://references` resource
   - File: `src/mcp/resources/library.ts`, `src/mcp/resources/library.test.ts`
   - Acceptance: Returns all references as CSL-JSON
   - Dependencies: 12.1.3
 
-- [ ] **12.4.2**: Implement `library://reference/{id}` resource
+- [x] **12.4.2**: Implement `library://reference/{id}` resource
   - File: `src/mcp/resources/library.ts`
   - Acceptance: Returns single reference by ID
   - Dependencies: 12.4.1
 
-- [ ] **12.4.3**: Implement `library://styles` resource
+- [x] **12.4.3**: Implement `library://styles` resource
   - File: `src/mcp/resources/library.ts`
   - Acceptance: Returns available citation styles
   - Dependencies: 12.4.1
 
-- [ ] **12.4.4**: Register all resources
+- [x] **12.4.4**: Register all resources
   - File: `src/mcp/resources/index.ts`
   - Acceptance: All resources registered with McpServer
   - Dependencies: 12.4.1, 12.4.2, 12.4.3
