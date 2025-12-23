@@ -279,25 +279,38 @@ describe("Library", () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
     });
 
-    it("should update reference by ID", async () => {
+    it("should update reference by ID (default)", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = await library.updateById("smith-2023", { title: "Updated Title" });
+      const result = await library.update("smith-2023", { title: "Updated Title" });
 
       expect(result.updated).toBe(true);
-      const item = await library.findById("smith-2023");
-      expect(item?.title).toBe("Updated Title");
+      expect(result.item).toBeDefined();
+      expect(result.item?.title).toBe("Updated Title");
+      expect(result.item?.id).toBe("smith-2023");
     });
 
-    it("should update reference by UUID", async () => {
+    it("should update reference by UUID when byUuid=true", async () => {
       const library = await Library.load(testFilePath);
       const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-      const result = await library.updateByUuid(uuid, { title: "Updated Title" });
+      const result = await library.update(uuid, { title: "Updated Title" }, { byUuid: true });
 
       expect(result.updated).toBe(true);
-      const item = await library.findByUuid(uuid);
-      expect(item?.title).toBe("Updated Title");
+      expect(result.item).toBeDefined();
+      expect(result.item?.title).toBe("Updated Title");
+      expect(result.item?.custom?.uuid).toBe(uuid);
+    });
+
+    it("should return item in UpdateResult", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = await library.update("smith-2023", { title: "Updated Title" });
+
+      expect(result.item).toBeDefined();
+      expect(result.item?.title).toBe("Updated Title");
+      expect(result.item?.author).toEqual([{ family: "Smith", given: "John" }]);
+      expect(result.item?.DOI).toBe("10.1234/jmi.2023.0045");
     });
 
     it("should preserve uuid and created_at when updating", async () => {
@@ -306,11 +319,10 @@ describe("Library", () => {
       const originalUuid = originalItem?.custom?.uuid;
       const originalCreatedAt = originalItem?.custom?.created_at;
 
-      await library.updateById("smith-2023", { title: "Updated Title" });
+      const result = await library.update("smith-2023", { title: "Updated Title" });
 
-      const updatedItem = await library.findById("smith-2023");
-      expect(updatedItem?.custom?.uuid).toBe(originalUuid);
-      expect(updatedItem?.custom?.created_at).toBe(originalCreatedAt);
+      expect(result.item?.custom?.uuid).toBe(originalUuid);
+      expect(result.item?.custom?.created_at).toBe(originalCreatedAt);
     });
 
     it("should update timestamp when updating", async () => {
@@ -321,19 +333,19 @@ describe("Library", () => {
       // Wait a bit to ensure timestamp changes
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      await library.updateById("smith-2023", { title: "Updated Title" });
+      const result = await library.update("smith-2023", { title: "Updated Title" });
 
-      const updatedItem = await library.findById("smith-2023");
-      expect(updatedItem?.custom?.timestamp).not.toBe(originalTimestamp);
+      expect(result.item?.custom?.timestamp).not.toBe(originalTimestamp);
     });
 
     it("should update all indices when ID changes", async () => {
       const library = await Library.load(testFilePath);
       const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-      const result = await library.updateById("smith-2023", { id: "smith-2023-updated" });
+      const result = await library.update("smith-2023", { id: "smith-2023-updated" });
 
       expect(result.updated).toBe(true);
+      expect(result.item?.id).toBe("smith-2023-updated");
       expect(await library.findById("smith-2023")).toBeUndefined();
       expect(await library.findById("smith-2023-updated")).toBeDefined();
       expect((await library.findByUuid(uuid))?.id).toBe("smith-2023-updated");
@@ -342,20 +354,24 @@ describe("Library", () => {
     it("should return updated=false when updating non-existent ID", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = await library.updateById("non-existent", { title: "Updated" });
+      const result = await library.update("non-existent", { title: "Updated" });
 
       expect(result.updated).toBe(false);
+      expect(result.item).toBeUndefined();
       expect(await library.getAll()).toHaveLength(2);
     });
 
     it("should return updated=false when updating non-existent UUID", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = await library.updateByUuid("00000000-0000-0000-0000-000000000000", {
-        title: "Updated",
-      });
+      const result = await library.update(
+        "00000000-0000-0000-0000-000000000000",
+        { title: "Updated" },
+        { byUuid: true }
+      );
 
       expect(result.updated).toBe(false);
+      expect(result.item).toBeUndefined();
       expect(await library.getAll()).toHaveLength(2);
     });
 
@@ -364,10 +380,11 @@ describe("Library", () => {
         const library = await Library.load(testFilePath);
 
         // Try to change smith-2023's ID to tanaka-2022 (which already exists)
-        const result = await library.updateById("smith-2023", { id: "tanaka-2022" });
+        const result = await library.update("smith-2023", { id: "tanaka-2022" });
 
         expect(result.updated).toBe(false);
         expect(result.idCollision).toBe(true);
+        expect(result.item).toBeUndefined();
         // Original reference should be unchanged
         expect(await library.findById("smith-2023")).toBeDefined();
         expect((await library.findById("tanaka-2022"))?.title).toBe("Deep Learning for Image Recognition");
@@ -376,7 +393,7 @@ describe("Library", () => {
       it("should add suffix when onIdCollision is 'suffix'", async () => {
         const library = await Library.load(testFilePath);
 
-        const result = await library.updateById(
+        const result = await library.update(
           "smith-2023",
           { id: "tanaka-2022" },
           { onIdCollision: "suffix" }
@@ -386,35 +403,36 @@ describe("Library", () => {
         expect(result.idChanged).toBe(true);
         expect(result.newId).toBeDefined();
         expect(result.newId).toMatch(/^tanaka-2022[a-z]+$/);
+        expect(result.item).toBeDefined();
+        expect(result.item?.id).toBe(result.newId);
+        expect(result.item?.title).toBe("Machine Learning in Medical Diagnosis");
         expect(await library.findById("smith-2023")).toBeUndefined();
-        const updatedItem = await library.findById(result.newId ?? "");
-        expect(updatedItem).toBeDefined();
-        expect(updatedItem?.title).toBe("Machine Learning in Medical Diagnosis");
       });
 
       it("should allow same ID (no change) without collision", async () => {
         const library = await Library.load(testFilePath);
 
-        const result = await library.updateById("smith-2023", { id: "smith-2023", title: "Updated" });
+        const result = await library.update("smith-2023", { id: "smith-2023", title: "Updated" });
 
         expect(result.updated).toBe(true);
         expect(result.idCollision).toBeUndefined();
-        expect((await library.findById("smith-2023"))?.title).toBe("Updated");
+        expect(result.item?.title).toBe("Updated");
       });
 
-      it("should work with updateByUuid and collision handling", async () => {
+      it("should work with byUuid and collision handling", async () => {
         const library = await Library.load(testFilePath);
         const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-        const result = await library.updateByUuid(
+        const result = await library.update(
           uuid,
           { id: "tanaka-2022" },
-          { onIdCollision: "suffix" }
+          { byUuid: true, onIdCollision: "suffix" }
         );
 
         expect(result.updated).toBe(true);
         expect(result.idChanged).toBe(true);
-        expect((await library.findByUuid(uuid))?.id).toBe(result.newId);
+        expect(result.item?.id).toBe(result.newId);
+        expect(result.item?.custom?.uuid).toBe(uuid);
       });
     });
   });

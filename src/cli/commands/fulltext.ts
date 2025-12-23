@@ -173,11 +173,7 @@ async function updateFulltextMetadataServer(
   byUuid: boolean
 ): Promise<void> {
   const updates = { custom: { fulltext } } as Partial<CslItem>;
-  if (byUuid) {
-    await context.client.updateByUuid(identifier, updates);
-  } else {
-    await context.client.updateById(identifier, updates);
-  }
+  await context.client.update(identifier, updates, { byUuid });
 }
 
 async function cleanupTempDir(tempDir: string | undefined): Promise<void> {

@@ -19,6 +19,8 @@ import type { CslItem } from "./csl-json/types.js";
 export interface UpdateOptions {
   /** How to handle ID collision: 'fail' (default) or 'suffix' */
   onIdCollision?: "fail" | "suffix";
+  /** If true, treat the identifier as UUID; otherwise treat as citation ID (default: false) */
+  byUuid?: boolean;
 }
 
 /**
@@ -27,6 +29,8 @@ export interface UpdateOptions {
 export interface UpdateResult {
   /** Whether the update was successful */
   updated: boolean;
+  /** The updated item (only when updated=true) */
+  item?: CslItem;
   /** True if ID collision occurred (only when updated=false and onIdCollision='fail') */
   idCollision?: boolean;
   /** True if the ID was changed due to collision resolution */
@@ -74,22 +78,17 @@ export interface ILibrary {
   add(item: CslItem): Promise<void>;
 
   /**
-   * Update a reference by citation ID.
-   * @param id - The citation ID of the reference to update
+   * Update a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to update
    * @param updates - Partial CSL item with fields to update
-   * @param options - Update options (e.g., ID collision handling)
-   * @returns Update result indicating success/failure and any ID changes
+   * @param options - Update options (byUuid to use UUID lookup, onIdCollision for collision handling)
+   * @returns Update result indicating success/failure, updated item, and any ID changes
    */
-  updateById(id: string, updates: Partial<CslItem>, options?: UpdateOptions): Promise<UpdateResult>;
-
-  /**
-   * Update a reference by UUID.
-   * @param uuid - The UUID of the reference to update
-   * @param updates - Partial CSL item with fields to update
-   * @param options - Update options (e.g., ID collision handling)
-   * @returns Update result indicating success/failure and any ID changes
-   */
-  updateByUuid(uuid: string, updates: Partial<CslItem>, options?: UpdateOptions): Promise<UpdateResult>;
+  update(
+    identifier: string,
+    updates: Partial<CslItem>,
+    options?: UpdateOptions
+  ): Promise<UpdateResult>;
 
   /**
    * Remove a reference by citation ID.

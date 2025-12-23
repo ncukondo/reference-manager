@@ -190,8 +190,11 @@ Key design decisions:
   - Acceptance: All consumers await ILibrary method calls
   - Dependencies: 12.4.6.2c
 
-- [ ] **12.4.6.3**: Update `ServerClient` to implement `ILibrary`
+- [ ] **12.4.6.3**: Unified `update()` method and `ServerClient` ILibrary implementation
   - Dependencies: 12.4.6.2d
+  - Note: Replaces updateById/updateByUuid with unified update() method
+  - **Status**: update() implementation complete. Remaining: 12.4.6.3g (server endpoint item return)
+  - **Known issues**: server-client.test.ts has failing tests for find()/remove() methods (not yet implemented)
 
   - [x] **12.4.6.3a**: Extend server PUT endpoints for onIdCollision option
     - File: `src/server/routes/references.ts`, `src/server/routes/references.test.ts`
@@ -199,38 +202,59 @@ Key design decisions:
 
   - [x] **12.4.6.3b**: Add ILibrary methods to ServerClient
     - File: `src/cli/server-client.ts`
-    - Acceptance: ServerClient has findById, findByUuid, updateById, updateByUuid, removeById, removeByUuid, save
-    - Note: Currently UpdateResult lacks `item` field, causing performance issue
+    - Acceptance: ServerClient has findById, findByUuid, update, removeById, removeByUuid, save
+    - Note: updateById/updateByUuid replaced with unified update() method
 
-  - [ ] **12.4.6.3c**: Add `item` field to ILibrary.UpdateResult
+  - [x] **12.4.6.3c**: Add `item` field to UpdateResult
     - File: `src/core/library-interface.ts`
     - Acceptance: UpdateResult includes `item?: CslItem` for returning updated item
 
-  - [ ] **12.4.6.3d**: Update Library.updateById/updateByUuid to return item
+  - [x] **12.4.6.3d**: Add unified `update()` to ILibrary interface
+    - File: `src/core/library-interface.ts`
+    - Acceptance: `update(idOrUuid, updates, options?: { byUuid?, onIdCollision? })` defined
+    - Note: Replaces updateById/updateByUuid (breaking change, pre-release OK)
+    - Dependencies: 12.4.6.3c
+
+  - [x] **12.4.6.3e**: Implement Library.update() with TDD
     - File: `src/core/library.ts`, `src/core/library.test.ts`
-    - Acceptance: Library update methods return item in UpdateResult
+    - Acceptance: Library.update() works with both id and uuid, returns item in UpdateResult
+    - Dependencies: 12.4.6.3d
+
+  - [x] **12.4.6.3f**: Remove Library.updateById/updateByUuid
+    - File: `src/core/library.ts`
+    - Acceptance: Old methods removed, update() is the only update method
+    - Dependencies: 12.4.6.3e
+
+  - [ ] **12.4.6.3g**: Update server PUT endpoint to return updated item
+    - File: `src/server/routes/references.ts`, `src/server/routes/references.test.ts`
+    - Acceptance: PUT response includes updated CslItem in response body
     - Dependencies: 12.4.6.3c
 
-  - [ ] **12.4.6.3e**: Update ServerClient.updateById/updateByUuid to return item
+  - [x] **12.4.6.3h**: Implement ServerClient.update()
     - File: `src/cli/server-client.ts`
-    - Acceptance: ServerClient returns item from server response (1 HTTP request)
-    - Dependencies: 12.4.6.3c
+    - Acceptance: ServerClient.update() uses single HTTP request, returns item
+    - Dependencies: 12.4.6.3d, 12.4.6.3g
+    - Note: Item currently not returned from server (pending 12.4.6.3g)
 
-  - [ ] **12.4.6.3f**: Simplify updateReference operation
+  - [x] **12.4.6.3i**: Remove ServerClient.updateById/updateByUuid
+    - File: `src/cli/server-client.ts`
+    - Acceptance: Old methods removed
+    - Dependencies: 12.4.6.3h
+
+  - [x] **12.4.6.3j**: Update updateReference operation for update()
     - File: `src/features/operations/update.ts`, `src/features/operations/update.test.ts`
-    - Acceptance: Remove redundant findById call, use item from UpdateResult
-    - Dependencies: 12.4.6.3d, 12.4.6.3e
+    - Acceptance: Use library.update() directly, remove findById/findByUuid call
+    - Dependencies: 12.4.6.3f, 12.4.6.3i
 
-  - [ ] **12.4.6.3g**: Update CLI commands for new ILibrary methods
-    - File: `src/cli/commands/update.ts`, `src/cli/commands/remove.ts`
-    - Acceptance: CLI commands use ILibrary methods directly
-    - Dependencies: 12.4.6.3f
-    - Note: src/cli/index.ts and fulltext.ts already updated
+  - [x] **12.4.6.3k**: Update fulltext.ts to use update()
+    - File: `src/cli/commands/fulltext.ts`
+    - Acceptance: updateFulltextMetadataServer uses update() with byUuid option
+    - Dependencies: 12.4.6.3j
 
-  - [ ] **12.4.6.3h**: Update server-client.test.ts for new API
+  - [x] **12.4.6.3l**: Update server-client.test.ts for new API
     - File: `src/cli/server-client.test.ts`
-    - Acceptance: Tests updated for new method signatures
-    - Dependencies: 12.4.6.3g
+    - Acceptance: Tests updated for update() method
+    - Dependencies: 12.4.6.3k
 
 - [x] **12.4.6.4**: Update operations to accept `ILibrary` (type parameter)
   - File: `src/features/operations/*.ts`

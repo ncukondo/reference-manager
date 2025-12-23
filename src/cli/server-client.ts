@@ -118,22 +118,26 @@ export class ServerClient implements ILibrary {
   }
 
   /**
-   * Update reference by citation ID.
-   * @param id - Citation ID
+   * Update reference by citation ID or UUID.
+   * @param identifier - Citation ID or UUID
    * @param updates - Partial CSL item with fields to update
-   * @param options - Update options
-   * @returns Update result
+   * @param options - Update options (byUuid to use UUID lookup, onIdCollision for collision handling)
+   * @returns Update result with updated item, success status, and any ID changes
    */
-  async updateById(
-    id: string,
+  async update(
+    identifier: string,
     updates: Partial<CslItem>,
     options?: UpdateOptions
   ): Promise<UpdateResult> {
-    const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
+    const { byUuid = false, onIdCollision } = options ?? {};
+    const url = byUuid
+      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
+
     const response = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ updates, onIdCollision: options?.onIdCollision }),
+      body: JSON.stringify({ updates, onIdCollision }),
     });
 
     if (!response.ok && response.status !== 404 && response.status !== 409) {
@@ -141,40 +145,9 @@ export class ServerClient implements ILibrary {
     }
 
     const result = (await response.json()) as UpdateOperationResult;
-    // Return UpdateResult (without item), only include defined properties
+    // Return UpdateResult with item if available
     const updateResult: UpdateResult = { updated: result.updated };
-    if (result.idCollision !== undefined) updateResult.idCollision = result.idCollision;
-    if (result.idChanged !== undefined) updateResult.idChanged = result.idChanged;
-    if (result.newId !== undefined) updateResult.newId = result.newId;
-    return updateResult;
-  }
-
-  /**
-   * Update reference by UUID.
-   * @param uuid - UUID
-   * @param updates - Partial CSL item with fields to update
-   * @param options - Update options
-   * @returns Update result
-   */
-  async updateByUuid(
-    uuid: string,
-    updates: Partial<CslItem>,
-    options?: UpdateOptions
-  ): Promise<UpdateResult> {
-    const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ updates, onIdCollision: options?.onIdCollision }),
-    });
-
-    if (!response.ok && response.status !== 404 && response.status !== 409) {
-      throw new Error(await response.text());
-    }
-
-    const result = (await response.json()) as UpdateOperationResult;
-    // Return UpdateResult (without item), only include defined properties
-    const updateResult: UpdateResult = { updated: result.updated };
+    if (result.item !== undefined) updateResult.item = result.item;
     if (result.idCollision !== undefined) updateResult.idCollision = result.idCollision;
     if (result.idChanged !== undefined) updateResult.idChanged = result.idChanged;
     if (result.newId !== undefined) updateResult.newId = result.newId;

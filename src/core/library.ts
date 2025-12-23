@@ -130,33 +130,25 @@ export class Library implements ILibrary {
   }
 
   /**
-   * Update a reference by UUID.
-   * @param uuid - The UUID of the reference to update
+   * Update a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to update
    * @param updates - Partial updates to apply to the reference
-   * @returns true if the reference was found and updated, false otherwise
+   * @param options - Update options (byUuid to use UUID lookup, onIdCollision for collision handling)
+   * @returns Update result with updated item, success status, and any ID changes
    */
-  async updateByUuid(uuid: string, updates: Partial<CslItem>, options: UpdateOptions = {}): Promise<UpdateResult> {
-    const ref = this.uuidIndex.get(uuid);
+  async update(
+    identifier: string,
+    updates: Partial<CslItem>,
+    options: UpdateOptions = {}
+  ): Promise<UpdateResult> {
+    const { byUuid = false, ...updateOptions } = options;
+    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+
     if (!ref) {
       return { updated: false };
     }
 
-    return this.updateReference(ref, updates, options);
-  }
-
-  /**
-   * Update a reference by ID.
-   * @param id - The ID of the reference to update
-   * @param updates - Partial updates to apply to the reference
-   * @returns true if the reference was found and updated, false otherwise
-   */
-  async updateById(id: string, updates: Partial<CslItem>, options: UpdateOptions = {}): Promise<UpdateResult> {
-    const ref = this.idIndex.get(id);
-    if (!ref) {
-      return { updated: false };
-    }
-
-    return this.updateReference(ref, updates, options);
+    return this.updateReference(ref, updates, updateOptions);
   }
 
   /**
@@ -281,7 +273,7 @@ export class Library implements ILibrary {
     this.references[index] = newRef;
     this.addToIndices(newRef);
 
-    const result: UpdateResult = { updated: true };
+    const result: UpdateResult = { updated: true, item: newRef.getItem() };
     if (idChanged) {
       result.idChanged = true;
       result.newId = newId;

@@ -197,7 +197,7 @@ describe("ServerClient", () => {
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ updates, onIdCollision: undefined }),
       });
       expect(result).toEqual(updateResult);
     });
@@ -223,7 +223,7 @@ describe("ServerClient", () => {
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ updates, onIdCollision: undefined }),
       });
       expect(result).toEqual(updateResult);
     });
@@ -242,7 +242,7 @@ describe("ServerClient", () => {
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ updates, onIdCollision: undefined }),
       });
     });
 

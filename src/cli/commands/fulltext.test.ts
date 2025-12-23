@@ -83,7 +83,8 @@ describe("fulltext command", () => {
   } as unknown as Library;
 
   const mockServerClient = {
-    find: vi.fn(),
+    findById: vi.fn(),
+    findByUuid: vi.fn(),
     update: vi.fn(),
   } as unknown as ServerClient;
 
@@ -314,7 +315,7 @@ describe("fulltext command", () => {
 
     describe("via server context", () => {
       it("should find reference via server client", async () => {
-        vi.mocked(mockServerClient.find).mockResolvedValue(mockItem);
+        vi.mocked(mockServerClient.findById).mockResolvedValue(mockItem);
         mockAttachFile.mockResolvedValue({
           filename: "test.pdf",
           overwritten: false,
@@ -329,7 +330,7 @@ describe("fulltext command", () => {
 
         const result = await executeFulltextAttach(options, serverContext);
 
-        expect(mockServerClient.find).toHaveBeenCalledWith("Smith-2024", { byUuid: false });
+        expect(mockServerClient.findById).toHaveBeenCalledWith("Smith-2024");
         expect(result.success).toBe(true);
       });
     });

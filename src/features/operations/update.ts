@@ -44,10 +44,8 @@ export async function updateReference(
 ): Promise<UpdateOperationResult> {
   const { identifier, byUuid = false, updates, onIdCollision = "fail" } = options;
 
-  // Update the reference
-  const updateResult = byUuid
-    ? await library.updateByUuid(identifier, updates, { onIdCollision })
-    : await library.updateById(identifier, updates, { onIdCollision });
+  // Update the reference using unified update() method
+  const updateResult = await library.update(identifier, updates, { byUuid, onIdCollision });
 
   if (!updateResult.updated) {
     const result: UpdateOperationResult = { updated: false };
@@ -60,15 +58,11 @@ export async function updateReference(
   // Save the library
   await library.save();
 
-  // Get the updated item (findById/findByUuid now returns CslItem directly)
-  const item = byUuid
-    ? await library.findByUuid(identifier)
-    : await library.findById(updateResult.newId ?? identifier);
-
+  // Build result from UpdateResult (item is now included)
   const result: UpdateOperationResult = { updated: true };
 
-  if (item) {
-    result.item = item;
+  if (updateResult.item) {
+    result.item = updateResult.item;
   }
 
   if (updateResult.idChanged && updateResult.newId) {
