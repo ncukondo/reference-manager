@@ -1,5 +1,8 @@
 /**
  * Fulltext CLI commands: attach, get, detach
+ *
+ * Standalone mode uses operations directly.
+ * Server mode maintains existing logic until ILibrary interface is implemented (see 12.4.6).
  */
 
 import { mkdtempSync, writeFileSync } from "node:fs";
@@ -13,7 +16,17 @@ import {
   FulltextNotAttachedError,
   type FulltextType,
 } from "../../features/fulltext/index.js";
-import { updateReference } from "../../features/operations/update.js";
+import {
+  type FulltextAttachResult,
+  type FulltextDetachResult,
+  type FulltextGetResult,
+  type FulltextAttachOptions as OperationAttachOptions,
+  type FulltextDetachOptions as OperationDetachOptions,
+  type FulltextGetOptions as OperationGetOptions,
+  fulltextAttach,
+  fulltextDetach,
+  fulltextGet,
+} from "../../features/operations/fulltext/index.js";
 import type { ExecutionContext } from "../execution-context.js";
 
 /**
@@ -27,21 +40,7 @@ export interface FulltextAttachOptions {
   force?: boolean;
   byUuid?: boolean;
   fulltextDirectory: string;
-  // For stdin support
   stdinContent?: Buffer;
-}
-
-/**
- * Result from fulltext attach command
- */
-export interface FulltextAttachResult {
-  success: boolean;
-  filename?: string;
-  type?: FulltextType;
-  overwritten?: boolean;
-  existingFile?: string;
-  requiresConfirmation?: boolean;
-  error?: string;
 }
 
 /**
@@ -56,19 +55,6 @@ export interface FulltextGetOptions {
 }
 
 /**
- * Result from fulltext get command
- */
-export interface FulltextGetResult {
-  success: boolean;
-  paths?: {
-    pdf?: string;
-    markdown?: string;
-  };
-  content?: Buffer;
-  error?: string;
-}
-
-/**
  * Options for fulltext detach command
  */
 export interface FulltextDetachOptions {
@@ -80,19 +66,88 @@ export interface FulltextDetachOptions {
   fulltextDirectory: string;
 }
 
+// Re-export result types
+export type { FulltextAttachResult, FulltextGetResult, FulltextDetachResult };
+
 /**
- * Result from fulltext detach command
+ * Execute fulltext attach command
  */
-export interface FulltextDetachResult {
-  success: boolean;
-  detached?: FulltextType[];
-  deleted?: FulltextType[];
-  error?: string;
+export async function executeFulltextAttach(
+  options: FulltextAttachOptions,
+  context: ExecutionContext
+): Promise<FulltextAttachResult> {
+  // Server mode: use existing logic (TODO: refactor in 12.4.6)
+  if (context.type === "server") {
+    return executeFulltextAttachServer(options, context);
+  }
+
+  // Standalone mode: use operations
+  const operationOptions: OperationAttachOptions = {
+    identifier: options.identifier,
+    filePath: options.filePath,
+    type: options.type,
+    move: options.move,
+    force: options.force,
+    byUuid: options.byUuid,
+    fulltextDirectory: options.fulltextDirectory,
+    stdinContent: options.stdinContent,
+  };
+
+  return fulltextAttach(context.library, operationOptions);
 }
 
 /**
- * Detect fulltext type from file extension
+ * Execute fulltext get command
  */
+export async function executeFulltextGet(
+  options: FulltextGetOptions,
+  context: ExecutionContext
+): Promise<FulltextGetResult> {
+  // Server mode: use existing logic (TODO: refactor in 12.4.6)
+  if (context.type === "server") {
+    return executeFulltextGetServer(options, context);
+  }
+
+  // Standalone mode: use operations
+  const operationOptions: OperationGetOptions = {
+    identifier: options.identifier,
+    type: options.type,
+    stdout: options.stdout,
+    byUuid: options.byUuid,
+    fulltextDirectory: options.fulltextDirectory,
+  };
+
+  return fulltextGet(context.library, operationOptions);
+}
+
+/**
+ * Execute fulltext detach command
+ */
+export async function executeFulltextDetach(
+  options: FulltextDetachOptions,
+  context: ExecutionContext
+): Promise<FulltextDetachResult> {
+  // Server mode: use existing logic (TODO: refactor in 12.4.6)
+  if (context.type === "server") {
+    return executeFulltextDetachServer(options, context);
+  }
+
+  // Standalone mode: use operations
+  const operationOptions: OperationDetachOptions = {
+    identifier: options.identifier,
+    type: options.type,
+    delete: options.delete,
+    byUuid: options.byUuid,
+    fulltextDirectory: options.fulltextDirectory,
+  };
+
+  return fulltextDetach(context.library, operationOptions);
+}
+
+// ============================================================================
+// Server mode implementations (TODO: Remove after 12.4.6 ILibrary refactor)
+// ============================================================================
+
 function detectType(filePath: string): FulltextType | undefined {
   const ext = extname(filePath).toLowerCase();
   if (ext === ".pdf") return "pdf";
@@ -100,60 +155,30 @@ function detectType(filePath: string): FulltextType | undefined {
   return undefined;
 }
 
-/**
- * Find reference by identifier
- */
-async function findReference(
+async function findReferenceServer(
   identifier: string,
-  context: ExecutionContext,
+  context: Extract<ExecutionContext, { type: "server" }>,
   byUuid: boolean
 ): Promise<CslItem | null> {
-  if (context.type === "server") {
-    return context.client.find(identifier, { byUuid });
-  }
-  const ref = byUuid
-    ? context.library.findByUuid(identifier)
-    : context.library.findById(identifier);
-  return ref?.getItem() ?? null;
+  return context.client.find(identifier, { byUuid });
 }
 
-/**
- * Update reference metadata with fulltext info
- */
-async function updateFulltextMetadata(
+async function updateFulltextMetadataServer(
   identifier: string,
   fulltext: { pdf?: string; markdown?: string } | undefined,
-  context: ExecutionContext,
+  context: Extract<ExecutionContext, { type: "server" }>,
   byUuid: boolean
 ): Promise<void> {
-  // Build updates with fulltext only - other custom fields preserved by merge in updateReference
-  const updates = {
-    custom: { fulltext },
-  } as Partial<CslItem>;
-
-  if (context.type === "server") {
-    await context.client.update(identifier, updates, { byUuid });
-  } else {
-    await updateReference(context.library, {
-      identifier,
-      updates,
-      byUuid,
-    });
-  }
+  const updates = { custom: { fulltext } } as Partial<CslItem>;
+  await context.client.update(identifier, updates, { byUuid });
 }
 
-/**
- * Clean up temp directory
- */
 async function cleanupTempDir(tempDir: string | undefined): Promise<void> {
   if (tempDir) {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
-/**
- * Prepare source path from stdin content
- */
 function prepareStdinSource(
   stdinContent: Buffer,
   fileType: FulltextType
@@ -171,24 +196,6 @@ function prepareStdinSource(
   }
 }
 
-/**
- * Build new fulltext metadata
- */
-function buildNewFulltext(
-  currentFulltext: { pdf?: string | undefined; markdown?: string | undefined },
-  fileType: FulltextType,
-  filename: string
-): { pdf?: string; markdown?: string } {
-  const newFulltext: { pdf?: string; markdown?: string } = {};
-  if (currentFulltext.pdf) newFulltext.pdf = currentFulltext.pdf;
-  if (currentFulltext.markdown) newFulltext.markdown = currentFulltext.markdown;
-  newFulltext[fileType] = filename;
-  return newFulltext;
-}
-
-/**
- * Resolve file type from options
- */
 function resolveFileType(
   explicitType: FulltextType | undefined,
   filePath: string | undefined,
@@ -212,12 +219,35 @@ function resolveFileType(
   return fileType;
 }
 
-/**
- * Execute fulltext attach command
- */
-export async function executeFulltextAttach(
+function buildNewFulltext(
+  currentFulltext: { pdf?: string | undefined; markdown?: string | undefined },
+  fileType: FulltextType,
+  filename: string
+): { pdf?: string; markdown?: string } {
+  const newFulltext: { pdf?: string; markdown?: string } = {};
+  if (currentFulltext.pdf) newFulltext.pdf = currentFulltext.pdf;
+  if (currentFulltext.markdown) newFulltext.markdown = currentFulltext.markdown;
+  newFulltext[fileType] = filename;
+  return newFulltext;
+}
+
+function buildRemainingFulltext(
+  currentFulltext: { pdf?: string | undefined; markdown?: string | undefined },
+  detached: FulltextType[]
+): { pdf?: string; markdown?: string } | undefined {
+  const newFulltext: { pdf?: string; markdown?: string } = {};
+  if (currentFulltext.pdf && !detached.includes("pdf")) {
+    newFulltext.pdf = currentFulltext.pdf;
+  }
+  if (currentFulltext.markdown && !detached.includes("markdown")) {
+    newFulltext.markdown = currentFulltext.markdown;
+  }
+  return Object.keys(newFulltext).length > 0 ? newFulltext : undefined;
+}
+
+async function executeFulltextAttachServer(
   options: FulltextAttachOptions,
-  context: ExecutionContext
+  context: Extract<ExecutionContext, { type: "server" }>
 ): Promise<FulltextAttachResult> {
   const {
     identifier,
@@ -230,20 +260,17 @@ export async function executeFulltextAttach(
     stdinContent,
   } = options;
 
-  // Find reference
-  const item = await findReference(identifier, context, byUuid);
+  const item = await findReferenceServer(identifier, context, byUuid);
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
   }
 
-  // Resolve file type
   const fileTypeResult = resolveFileType(explicitType, filePath, stdinContent);
   if (typeof fileTypeResult === "object" && "error" in fileTypeResult) {
     return { success: false, error: fileTypeResult.error };
   }
   const fileType = fileTypeResult;
 
-  // Prepare source path
   let sourcePath = filePath;
   let tempDir: string | undefined;
 
@@ -260,7 +287,6 @@ export async function executeFulltextAttach(
     return { success: false, error: "No file path or stdin content provided." };
   }
 
-  // Attach file
   const manager = new FulltextManager(fulltextDirectory);
 
   try {
@@ -270,15 +296,13 @@ export async function executeFulltextAttach(
     };
     const result = await manager.attachFile(item, sourcePath, fileType, attachOptions);
 
-    // If existing file and not force, return confirmation required
     if (result.existingFile && !result.overwritten) {
       await cleanupTempDir(tempDir);
       return { success: false, existingFile: result.existingFile, requiresConfirmation: true };
     }
 
-    // Update metadata
     const newFulltext = buildNewFulltext(item.custom?.fulltext ?? {}, fileType, result.filename);
-    await updateFulltextMetadata(identifier, newFulltext, context, byUuid);
+    await updateFulltextMetadataServer(identifier, newFulltext, context, byUuid);
     await cleanupTempDir(tempDir);
 
     return {
@@ -296,10 +320,7 @@ export async function executeFulltextAttach(
   }
 }
 
-/**
- * Get file content for stdout mode
- */
-async function getFileContent(
+async function getFileContentServer(
   manager: FulltextManager,
   item: CslItem,
   type: FulltextType,
@@ -321,10 +342,7 @@ async function getFileContent(
   }
 }
 
-/**
- * Get file paths for path mode
- */
-function getFilePaths(
+function getFilePathsServer(
   manager: FulltextManager,
   item: CslItem,
   types: FulltextType[],
@@ -345,40 +363,32 @@ function getFilePaths(
   return { success: true, paths };
 }
 
-/**
- * Execute fulltext get command
- */
-export async function executeFulltextGet(
+async function executeFulltextGetServer(
   options: FulltextGetOptions,
-  context: ExecutionContext
+  context: Extract<ExecutionContext, { type: "server" }>
 ): Promise<FulltextGetResult> {
   const { identifier, type, stdout, byUuid = false, fulltextDirectory } = options;
 
-  const item = await findReference(identifier, context, byUuid);
+  const item = await findReferenceServer(identifier, context, byUuid);
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
   }
 
   const manager = new FulltextManager(fulltextDirectory);
 
-  // Stdout mode with specific type
   if (stdout && type) {
-    return getFileContent(manager, item, type, identifier);
+    return getFileContentServer(manager, item, type, identifier);
   }
 
-  // Path mode
   const attachedTypes = type ? [type] : manager.getAttachedTypes(item);
   if (attachedTypes.length === 0) {
     return { success: false, error: `No fulltext attached to '${identifier}'` };
   }
 
-  return getFilePaths(manager, item, attachedTypes, identifier);
+  return getFilePathsServer(manager, item, attachedTypes, identifier);
 }
 
-/**
- * Perform detach operations for specified types
- */
-async function performDetachOperations(
+async function performDetachOperationsServer(
   manager: FulltextManager,
   item: CslItem,
   typesToDetach: FulltextType[],
@@ -399,43 +409,20 @@ async function performDetachOperations(
   return { detached, deleted };
 }
 
-/**
- * Build remaining fulltext metadata after detach
- */
-function buildRemainingFulltext(
-  currentFulltext: { pdf?: string | undefined; markdown?: string | undefined },
-  detached: FulltextType[]
-): { pdf?: string; markdown?: string } | undefined {
-  const newFulltext: { pdf?: string; markdown?: string } = {};
-  if (currentFulltext.pdf && !detached.includes("pdf")) {
-    newFulltext.pdf = currentFulltext.pdf;
-  }
-  if (currentFulltext.markdown && !detached.includes("markdown")) {
-    newFulltext.markdown = currentFulltext.markdown;
-  }
-  return Object.keys(newFulltext).length > 0 ? newFulltext : undefined;
-}
-
-/**
- * Handle detach errors
- */
-function handleDetachError(error: unknown): FulltextDetachResult {
+function handleDetachErrorServer(error: unknown): FulltextDetachResult {
   if (error instanceof FulltextNotAttachedError || error instanceof FulltextIOError) {
     return { success: false, error: error.message };
   }
   throw error;
 }
 
-/**
- * Execute fulltext detach command
- */
-export async function executeFulltextDetach(
+async function executeFulltextDetachServer(
   options: FulltextDetachOptions,
-  context: ExecutionContext
+  context: Extract<ExecutionContext, { type: "server" }>
 ): Promise<FulltextDetachResult> {
   const { identifier, type, delete: deleteFile, byUuid = false, fulltextDirectory } = options;
 
-  const item = await findReference(identifier, context, byUuid);
+  const item = await findReferenceServer(identifier, context, byUuid);
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
   }
@@ -448,7 +435,7 @@ export async function executeFulltextDetach(
   }
 
   try {
-    const { detached, deleted } = await performDetachOperations(
+    const { detached, deleted } = await performDetachOperationsServer(
       manager,
       item,
       typesToDetach,
@@ -456,7 +443,7 @@ export async function executeFulltextDetach(
     );
 
     const updatedFulltext = buildRemainingFulltext(item.custom?.fulltext ?? {}, detached);
-    await updateFulltextMetadata(identifier, updatedFulltext, context, byUuid);
+    await updateFulltextMetadataServer(identifier, updatedFulltext, context, byUuid);
 
     const resultData: FulltextDetachResult = { success: true, detached };
     if (deleted.length > 0) {
@@ -464,9 +451,13 @@ export async function executeFulltextDetach(
     }
     return resultData;
   } catch (error) {
-    return handleDetachError(error);
+    return handleDetachErrorServer(error);
   }
 }
+
+// ============================================================================
+// Output formatting functions
+// ============================================================================
 
 /**
  * Format fulltext attach output
@@ -498,12 +489,10 @@ export function formatFulltextGetOutput(result: FulltextGetResult): string {
     return `Error: ${result.error}`;
   }
 
-  // If content mode (stdout), the content is returned as Buffer, handled by CLI
   if (result.content) {
     return result.content.toString();
   }
 
-  // Path mode
   const lines: string[] = [];
   if (result.paths?.pdf) {
     lines.push(`pdf: ${result.paths.pdf}`);

@@ -125,30 +125,78 @@ MCP resources for library data access.
 Refactor fulltext implementation to follow the same pattern as other operations.
 Currently fulltext logic is in `cli/commands/fulltext.ts`. Move core logic to `features/operations/fulltext/` so MCP tools can use the same API as other tools (search, list, add, etc.).
 
-- [ ] **12.4.5.1**: Create `fulltextAttach` operation
+- [x] **12.4.5.1**: Create `fulltextAttach` operation
   - File: `src/features/operations/fulltext/attach.ts`, `src/features/operations/fulltext/attach.test.ts`
   - Acceptance: Core attach logic moved from CLI, returns structured result
   - Dependencies: 12.4.4
 
-- [ ] **12.4.5.2**: Create `fulltextGet` operation
+- [x] **12.4.5.2**: Create `fulltextGet` operation
   - File: `src/features/operations/fulltext/get.ts`, `src/features/operations/fulltext/get.test.ts`
   - Acceptance: Core get logic moved from CLI, returns paths and/or content
   - Dependencies: 12.4.5.1
 
-- [ ] **12.4.5.3**: Create `fulltextDetach` operation
+- [x] **12.4.5.3**: Create `fulltextDetach` operation
   - File: `src/features/operations/fulltext/detach.ts`, `src/features/operations/fulltext/detach.test.ts`
   - Acceptance: Core detach logic moved from CLI
   - Dependencies: 12.4.5.1
 
-- [ ] **12.4.5.4**: Update CLI to use new operations
+- [x] **12.4.5.4**: Update CLI to use new operations
   - File: `src/cli/commands/fulltext.ts`
-  - Acceptance: CLI commands are thin wrappers around operations
+  - Acceptance: CLI standalone mode uses operations, server mode preserved for 12.4.6
   - Dependencies: 12.4.5.1, 12.4.5.2, 12.4.5.3
 
-- [ ] **12.4.5.5**: Export fulltext operations from index
+- [x] **12.4.5.5**: Export fulltext operations from index
   - File: `src/features/operations/fulltext/index.ts`
   - Acceptance: All operations exported
   - Dependencies: 12.4.5.4
+
+#### 12.4.6 ILibrary Interface (Prerequisite for unified operations)
+
+Introduce `ILibrary` interface so that both `Library` (local) and `ServerClient` (HTTP) can be used interchangeably with operations. This eliminates duplicate logic in CLI commands.
+
+- [ ] **12.4.6.1**: Define `ILibrary` interface
+  - File: `src/core/library-interface.ts`, `src/core/library-interface.test.ts`
+  - Acceptance: Interface defines common methods (findById, findByUuid, getAll, add, updateById, save, etc.)
+  - Dependencies: 12.4.5.5
+
+- [ ] **12.4.6.2**: Update `Library` to implement `ILibrary`
+  - File: `src/core/library.ts`
+  - Acceptance: Library class implements ILibrary interface
+  - Dependencies: 12.4.6.1
+
+- [ ] **12.4.6.3**: Update `ServerClient` to implement `ILibrary`
+  - File: `src/server/client.ts`
+  - Acceptance: ServerClient implements ILibrary interface (HTTP calls behind the scenes)
+  - Dependencies: 12.4.6.1
+
+- [ ] **12.4.6.4**: Update operations to accept `ILibrary`
+  - File: `src/features/operations/*.ts`
+  - Acceptance: All operations use ILibrary instead of Library
+  - Dependencies: 12.4.6.2, 12.4.6.3
+
+- [ ] **12.4.6.5**: Simplify CLI fulltext commands
+  - File: `src/cli/commands/fulltext.ts`, `src/cli/execution-context.ts`
+  - Acceptance: CLI fulltext commands pass ILibrary to operations, no mode branching needed
+  - Dependencies: 12.4.6.4
+
+#### 12.4.7 Unify CLI and MCP with ILibrary
+
+Update all CLI commands and MCP tools to use ILibrary interface consistently.
+
+- [ ] **12.4.7.1**: Update CLI commands to use ILibrary
+  - File: `src/cli/commands/*.ts`
+  - Acceptance: All CLI commands (search, list, add, remove, cite, update) use ILibrary
+  - Dependencies: 12.4.6.5
+
+- [ ] **12.4.7.2**: Update MCP tools to accept ILibrary
+  - File: `src/mcp/tools/*.ts`, `src/mcp/context.ts`
+  - Acceptance: MCP context provides ILibrary, all tools use it
+  - Dependencies: 12.4.7.1
+
+- [ ] **12.4.7.3**: Remove ExecutionContext branching logic
+  - File: `src/cli/execution-context.ts`, `src/cli/commands/*.ts`
+  - Acceptance: ExecutionContext provides ILibrary (either Library or ServerClient)
+  - Dependencies: 12.4.7.2
 
 #### 12.5 Full-text Tools (Unit)
 
