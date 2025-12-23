@@ -3,9 +3,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
-import { registerMvpTools } from "./index.js";
+import { registerAllTools } from "./index.js";
 
-describe("MCP MVP tools registration", () => {
+describe("MCP tools registration", () => {
   let tempDir: string;
   let libraryPath: string;
   let library: Library;
@@ -21,8 +21,8 @@ describe("MCP MVP tools registration", () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  describe("registerMvpTools", () => {
-    it("should register all MVP tools (search, list, cite)", () => {
+  describe("registerAllTools", () => {
+    it("should register all tools (search, list, cite, add, remove)", () => {
       const registeredTools: string[] = [];
 
       const mockServer = {
@@ -31,12 +31,14 @@ describe("MCP MVP tools registration", () => {
         },
       };
 
-      registerMvpTools(mockServer as never, () => library);
+      registerAllTools(mockServer as never, () => library);
 
       expect(registeredTools).toContain("search");
       expect(registeredTools).toContain("list");
       expect(registeredTools).toContain("cite");
-      expect(registeredTools).toHaveLength(3);
+      expect(registeredTools).toContain("add");
+      expect(registeredTools).toContain("remove");
+      expect(registeredTools).toHaveLength(5);
     });
   });
 });

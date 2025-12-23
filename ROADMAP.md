@@ -86,12 +86,12 @@ Core tools using existing operations layer.
 
 Write operation tools.
 
-- [ ] **12.3.1**: Implement `add` tool
+- [x] **12.3.1**: Implement `add` tool
   - File: `src/mcp/tools/add.ts`, `src/mcp/tools/add.test.ts`
   - Acceptance: Calls addOperation, accepts PMID/DOI/BibTeX/RIS
   - Dependencies: 12.2.4
 
-- [ ] **12.3.2**: Implement `remove` tool
+- [x] **12.3.2**: Implement `remove` tool
   - File: `src/mcp/tools/remove.ts`, `src/mcp/tools/remove.test.ts`
   - Acceptance: Requires `force: true`, calls removeOperation
   - Dependencies: 12.2.4
