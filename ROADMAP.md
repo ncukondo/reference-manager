@@ -56,22 +56,22 @@ Setup MCP SDK and core context.
 
 Core tools using existing operations layer.
 
-- [ ] **12.2.1**: Implement `search` tool
+- [x] **12.2.1**: Implement `search` tool
   - File: `src/mcp/tools/search.ts`, `src/mcp/tools/search.test.ts`
   - Acceptance: Calls searchOperation, returns formatted results
   - Dependencies: 12.1.3
 
-- [ ] **12.2.2**: Implement `list` tool
+- [x] **12.2.2**: Implement `list` tool
   - File: `src/mcp/tools/list.ts`, `src/mcp/tools/list.test.ts`
   - Acceptance: Calls listOperation, supports format option
   - Dependencies: 12.1.3
 
-- [ ] **12.2.3**: Implement `cite` tool
+- [x] **12.2.3**: Implement `cite` tool
   - File: `src/mcp/tools/cite.ts`, `src/mcp/tools/cite.test.ts`
   - Acceptance: Calls citeOperation, supports style/format options
   - Dependencies: 12.1.3
 
-- [ ] **12.2.4**: Register MVP tools
+- [x] **12.2.4**: Register MVP tools
   - File: `src/mcp/tools/index.ts`
   - Acceptance: All MVP tools registered with McpServer
   - Dependencies: 12.2.1, 12.2.2, 12.2.3
