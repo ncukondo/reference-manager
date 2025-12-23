@@ -120,23 +120,53 @@ MCP resources for library data access.
   - Acceptance: All resources registered with McpServer
   - Dependencies: 12.4.1, 12.4.2, 12.4.3
 
+#### 12.4.5 Fulltext Operations Refactor (Prerequisite for 12.5)
+
+Refactor fulltext implementation to follow the same pattern as other operations.
+Currently fulltext logic is in `cli/commands/fulltext.ts`. Move core logic to `features/operations/fulltext/` so MCP tools can use the same API as other tools (search, list, add, etc.).
+
+- [ ] **12.4.5.1**: Create `fulltextAttach` operation
+  - File: `src/features/operations/fulltext/attach.ts`, `src/features/operations/fulltext/attach.test.ts`
+  - Acceptance: Core attach logic moved from CLI, returns structured result
+  - Dependencies: 12.4.4
+
+- [ ] **12.4.5.2**: Create `fulltextGet` operation
+  - File: `src/features/operations/fulltext/get.ts`, `src/features/operations/fulltext/get.test.ts`
+  - Acceptance: Core get logic moved from CLI, returns paths and/or content
+  - Dependencies: 12.4.5.1
+
+- [ ] **12.4.5.3**: Create `fulltextDetach` operation
+  - File: `src/features/operations/fulltext/detach.ts`, `src/features/operations/fulltext/detach.test.ts`
+  - Acceptance: Core detach logic moved from CLI
+  - Dependencies: 12.4.5.1
+
+- [ ] **12.4.5.4**: Update CLI to use new operations
+  - File: `src/cli/commands/fulltext.ts`
+  - Acceptance: CLI commands are thin wrappers around operations
+  - Dependencies: 12.4.5.1, 12.4.5.2, 12.4.5.3
+
+- [ ] **12.4.5.5**: Export fulltext operations from index
+  - File: `src/features/operations/fulltext/index.ts`
+  - Acceptance: All operations exported
+  - Dependencies: 12.4.5.4
+
 #### 12.5 Full-text Tools (Unit)
 
 Full-text attachment management.
 
 - [ ] **12.5.1**: Implement `fulltext_attach` tool
   - File: `src/mcp/tools/fulltext.ts`, `src/mcp/tools/fulltext.test.ts`
-  - Acceptance: Attaches file to reference
-  - Dependencies: 12.3.2
+  - Acceptance: Calls fulltextAttach operation, attaches file to reference
+  - Dependencies: 12.4.5.5
 
 - [ ] **12.5.2**: Implement `fulltext_get` tool
   - File: `src/mcp/tools/fulltext.ts`
-  - Acceptance: PDF returns path, Markdown returns content
+  - Acceptance: Calls fulltextGet operation, PDF returns path, Markdown returns content
   - Dependencies: 12.5.1
 
 - [ ] **12.5.3**: Implement `fulltext_detach` tool
   - File: `src/mcp/tools/fulltext.ts`
-  - Acceptance: Detaches file from reference
+  - Acceptance: Calls fulltextDetach operation, detaches file from reference
   - Dependencies: 12.5.1
 
 #### 12.6 CLI Integration (Integration)
