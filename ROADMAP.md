@@ -32,19 +32,25 @@ See: `spec/architecture/mcp-server.md`, `spec/decisions/ADR-008-mcp-stdio-server
 
 Setup MCP SDK and core context.
 
-- [ ] **12.1.1**: Add `@modelcontextprotocol/sdk` dependency
+- [x] **12.1.1**: Add `@modelcontextprotocol/sdk` dependency
   - File: `package.json`
   - Acceptance: SDK installed, peer dependency `zod` already present
 
-- [ ] **12.1.2**: Create MCP context type and factory
+- [x] **12.1.2**: Create MCP context type and factory
   - File: `src/mcp/context.ts`, `src/mcp/context.test.ts`
   - Acceptance: McpContext type with Library, Config, FileWatcher
   - Dependencies: None (uses existing types)
 
-- [ ] **12.1.3**: Create McpServer initialization
+- [x] **12.1.3**: Create McpServer initialization
   - File: `src/mcp/index.ts`, `src/mcp/index.test.ts`
   - Acceptance: Server created with name/version, stdio transport connected
   - Dependencies: 12.1.1, 12.1.2
+
+- [ ] **12.1.4**: Add Library.reload() method for file watcher integration
+  - File: `src/core/library.ts`, `src/core/library.test.ts`
+  - Acceptance: Library can reload from file, MCP context uses it on file change
+  - Dependencies: 12.1.3
+  - Note: Implements spec/features/file-monitoring.md handleFileChange pattern
 
 #### 12.2 Tools - MVP (Unit)
 
@@ -140,6 +146,16 @@ Connect MCP server to CLI.
   - File: `src/cli/index.ts`
   - Acceptance: Command available in CLI
   - Dependencies: 12.6.1
+
+#### 12.6.5 HTTP Server File Reload (Unit)
+
+Add file watching and auto-reload to HTTP server using Library.reload().
+
+- [ ] **12.6.5.1**: Integrate FileWatcher into HTTP server
+  - File: `src/server/index.ts`, `src/server/index.test.ts`
+  - Acceptance: HTTP server monitors library file, calls Library.reload() on change
+  - Dependencies: 12.1.4
+  - Note: Uses same pattern as MCP server file monitoring
 
 #### 12.7 E2E Tests
 
