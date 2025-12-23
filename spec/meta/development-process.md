@@ -219,6 +219,22 @@ Connecting N.1 and N.2 into existing system.
 Full test suite, typecheck, lint.
 ```
 
+#### 5. Mark Source Files for Modification
+
+When creating a roadmap, add a comment at the top of each source file scheduled for modification:
+
+```typescript
+// TODO: Phase N - Brief description of planned changes
+// See: ROADMAP.md Phase N.M for details
+```
+
+**Benefits**:
+- Prevents accidental modifications during other work
+- Provides context when reading the file
+- Enables quick search for files affected by a phase (`grep "Phase N"`)
+
+**Cleanup**: Remove these comments when the phase is complete.
+
 ### Roadmap Format
 
 ```markdown

@@ -27,27 +27,13 @@
 
 ### Case Sensitivity for Consecutive Uppercase
 
-Tokens containing **2 or more consecutive uppercase letters** (e.g., AI, API, RNA, CRISPR) are treated specially:
+Tokens containing **2+ consecutive uppercase letters** (AI, RNA, CRISPR) are matched case-sensitively for that portion.
 
-- **The consecutive uppercase portion is matched case-sensitively**
-- The remaining portion of the token is matched case-insensitively (with normalization)
-- This applies to all search contexts: bare tokens, field-specified, and phrase searches
+- `AI` → matches "AI therapy", not "ai therapy" or "Ai therapy"
+- `api` → matches "API endpoint" (no consecutive uppercase in query)
+- `RNA` → matches "mRNA synthesis" (partial match)
 
-**Detection pattern:** `/[A-Z]{2,}/g`
-
-**Examples:**
-
-| Query | Target | Match? | Reason |
-|-------|--------|--------|--------|
-| `AI` | "AI therapy" | ✓ | Exact case match for "AI" |
-| `AI` | "ai therapy" | ✗ | "ai" ≠ "AI" |
-| `AI` | "Ai therapy" | ✗ | "Ai" ≠ "AI" |
-| `api` | "API endpoint" | ✓ | No consecutive uppercase in query |
-| `RNA` | "mRNA synthesis" | ✓ | Partial match, "RNA" found in "mRNA" |
-| `AI therapy` | "AI Therapy" | ✓ | "AI" case-sensitive, "therapy" case-insensitive |
-| `AI-based` | "AI-Based method" | ✓ | "AI" case-sensitive, "based" case-insensitive |
-| `title:AI` | "AI model" | ✓ | Field prefix does not change behavior |
-| `"AI model"` | "AI Model" | ✓ | Phrase search: "AI" case-sensitive, "model" case-insensitive |
+See: `src/features/search/uppercase.ts` for implementation, `uppercase.test.ts` for examples.
 
 ### Boolean Logic
 
@@ -102,23 +88,11 @@ Tokens containing **2 or more consecutive uppercase letters** (e.g., AI, API, RN
 
 ## Normalization
 
-For content fields (non-ID fields), the following normalization is applied:
+Content fields are normalized before matching: Unicode NFKC, lowercase, punctuation removed, whitespace normalized.
 
-- Unicode NFKC
-- Lowercase
-- Punctuation removed
-- Whitespace normalized
+**Exception:** Consecutive uppercase portions (2+) are matched case-sensitively.
 
-**Exception:** When the query contains consecutive uppercase letters (2+), those portions are matched case-sensitively against the original (non-normalized) field value. See "Case Sensitivity for Consecutive Uppercase" above.
-
-Authors:
-- All authors
-- `family` + given initial
-
-Year:
-- From `issued.date-parts`
-- Fallback extraction
-- Missing → `0000`
+See: `src/features/search/matcher.ts` for normalization and matching logic.
 
 ## Matching
 
