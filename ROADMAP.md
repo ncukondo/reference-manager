@@ -20,9 +20,152 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Current Phase
+
+### Phase 12: MCP Server
+
+MCP (Model Context Protocol) stdio server for AI agent integration.
+
+See: `spec/architecture/mcp-server.md`, `spec/decisions/ADR-008-mcp-stdio-server.md`
+
+#### 12.1 Infrastructure (Unit)
+
+Setup MCP SDK and core context.
+
+- [ ] **12.1.1**: Add `@modelcontextprotocol/sdk` dependency
+  - File: `package.json`
+  - Acceptance: SDK installed, peer dependency `zod` already present
+
+- [ ] **12.1.2**: Create MCP context type and factory
+  - File: `src/mcp/context.ts`, `src/mcp/context.test.ts`
+  - Acceptance: McpContext type with Library, Config, FileWatcher
+  - Dependencies: None (uses existing types)
+
+- [ ] **12.1.3**: Create McpServer initialization
+  - File: `src/mcp/index.ts`, `src/mcp/index.test.ts`
+  - Acceptance: Server created with name/version, stdio transport connected
+  - Dependencies: 12.1.1, 12.1.2
+
+#### 12.2 Tools - MVP (Unit)
+
+Core tools using existing operations layer.
+
+- [ ] **12.2.1**: Implement `search` tool
+  - File: `src/mcp/tools/search.ts`, `src/mcp/tools/search.test.ts`
+  - Acceptance: Calls searchOperation, returns formatted results
+  - Dependencies: 12.1.3
+
+- [ ] **12.2.2**: Implement `list` tool
+  - File: `src/mcp/tools/list.ts`, `src/mcp/tools/list.test.ts`
+  - Acceptance: Calls listOperation, supports format option
+  - Dependencies: 12.1.3
+
+- [ ] **12.2.3**: Implement `cite` tool
+  - File: `src/mcp/tools/cite.ts`, `src/mcp/tools/cite.test.ts`
+  - Acceptance: Calls citeOperation, supports style/format options
+  - Dependencies: 12.1.3
+
+- [ ] **12.2.4**: Register MVP tools
+  - File: `src/mcp/tools/index.ts`
+  - Acceptance: All MVP tools registered with McpServer
+  - Dependencies: 12.2.1, 12.2.2, 12.2.3
+
+#### 12.3 Tools - Extended (Unit)
+
+Write operation tools.
+
+- [ ] **12.3.1**: Implement `add` tool
+  - File: `src/mcp/tools/add.ts`, `src/mcp/tools/add.test.ts`
+  - Acceptance: Calls addOperation, accepts PMID/DOI/BibTeX/RIS
+  - Dependencies: 12.2.4
+
+- [ ] **12.3.2**: Implement `remove` tool
+  - File: `src/mcp/tools/remove.ts`, `src/mcp/tools/remove.test.ts`
+  - Acceptance: Requires `force: true`, calls removeOperation
+  - Dependencies: 12.2.4
+
+#### 12.4 Resources (Unit)
+
+MCP resources for library data access.
+
+- [ ] **12.4.1**: Implement `library://references` resource
+  - File: `src/mcp/resources/library.ts`, `src/mcp/resources/library.test.ts`
+  - Acceptance: Returns all references as CSL-JSON
+  - Dependencies: 12.1.3
+
+- [ ] **12.4.2**: Implement `library://reference/{id}` resource
+  - File: `src/mcp/resources/library.ts`
+  - Acceptance: Returns single reference by ID
+  - Dependencies: 12.4.1
+
+- [ ] **12.4.3**: Implement `library://styles` resource
+  - File: `src/mcp/resources/library.ts`
+  - Acceptance: Returns available citation styles
+  - Dependencies: 12.4.1
+
+- [ ] **12.4.4**: Register all resources
+  - File: `src/mcp/resources/index.ts`
+  - Acceptance: All resources registered with McpServer
+  - Dependencies: 12.4.1, 12.4.2, 12.4.3
+
+#### 12.5 Full-text Tools (Unit)
+
+Full-text attachment management.
+
+- [ ] **12.5.1**: Implement `fulltext_attach` tool
+  - File: `src/mcp/tools/fulltext.ts`, `src/mcp/tools/fulltext.test.ts`
+  - Acceptance: Attaches file to reference
+  - Dependencies: 12.3.2
+
+- [ ] **12.5.2**: Implement `fulltext_get` tool
+  - File: `src/mcp/tools/fulltext.ts`
+  - Acceptance: PDF returns path, Markdown returns content
+  - Dependencies: 12.5.1
+
+- [ ] **12.5.3**: Implement `fulltext_detach` tool
+  - File: `src/mcp/tools/fulltext.ts`
+  - Acceptance: Detaches file from reference
+  - Dependencies: 12.5.1
+
+#### 12.6 CLI Integration (Integration)
+
+Connect MCP server to CLI.
+
+- [ ] **12.6.1**: Create `mcp` CLI command
+  - File: `src/cli/commands/mcp.ts`, `src/cli/commands/mcp.test.ts`
+  - Acceptance: `reference-manager mcp` starts server, accepts --library
+  - Dependencies: 12.4.4, 12.5.3
+
+- [ ] **12.6.2**: Register command in CLI
+  - File: `src/cli/index.ts`
+  - Acceptance: Command available in CLI
+  - Dependencies: 12.6.1
+
+#### 12.7 E2E Tests
+
+End-to-end testing with MCP client.
+
+- [ ] **12.7.1**: E2E test for tool invocation
+  - File: `src/mcp/mcp.e2e.test.ts`
+  - Acceptance: Start server, invoke tools, verify responses
+  - Dependencies: 12.6.2
+
+#### 12.8 Documentation & Quality
+
+- [ ] **12.8.1**: Update README with MCP section
+  - File: `README.md`
+  - Acceptance: Claude Code integration guide included
+  - Dependencies: 12.7.1
+
+- [ ] **12.8.2**: Quality checks
+  - Acceptance: typecheck, lint, format, all tests pass
+  - Dependencies: 12.8.1
+
+---
+
 ## Future Phases
 
-### Phase 12: Citation Enhancements
+### Phase 13: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -32,7 +175,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 13: Advanced Features
+### Phase 14: Advanced Features
 
 Additional features beyond core functionality:
 
