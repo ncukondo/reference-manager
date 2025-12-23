@@ -133,4 +133,82 @@ describe("McpContext", () => {
       }
     });
   });
+
+  describe("file change handling", () => {
+    it("should reload library on external file change", async () => {
+      // Initial library with one reference
+      const initialRef = {
+        id: "initial2024",
+        type: "article-journal",
+        title: "Initial Article",
+      };
+      await fs.writeFile(libraryPath, JSON.stringify([initialRef]), "utf-8");
+
+      const ctx = await createMcpContext({ configPath });
+
+      try {
+        expect(ctx.library.getAll()).toHaveLength(1);
+        expect(ctx.library.findById("initial2024")).toBeDefined();
+
+        // Simulate external file change
+        const newRef = {
+          id: "external2024",
+          type: "article-journal",
+          title: "Externally Added",
+        };
+        await fs.writeFile(libraryPath, JSON.stringify([newRef]), "utf-8");
+
+        // Emit change event manually (simulating file watcher)
+        ctx.fileWatcher.emit("change");
+
+        // Wait for async reload
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Library should be reloaded with new content
+        expect(ctx.library.getAll()).toHaveLength(1);
+        expect(ctx.library.findById("external2024")).toBeDefined();
+        expect(ctx.library.findById("initial2024")).toBeUndefined();
+      } finally {
+        await ctx.dispose();
+      }
+    });
+
+    it("should skip reload for self-write (hash matches)", async () => {
+      const ref = {
+        id: "test2024",
+        type: "article-journal",
+        title: "Test Article",
+      };
+      await fs.writeFile(libraryPath, JSON.stringify([ref]), "utf-8");
+
+      const ctx = await createMcpContext({ configPath });
+
+      try {
+        // Add a reference and save (self-write)
+        const newItem = {
+          id: "added2024",
+          type: "article-journal" as const,
+          title: "Added Item",
+        };
+        ctx.library.add(newItem);
+        await ctx.library.save();
+
+        expect(ctx.library.getAll()).toHaveLength(2);
+
+        // Emit change event (as if file watcher detected the self-write)
+        ctx.fileWatcher.emit("change");
+
+        // Wait for async reload attempt
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Library should NOT be reloaded (self-write detected)
+        // Both references should still be present
+        expect(ctx.library.getAll()).toHaveLength(2);
+        expect(ctx.library.findById("test2024")).toBeDefined();
+        expect(ctx.library.findById("added2024")).toBeDefined();
+      } finally {
+        await ctx.dispose();
+      }
+    });
+  });
 });

@@ -561,4 +561,127 @@ describe("Library", () => {
       expect(hash1).toBe(hash2);
     });
   });
+
+  describe("reload", () => {
+    it("should reload library from file and update references", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      expect(library.getAll()).toHaveLength(2);
+
+      // Modify file externally
+      const newItems = [
+        {
+          id: "external-2024",
+          type: "article-journal",
+          title: "Externally Added Item",
+        },
+      ];
+      await writeFile(testFilePath, JSON.stringify(newItems, null, 2), "utf-8");
+
+      // Reload
+      const reloaded = await library.reload();
+
+      expect(reloaded).toBe(true);
+      expect(library.getAll()).toHaveLength(1);
+      expect(library.findById("external-2024")).toBeDefined();
+      expect(library.findById("smith-2023")).toBeUndefined();
+    });
+
+    it("should update file hash after reload", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      const originalHash = library.getCurrentHash();
+
+      // Modify file externally
+      const newItems = [{ id: "new-2024", type: "article-journal", title: "New" }];
+      await writeFile(testFilePath, JSON.stringify(newItems, null, 2), "utf-8");
+
+      await library.reload();
+
+      const newHash = library.getCurrentHash();
+      expect(newHash).not.toBe(originalHash);
+    });
+
+    it("should rebuild all indices after reload", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      // New items with different identifiers
+      const newItems = [
+        {
+          id: "new-ref-2024",
+          type: "article-journal",
+          DOI: "10.5555/new.doi",
+          PMID: "99999999",
+          custom: {
+            uuid: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            created_at: "2024-01-01T00:00:00.000Z",
+            timestamp: "2024-01-01T00:00:00.000Z",
+          },
+        },
+      ];
+      await writeFile(testFilePath, JSON.stringify(newItems, null, 2), "utf-8");
+
+      await library.reload();
+
+      // Old indices should be cleared
+      expect(library.findById("smith-2023")).toBeUndefined();
+      expect(library.findByDoi("10.1234/jmi.2023.0045")).toBeUndefined();
+      expect(library.findByPmid("12345678")).toBeUndefined();
+      expect(library.findByUuid("550e8400-e29b-41d4-a716-446655440001")).toBeUndefined();
+
+      // New indices should be built
+      expect(library.findById("new-ref-2024")).toBeDefined();
+      expect(library.findByDoi("10.5555/new.doi")).toBeDefined();
+      expect(library.findByPmid("99999999")).toBeDefined();
+      expect(library.findByUuid("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).toBeDefined();
+    });
+
+    it("should skip reload if file hash matches (self-write detection)", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      // Save without modifying (hash should remain the same)
+      await library.save();
+
+      // Reload should detect self-write and skip
+      const reloaded = await library.reload();
+
+      expect(reloaded).toBe(false);
+      expect(library.getAll()).toHaveLength(2);
+    });
+
+    it("should reload after external modification following self-write", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      // Self-write: add an item and save
+      const newItem: CslItem = {
+        id: "added-2024",
+        type: "article-journal",
+        title: "Added Item",
+      };
+      library.add(newItem);
+      await library.save();
+
+      expect(library.getAll()).toHaveLength(3);
+
+      // reload() should skip (self-write)
+      const reloaded1 = await library.reload();
+      expect(reloaded1).toBe(false);
+
+      // External modification
+      const externalItems = [{ id: "external-2024", type: "article-journal", title: "External" }];
+      await writeFile(testFilePath, JSON.stringify(externalItems, null, 2), "utf-8");
+
+      // Now reload should detect external change and reload
+      const reloaded2 = await library.reload();
+
+      expect(reloaded2).toBe(true);
+      expect(library.getAll()).toHaveLength(1);
+      expect(library.findById("external-2024")).toBeDefined();
+    });
+  });
 });

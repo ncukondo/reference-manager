@@ -39,10 +39,12 @@ export async function createMcpContext(options: CreateMcpContextOptions): Promis
   });
 
   // Listen for file changes
-  // TODO(12.1.4): Call library.reload() when Library.reload() is implemented
+  // Library.reload() handles self-write detection via hash comparison
   fileWatcher.on("change", () => {
-    // Library reload will be implemented in 12.1.4
-    // See: spec/features/file-monitoring.md for handleFileChange pattern
+    library.reload().catch((error) => {
+      // Log error but don't crash - library continues with previous state
+      console.error("Failed to reload library:", error);
+    });
   });
 
   await fileWatcher.start();

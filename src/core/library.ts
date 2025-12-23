@@ -73,6 +73,41 @@ export class Library {
   }
 
   /**
+   * Reloads the library from file if it was modified externally.
+   * Self-writes (detected via hash comparison) are skipped.
+   * @returns true if reload occurred, false if skipped (self-write detected)
+   */
+  async reload(): Promise<boolean> {
+    const newHash = await computeFileHash(this.filePath);
+
+    if (newHash === this.currentHash) {
+      // Self-write detected, skip reload
+      return false;
+    }
+
+    // External change detected, reload
+    const items = await parseCslJson(this.filePath);
+
+    // Clear and rebuild indices
+    this.references = [];
+    this.uuidIndex.clear();
+    this.idIndex.clear();
+    this.doiIndex.clear();
+    this.pmidIndex.clear();
+
+    for (const item of items) {
+      const ref = new Reference(item);
+      this.references.push(ref);
+      this.addToIndices(ref);
+    }
+
+    // Update hash
+    this.currentHash = newHash;
+
+    return true;
+  }
+
+  /**
    * Add a reference to the library
    */
   add(item: CslItem): void {

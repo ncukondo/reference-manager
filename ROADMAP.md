@@ -46,7 +46,7 @@ Setup MCP SDK and core context.
   - Acceptance: Server created with name/version, stdio transport connected
   - Dependencies: 12.1.1, 12.1.2
 
-- [ ] **12.1.4**: Add Library.reload() method for file watcher integration
+- [x] **12.1.4**: Add Library.reload() method for file watcher integration
   - File: `src/core/library.ts`, `src/core/library.test.ts`
   - Acceptance: Library can reload from file, MCP context uses it on file change
   - Dependencies: 12.1.3
