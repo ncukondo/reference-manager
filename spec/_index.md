@@ -10,7 +10,14 @@ These specifications serve as guidelines for AI-assisted development:
 - Document feature requirements
 - Guide implementation decisions
 
-**Principle**: Specs describe "what" and "why", not "how". Implementation details belong in source code comments.
+## Spec Principles
+
+1. **"What" and "Why", not "How"**: Implementation details belong in source code
+2. **Source code is truth**: For implementation details, read the code
+3. **On-demand reading**: Only read specs relevant to current task
+4. **No duplication**: If code shows it, don't repeat in spec
+
+**Source Code References**: Specs use `See: src/path/file.ts` to point to implementations.
 
 ## Directory Structure
 

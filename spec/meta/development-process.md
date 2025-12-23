@@ -133,8 +133,107 @@ Why this option over others?
 After spec and technical decisions are clear:
 
 1. Add new task with clear acceptance criteria
-2. Organize by priority/dependency
-3. Mark current phase
+2. Structure tasks for TDD workflow (see below)
+3. Organize by priority/dependency
+4. Mark current phase
+
+### Task Structuring Principles for TDD
+
+**Goal**: Enable smooth TDD cycles with minimal context switching and clear progress.
+
+#### 1. Dependency-First Ordering
+
+Start with tasks that have **no or minimal dependencies**, then progress to dependent tasks:
+
+```
+✓ Task 1: Pure utility (no dependencies)
+  └→ Task 2: Uses Task 1 (depends on 1)
+     └→ Task 3: Uses Task 2 (depends on 2)
+        └→ Task 4: Integration (depends on 1, 2, 3)
+```
+
+**Benefits**:
+- Each task can be tested in isolation
+- No need to mock unimplemented dependencies
+- Clear progression from foundation to integration
+
+#### 2. Small, Atomic Units
+
+Break tasks into **test → implement pairs** that can be completed in a single TDD cycle:
+
+```markdown
+#### Section N.M: Feature Name
+
+- [ ] **N.M.1**: Test case description
+  - File: `src/path/module.test.ts`
+  - Test cases to write
+
+- [ ] **N.M.2**: Implementation description
+  - File: `src/path/module.ts`
+  - Depends on: N.M.1
+```
+
+**Guidelines**:
+- One test file per logical unit
+- One implementation task per test task
+- Each pair = 1 TDD cycle (Red → Green)
+
+#### 3. Explicit Dependencies
+
+Always specify what each task depends on:
+
+```markdown
+- [ ] **11.2.2**: Implement matching function
+  - Depends on: 11.1.2  ← Clear dependency
+```
+
+This allows:
+- Parallel work on independent tasks
+- Clear understanding of task order
+- Easy identification of blockers
+
+#### 4. Layer-by-Layer Progression
+
+Structure phases from low-level to high-level:
+
+```
+Layer 1: Pure functions / Utilities (no I/O, no dependencies)
+Layer 2: Core logic (uses Layer 1)
+Layer 3: Integration (connects Layer 1 & 2)
+Layer 4: API / CLI (uses all layers)
+Layer 5: E2E tests (tests full stack)
+```
+
+**Example Phase Structure**:
+```markdown
+#### N.1 Utility Functions (Unit)
+Pure functions with no dependencies.
+
+#### N.2 Core Logic (Unit)
+Business logic using N.1 utilities.
+
+#### N.3 Integration (Integration)
+Connecting N.1 and N.2 into existing system.
+
+#### N.4 Quality Checks
+Full test suite, typecheck, lint.
+```
+
+#### 5. Mark Source Files for Modification
+
+When creating a roadmap, add a comment at the top of each source file scheduled for modification:
+
+```typescript
+// TODO: Phase N - Brief description of planned changes
+// See: ROADMAP.md Phase N.M for details
+```
+
+**Benefits**:
+- Prevents accidental modifications during other work
+- Provides context when reading the file
+- Enables quick search for files affected by a phase (`grep "Phase N"`)
+
+**Cleanup**: Remove these comments when the phase is complete.
 
 ### Roadmap Format
 

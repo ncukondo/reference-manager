@@ -15,7 +15,8 @@ export type FieldSpecifier =
   | "pmid"
   | "pmcid"
   | "url"
-  | "keyword";
+  | "keyword"
+  | "tag";
 
 /**
  * Search token representing a parsed query element

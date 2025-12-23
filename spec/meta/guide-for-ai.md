@@ -6,6 +6,26 @@ Essential guidelines for AI assistants working on this project.
 
 **Always read `spec/_index.md` first.** It provides navigation to all specifications.
 
+## Spec Philosophy: Token Efficiency
+
+Specs are designed for **minimal token consumption**:
+
+1. **Specs describe "what" and "why", not "how"**
+   - Implementation details belong in source code
+   - If code shows it clearly, don't duplicate in spec
+
+2. **Reference source code for implementation details**
+   - Use `See: src/path/file.ts` to point to implementation
+   - Source code is the single source of truth for "how"
+
+3. **Read specs on-demand by task**
+   - Each spec file covers one topic
+   - Only read specs relevant to current task
+
+4. **When in doubt, check the code first**
+   - Source code comments explain implementation details
+   - Spec explains requirements and constraints
+
 ## Workflow
 
 Follow the complete workflow in `spec/meta/development-process.md`:

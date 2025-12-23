@@ -159,6 +159,28 @@ describe("tokenizer", () => {
       expect(result.tokens[0].value).toBe("neuroscience");
     });
 
+    it("should parse tag field", () => {
+      const result = tokenize("tag:review");
+      expect(result.tokens).toHaveLength(1);
+      expect(result.tokens[0]).toEqual({
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      });
+    });
+
+    it("should parse tag field with different value", () => {
+      const result = tokenize("tag:important");
+      expect(result.tokens).toHaveLength(1);
+      expect(result.tokens[0]).toEqual({
+        raw: "tag:important",
+        value: "important",
+        field: "tag",
+        isPhrase: false,
+      });
+    });
+
     it("should handle field with phrase", () => {
       const result = tokenize('author:"John Smith"');
       expect(result.tokens).toHaveLength(1);

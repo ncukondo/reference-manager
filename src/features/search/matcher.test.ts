@@ -149,10 +149,10 @@ describe("matchToken", () => {
       expect(titleMatch?.strength).toBe("partial");
     });
 
-    it("should match title case-insensitively", () => {
+    it("should match title case-insensitively when query has no consecutive uppercase", () => {
       const token: SearchToken = {
-        raw: "MACHINE",
-        value: "MACHINE",
+        raw: "machine",
+        value: "machine",
         field: "title",
         isPhrase: false,
       };
@@ -188,6 +188,54 @@ describe("matchToken", () => {
       const matches = matchToken(token, reference);
       expect(matches).toHaveLength(1);
       expect(matches[0].field).toBe("author");
+    });
+
+    it("should match author with full given name", () => {
+      const refWithTakeshi: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test Article",
+        author: [{ family: "Kondo", given: "Takeshi" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:Takeshi",
+        value: "Takeshi",
+        field: "author",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTakeshi);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("author");
+    });
+
+    it("should NOT match author whose given name starts differently", () => {
+      const refWithTakuma: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test Article",
+        author: [{ family: "Kondo", given: "Takuma" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:Takeshi",
+        value: "Takeshi",
+        field: "author",
+        isPhrase: false,
+      };
+
+      // "Takeshi" should NOT match "Takuma" (different given name, only initial T matches)
+      const matches = matchToken(token, refWithTakuma);
+      expect(matches).toHaveLength(0);
     });
 
     it("should match container-title", () => {
@@ -289,15 +337,15 @@ describe("matchToken", () => {
       expect(matches[0].value).toBe("neural networks");
     });
 
-    it("should match keyword with normalization", () => {
+    it("should match keyword with normalization (case-insensitive when no consecutive uppercase)", () => {
       const refWithKeywords: CslItem = {
         ...reference,
         keyword: ["Machine Learning", "Deep Learning"],
       };
 
       const token: SearchToken = {
-        raw: "keyword:LEARNING",
-        value: "LEARNING",
+        raw: "keyword:learning",
+        value: "learning",
         field: "keyword",
         isPhrase: false,
       };
@@ -370,6 +418,265 @@ describe("matchToken", () => {
       expect(keywordMatch).toBeDefined();
       expect(keywordMatch?.strength).toBe("partial");
     });
+
+    it("should match uppercase 'RNA' in keyword 'mRNA sequencing'", () => {
+      const refWithRNAKeyword: CslItem = {
+        ...reference,
+        keyword: ["mRNA sequencing", "gene expression"],
+      };
+
+      const token: SearchToken = {
+        raw: "keyword:RNA",
+        value: "RNA",
+        field: "keyword",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithRNAKeyword);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("keyword");
+      expect(matches[0].value).toBe("mRNA sequencing");
+    });
+
+    it("should NOT match uppercase 'RNA' in keyword 'mrna sequencing' (lowercase)", () => {
+      const refWithLowercaseKeyword: CslItem = {
+        ...reference,
+        keyword: ["mrna sequencing", "gene expression"],
+      };
+
+      const token: SearchToken = {
+        raw: "keyword:RNA",
+        value: "RNA",
+        field: "keyword",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithLowercaseKeyword);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should match lowercase query 'rna' with uppercase keyword 'RNA' (case-insensitive)", () => {
+      const refWithUppercaseKeyword: CslItem = {
+        ...reference,
+        keyword: ["RNA sequencing", "gene expression"],
+      };
+
+      const token: SearchToken = {
+        raw: "keyword:rna",
+        value: "rna",
+        field: "keyword",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithUppercaseKeyword);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("keyword");
+    });
+  });
+
+  describe("Tag field matching (custom.tags array)", () => {
+    it("should match tag in array with field specifier", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review", "important"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+      expect(matches[0].strength).toBe("partial");
+    });
+
+    it("should match partial tag value", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:rev",
+        value: "rev",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+      expect(matches[0].value).toBe("review");
+    });
+
+    it("should return no match when custom is empty", () => {
+      const refWithEmptyCustom: CslItem = {
+        ...reference,
+        custom: {},
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithEmptyCustom);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should return no match when custom is missing", () => {
+      const refWithoutCustom: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test Title",
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithoutCustom);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should handle empty tags array", () => {
+      const refWithEmptyTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: [],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:review",
+        value: "review",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithEmptyTags);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should match any tag element in array", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["important", "urgent", "review"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:urgent",
+        value: "urgent",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+      expect(matches[0].value).toBe("urgent");
+    });
+
+    it("should not match when tag not in array", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review", "important"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:urgent",
+        value: "urgent",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should search tag in multi-field search", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["review", "methodology"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "methodology",
+        value: "methodology",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      const tagMatch = matches.find((m) => m.field === "tag");
+      expect(tagMatch).toBeDefined();
+      expect(tagMatch?.strength).toBe("partial");
+    });
+
+    it("should match uppercase query in tag with uppercase-sensitivity", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["AI research", "methodology"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:AI",
+        value: "AI",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("tag");
+    });
+
+    it("should NOT match uppercase query when tag has lowercase", () => {
+      const refWithTags: CslItem = {
+        ...reference,
+        custom: {
+          ...reference.custom,
+          tags: ["ai research", "methodology"],
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "tag:AI",
+        value: "AI",
+        field: "tag",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithTags);
+      expect(matches).toHaveLength(0);
+    });
   });
 
   describe("Multi-field search (no field specifier)", () => {
@@ -395,6 +702,163 @@ describe("matchToken", () => {
       const pmidMatch = matches.find((m) => m.field === "PMID");
       expect(pmidMatch).toBeDefined();
       expect(pmidMatch?.strength).toBe("exact");
+    });
+  });
+
+  describe("Uppercase-sensitive matching for content fields", () => {
+    it("should match uppercase query 'AI' with title containing 'AI'", () => {
+      const refWithAI: CslItem = {
+        ...reference,
+        title: "AI therapy for mental health",
+      };
+
+      const token: SearchToken = {
+        raw: "title:AI",
+        value: "AI",
+        field: "title",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithAI);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("title");
+    });
+
+    it("should NOT match uppercase query 'AI' with title containing only 'ai'", () => {
+      const refWithLowercaseAi: CslItem = {
+        ...reference,
+        title: "ai therapy for mental health",
+      };
+
+      const token: SearchToken = {
+        raw: "title:AI",
+        value: "AI",
+        field: "title",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithLowercaseAi);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should NOT match uppercase query 'AI' with title containing 'Ai'", () => {
+      const refWithMixedAi: CslItem = {
+        ...reference,
+        title: "Ai therapy for mental health",
+      };
+
+      const token: SearchToken = {
+        raw: "title:AI",
+        value: "AI",
+        field: "title",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithMixedAi);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should match lowercase query 'api' with title containing 'API' (case-insensitive)", () => {
+      const refWithAPI: CslItem = {
+        ...reference,
+        title: "RESTful API design patterns",
+      };
+
+      const token: SearchToken = {
+        raw: "title:api",
+        value: "api",
+        field: "title",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithAPI);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("title");
+    });
+
+    it("should match mixed query 'AI therapy' with title containing both", () => {
+      const refWithAITherapy: CslItem = {
+        ...reference,
+        title: "AI Therapy: New Approaches",
+      };
+
+      const token: SearchToken = {
+        raw: "title:AI therapy",
+        value: "AI therapy",
+        field: "title",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithAITherapy);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("title");
+    });
+
+    it("should match 'RNA' in 'mRNA' (partial uppercase match)", () => {
+      const refWithMRNA: CslItem = {
+        ...reference,
+        title: "mRNA sequencing advances",
+      };
+
+      const token: SearchToken = {
+        raw: "title:RNA",
+        value: "RNA",
+        field: "title",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithMRNA);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("title");
+    });
+
+    it("should work with author field uppercase matching", () => {
+      // Test with family name containing uppercase abbreviation
+      const refWithAIAuthor: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test",
+        author: [{ family: "AI Research Group", given: "Team" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:AI",
+        value: "AI",
+        field: "author",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithAIAuthor);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("author");
+    });
+
+    it("should NOT match author with lowercase when query has uppercase", () => {
+      const refWithLowercaseAuthor: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "Test",
+        author: [{ family: "Aiden", given: "John" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:AI",
+        value: "AI",
+        field: "author",
+        isPhrase: false,
+      };
+
+      // "AI" should NOT match "Aiden" because consecutive uppercase requires exact case match
+      const matches = matchToken(token, refWithLowercaseAuthor);
+      expect(matches).toHaveLength(0);
     });
   });
 });

@@ -22,7 +22,18 @@
   - `pmcid:` - Search in PMCID field
   - `url:` - Search in URL field (both primary `URL` and `custom.additional_urls`)
   - `keyword:` - Search in keyword field
+  - `tag:` - Search in custom tags field (`custom.tags`)
 - If no field prefix is specified, search all fields
+
+### Case Sensitivity for Consecutive Uppercase
+
+Tokens containing **2+ consecutive uppercase letters** (AI, RNA, CRISPR) are matched case-sensitively for that portion.
+
+- `AI` → matches "AI therapy", not "ai therapy" or "Ai therapy"
+- `api` → matches "API endpoint" (no consecutive uppercase in query)
+- `RNA` → matches "mRNA synthesis" (partial match)
+
+See: `src/features/search/uppercase.ts` for implementation, `uppercase.test.ts` for examples.
 
 ### Boolean Logic
 
@@ -53,6 +64,7 @@
 - `title` - Title
 - `author` - Authors (all author names, normalized as `family` + given initial)
 - `keyword` - Keywords (array in memory, each element searched individually)
+- `custom.tags` - User-defined tags (array, each element searched individually)
 - `container-title` - Journal/book title
 - `publisher` - Publisher name
 - `abstract` - Abstract text
@@ -64,30 +76,23 @@
 - Normalization applied (see below)
 
 **Array field handling:**
-- For array fields (e.g., `keyword`), each array element is treated as a separate searchable value
+- For array fields (e.g., `keyword`, `custom.tags`), each array element is treated as a separate searchable value
 - A match occurs if the query matches any element in the array
 - Example: For `keyword: ["machine learning", "deep learning", "neural networks"]`:
   - Query `"machine"` matches (found in "machine learning")
   - Query `"deep"` matches (found in "deep learning")
   - Query `"keyword:neural"` matches (found in "neural networks")
+- Example: For `custom.tags: ["review", "important", "to-read"]`:
+  - Query `"tag:review"` matches
+  - Query `"important"` matches (in multi-field search)
 
 ## Normalization
 
-For content fields (non-ID fields), the following normalization is applied:
+Content fields are normalized before matching: Unicode NFKC, lowercase, punctuation removed, whitespace normalized.
 
-- Unicode NFKC
-- Lowercase
-- Punctuation removed
-- Whitespace normalized
+**Exception:** Consecutive uppercase portions (2+) are matched case-sensitively.
 
-Authors:
-- All authors
-- `family` + given initial
-
-Year:
-- From `issued.date-parts`
-- Fallback extraction
-- Missing → `0000`
+See: `src/features/search/matcher.ts` for normalization and matching logic.
 
 ## Matching
 

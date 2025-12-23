@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Search Enhancements (Phase 11)**: Improved search functionality
+  - Case-sensitive matching for consecutive uppercase letters (AI, RNA, API, etc.)
+    - Query "AI" matches "AI therapy" but not "ai therapy" or "Ai therapy"
+    - Query "api" still matches "API endpoint" (no consecutive uppercase in query)
+    - Works with partial matches: "RNA" matches "mRNA sequencing"
+  - Author full given name search support
+    - Query "author:Takeshi" matches author with given name "Takeshi"
+    - Previously only matched on family name and initial
+  - Custom tags field support (`custom.tags`)
+    - New `tag:` search prefix for tag-specific search
+    - Tags included in multi-field (bare) search
+    - Schema updated to include `tags` in CslCustomSchema
+
 - **Full-text Management (Phase 10)**: New `fulltext` command for PDF and Markdown file management
   - `fulltext attach`: Attach PDF or Markdown files to references
     - Auto-detect format by file extension

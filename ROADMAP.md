@@ -14,6 +14,7 @@ For detailed specifications, see [spec/](./spec/).
 - ✅ **Phase 8**: Operation Integration (unified operations pattern)
 - ✅ **Phase 9**: Server Mode Performance Optimization (ExecutionContext pattern)
 - ✅ **Phase 10**: Full-text Management (attach, get, detach commands)
+- ✅ **Phase 11**: Search Enhancements (uppercase matching, author given name, tags)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
@@ -21,7 +22,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ## Future Phases
 
-### Phase 11: Citation Enhancements
+### Phase 12: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -31,14 +32,14 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 12: Advanced Features
+### Phase 13: Advanced Features
 
 Additional features beyond core functionality:
 
 - Citation graph visualization
 - Duplicate detection improvements
 - Advanced search operators
-- Tag management
+- Tag management commands (add/remove tags)
 - Note-taking integration
 - LSP integration for text editors
 

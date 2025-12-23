@@ -69,6 +69,7 @@
       "https://example.com/resource1",
       "https://example.com/resource2"
     ],
+    "tags": ["review", "important", "to-read"],
     "fulltext": {
       "pdf": "Smith-2024-PMID12345678-123e4567-e89b-12d3-a456-426614174000.pdf",
       "markdown": "Smith-2024-PMID12345678-123e4567-e89b-12d3-a456-426614174000.md"
@@ -79,7 +80,21 @@
   - `uuid`: Internal stable identifier (required, auto-generated)
   - `timestamp`: ISO 8601 timestamp when reference was added (required, auto-generated)
   - `additional_urls`: Optional array of additional URLs (optional)
+  - `tags`: User-defined tags for categorization and search (optional, array of strings)
   - `fulltext`: Attached full-text files (optional, see `fulltext.md`)
     - `pdf`: PDF filename in fulltext directory
     - `markdown`: Markdown filename in fulltext directory
 - Unknown fields are preserved (passthrough) for external tool compatibility
+
+## Tags
+
+- Stored in `custom.tags` field
+- Format: array of strings (stored as JSON array, not semicolon-separated like `keyword`)
+- Example:
+  ```json
+  "custom": {
+    "tags": ["review", "important", "RNA-seq"]
+  }
+  ```
+- Search: Use `tag:` prefix or include in multi-field search (see `search.md`)
+- Empty arrays are omitted from serialized output

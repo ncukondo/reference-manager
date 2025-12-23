@@ -1,6 +1,7 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import { normalize } from "./normalizer.js";
+import { normalizePreservingCase } from "./normalizer.js";
 import type { FieldMatch, MatchStrength, SearchResult, SearchToken } from "./types.js";
+import { matchWithUppercaseSensitivity } from "./uppercase.js";
 
 /**
  * ID fields require exact match (case-sensitive)
@@ -19,7 +20,7 @@ function extractYear(reference: CslItem): string {
 
 /**
  * Extract and format author names
- * Returns "family given-initial" format for all authors
+ * Returns "family given" format for all authors
  */
 function extractAuthors(reference: CslItem): string {
   if (!reference.author || reference.author.length === 0) {
@@ -29,8 +30,8 @@ function extractAuthors(reference: CslItem): string {
   return reference.author
     .map((author) => {
       const family = author.family || "";
-      const givenInitial = author.given ? author.given[0] : "";
-      return givenInitial ? `${family} ${givenInitial}` : family;
+      const given = author.given || "";
+      return given ? `${family} ${given}` : family;
     })
     .join(" ");
 }
@@ -106,18 +107,50 @@ function matchKeyword(queryValue: string, reference: CslItem): FieldMatch | null
     return null;
   }
 
-  // Normalize query value
-  const normalizedQuery = normalize(queryValue);
+  // Normalize query value (preserving case for uppercase-sensitive matching)
+  const normalizedQuery = normalizePreservingCase(queryValue);
 
   // Search through each keyword element
   for (const keyword of reference.keyword) {
     if (typeof keyword === "string") {
-      const normalizedKeyword = normalize(keyword);
-      if (normalizedKeyword.includes(normalizedQuery)) {
+      const normalizedKeyword = normalizePreservingCase(keyword);
+      // Use uppercase-sensitive matching
+      if (matchWithUppercaseSensitivity(normalizedQuery, normalizedKeyword)) {
         return {
           field: "keyword",
           strength: "partial",
           value: keyword,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Match a tag field against custom.tags array
+ * Similar to matchKeyword but accesses custom.tags
+ */
+function matchTag(queryValue: string, reference: CslItem): FieldMatch | null {
+  // Check if custom.tags field exists and is an array
+  if (!reference.custom?.tags || !Array.isArray(reference.custom.tags)) {
+    return null;
+  }
+
+  // Normalize query value (preserving case for uppercase-sensitive matching)
+  const normalizedQuery = normalizePreservingCase(queryValue);
+
+  // Search through each tag element
+  for (const tag of reference.custom.tags) {
+    if (typeof tag === "string") {
+      const normalizedTag = normalizePreservingCase(tag);
+      // Use uppercase-sensitive matching
+      if (matchWithUppercaseSensitivity(normalizedQuery, normalizedTag)) {
+        return {
+          field: "tag",
+          strength: "partial",
+          value: tag,
         };
       }
     }
@@ -173,11 +206,14 @@ function matchFieldValue(field: string, tokenValue: string, reference: CslItem):
     return null;
   }
 
-  // Content field: partial match, case-insensitive with normalization
-  const normalizedFieldValue = normalize(fieldValue);
-  const normalizedQuery = normalize(tokenValue);
+  // Content field: use uppercase-sensitive matching
+  // Normalize both values (remove diacritics, normalize whitespace) while preserving case
+  const normalizedFieldValue = normalizePreservingCase(fieldValue);
+  const normalizedQuery = normalizePreservingCase(tokenValue);
 
-  if (normalizedFieldValue.includes(normalizedQuery)) {
+  // If query contains consecutive uppercase (e.g., "AI", "RNA"), match case-sensitively
+  // Otherwise, match case-insensitively
+  if (matchWithUppercaseSensitivity(normalizedQuery, normalizedFieldValue)) {
     return {
       field,
       strength: "partial",
@@ -212,6 +248,13 @@ function matchSpecificField(token: SearchToken, reference: CslItem): FieldMatch[
   if (fieldToSearch === "keyword") {
     const keywordMatch = matchKeyword(token.value, reference);
     if (keywordMatch) matches.push(keywordMatch);
+    return matches;
+  }
+
+  // Handle tag field specially (search custom.tags array)
+  if (fieldToSearch === "tag") {
+    const tagMatch = matchTag(token.value, reference);
+    if (tagMatch) matches.push(tagMatch);
     return matches;
   }
 
@@ -254,6 +297,9 @@ function matchSingleField(
   if (field === "keyword") {
     return matchKeyword(tokenValue, reference);
   }
+  if (field === "tag") {
+    return matchTag(tokenValue, reference);
+  }
   return matchFieldValue(field, tokenValue, reference);
 }
 
@@ -264,7 +310,7 @@ function matchAllFields(token: SearchToken, reference: CslItem): FieldMatch[] {
   const matches: FieldMatch[] = [];
 
   // Match special fields
-  const specialFields = ["year", "URL", "keyword"];
+  const specialFields = ["year", "URL", "keyword", "tag"];
   for (const field of specialFields) {
     const match = matchSingleField(field, token.value, reference);
     if (match) matches.push(match);

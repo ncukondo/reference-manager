@@ -343,5 +343,66 @@ describe("CSL-JSON Validator", () => {
         expect(custom.anotherField).toBe(123);
       });
     });
+
+    describe("tags field in custom", () => {
+      it("should validate entries with custom.tags", () => {
+        const library: CslLibrary = [
+          {
+            id: "with_tags",
+            type: "article",
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440001",
+              created_at: "2024-01-01T00:00:00.000Z",
+              timestamp: "2024-01-01T00:00:00.000Z",
+              tags: ["tag1", "tag2"],
+            },
+          },
+        ];
+
+        const result = validateCslJson(library);
+        expect(result).toBeDefined();
+        expect(result.length).toBe(1);
+        expect(result[0].custom?.tags).toEqual(["tag1", "tag2"]);
+      });
+
+      it("should validate entries with empty custom.tags", () => {
+        const library: CslLibrary = [
+          {
+            id: "with_empty_tags",
+            type: "article",
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440001",
+              created_at: "2024-01-01T00:00:00.000Z",
+              timestamp: "2024-01-01T00:00:00.000Z",
+              tags: [],
+            },
+          },
+        ];
+
+        const result = validateCslJson(library);
+        expect(result).toBeDefined();
+        expect(result.length).toBe(1);
+        expect(result[0].custom?.tags).toEqual([]);
+      });
+
+      it("should validate entries without custom.tags (optional)", () => {
+        const library: CslLibrary = [
+          {
+            id: "without_tags",
+            type: "article",
+            custom: {
+              uuid: "550e8400-e29b-41d4-a716-446655440001",
+              created_at: "2024-01-01T00:00:00.000Z",
+              timestamp: "2024-01-01T00:00:00.000Z",
+            },
+          },
+        ];
+
+        const result = validateCslJson(library);
+        expect(result).toBeDefined();
+        expect(result.length).toBe(1);
+        expect(result[0].custom?.tags).toBeUndefined();
+      });
+    });
   });
 });

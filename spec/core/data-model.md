@@ -47,6 +47,7 @@ The `custom` field stores reference-manager-specific metadata:
   "created_at": "2024-01-01T00:00:00.000Z",
   "timestamp": "2024-01-02T10:30:00.000Z",
   "additional_urls": ["https://example.com/resource"],
+  "tags": ["review", "important"],
   "fulltext": {
     "pdf": "Smith-2024-PMID12345678-<uuid>.pdf",
     "markdown": "Smith-2024-PMID12345678-<uuid>.md"
@@ -60,6 +61,7 @@ The `custom` field stores reference-manager-specific metadata:
 | `created_at` | Creation time (immutable) |
 | `timestamp` | Last modification time (for LWW conflict resolution) |
 | `additional_urls` | Optional array of additional URLs |
+| `tags` | User-defined tags for categorization (see `features/metadata.md`) |
 | `fulltext` | Attached full-text files (see `features/fulltext.md`) |
 | `fulltext.pdf` | PDF filename (stored in fulltext directory) |
 | `fulltext.markdown` | Markdown filename (stored in fulltext directory) |
