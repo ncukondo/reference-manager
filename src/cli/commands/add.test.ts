@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Library } from "../../core/library.js";
 import type { AddReferencesResult } from "../../features/operations/add.js";
-import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 import {
   type AddCommandOptions,
   type AddCommandResult,
@@ -11,123 +9,113 @@ import {
   getExitCode,
 } from "./add.js";
 
-// Mock dependencies
-vi.mock("../../features/operations/add.js", () => ({
-  addReferences: vi.fn(),
-}));
-
 describe("add command", () => {
   describe("executeAdd", () => {
-    const mockLibrary = {} as Library;
-    const mockServerClient = {
-      import: vi.fn(),
-    } as unknown as ServerClient;
+    const mockImport = vi.fn();
 
-    const serverContext: ServerExecutionContext = {
-      type: "server",
-      client: mockServerClient,
-    };
-
-    const localContext: LocalExecutionContext = {
-      type: "local",
-      library: mockLibrary,
-    };
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        type: "local",
+        library: {
+          import: mockImport,
+        },
+      }) as unknown as ExecutionContext;
 
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
-    describe("via server", () => {
-      it("should call server import when context is server", async () => {
-        const mockResult: AddReferencesResult = {
-          added: [{ id: "Smith-2024", title: "Test Paper" }],
-          failed: [],
-          skipped: [],
-        };
-        vi.mocked(mockServerClient.import).mockResolvedValue(mockResult);
+    it("should call context.library.import with inputs and force option", async () => {
+      const mockResult: AddReferencesResult = {
+        added: [{ id: "Smith-2024", title: "Test Paper" }],
+        failed: [],
+        skipped: [],
+      };
+      mockImport.mockResolvedValue(mockResult);
 
-        const options: AddCommandOptions = {
-          inputs: ["10.1234/test"],
-          force: false,
-        };
+      const options: AddCommandOptions = {
+        inputs: ["10.1234/test"],
+        force: false,
+      };
+      const context = createContext();
 
-        const result = await executeAdd(options, serverContext);
+      const result = await executeAdd(options, context);
 
-        expect(mockServerClient.import).toHaveBeenCalledWith(["10.1234/test"], {
-          force: false,
-        });
-        expect(result).toEqual(mockResult);
+      expect(mockImport).toHaveBeenCalledWith(["10.1234/test"], {
+        force: false,
       });
+      expect(result).toEqual(mockResult);
+    });
 
-      it("should pass format option to server", async () => {
-        const mockResult: AddReferencesResult = {
-          added: [],
-          failed: [],
-          skipped: [],
-        };
-        vi.mocked(mockServerClient.import).mockResolvedValue(mockResult);
+    it("should pass format option", async () => {
+      const mockResult: AddReferencesResult = {
+        added: [],
+        failed: [],
+        skipped: [],
+      };
+      mockImport.mockResolvedValue(mockResult);
 
-        const options: AddCommandOptions = {
-          inputs: ["test.bib"],
-          force: true,
-          format: "bibtex",
-        };
+      const options: AddCommandOptions = {
+        inputs: ["test.bib"],
+        force: true,
+        format: "bibtex",
+      };
+      const context = createContext();
 
-        await executeAdd(options, serverContext);
+      await executeAdd(options, context);
 
-        expect(mockServerClient.import).toHaveBeenCalledWith(["test.bib"], {
-          force: true,
-          format: "bibtex",
-        });
+      expect(mockImport).toHaveBeenCalledWith(["test.bib"], {
+        force: true,
+        format: "bibtex",
       });
     });
 
-    describe("via library", () => {
-      it("should call addReferences when context is local", async () => {
-        const { addReferences } = await import("../../features/operations/add.js");
-        const mockResult: AddReferencesResult = {
-          added: [{ id: "Jones-2023", title: "Another Paper" }],
-          failed: [],
-          skipped: [],
-        };
-        vi.mocked(addReferences).mockResolvedValue(mockResult);
+    it("should pass pubmedConfig option", async () => {
+      const mockResult: AddReferencesResult = {
+        added: [],
+        failed: [],
+        skipped: [],
+      };
+      mockImport.mockResolvedValue(mockResult);
 
-        const options: AddCommandOptions = {
-          inputs: ["12345678"],
-          force: false,
-        };
+      const options: AddCommandOptions = {
+        inputs: ["12345678"],
+        force: true,
+        format: "pmid",
+        pubmedConfig: { email: "test@example.com" },
+      };
+      const context = createContext();
 
-        const result = await executeAdd(options, localContext);
+      await executeAdd(options, context);
 
-        expect(addReferences).toHaveBeenCalledWith(["12345678"], mockLibrary, {
-          force: false,
-        });
-        expect(result).toEqual(mockResult);
+      expect(mockImport).toHaveBeenCalledWith(["12345678"], {
+        force: true,
+        format: "pmid",
+        pubmedConfig: { email: "test@example.com" },
       });
+    });
 
-      it("should pass format and pubmedConfig options", async () => {
-        const { addReferences } = await import("../../features/operations/add.js");
-        const mockResult: AddReferencesResult = {
-          added: [],
-          failed: [],
-          skipped: [],
-        };
-        vi.mocked(addReferences).mockResolvedValue(mockResult);
+    it("should pass stdinContent option", async () => {
+      const mockResult: AddReferencesResult = {
+        added: [],
+        failed: [],
+        skipped: [],
+      };
+      mockImport.mockResolvedValue(mockResult);
 
-        const options: AddCommandOptions = {
-          inputs: ["12345678"],
-          force: true,
-          format: "pmid",
-          pubmedConfig: { email: "test@example.com" },
-        };
+      const options: AddCommandOptions = {
+        inputs: ["-"],
+        force: false,
+        stdinContent: "@article{test, title={Test}}",
+      };
+      const context = createContext();
 
-        await executeAdd(options, localContext);
+      await executeAdd(options, context);
 
-        expect(addReferences).toHaveBeenCalledWith(["12345678"], mockLibrary, {
-          force: true,
-          format: "pmid",
-          pubmedConfig: { email: "test@example.com" },
-        });
+      expect(mockImport).toHaveBeenCalledWith(["-"], {
+        force: false,
+        stdinContent: "@article{test, title={Test}}",
       });
     });
   });

@@ -373,7 +373,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Acceptance: Commands use `context.library.search/list()`, no branching
   - Dependencies: 12.4.7.6
 
-- [ ] **12.4.7.8**: Update CLI commands (add, cite)
+- [x] **12.4.7.8**: Update CLI commands (add, cite)
   - File: `src/cli/commands/add.ts`, `src/cli/commands/cite.ts`, tests
   - Acceptance: Commands use `context.library.import/cite()`, no branching
   - Dependencies: 12.4.7.6

@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Library } from "../../core/library.js";
 import type { CiteResult } from "../../features/operations/cite.js";
-import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 import {
   type CiteCommandOptions,
   type CiteCommandResult,
@@ -12,11 +10,6 @@ import {
   getCiteExitCode,
 } from "./cite.js";
 
-// Mock dependencies
-vi.mock("../../features/operations/cite.js", () => ({
-  citeReferences: vi.fn(),
-}));
-
 // Mock fs for CSL file validation
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
@@ -24,114 +17,83 @@ vi.mock("node:fs", () => ({
 
 describe("cite command", () => {
   describe("executeCite", () => {
-    const mockLibrary = {} as Library;
-    const mockServerClient = {
-      cite: vi.fn(),
-    } as unknown as ServerClient;
+    const mockCite = vi.fn();
 
-    const serverContext: ServerExecutionContext = {
-      type: "server",
-      client: mockServerClient,
-    };
-
-    const localContext: LocalExecutionContext = {
-      type: "local",
-      library: mockLibrary,
-    };
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        type: "local",
+        library: {
+          cite: mockCite,
+        },
+      }) as unknown as ExecutionContext;
 
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
-    describe("via server", () => {
-      it("should call server cite when context is server", async () => {
-        const mockResult: CiteResult = {
-          results: [{ identifier: "Smith-2023", success: true, citation: "Smith (2023)" }],
-        };
-        vi.mocked(mockServerClient.cite).mockResolvedValue(mockResult);
+    it("should call context.library.cite with identifiers", async () => {
+      const mockResult: CiteResult = {
+        results: [{ identifier: "Smith-2023", success: true, citation: "Smith (2023)" }],
+      };
+      mockCite.mockResolvedValue(mockResult);
 
-        const options: CiteCommandOptions = { identifiers: ["Smith-2023"] };
+      const options: CiteCommandOptions = { identifiers: ["Smith-2023"] };
+      const context = createContext();
 
-        const result = await executeCite(options, serverContext);
+      const result = await executeCite(options, context);
 
-        expect(mockServerClient.cite).toHaveBeenCalledWith({
-          identifiers: ["Smith-2023"],
-        });
-        expect(result).toEqual(mockResult);
+      expect(mockCite).toHaveBeenCalledWith({
+        identifiers: ["Smith-2023"],
       });
+      expect(result).toEqual(mockResult);
+    });
 
-      it("should pass all options to server", async () => {
-        const mockResult: CiteResult = {
-          results: [{ identifier: "Smith-2023", success: true, citation: "Smith (2023)" }],
-        };
-        vi.mocked(mockServerClient.cite).mockResolvedValue(mockResult);
+    it("should pass all options to context.library.cite", async () => {
+      const mockResult: CiteResult = {
+        results: [{ identifier: "abc-123", success: true, citation: "Smith (2023)" }],
+      };
+      mockCite.mockResolvedValue(mockResult);
 
-        const options: CiteCommandOptions = {
-          identifiers: ["abc-123"],
-          uuid: true,
-          style: "vancouver",
-          locale: "ja-JP",
-          format: "html",
-          inText: true,
-        };
+      const options: CiteCommandOptions = {
+        identifiers: ["abc-123"],
+        uuid: true,
+        style: "vancouver",
+        locale: "ja-JP",
+        format: "html",
+        inText: true,
+      };
+      const context = createContext();
 
-        await executeCite(options, serverContext);
+      await executeCite(options, context);
 
-        expect(mockServerClient.cite).toHaveBeenCalledWith({
-          identifiers: ["abc-123"],
-          byUuid: true,
-          style: "vancouver",
-          locale: "ja-JP",
-          format: "html",
-          inText: true,
-        });
+      expect(mockCite).toHaveBeenCalledWith({
+        identifiers: ["abc-123"],
+        byUuid: true,
+        style: "vancouver",
+        locale: "ja-JP",
+        format: "html",
+        inText: true,
       });
     });
 
-    describe("via library", () => {
-      it("should call citeReferences when context is local", async () => {
-        const { citeReferences } = await import("../../features/operations/cite.js");
-        const mockResult: CiteResult = {
-          results: [{ identifier: "Smith-2023", success: true, citation: "Smith (2023)" }],
-        };
-        vi.mocked(citeReferences).mockResolvedValue(mockResult);
+    it("should support rtf format", async () => {
+      const mockResult: CiteResult = {
+        results: [{ identifier: "Smith-2023", success: true, citation: "{\\rtf1 Smith (2023)}" }],
+      };
+      mockCite.mockResolvedValue(mockResult);
 
-        const options: CiteCommandOptions = { identifiers: ["Smith-2023"] };
+      const options: CiteCommandOptions = {
+        identifiers: ["Smith-2023"],
+        format: "rtf",
+      };
+      const context = createContext();
 
-        const result = await executeCite(options, localContext);
+      await executeCite(options, context);
 
-        expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
-          identifiers: ["Smith-2023"],
-        });
-        expect(result).toEqual(mockResult);
-      });
-
-      it("should pass all options to citeReferences", async () => {
-        const { citeReferences } = await import("../../features/operations/cite.js");
-        const mockResult: CiteResult = {
-          results: [{ identifier: "abc-123", success: true, citation: "Smith (2023)" }],
-        };
-        vi.mocked(citeReferences).mockResolvedValue(mockResult);
-
-        const options: CiteCommandOptions = {
-          identifiers: ["abc-123"],
-          uuid: true,
-          style: "vancouver",
-          locale: "ja-JP",
-          format: "html",
-          inText: true,
-        };
-
-        await executeCite(options, localContext);
-
-        expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
-          identifiers: ["abc-123"],
-          byUuid: true,
-          style: "vancouver",
-          locale: "ja-JP",
-          format: "html",
-          inText: true,
-        });
+      expect(mockCite).toHaveBeenCalledWith({
+        identifiers: ["Smith-2023"],
+        format: "rtf",
       });
     });
 
@@ -142,10 +104,9 @@ describe("cite command", () => {
           // @ts-expect-error - testing invalid format
           format: "invalid",
         };
+        const context = createContext();
 
-        await expect(executeCite(options, localContext)).rejects.toThrow(
-          "Invalid format 'invalid'"
-        );
+        await expect(executeCite(options, context)).rejects.toThrow("Invalid format 'invalid'");
       });
 
       it("should throw error when CSL file does not exist", async () => {
@@ -156,8 +117,9 @@ describe("cite command", () => {
           identifiers: ["Smith-2023"],
           cslFile: "/nonexistent/style.csl",
         };
+        const context = createContext();
 
-        await expect(executeCite(options, localContext)).rejects.toThrow(
+        await expect(executeCite(options, context)).rejects.toThrow(
           "CSL file '/nonexistent/style.csl' not found"
         );
       });

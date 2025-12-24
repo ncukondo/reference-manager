@@ -1,13 +1,12 @@
 import type { InputFormat } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
-import {
-  type AddReferencesOptions,
-  type AddReferencesResult,
-  type AddedItem,
-  type FailedItem,
-  type SkippedItem,
-  addReferences,
+import type {
+  AddReferencesResult,
+  AddedItem,
+  FailedItem,
+  SkippedItem,
 } from "../../features/operations/add.js";
+import type { ImportOptions } from "../../features/operations/library-operations.js";
 import type { ExecutionContext } from "../execution-context.js";
 
 /**
@@ -41,10 +40,10 @@ const MAX_ERROR_LENGTH = 80;
 
 /**
  * Execute add command.
- * Routes to server API or direct library operation based on execution context.
+ * Uses context.library.import() which works for both local and server modes.
  *
  * @param options - Add command options
- * @param context - Execution context (server or local)
+ * @param context - Execution context
  * @returns Add result containing added, failed, and skipped items
  */
 export async function executeAdd(
@@ -53,31 +52,19 @@ export async function executeAdd(
 ): Promise<AddCommandResult> {
   const { inputs, force, format, pubmedConfig, stdinContent } = options;
 
-  if (context.type === "server") {
-    // Route through server - build options without undefined values
-    const serverOptions: AddReferencesOptions = { force };
-    if (format !== undefined) {
-      serverOptions.format = format as InputFormat | "auto";
-    }
-    if (stdinContent !== undefined) {
-      serverOptions.stdinContent = stdinContent;
-    }
-    return context.client.import(inputs, serverOptions);
-  }
-
-  // Direct library operation - build options without undefined values
-  const addOptions: AddReferencesOptions = { force };
+  // Build options without undefined values
+  const importOptions: ImportOptions = { force };
   if (format !== undefined) {
-    addOptions.format = format as InputFormat | "auto";
+    importOptions.format = format as InputFormat | "auto";
   }
   if (pubmedConfig !== undefined) {
-    addOptions.pubmedConfig = pubmedConfig;
+    importOptions.pubmedConfig = pubmedConfig;
   }
   if (stdinContent !== undefined) {
-    addOptions.stdinContent = stdinContent;
+    importOptions.stdinContent = stdinContent;
   }
 
-  return addReferences(inputs, context.library, addOptions);
+  return context.library.import(inputs, importOptions);
 }
 
 /**

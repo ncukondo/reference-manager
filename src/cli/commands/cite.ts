@@ -1,6 +1,5 @@
-import { type CiteResult, citeReferences } from "../../features/operations/cite.js";
+import type { CiteOperationOptions, CiteResult } from "../../features/operations/cite.js";
 import type { ExecutionContext } from "../execution-context.js";
-import type { ServerClient } from "../server-client.js";
 
 /**
  * Options for the cite command.
@@ -37,28 +36,9 @@ async function validateOptions(options: CiteCommandOptions): Promise<void> {
 }
 
 /**
- * Build server cite options from command options.
+ * Build cite operation options from command options.
  */
-function buildServerCiteOptions(options: CiteCommandOptions): Parameters<ServerClient["cite"]>[0] {
-  return {
-    identifiers: options.identifiers,
-    ...(options.uuid !== undefined && { byUuid: options.uuid }),
-    ...(options.inText !== undefined && { inText: options.inText }),
-    ...(options.style !== undefined && { style: options.style }),
-    ...(options.cslFile !== undefined && { cslFile: options.cslFile }),
-    ...(options.locale !== undefined && { locale: options.locale }),
-    ...(options.format !== undefined && {
-      format: options.format === "rtf" ? "text" : options.format,
-    }),
-  };
-}
-
-/**
- * Build operation cite options from command options.
- */
-function buildOperationCiteOptions(
-  options: CiteCommandOptions
-): Parameters<typeof citeReferences>[1] {
+function buildCiteOptions(options: CiteCommandOptions): CiteOperationOptions {
   return {
     identifiers: options.identifiers,
     ...(options.uuid !== undefined && { byUuid: options.uuid }),
@@ -72,10 +52,10 @@ function buildOperationCiteOptions(
 
 /**
  * Execute cite command.
- * Routes to server API or direct library operation based on execution context.
+ * Uses context.library.cite() which works for both local and server modes.
  *
  * @param options - Cite command options
- * @param context - Execution context (server or local)
+ * @param context - Execution context
  * @returns Cite result containing per-identifier results
  */
 export async function executeCite(
@@ -84,11 +64,7 @@ export async function executeCite(
 ): Promise<CiteCommandResult> {
   await validateOptions(options);
 
-  if (context.type === "server") {
-    return context.client.cite(buildServerCiteOptions(options));
-  }
-
-  return citeReferences(context.library, buildOperationCiteOptions(options));
+  return context.library.cite(buildCiteOptions(options));
 }
 
 /**
