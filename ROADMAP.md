@@ -388,7 +388,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Acceptance: Commands use `context.library` directly (minor update from getLibrary)
   - Dependencies: 12.4.7.6
 
-- [ ] **12.4.7.11**: Update CLI main and helpers
+- [x] **12.4.7.11**: Update CLI main and helpers
   - File: `src/cli/index.ts`
   - Acceptance: findReferenceToRemove uses context.library.find(), imports updated
   - Dependencies: 12.4.7.9
