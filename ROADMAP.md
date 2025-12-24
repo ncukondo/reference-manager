@@ -321,24 +321,93 @@ Key design decisions:
   - Acceptance: CLI fulltext commands pass ILibrary to operations, no mode branching needed
   - Dependencies: 12.4.6.3
 
-#### 12.4.7 Unify CLI and MCP with ILibrary
+#### 12.4.7 ILibraryOperations Pattern (CLI Unification)
 
-Update all CLI commands and MCP tools to use ILibrary interface consistently.
+Introduce `ILibraryOperations` interface to unify CLI commands across local and server modes.
+Eliminates branching logic (`context.type === "server"`) in CLI commands while preserving mode information.
 
-- [ ] **12.4.7.1**: Update CLI commands to use ILibrary
-  - File: `src/cli/commands/*.ts`
-  - Acceptance: All CLI commands (search, list, add, remove, cite, update) use ILibrary
+See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
+
+**Note**: MCP remains unchanged (uses Library + operation functions directly).
+
+##### Phase 1: New Abstractions
+
+- [ ] **12.4.7.1**: Create `ILibraryOperations` interface
+  - File: `src/features/operations/library-operations.ts`
+  - Acceptance: Interface extends ILibrary with search, list, cite, import methods
   - Dependencies: 12.4.6.5
 
-- [ ] **12.4.7.2**: Update MCP tools to accept ILibrary
-  - File: `src/mcp/tools/*.ts`, `src/mcp/context.ts`
-  - Acceptance: MCP context provides ILibrary, all tools use it
+- [ ] **12.4.7.2**: Create `OperationsLibrary` class
+  - File: `src/features/operations/operations-library.ts`, `src/features/operations/operations-library.test.ts`
+  - Acceptance: Wraps ILibrary, delegates ILibrary methods, implements high-level methods using operation functions
   - Dependencies: 12.4.7.1
 
-- [ ] **12.4.7.3**: Remove ExecutionContext branching logic
-  - File: `src/cli/execution-context.ts`, `src/cli/commands/*.ts`
-  - Acceptance: ExecutionContext provides ILibrary (either Library or ServerClient)
+- [ ] **12.4.7.3**: Export from operations index
+  - File: `src/features/operations/index.ts`
+  - Acceptance: ILibraryOperations and OperationsLibrary exported
   - Dependencies: 12.4.7.2
+
+##### Phase 2: ServerClient Updates
+
+- [ ] **12.4.7.4**: Rename ServerClient.addFromInputs to import
+  - File: `src/cli/server-client.ts`, `src/cli/server-client.test.ts`
+  - Acceptance: Method renamed to `import()`, tests updated
+  - Dependencies: 12.4.7.1
+
+- [ ] **12.4.7.5**: Update ServerClient to implement ILibraryOperations
+  - File: `src/cli/server-client.ts`, `src/cli/server-client.test.ts`
+  - Acceptance: ServerClient implements ILibraryOperations, existing HTTP methods preserved
+  - Dependencies: 12.4.7.4
+
+##### Phase 3: ExecutionContext Updates
+
+- [ ] **12.4.7.6**: Simplify ExecutionContext
+  - File: `src/cli/execution-context.ts`, `src/cli/execution-context.test.ts`
+  - Acceptance: ExecutionContext has `mode: "local" | "server"` and `library: ILibraryOperations`, createExecutionContext returns OperationsLibrary or ServerClient
+  - Dependencies: 12.4.7.5
+
+##### Phase 4: CLI Commands Updates
+
+- [ ] **12.4.7.7**: Update CLI commands (search, list)
+  - File: `src/cli/commands/search.ts`, `src/cli/commands/list.ts`, tests
+  - Acceptance: Commands use `context.library.search/list()`, no branching
+  - Dependencies: 12.4.7.6
+
+- [ ] **12.4.7.8**: Update CLI commands (add, cite)
+  - File: `src/cli/commands/add.ts`, `src/cli/commands/cite.ts`, tests
+  - Acceptance: Commands use `context.library.import/cite()`, no branching
+  - Dependencies: 12.4.7.6
+
+- [ ] **12.4.7.9**: Update CLI commands (remove, update)
+  - File: `src/cli/commands/remove.ts`, `src/cli/commands/update.ts`, tests
+  - Acceptance: Commands use `context.library.remove/update()`, no branching
+  - Dependencies: 12.4.7.6
+
+- [ ] **12.4.7.10**: Update CLI commands (fulltext)
+  - File: `src/cli/commands/fulltext.ts`, `src/cli/commands/fulltext.test.ts`
+  - Acceptance: Commands use `context.library` directly (minor update from getLibrary)
+  - Dependencies: 12.4.7.6
+
+- [ ] **12.4.7.11**: Update CLI main and helpers
+  - File: `src/cli/index.ts`
+  - Acceptance: findReferenceToRemove uses context.library.find(), imports updated
+  - Dependencies: 12.4.7.9
+
+##### Phase 5: Cleanup and Quality
+
+- [ ] **12.4.7.12**: Cleanup deprecated code
+  - File: `src/cli/execution-context.ts`, `src/cli/commands/cite.ts`
+  - Acceptance: Remove ServerExecutionContext, LocalExecutionContext types, isServerContext, isLocalContext, getLibrary functions, buildServerCiteOptions
+  - Dependencies: 12.4.7.11
+
+- [ ] **12.4.7.13**: Update E2E tests
+  - File: `src/cli/execution-context.e2e.test.ts`, `src/cli/performance.e2e.test.ts`
+  - Acceptance: E2E tests work with new ExecutionContext
+  - Dependencies: 12.4.7.12
+
+- [ ] **12.4.7.14**: Quality checks
+  - Acceptance: typecheck, lint, format, all tests pass
+  - Dependencies: 12.4.7.13
 
 #### 12.5 Full-text Tools (Unit)
 

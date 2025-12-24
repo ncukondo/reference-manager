@@ -90,8 +90,8 @@ directory = "~/.reference-manager/fulltext"
 
 ### Two Modes of Operation
 
-1. **Direct file access**: When server not running
-2. **Server-backed**: When server running (faster for large libraries)
+1. **Direct file access**: When server not running (via `OperationsLibrary`)
+2. **Server-backed**: When server running (via `ServerClient`, faster for large libraries)
 
 ### Automatic Detection
 
@@ -106,6 +106,45 @@ CLI automatically detects running server via portfile (`~/.reference-manager/ser
 - Users don't need to manage server manually
 - Automatic fallback if server unavailable
 - Write operations via server update in-memory index immediately
+
+### ExecutionContext Pattern
+
+See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
+
+The CLI uses `ILibraryOperations` interface to unify local and server modes:
+
+```typescript
+type ExecutionMode = "local" | "server";
+
+interface ExecutionContext {
+  mode: ExecutionMode;
+  library: ILibraryOperations;
+}
+```
+
+The `mode` field is preserved for status/diagnostic commands and future extensibility (e.g., MCP mode).
+
+- **Local mode**: `OperationsLibrary` wraps `Library` and delegates to operation functions
+- **Server mode**: `ServerClient` makes direct HTTP requests to server endpoints
+
+This eliminates branching logic in CLI commands:
+
+```typescript
+// Unified - no mode checking needed
+export async function executeSearch(options, context: ExecutionContext) {
+  return context.library.search({ query: options.query, format });
+}
+```
+
+### Layer Responsibilities
+
+| Layer | Local Mode | Server Mode |
+|-------|------------|-------------|
+| `core/Library` | CRUD operations | - |
+| `features/operations/*` | Business logic | - |
+| `features/operations/OperationsLibrary` | Wraps Library | - |
+| `cli/ServerClient` | - | HTTP API calls |
+| `cli/ExecutionContext` | Provides `OperationsLibrary` | Provides `ServerClient` |
 
 ## Global Options
 
