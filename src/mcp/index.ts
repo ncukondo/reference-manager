@@ -3,6 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import packageJson from "../../package.json" with { type: "json" };
 import { type McpContext, createMcpContext } from "./context.js";
+import { registerAllResources } from "./resources/index.js";
+import { registerAllTools } from "./tools/index.js";
 
 export interface CreateMcpServerOptions {
   configPath: string;
@@ -36,6 +38,13 @@ export async function createMcpServer(options: CreateMcpServerOptions): Promise<
 
   // Create MCP server
   const server = new McpServer(serverInfo);
+
+  // Register tools and resources
+  // Use getters to always get current library/config (for file watcher updates)
+  const getLibrary = () => context.library;
+  const getConfig = () => context.config;
+  registerAllTools(server, getLibrary, getConfig);
+  registerAllResources(server, getLibrary);
 
   // Create stdio transport
   const transport = new StdioServerTransport(

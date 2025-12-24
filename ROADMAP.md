@@ -433,12 +433,12 @@ Full-text attachment management.
 
 Connect MCP server to CLI.
 
-- [ ] **12.6.1**: Create `mcp` CLI command
+- [x] **12.6.1**: Create `mcp` CLI command
   - File: `src/cli/commands/mcp.ts`, `src/cli/commands/mcp.test.ts`
   - Acceptance: `reference-manager mcp` starts server, accepts --library
   - Dependencies: 12.4.4, 12.5.3
 
-- [ ] **12.6.2**: Register command in CLI
+- [x] **12.6.2**: Register command in CLI
   - File: `src/cli/index.ts`
   - Acceptance: Command available in CLI
   - Dependencies: 12.6.1

@@ -30,6 +30,7 @@ import {
   getFulltextExitCode,
 } from "./commands/fulltext.js";
 import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
+import { mcpStart } from "./commands/mcp.js";
 import {
   type RemoveCommandOptions,
   deleteFulltextFiles,
@@ -83,6 +84,7 @@ export function createProgram(): Command {
   registerCiteCommand(program);
   registerServerCommand(program);
   registerFulltextCommand(program);
+  registerMcpCommand(program);
 
   return program;
 }
@@ -597,6 +599,46 @@ function registerServerCommand(program: Command): void {
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
         process.exit(4);
+      }
+    });
+}
+
+/**
+ * Register 'mcp' command - MCP stdio server
+ */
+function registerMcpCommand(program: Command): void {
+  program
+    .command("mcp")
+    .description("Start MCP stdio server for AI agent integration")
+    .action(async () => {
+      try {
+        const globalOpts = program.opts();
+
+        const mcpOptions: Parameters<typeof mcpStart>[0] = {
+          configPath: globalOpts.config ?? "",
+        };
+        if (globalOpts.library !== undefined) {
+          mcpOptions.libraryPath = globalOpts.library;
+        }
+        const result = await mcpStart(mcpOptions);
+
+        // MCP server runs until stdin closes or signal received
+        // The server keeps running and handles requests via stdio
+        // Wait for server to close (happens on stdin close or dispose)
+        await new Promise<void>((resolve) => {
+          process.stdin.on("close", async () => {
+            await result.dispose();
+            resolve();
+          });
+
+          process.stdin.on("end", async () => {
+            await result.dispose();
+            resolve();
+          });
+        });
+      } catch (error) {
+        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.exit(1);
       }
     });
 }
