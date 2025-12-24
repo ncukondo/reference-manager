@@ -113,22 +113,6 @@ export interface ILibrary {
    */
   remove(identifier: string, options?: RemoveOptions): Promise<RemoveResult>;
 
-  /**
-   * Remove a reference by citation ID.
-   * @param id - The citation ID of the reference to remove
-   * @returns true if removed, false if not found
-   * @deprecated Use remove() instead
-   */
-  removeById(id: string): Promise<boolean>;
-
-  /**
-   * Remove a reference by UUID.
-   * @param uuid - The UUID of the reference to remove
-   * @returns true if removed, false if not found
-   * @deprecated Use remove() instead
-   */
-  removeByUuid(uuid: string): Promise<boolean>;
-
   // ─────────────────────────────────────────────────────────────────────────
   // Persistence
   // ─────────────────────────────────────────────────────────────────────────

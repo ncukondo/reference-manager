@@ -130,32 +130,6 @@ export class Library implements ILibrary {
   }
 
   /**
-   * Remove a reference by UUID
-   * @deprecated Use remove() instead
-   */
-  async removeByUuid(uuid: string): Promise<boolean> {
-    const ref = this.uuidIndex.get(uuid);
-    if (!ref) {
-      return false;
-    }
-
-    return this.removeReference(ref);
-  }
-
-  /**
-   * Remove a reference by ID
-   * @deprecated Use remove() instead
-   */
-  async removeById(id: string): Promise<boolean> {
-    const ref = this.idIndex.get(id);
-    if (!ref) {
-      return false;
-    }
-
-    return this.removeReference(ref);
-  }
-
-  /**
    * Update a reference by citation ID or UUID.
    * @param identifier - The citation ID or UUID of the reference to update
    * @param updates - Partial updates to apply to the reference

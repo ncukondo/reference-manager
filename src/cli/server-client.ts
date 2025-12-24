@@ -172,46 +172,6 @@ export class ServerClient implements ILibrary {
     return removeResult;
   }
 
-  /**
-   * Remove reference by citation ID.
-   * @param id - Citation ID
-   * @returns true if removed, false if not found
-   * @deprecated Use remove() instead
-   */
-  async removeById(id: string): Promise<boolean> {
-    const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
-    const response = await fetch(url, {
-      method: "DELETE",
-    });
-
-    if (!response.ok && response.status !== 404) {
-      throw new Error(await response.text());
-    }
-
-    const result = (await response.json()) as RemoveResult;
-    return result.removed;
-  }
-
-  /**
-   * Remove reference by UUID.
-   * @param uuid - UUID
-   * @returns true if removed, false if not found
-   * @deprecated Use remove() instead
-   */
-  async removeByUuid(uuid: string): Promise<boolean> {
-    const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;
-    const response = await fetch(url, {
-      method: "DELETE",
-    });
-
-    if (!response.ok && response.status !== 404) {
-      throw new Error(await response.text());
-    }
-
-    const result = (await response.json()) as RemoveResult;
-    return result.removed;
-  }
-
   // ─────────────────────────────────────────────────────────────────────────
   // ILibrary Persistence
   // ─────────────────────────────────────────────────────────────────────────

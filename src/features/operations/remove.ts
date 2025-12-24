@@ -34,21 +34,11 @@ export async function removeReference(
 ): Promise<RemoveResult> {
   const { identifier, byUuid = false } = options;
 
-  // Find the reference first (returns CslItem directly)
-  const item = await library.find(identifier, { byUuid });
+  const result = await library.remove(identifier, { byUuid });
 
-  if (!item) {
-    return { removed: false };
-  }
-
-  // Remove from library
-  const removed = byUuid
-    ? await library.removeByUuid(identifier)
-    : await library.removeById(identifier);
-
-  if (removed) {
+  if (result.removed) {
     await library.save();
   }
 
-  return { removed, removedItem: item };
+  return result;
 }

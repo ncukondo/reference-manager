@@ -20,80 +20,81 @@ describe("removeReference", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      find: vi.fn(),
-      findById: vi.fn(),
-      findByUuid: vi.fn(),
-      removeById: vi.fn(),
-      removeByUuid: vi.fn(),
+      remove: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined),
     } as unknown as Library;
   });
 
   describe("remove by ID", () => {
     it("should remove reference by ID successfully", async () => {
-      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
-      (mockLibrary.removeById as ReturnType<typeof vi.fn>).mockReturnValue(true);
+      (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({
+        removed: true,
+        removedItem: mockItem,
+      });
 
       const options: RemoveOperationOptions = { identifier: "smith-2023", byUuid: false };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
       expect(result.removedItem).toEqual(mockItem);
-      expect(mockLibrary.removeById).toHaveBeenCalledWith("smith-2023");
+      expect(mockLibrary.remove).toHaveBeenCalledWith("smith-2023", { byUuid: false });
       expect(mockLibrary.save).toHaveBeenCalled();
     });
 
     it("should return removed=false when ID not found", async () => {
-      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({ removed: false });
 
       const options: RemoveOperationOptions = { identifier: "nonexistent", byUuid: false };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(false);
       expect(result.removedItem).toBeUndefined();
-      expect(mockLibrary.removeById).not.toHaveBeenCalled();
+      expect(mockLibrary.remove).toHaveBeenCalledWith("nonexistent", { byUuid: false });
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
   });
 
   describe("remove by UUID", () => {
     it("should remove reference by UUID successfully", async () => {
-      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
-      (mockLibrary.removeByUuid as ReturnType<typeof vi.fn>).mockReturnValue(true);
+      (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({
+        removed: true,
+        removedItem: mockItem,
+      });
 
       const options: RemoveOperationOptions = { identifier: "uuid-1", byUuid: true };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
       expect(result.removedItem).toEqual(mockItem);
-      expect(mockLibrary.removeByUuid).toHaveBeenCalledWith("uuid-1");
+      expect(mockLibrary.remove).toHaveBeenCalledWith("uuid-1", { byUuid: true });
       expect(mockLibrary.save).toHaveBeenCalled();
     });
 
     it("should return removed=false when UUID not found", async () => {
-      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({ removed: false });
 
       const options: RemoveOperationOptions = { identifier: "nonexistent-uuid", byUuid: true };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(false);
       expect(result.removedItem).toBeUndefined();
-      expect(mockLibrary.removeByUuid).not.toHaveBeenCalled();
+      expect(mockLibrary.remove).toHaveBeenCalledWith("nonexistent-uuid", { byUuid: true });
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
   });
 
   describe("byUuid default", () => {
     it("should use byUuid=false by default", async () => {
-      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
-      (mockLibrary.removeById as ReturnType<typeof vi.fn>).mockReturnValue(true);
+      (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({
+        removed: true,
+        removedItem: mockItem,
+      });
 
       const options: RemoveOperationOptions = { identifier: "smith-2023" };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
-      expect(mockLibrary.find).toHaveBeenCalledWith("smith-2023", { byUuid: false });
-      expect(mockLibrary.removeById).toHaveBeenCalledWith("smith-2023");
+      expect(mockLibrary.remove).toHaveBeenCalledWith("smith-2023", { byUuid: false });
     });
   });
 });

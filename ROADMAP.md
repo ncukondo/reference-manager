@@ -300,7 +300,7 @@ Key design decisions:
     - Acceptance: DELETE endpoints return `{ removed, removedItem? }` and ServerClient.remove() returns removedItem
     - Dependencies: 12.4.6.3q
 
-  - [ ] **12.4.6.3r**: Replace removeById/removeByUuid usages with remove()
+  - [x] **12.4.6.3r**: Replace removeById/removeByUuid usages with remove()
     - Files: operations, CLI commands
     - Acceptance: All operations use remove(), tests updated
     - Dependencies: 12.4.6.3q

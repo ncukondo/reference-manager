@@ -234,7 +234,7 @@ describe("Library", () => {
       const library = await Library.load(testFilePath);
       const uuid = "550e8400-e29b-41d4-a716-446655440001";
 
-      await library.removeByUuid(uuid);
+      await library.remove(uuid, { byUuid: true });
       expect(await library.getAll()).toHaveLength(1);
       expect(await library.find(uuid, { byUuid: true })).toBeUndefined();
     });
@@ -242,7 +242,7 @@ describe("Library", () => {
     it("should remove reference by ID", async () => {
       const library = await Library.load(testFilePath);
 
-      await library.removeById("smith-2023");
+      await library.remove("smith-2023");
       expect(await library.getAll()).toHaveLength(1);
       expect(await library.find("smith-2023")).toBeUndefined();
     });
@@ -250,7 +250,7 @@ describe("Library", () => {
     it("should update all indices when removing", async () => {
       const library = await Library.load(testFilePath);
 
-      await library.removeById("smith-2023");
+      await library.remove("smith-2023");
 
       expect(
         await library.find("550e8400-e29b-41d4-a716-446655440001", { byUuid: true })
@@ -259,20 +259,30 @@ describe("Library", () => {
       expect(library.findByPmid("12345678")).toBeUndefined();
     });
 
-    it("should return false when removing non-existent reference", async () => {
+    it("should return removed=false when removing non-existent reference", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = await library.removeById("non-existent");
-      expect(result).toBe(false);
+      const result = await library.remove("non-existent");
+      expect(result.removed).toBe(false);
       expect(await library.getAll()).toHaveLength(2);
     });
 
-    it("should return true when successfully removing reference", async () => {
+    it("should return removed=true when successfully removing reference", async () => {
       const library = await Library.load(testFilePath);
 
-      const result = await library.removeById("smith-2023");
-      expect(result).toBe(true);
+      const result = await library.remove("smith-2023");
+      expect(result.removed).toBe(true);
       expect(await library.getAll()).toHaveLength(1);
+    });
+
+    it("should return removedItem when successfully removing reference", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("smith-2023");
+      expect(result.removed).toBe(true);
+      expect(result.removedItem).toBeDefined();
+      expect(result.removedItem?.id).toBe("smith-2023");
+      expect(result.removedItem?.title).toBe("Machine Learning in Medical Diagnosis");
     });
   });
 
