@@ -190,10 +190,10 @@ Key design decisions:
   - Acceptance: All consumers await ILibrary method calls
   - Dependencies: 12.4.6.2c
 
-- [ ] **12.4.6.3**: Unified `update()` method and `ServerClient` ILibrary implementation
+- [x] **12.4.6.3**: Unified `update()` method and `ServerClient` ILibrary implementation
   - Dependencies: 12.4.6.2d
   - Note: Replaces updateById/updateByUuid with unified update() method
-  - **Status**: update() implementation complete. Remaining: 12.4.6.3g (server endpoint item return)
+  - **Status**: Complete
   - **Known issues**: server-client.test.ts has failing tests for find()/remove() methods (not yet implemented)
 
   - [x] **12.4.6.3a**: Extend server PUT endpoints for onIdCollision option
@@ -225,7 +225,7 @@ Key design decisions:
     - Acceptance: Old methods removed, update() is the only update method
     - Dependencies: 12.4.6.3e
 
-  - [ ] **12.4.6.3g**: Update server PUT endpoint to return updated item
+  - [x] **12.4.6.3g**: Update server PUT endpoint to return updated item
     - File: `src/server/routes/references.ts`, `src/server/routes/references.test.ts`
     - Acceptance: PUT response includes updated CslItem in response body
     - Dependencies: 12.4.6.3c
