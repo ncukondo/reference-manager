@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Library } from "../../core/library.js";
 import type { ListResult } from "../../features/operations/list.js";
-import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 import {
   type ListCommandOptions,
   type ListCommandResult,
@@ -10,114 +8,92 @@ import {
   formatListOutput,
 } from "./list.js";
 
-// Mock dependencies
-vi.mock("../../features/operations/list.js", () => ({
-  listReferences: vi.fn(),
-}));
-
 describe("list command", () => {
   describe("executeList", () => {
-    const mockLibrary = {} as Library;
-    const mockServerClient = {
-      list: vi.fn(),
-    } as unknown as ServerClient;
+    const mockList = vi.fn();
 
-    const serverContext: ServerExecutionContext = {
-      type: "server",
-      client: mockServerClient,
-    };
-
-    const localContext: LocalExecutionContext = {
-      type: "local",
-      library: mockLibrary,
-    };
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        type: "local",
+        library: {
+          list: mockList,
+        },
+      }) as unknown as ExecutionContext;
 
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
-    describe("via server", () => {
-      it("should call server list when context is server", async () => {
-        const mockResult: ListResult = {
-          items: ["[ref1] Test Article"],
-        };
-        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
+    it("should call context.library.list with pretty format by default", async () => {
+      const mockResult: ListResult = {
+        items: ["[ref1] Test Article"],
+      };
+      mockList.mockResolvedValue(mockResult);
 
-        const options: ListCommandOptions = {};
+      const options: ListCommandOptions = {};
+      const context = createContext();
 
-        const result = await executeList(options, serverContext);
+      const result = await executeList(options, context);
 
-        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "pretty" });
-        expect(result).toEqual(mockResult);
-      });
-
-      it("should pass json format option to server", async () => {
-        const mockResult: ListResult = { items: ['{"id":"ref1"}'] };
-        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
-
-        const options: ListCommandOptions = { json: true };
-
-        await executeList(options, serverContext);
-
-        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "json" });
-      });
-
-      it("should pass ids-only format option to server", async () => {
-        const mockResult: ListResult = { items: ["ref1", "ref2"] };
-        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
-
-        const options: ListCommandOptions = { idsOnly: true };
-
-        await executeList(options, serverContext);
-
-        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "ids-only" });
-      });
-
-      it("should pass uuid format option to server", async () => {
-        const mockResult: ListResult = { items: ["uuid-1", "uuid-2"] };
-        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
-
-        const options: ListCommandOptions = { uuid: true };
-
-        await executeList(options, serverContext);
-
-        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "uuid" });
-      });
-
-      it("should pass bibtex format option to server", async () => {
-        const mockResult: ListResult = { items: ["@article{ref1,}"] };
-        vi.mocked(mockServerClient.list).mockResolvedValue(mockResult);
-
-        const options: ListCommandOptions = { bibtex: true };
-
-        await executeList(options, serverContext);
-
-        expect(mockServerClient.list).toHaveBeenCalledWith({ format: "bibtex" });
-      });
+      expect(mockList).toHaveBeenCalledWith({ format: "pretty" });
+      expect(result).toEqual(mockResult);
     });
 
-    describe("via library", () => {
-      it("should call listReferences when context is local", async () => {
-        const { listReferences } = await import("../../features/operations/list.js");
-        const mockResult: ListResult = {
-          items: ["[ref1] Test Article"],
-        };
-        vi.mocked(listReferences).mockReturnValue(mockResult);
+    it("should pass json format option", async () => {
+      const mockResult: ListResult = { items: ['{"id":"ref1"}'] };
+      mockList.mockResolvedValue(mockResult);
 
-        const options: ListCommandOptions = {};
+      const options: ListCommandOptions = { json: true };
+      const context = createContext();
 
-        const result = await executeList(options, localContext);
+      await executeList(options, context);
 
-        expect(listReferences).toHaveBeenCalledWith(mockLibrary, { format: "pretty" });
-        expect(result).toEqual(mockResult);
-      });
+      expect(mockList).toHaveBeenCalledWith({ format: "json" });
+    });
+
+    it("should pass ids-only format option", async () => {
+      const mockResult: ListResult = { items: ["ref1", "ref2"] };
+      mockList.mockResolvedValue(mockResult);
+
+      const options: ListCommandOptions = { idsOnly: true };
+      const context = createContext();
+
+      await executeList(options, context);
+
+      expect(mockList).toHaveBeenCalledWith({ format: "ids-only" });
+    });
+
+    it("should pass uuid format option", async () => {
+      const mockResult: ListResult = { items: ["uuid-1", "uuid-2"] };
+      mockList.mockResolvedValue(mockResult);
+
+      const options: ListCommandOptions = { uuid: true };
+      const context = createContext();
+
+      await executeList(options, context);
+
+      expect(mockList).toHaveBeenCalledWith({ format: "uuid" });
+    });
+
+    it("should pass bibtex format option", async () => {
+      const mockResult: ListResult = { items: ["@article{ref1,}"] };
+      mockList.mockResolvedValue(mockResult);
+
+      const options: ListCommandOptions = { bibtex: true };
+      const context = createContext();
+
+      await executeList(options, context);
+
+      expect(mockList).toHaveBeenCalledWith({ format: "bibtex" });
     });
 
     describe("option validation", () => {
       it("should throw error for conflicting output options", async () => {
         const options: ListCommandOptions = { json: true, bibtex: true };
+        const context = createContext();
 
-        await expect(executeList(options, localContext)).rejects.toThrow(
+        await expect(executeList(options, context)).rejects.toThrow(
           "Multiple output formats specified"
         );
       });

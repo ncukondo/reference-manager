@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Library } from "../../core/library.js";
 import type { SearchResult } from "../../features/operations/search.js";
-import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
-import type { ServerClient } from "../server-client.js";
+import type { ExecutionContext } from "../execution-context.js";
 import {
   type SearchCommandOptions,
   type SearchCommandResult,
@@ -10,117 +8,92 @@ import {
   formatSearchOutput,
 } from "./search.js";
 
-// Mock dependencies
-vi.mock("../../features/operations/search.js", () => ({
-  searchReferences: vi.fn(),
-}));
-
 describe("search command", () => {
   describe("executeSearch", () => {
-    const mockLibrary = {} as Library;
-    const mockServerClient = {
-      search: vi.fn(),
-    } as unknown as ServerClient;
+    const mockSearch = vi.fn();
 
-    const serverContext: ServerExecutionContext = {
-      type: "server",
-      client: mockServerClient,
-    };
-
-    const localContext: LocalExecutionContext = {
-      type: "local",
-      library: mockLibrary,
-    };
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        type: "local",
+        library: {
+          search: mockSearch,
+        },
+      }) as unknown as ExecutionContext;
 
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
-    describe("via server", () => {
-      it("should call server search when context is server", async () => {
-        const mockResult: SearchResult = {
-          items: ["[ref1] Test Article"],
-        };
-        vi.mocked(mockServerClient.search).mockResolvedValue(mockResult);
+    it("should call context.library.search with query and pretty format by default", async () => {
+      const mockResult: SearchResult = {
+        items: ["[ref1] Test Article"],
+      };
+      mockSearch.mockResolvedValue(mockResult);
 
-        const options: SearchCommandOptions = { query: "test" };
+      const options: SearchCommandOptions = { query: "test" };
+      const context = createContext();
 
-        const result = await executeSearch(options, serverContext);
+      const result = await executeSearch(options, context);
 
-        expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "pretty" });
-        expect(result).toEqual(mockResult);
-      });
-
-      it("should pass json format option to server", async () => {
-        const mockResult: SearchResult = { items: ['{"id":"ref1"}'] };
-        vi.mocked(mockServerClient.search).mockResolvedValue(mockResult);
-
-        const options: SearchCommandOptions = { query: "test", json: true };
-
-        await executeSearch(options, serverContext);
-
-        expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "json" });
-      });
-
-      it("should pass ids-only format option to server", async () => {
-        const mockResult: SearchResult = { items: ["ref1", "ref2"] };
-        vi.mocked(mockServerClient.search).mockResolvedValue(mockResult);
-
-        const options: SearchCommandOptions = { query: "test", idsOnly: true };
-
-        await executeSearch(options, serverContext);
-
-        expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "ids-only" });
-      });
-
-      it("should pass uuid format option to server", async () => {
-        const mockResult: SearchResult = { items: ["uuid-1", "uuid-2"] };
-        vi.mocked(mockServerClient.search).mockResolvedValue(mockResult);
-
-        const options: SearchCommandOptions = { query: "test", uuid: true };
-
-        await executeSearch(options, serverContext);
-
-        expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "uuid" });
-      });
-
-      it("should pass bibtex format option to server", async () => {
-        const mockResult: SearchResult = { items: ["@article{ref1,}"] };
-        vi.mocked(mockServerClient.search).mockResolvedValue(mockResult);
-
-        const options: SearchCommandOptions = { query: "test", bibtex: true };
-
-        await executeSearch(options, serverContext);
-
-        expect(mockServerClient.search).toHaveBeenCalledWith({ query: "test", format: "bibtex" });
-      });
+      expect(mockSearch).toHaveBeenCalledWith({ query: "test", format: "pretty" });
+      expect(result).toEqual(mockResult);
     });
 
-    describe("via library", () => {
-      it("should call searchReferences when context is local", async () => {
-        const { searchReferences } = await import("../../features/operations/search.js");
-        const mockResult: SearchResult = {
-          items: ["[ref1] Test Article"],
-        };
-        vi.mocked(searchReferences).mockReturnValue(mockResult);
+    it("should pass json format option", async () => {
+      const mockResult: SearchResult = { items: ['{"id":"ref1"}'] };
+      mockSearch.mockResolvedValue(mockResult);
 
-        const options: SearchCommandOptions = { query: "machine learning" };
+      const options: SearchCommandOptions = { query: "test", json: true };
+      const context = createContext();
 
-        const result = await executeSearch(options, localContext);
+      await executeSearch(options, context);
 
-        expect(searchReferences).toHaveBeenCalledWith(mockLibrary, {
-          query: "machine learning",
-          format: "pretty",
-        });
-        expect(result).toEqual(mockResult);
-      });
+      expect(mockSearch).toHaveBeenCalledWith({ query: "test", format: "json" });
+    });
+
+    it("should pass ids-only format option", async () => {
+      const mockResult: SearchResult = { items: ["ref1", "ref2"] };
+      mockSearch.mockResolvedValue(mockResult);
+
+      const options: SearchCommandOptions = { query: "test", idsOnly: true };
+      const context = createContext();
+
+      await executeSearch(options, context);
+
+      expect(mockSearch).toHaveBeenCalledWith({ query: "test", format: "ids-only" });
+    });
+
+    it("should pass uuid format option", async () => {
+      const mockResult: SearchResult = { items: ["uuid-1", "uuid-2"] };
+      mockSearch.mockResolvedValue(mockResult);
+
+      const options: SearchCommandOptions = { query: "test", uuid: true };
+      const context = createContext();
+
+      await executeSearch(options, context);
+
+      expect(mockSearch).toHaveBeenCalledWith({ query: "test", format: "uuid" });
+    });
+
+    it("should pass bibtex format option", async () => {
+      const mockResult: SearchResult = { items: ["@article{ref1,}"] };
+      mockSearch.mockResolvedValue(mockResult);
+
+      const options: SearchCommandOptions = { query: "test", bibtex: true };
+      const context = createContext();
+
+      await executeSearch(options, context);
+
+      expect(mockSearch).toHaveBeenCalledWith({ query: "test", format: "bibtex" });
     });
 
     describe("option validation", () => {
       it("should throw error for conflicting output options", async () => {
         const options: SearchCommandOptions = { query: "test", json: true, bibtex: true };
+        const context = createContext();
 
-        await expect(executeSearch(options, localContext)).rejects.toThrow(
+        await expect(executeSearch(options, context)).rejects.toThrow(
           "Multiple output formats specified"
         );
       });

@@ -368,7 +368,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 
 ##### Phase 4: CLI Commands Updates
 
-- [ ] **12.4.7.7**: Update CLI commands (search, list)
+- [x] **12.4.7.7**: Update CLI commands (search, list)
   - File: `src/cli/commands/search.ts`, `src/cli/commands/list.ts`, tests
   - Acceptance: Commands use `context.library.search/list()`, no branching
   - Dependencies: 12.4.7.6
