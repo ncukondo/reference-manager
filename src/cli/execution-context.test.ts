@@ -1,14 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { Config } from "../config/schema.js";
 import type { Library } from "../core/library.js";
-import {
-  type ExecutionMode,
-  createExecutionContext,
-  // Deprecated exports (for backward compatibility testing)
-  getLibrary,
-  isLocalContext,
-  isServerContext,
-} from "./execution-context.js";
+import { type ExecutionMode, createExecutionContext } from "./execution-context.js";
 import * as serverDetection from "./server-detection.js";
 
 // Mock the server-detection module
@@ -156,97 +149,6 @@ describe("execution-context", () => {
 
       // Mode should be available for diagnostics/logging
       expect(["local", "server"]).toContain(context.mode);
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Deprecated API tests - To be removed in 12.4.7.12
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  describe("deprecated: type property (backward compatibility)", () => {
-    test("should provide type property matching mode", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(context.type).toBe(context.mode);
-    });
-
-    test("should have type='server' in server mode", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue({
-        baseUrl: "http://localhost:3000",
-        pid: 12345,
-      });
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(context.type).toBe("server");
-    });
-  });
-
-  describe("deprecated: client property (backward compatibility)", () => {
-    test("should provide client property in server mode", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue({
-        baseUrl: "http://localhost:3000",
-        pid: 12345,
-      });
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(context.client).toBeDefined();
-      expect(context.client?.baseUrl).toBe("http://localhost:3000");
-    });
-
-    test("should not have client in local mode", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(context.client).toBeUndefined();
-    });
-  });
-
-  describe("deprecated: isServerContext", () => {
-    test("should return true for server context", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue({
-        baseUrl: "http://localhost:3000",
-        pid: 12345,
-      });
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(isServerContext(context)).toBe(true);
-    });
-
-    test("should return false for local context", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(isServerContext(context)).toBe(false);
-    });
-  });
-
-  describe("deprecated: isLocalContext", () => {
-    test("should return true for local context", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(isLocalContext(context)).toBe(true);
-    });
-
-    test("should return false for server context", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue({
-        baseUrl: "http://localhost:3000",
-        pid: 12345,
-      });
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      expect(isLocalContext(context)).toBe(false);
-    });
-  });
-
-  describe("deprecated: getLibrary", () => {
-    test("should return ILibrary from context", async () => {
-      vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
-      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
-
-      const lib = getLibrary(context);
-      expect(lib).toBe(context.library);
     });
   });
 });

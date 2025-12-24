@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
 import type { AttachResult, DetachResult } from "../../features/fulltext/index.js";
-import type { LocalExecutionContext, ServerExecutionContext } from "../execution-context.js";
+import type { ExecutionContext } from "../execution-context.js";
 import type { ServerClient } from "../server-client.js";
 import {
   type FulltextAttachOptions,
@@ -90,16 +90,13 @@ describe("fulltext command", () => {
     update: vi.fn(),
   } as unknown as ServerClient;
 
-  const serverContext: ServerExecutionContext = {
+  const serverContext: ExecutionContext = {
     mode: "server",
-    type: "server",
     library: mockServerClient,
-    client: mockServerClient,
   };
 
-  const localContext: LocalExecutionContext = {
+  const localContext: ExecutionContext = {
     mode: "local",
-    type: "local",
     library: mockLibrary,
   };
 

@@ -395,7 +395,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 
 ##### Phase 5: Cleanup and Quality
 
-- [ ] **12.4.7.12**: Cleanup deprecated code
+- [x] **12.4.7.12**: Cleanup deprecated code
   - File: `src/cli/execution-context.ts`, `src/cli/commands/cite.ts`
   - Acceptance: Remove ServerExecutionContext, LocalExecutionContext types, isServerContext, isLocalContext, getLibrary functions, buildServerCiteOptions
   - Dependencies: 12.4.7.11
