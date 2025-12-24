@@ -16,7 +16,7 @@ import {
   fulltextDetach,
   fulltextGet,
 } from "../../features/operations/fulltext/index.js";
-import { type ExecutionContext, getLibrary } from "../execution-context.js";
+import type { ExecutionContext } from "../execution-context.js";
 
 /**
  * Options for fulltext attach command
@@ -76,7 +76,7 @@ export async function executeFulltextAttach(
     stdinContent: options.stdinContent,
   };
 
-  return fulltextAttach(getLibrary(context), operationOptions);
+  return fulltextAttach(context.library, operationOptions);
 }
 
 /**
@@ -94,7 +94,7 @@ export async function executeFulltextGet(
     fulltextDirectory: options.fulltextDirectory,
   };
 
-  return fulltextGet(getLibrary(context), operationOptions);
+  return fulltextGet(context.library, operationOptions);
 }
 
 /**
@@ -112,7 +112,7 @@ export async function executeFulltextDetach(
     fulltextDirectory: options.fulltextDirectory,
   };
 
-  return fulltextDetach(getLibrary(context), operationOptions);
+  return fulltextDetach(context.library, operationOptions);
 }
 
 // ============================================================================

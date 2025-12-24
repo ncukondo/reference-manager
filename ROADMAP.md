@@ -383,7 +383,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Acceptance: Commands use `context.library.remove/update()`, no branching
   - Dependencies: 12.4.7.6
 
-- [ ] **12.4.7.10**: Update CLI commands (fulltext)
+- [x] **12.4.7.10**: Update CLI commands (fulltext)
   - File: `src/cli/commands/fulltext.ts`, `src/cli/commands/fulltext.test.ts`
   - Acceptance: Commands use `context.library` directly (minor update from getLibrary)
   - Dependencies: 12.4.7.6
