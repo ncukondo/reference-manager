@@ -2,7 +2,7 @@ import { unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { FulltextType } from "../../features/fulltext/index.js";
-import { type RemoveResult, removeReference } from "../../features/operations/remove.js";
+import type { RemoveResult } from "../../features/operations/remove.js";
 import type { ExecutionContext } from "../execution-context.js";
 
 /**
@@ -20,10 +20,10 @@ export type RemoveCommandResult = RemoveResult;
 
 /**
  * Execute remove command.
- * Routes to server API or direct library operation based on execution context.
+ * Uses context.library.remove() which works for both local and server modes.
  *
  * @param options - Remove command options
- * @param context - Execution context (server or local)
+ * @param context - Execution context
  * @returns Remove result
  */
 export async function executeRemove(
@@ -32,13 +32,7 @@ export async function executeRemove(
 ): Promise<RemoveCommandResult> {
   const { identifier, byUuid = false } = options;
 
-  if (context.type === "server") {
-    // Server mode: use client with byUuid option for direct ID or UUID lookup
-    return context.client.remove(identifier, { byUuid });
-  }
-
-  // Local mode: direct library operation
-  return removeReference(context.library, { identifier, byUuid });
+  return context.library.remove(identifier, { byUuid });
 }
 
 /**

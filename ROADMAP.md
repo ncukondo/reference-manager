@@ -378,7 +378,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Acceptance: Commands use `context.library.import/cite()`, no branching
   - Dependencies: 12.4.7.6
 
-- [ ] **12.4.7.9**: Update CLI commands (remove, update)
+- [x] **12.4.7.9**: Update CLI commands (remove, update)
   - File: `src/cli/commands/remove.ts`, `src/cli/commands/update.ts`, tests
   - Acceptance: Commands use `context.library.remove/update()`, no branching
   - Dependencies: 12.4.7.6

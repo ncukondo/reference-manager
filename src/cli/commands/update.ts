@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import { type UpdateOperationResult, updateReference } from "../../features/operations/update.js";
+import type { UpdateOperationResult } from "../../features/operations/update.js";
 import type { ExecutionContext } from "../execution-context.js";
 
 /**
@@ -18,10 +18,10 @@ export type UpdateCommandResult = UpdateOperationResult;
 
 /**
  * Execute update command.
- * Routes to server API or direct library operation based on execution context.
+ * Uses context.library.update() which works for both local and server modes.
  *
  * @param options - Update command options
- * @param context - Execution context (server or local)
+ * @param context - Execution context
  * @returns Update result
  */
 export async function executeUpdate(
@@ -30,13 +30,7 @@ export async function executeUpdate(
 ): Promise<UpdateCommandResult> {
   const { identifier, updates, byUuid = false } = options;
 
-  if (context.type === "server") {
-    // Server mode: use client with byUuid option for direct ID or UUID lookup
-    return context.client.update(identifier, updates, { byUuid });
-  }
-
-  // Local mode: direct library operation
-  return updateReference(context.library, { identifier, updates, byUuid });
+  return context.library.update(identifier, updates, { byUuid });
 }
 
 /**
