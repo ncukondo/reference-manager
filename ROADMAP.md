@@ -332,17 +332,17 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 
 ##### Phase 1: New Abstractions
 
-- [ ] **12.4.7.1**: Create `ILibraryOperations` interface
+- [x] **12.4.7.1**: Create `ILibraryOperations` interface
   - File: `src/features/operations/library-operations.ts`
   - Acceptance: Interface extends ILibrary with search, list, cite, import methods
   - Dependencies: 12.4.6.5
 
-- [ ] **12.4.7.2**: Create `OperationsLibrary` class
+- [x] **12.4.7.2**: Create `OperationsLibrary` class
   - File: `src/features/operations/operations-library.ts`, `src/features/operations/operations-library.test.ts`
   - Acceptance: Wraps ILibrary, delegates ILibrary methods, implements high-level methods using operation functions
   - Dependencies: 12.4.7.1
 
-- [ ] **12.4.7.3**: Export from operations index
+- [x] **12.4.7.3**: Export from operations index
   - File: `src/features/operations/index.ts`
   - Acceptance: ILibraryOperations and OperationsLibrary exported
   - Dependencies: 12.4.7.2

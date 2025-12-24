@@ -48,7 +48,8 @@
       "Bash(cat:*)",
       "Bash(gh run view:*)",
       "WebFetch(domain:docs.npmjs.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__serena__list_memories"
     ]
   },
   "enableAllProjectMcpServers": true,
