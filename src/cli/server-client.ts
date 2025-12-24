@@ -2,6 +2,8 @@ import type { CslItem } from "../core/csl-json/types.js";
 import type {
   FindOptions,
   ILibrary,
+  RemoveResult as ILibraryRemoveResult,
+  RemoveOptions,
   UpdateOptions,
   UpdateResult,
 } from "../core/library-interface.js";
@@ -144,9 +146,34 @@ export class ServerClient implements ILibrary {
   }
 
   /**
+   * Remove a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to remove
+   * @param options - Remove options (byUuid to use UUID lookup)
+   * @returns Remove result with removed status (removedItem not available from server yet)
+   */
+  async remove(identifier: string, options: RemoveOptions = {}): Promise<ILibraryRemoveResult> {
+    const { byUuid = false } = options;
+    const url = byUuid
+      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+
+    if (!response.ok && response.status !== 404) {
+      throw new Error(await response.text());
+    }
+
+    const result = (await response.json()) as RemoveResult;
+    // Note: removedItem is not yet available from server API (TODO: Phase 12.4.6.3q2)
+    return { removed: result.removed };
+  }
+
+  /**
    * Remove reference by citation ID.
    * @param id - Citation ID
    * @returns true if removed, false if not found
+   * @deprecated Use remove() instead
    */
   async removeById(id: string): Promise<boolean> {
     const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
@@ -166,6 +193,7 @@ export class ServerClient implements ILibrary {
    * Remove reference by UUID.
    * @param uuid - UUID
    * @returns true if removed, false if not found
+   * @deprecated Use remove() instead
    */
   async removeByUuid(uuid: string): Promise<boolean> {
     const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;

@@ -21,6 +21,22 @@ export interface FindOptions {
   byUuid?: boolean;
 }
 
+/**
+ * Options for remove operations.
+ * Currently identical to FindOptions, but defined separately for clarity and future extensibility.
+ */
+export type RemoveOptions = FindOptions;
+
+/**
+ * Result of a remove operation.
+ */
+export interface RemoveResult {
+  /** Whether the removal was successful */
+  removed: boolean;
+  /** The removed item (only when removed=true, may be undefined if not available from server) */
+  removedItem?: CslItem;
+}
+
 export interface UpdateOptions {
   /** How to handle ID collision: 'fail' (default) or 'suffix' */
   onIdCollision?: "fail" | "suffix";
@@ -90,9 +106,18 @@ export interface ILibrary {
   ): Promise<UpdateResult>;
 
   /**
+   * Remove a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to remove
+   * @param options - Remove options (byUuid to use UUID lookup)
+   * @returns Remove result with removed status and optionally the removed item
+   */
+  remove(identifier: string, options?: RemoveOptions): Promise<RemoveResult>;
+
+  /**
    * Remove a reference by citation ID.
    * @param id - The citation ID of the reference to remove
    * @returns true if removed, false if not found
+   * @deprecated Use remove() instead
    */
   removeById(id: string): Promise<boolean>;
 
@@ -100,6 +125,7 @@ export interface ILibrary {
    * Remove a reference by UUID.
    * @param uuid - The UUID of the reference to remove
    * @returns true if removed, false if not found
+   * @deprecated Use remove() instead
    */
   removeByUuid(uuid: string): Promise<boolean>;
 

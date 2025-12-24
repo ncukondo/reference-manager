@@ -284,15 +284,21 @@ Key design decisions:
     - Acceptance: Only find() remains, no deprecated methods
     - Dependencies: 12.4.6.3o2
 
-  - [ ] **12.4.6.3p**: Add unified remove() to ILibrary interface
+  - [x] **12.4.6.3p**: Add unified remove() to ILibrary interface
     - File: `src/core/library-interface.ts`
-    - Acceptance: `remove(identifier, options?: { byUuid? })` defined
+    - Acceptance: `remove(identifier, options?: { byUuid? })` returns `RemoveResult` with `removed` and `removedItem?`
     - Dependencies: 12.4.6.3o
 
-  - [ ] **12.4.6.3q**: Implement Library.remove() and ServerClient.remove()
+  - [x] **12.4.6.3q**: Implement Library.remove() and ServerClient.remove()
     - File: `src/core/library.ts`, `src/cli/server-client.ts`, tests
     - Acceptance: Both implementations work with id and uuid
+    - Note: Library.remove() returns removedItem; ServerClient.remove() returns only removed (server API pending 12.4.6.3q2)
     - Dependencies: 12.4.6.3p
+
+  - [ ] **12.4.6.3q2**: Update server DELETE API to return removedItem
+    - File: `src/server/routes/references.ts`, tests
+    - Acceptance: DELETE endpoints return `{ removed, item? }` and ServerClient.remove() returns removedItem
+    - Dependencies: 12.4.6.3q
 
   - [ ] **12.4.6.3r**: Replace removeById/removeByUuid usages with remove()
     - Files: operations, CLI commands

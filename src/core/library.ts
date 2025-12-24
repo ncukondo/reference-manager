@@ -2,7 +2,14 @@ import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
-import type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
+import type {
+  FindOptions,
+  ILibrary,
+  RemoveOptions,
+  RemoveResult,
+  UpdateOptions,
+  UpdateResult,
+} from "./library-interface.js";
 import { Reference } from "./reference";
 
 // Re-export types from library-interface for backward compatibility
@@ -106,7 +113,25 @@ export class Library implements ILibrary {
   }
 
   /**
+   * Remove a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to remove
+   * @param options - Remove options (byUuid to use UUID lookup)
+   * @returns Remove result with removed status and the removed item
+   */
+  async remove(identifier: string, options: RemoveOptions = {}): Promise<RemoveResult> {
+    const { byUuid = false } = options;
+    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+    if (!ref) {
+      return { removed: false };
+    }
+    const removedItem = ref.getItem();
+    const removed = this.removeReference(ref);
+    return { removed, removedItem };
+  }
+
+  /**
    * Remove a reference by UUID
+   * @deprecated Use remove() instead
    */
   async removeByUuid(uuid: string): Promise<boolean> {
     const ref = this.uuidIndex.get(uuid);
@@ -119,6 +144,7 @@ export class Library implements ILibrary {
 
   /**
    * Remove a reference by ID
+   * @deprecated Use remove() instead
    */
   async removeById(id: string): Promise<boolean> {
     const ref = this.idIndex.get(id);

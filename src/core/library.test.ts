@@ -552,6 +552,82 @@ describe("Library", () => {
     });
   });
 
+  describe("remove (unified method)", () => {
+    beforeEach(async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+    });
+
+    it("should remove by ID (default)", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("smith-2023");
+
+      expect(result.removed).toBe(true);
+      expect(result.removedItem).toBeDefined();
+      expect(result.removedItem?.id).toBe("smith-2023");
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.find("smith-2023")).toBeUndefined();
+    });
+
+    it("should remove by ID when byUuid=false", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("tanaka-2022", { byUuid: false });
+
+      expect(result.removed).toBe(true);
+      expect(result.removedItem).toBeDefined();
+      expect(result.removedItem?.id).toBe("tanaka-2022");
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.find("tanaka-2022")).toBeUndefined();
+    });
+
+    it("should remove by UUID when byUuid=true", async () => {
+      const library = await Library.load(testFilePath);
+      const uuid = "550e8400-e29b-41d4-a716-446655440001";
+
+      const result = await library.remove(uuid, { byUuid: true });
+
+      expect(result.removed).toBe(true);
+      expect(result.removedItem).toBeDefined();
+      expect(result.removedItem?.id).toBe("smith-2023");
+      expect(result.removedItem?.custom?.uuid).toBe(uuid);
+      expect(await library.getAll()).toHaveLength(1);
+      expect(await library.find(uuid, { byUuid: true })).toBeUndefined();
+    });
+
+    it("should return removed=false for non-existent ID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("non-existent");
+
+      expect(result.removed).toBe(false);
+      expect(result.removedItem).toBeUndefined();
+      expect(await library.getAll()).toHaveLength(2);
+    });
+
+    it("should return removed=false for non-existent UUID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("00000000-0000-0000-0000-000000000000", { byUuid: true });
+
+      expect(result.removed).toBe(false);
+      expect(result.removedItem).toBeUndefined();
+      expect(await library.getAll()).toHaveLength(2);
+    });
+
+    it("should update all indices when removing by unified method", async () => {
+      const library = await Library.load(testFilePath);
+
+      await library.remove("smith-2023");
+
+      expect(
+        await library.find("550e8400-e29b-41d4-a716-446655440001", { byUuid: true })
+      ).toBeUndefined();
+      expect(library.findByDoi("10.1234/jmi.2023.0045")).toBeUndefined();
+      expect(library.findByPmid("12345678")).toBeUndefined();
+    });
+  });
+
   describe("getAll", () => {
     it("should return all references", async () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");

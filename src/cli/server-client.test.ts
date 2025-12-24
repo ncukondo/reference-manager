@@ -293,47 +293,51 @@ describe("ServerClient", () => {
 
   describe("remove", () => {
     test("should remove reference by UUID when byUuid is true", async () => {
-      const removeResult = { removed: true, item: { id: "test-1", type: "article" } };
+      // Server API currently returns { removed: boolean } without removedItem
+      // removedItem will be added in a future phase (12.4.6.3q2)
+      const serverResponse = { removed: true };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => removeResult,
+        json: async () => serverResponse,
       } as Response);
 
       const result = await client.remove("uuid-1", { byUuid: true });
 
-      expect(result).toEqual(removeResult);
+      expect(result).toEqual({ removed: true });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
         method: "DELETE",
       });
     });
 
     test("should remove reference by citation ID when byUuid is false", async () => {
-      const removeResult = { removed: true, item: { id: "Smith-2024", type: "article" } };
+      // Server API currently returns { removed: boolean } without removedItem
+      const serverResponse = { removed: true };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => removeResult,
+        json: async () => serverResponse,
       } as Response);
 
       const result = await client.remove("Smith-2024", { byUuid: false });
 
-      expect(result).toEqual(removeResult);
+      expect(result).toEqual({ removed: true });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "DELETE",
       });
     });
 
     test("should default to ID lookup when no options provided", async () => {
-      const removeResult = { removed: true };
+      const serverResponse = { removed: true };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => removeResult,
+        json: async () => serverResponse,
       } as Response);
 
-      await client.remove("Smith-2024");
+      const result = await client.remove("Smith-2024");
 
+      expect(result).toEqual({ removed: true });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "DELETE",
       });
