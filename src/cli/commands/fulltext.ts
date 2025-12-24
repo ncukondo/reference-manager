@@ -160,9 +160,7 @@ async function findReferenceServer(
   context: Extract<ExecutionContext, { type: "server" }>,
   byUuid: boolean
 ): Promise<CslItem | null> {
-  const result = byUuid
-    ? await context.client.findByUuid(identifier)
-    : await context.client.findById(identifier);
+  const result = await context.client.find(identifier, { byUuid });
   return result ?? null;
 }
 

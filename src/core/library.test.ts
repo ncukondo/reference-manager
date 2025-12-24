@@ -495,6 +495,59 @@ describe("Library", () => {
     });
   });
 
+  describe("find (unified method)", () => {
+    beforeEach(async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+    });
+
+    it("should find by ID (default)", async () => {
+      const library = await Library.load(testFilePath);
+
+      const item = await library.find("smith-2023");
+
+      expect(item).toBeDefined();
+      expect(item?.id).toBe("smith-2023");
+      expect(item?.title).toBe("Machine Learning in Medical Diagnosis");
+    });
+
+    it("should find by ID when byUuid=false", async () => {
+      const library = await Library.load(testFilePath);
+
+      const item = await library.find("tanaka-2022", { byUuid: false });
+
+      expect(item).toBeDefined();
+      expect(item?.id).toBe("tanaka-2022");
+      expect(item?.title).toBe("Deep Learning for Image Recognition");
+    });
+
+    it("should find by UUID when byUuid=true", async () => {
+      const library = await Library.load(testFilePath);
+      const uuid = "550e8400-e29b-41d4-a716-446655440001";
+
+      const item = await library.find(uuid, { byUuid: true });
+
+      expect(item).toBeDefined();
+      expect(item?.id).toBe("smith-2023");
+      expect(item?.custom?.uuid).toBe(uuid);
+    });
+
+    it("should return undefined for non-existent ID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const item = await library.find("non-existent");
+
+      expect(item).toBeUndefined();
+    });
+
+    it("should return undefined for non-existent UUID", async () => {
+      const library = await Library.load(testFilePath);
+
+      const item = await library.find("00000000-0000-0000-0000-000000000000", { byUuid: true });
+
+      expect(item).toBeUndefined();
+    });
+  });
+
   describe("getAll", () => {
     it("should return all references", async () => {
       await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");

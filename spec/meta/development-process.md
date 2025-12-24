@@ -469,3 +469,73 @@ Goals:
 4. Run quality checks
 5. Update specs if behavior changed
 6. Commit
+
+### Replacing Functions/Methods (API Migration)
+
+When replacing existing functions or methods with new ones (e.g., replacing `findById`/`findByUuid` with unified `find()`):
+
+#### Step 1: Identify All References (Required)
+
+Use Serena MCP to identify ALL usages before making any changes:
+
+```bash
+# Find all references to the function/method
+mcp__serena__search_for_pattern "\.methodName\(" --relative_path="src"
+
+# Or use find_referencing_symbols for symbol-based search
+mcp__serena__find_referencing_symbols --name_path="ClassName/methodName" --relative_path="src/file.ts"
+```
+
+Document the complete list of files and line numbers that need updating.
+
+#### Step 2: Plan the Migration
+
+1. Group usages by layer (core → operations → CLI → tests)
+2. Determine replacement order (usually bottom-up: core first, then consumers)
+3. Identify if bulk replacement is possible (identical patterns) vs manual updates needed
+
+#### Step 3: Present Work Plan (Required)
+
+Before executing replacements, present a clear work plan:
+
+```markdown
+## Migration Plan: methodName → newMethodName
+
+### Files to Update
+| File | Occurrences | Replacement Type |
+|------|-------------|------------------|
+| src/core/module.ts | 3 | Bulk replace |
+| src/operations/op.ts | 5 | Manual (different patterns) |
+
+### Planned Operations
+1. **Bulk replace** in `src/core/`: `old pattern` → `new pattern`
+2. **Manual update** in `src/operations/op.ts`: [describe changes]
+3. **Update tests**: Add `newMethodName` to mocks
+
+### Execution Order
+1. Core layer
+2. Operations layer
+3. CLI layer
+4. Test mocks
+```
+
+Get explicit approval before proceeding.
+
+#### Step 4: Execute Replacements Efficiently
+
+Use appropriate tools:
+- **Bulk replacement**: Use Edit tool with `replace_all: true` for identical patterns
+- **Symbol replacement**: Use `mcp__serena__replace_symbol_body` for symbol-level changes
+- **Manual edits**: Use Edit tool for complex, non-uniform changes
+
+#### Step 5: Verify and Test
+
+1. Run typecheck to catch missing updates
+2. Run tests to verify functionality
+3. Search again to confirm no usages remain
+
+#### Step 6: Mark as Deprecated or Remove
+
+After all usages are migrated:
+- Mark old methods as `@deprecated` with migration notes
+- Or remove them entirely if safe (pre-release)

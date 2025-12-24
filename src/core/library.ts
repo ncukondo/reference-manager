@@ -2,11 +2,11 @@ import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
-import type { ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
+import type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
 import { Reference } from "./reference";
 
 // Re-export types from library-interface for backward compatibility
-export type { ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
+export type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
 
 /**
  * Library manager for CSL-JSON references.
@@ -152,7 +152,20 @@ export class Library implements ILibrary {
   }
 
   /**
+   * Find a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to find
+   * @param options - Find options (byUuid to use UUID lookup)
+   * @returns The CSL item if found, undefined otherwise
+   */
+  async find(identifier: string, options: FindOptions = {}): Promise<CslItem | undefined> {
+    const { byUuid = false } = options;
+    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+    return ref?.getItem();
+  }
+
+  /**
    * Find a reference by UUID
+   * @deprecated Use find(uuid, { byUuid: true }) instead
    */
   async findByUuid(uuid: string): Promise<CslItem | undefined> {
     return this.uuidIndex.get(uuid)?.getItem();
@@ -160,6 +173,7 @@ export class Library implements ILibrary {
 
   /**
    * Find a reference by ID
+   * @deprecated Use find(id) instead
    */
   async findById(id: string): Promise<CslItem | undefined> {
     return this.idIndex.get(id)?.getItem();

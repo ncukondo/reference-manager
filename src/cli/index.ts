@@ -261,13 +261,10 @@ async function findReferenceToRemove(
   context: ExecutionContext
 ): Promise<CslItem | undefined> {
   if (context.type === "server") {
-    return byUuid
-      ? context.client.findByUuid(identifier)
-      : context.client.findById(identifier);
+    return context.client.find(identifier, { byUuid });
   }
 
-  // findById/findByUuid now return CslItem directly
-  return byUuid ? context.library.findByUuid(identifier) : context.library.findById(identifier);
+  return context.library.find(identifier, { byUuid });
 }
 
 async function confirmRemoval(

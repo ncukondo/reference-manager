@@ -58,6 +58,7 @@ describe("fulltextDetach", () => {
     vi.mocked(FulltextManager).mockImplementation(() => mockManager as unknown as FulltextManager);
 
     mockLibrary = {
+      find: vi.fn(),
       findById: vi.fn(),
       findByUuid: vi.fn(),
     } as unknown as Library;
@@ -66,7 +67,7 @@ describe("fulltextDetach", () => {
   describe("reference lookup", () => {
     it("should find reference by id when byUuid is false", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
@@ -75,13 +76,12 @@ describe("fulltextDetach", () => {
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockLibrary.findById).toHaveBeenCalledWith("test-id");
-      expect(mockLibrary.findByUuid).not.toHaveBeenCalled();
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { byUuid: false });
     });
 
     it("should find reference by uuid when byUuid is true", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findByUuid).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
@@ -91,12 +91,11 @@ describe("fulltextDetach", () => {
         byUuid: true,
       });
 
-      expect(mockLibrary.findByUuid).toHaveBeenCalledWith("test-uuid");
-      expect(mockLibrary.findById).not.toHaveBeenCalled();
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { byUuid: true });
     });
 
     it("should return error when reference not found", async () => {
-      vi.mocked(mockLibrary.findById).mockReturnValue(undefined);
+      vi.mocked(mockLibrary.find).mockResolvedValue(undefined);
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "nonexistent",
@@ -111,7 +110,7 @@ describe("fulltextDetach", () => {
   describe("detach operations", () => {
     it("should detach pdf successfully", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
@@ -127,7 +126,7 @@ describe("fulltextDetach", () => {
 
     it("should detach specific type when type option is provided", async () => {
       const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
       const result = await fulltextDetach(mockLibrary, {
@@ -143,7 +142,7 @@ describe("fulltextDetach", () => {
 
     it("should detach all types when no type specified", async () => {
       const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf", "markdown"]);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
@@ -159,7 +158,7 @@ describe("fulltextDetach", () => {
 
     it("should delete files when delete option is true", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockResolvedValue({ deleted: true });
 
@@ -177,7 +176,7 @@ describe("fulltextDetach", () => {
 
     it("should return error when no fulltext attached", async () => {
       const item = createItem("test-id");
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue([]);
 
       const result = await fulltextDetach(mockLibrary, {
@@ -193,7 +192,7 @@ describe("fulltextDetach", () => {
   describe("metadata update", () => {
     it("should update metadata after detaching", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
@@ -213,7 +212,7 @@ describe("fulltextDetach", () => {
 
     it("should preserve remaining fulltext entries", async () => {
       const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.detachFile.mockResolvedValue({ deleted: false });
 
       await fulltextDetach(mockLibrary, {
@@ -235,7 +234,7 @@ describe("fulltextDetach", () => {
   describe("error handling", () => {
     it("should handle FulltextNotAttachedError", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockRejectedValue(new FulltextNotAttachedError("File not attached"));
 
@@ -250,7 +249,7 @@ describe("fulltextDetach", () => {
 
     it("should handle FulltextIOError", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockRejectedValue(new FulltextIOError("Delete failed"));
 
@@ -265,7 +264,7 @@ describe("fulltextDetach", () => {
 
     it("should rethrow unexpected errors", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue(item);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.detachFile.mockRejectedValue(new Error("Unexpected error"));
 

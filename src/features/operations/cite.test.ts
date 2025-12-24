@@ -30,6 +30,12 @@ describe("citeReferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
+      find: vi.fn((id: string, options?: { byUuid?: boolean }) => {
+        if (options?.byUuid) {
+          return Promise.resolve(mockItems.find((i) => i.custom?.uuid === id));
+        }
+        return Promise.resolve(mockItems.find((i) => i.id === id));
+      }),
       findById: vi.fn((id: string) => mockItems.find((i) => i.id === id)),
       findByUuid: vi.fn((uuid: string) => mockItems.find((i) => i.custom?.uuid === uuid)),
     } as unknown as Library;
@@ -151,8 +157,7 @@ describe("citeReferences", () => {
       };
       await citeReferences(mockLibrary, options);
 
-      expect(mockLibrary.findById).toHaveBeenCalledWith("smith-2023");
-      expect(mockLibrary.findByUuid).not.toHaveBeenCalled();
+      expect(mockLibrary.find).toHaveBeenCalledWith("smith-2023", { byUuid: false });
     });
   });
 });

@@ -1,5 +1,5 @@
 import type { CslItem } from "../core/csl-json/types.js";
-import type { ILibrary, UpdateOptions, UpdateResult } from "../core/library-interface.js";
+import type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "../core/library-interface.js";
 import type { AddReferencesResult } from "../features/operations/add.js";
 import type { CiteResult } from "../features/operations/cite.js";
 import type { ListOptions, ListResult } from "../features/operations/list.js";
@@ -54,12 +54,16 @@ export class ServerClient implements ILibrary {
   }
 
   /**
-   * Find reference by citation ID.
-   * @param id - Citation ID
+   * Find reference by citation ID or UUID.
+   * @param identifier - Citation ID or UUID
+   * @param options - Find options (byUuid to use UUID lookup)
    * @returns CSL item or undefined if not found
    */
-  async findById(id: string): Promise<CslItem | undefined> {
-    const url = `${this.baseUrl}/api/references/id/${encodeURIComponent(id)}`;
+  async find(identifier: string, options: FindOptions = {}): Promise<CslItem | undefined> {
+    const { byUuid = false } = options;
+    const url = byUuid
+      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
     const response = await fetch(url);
 
     if (response.status === 404) {
@@ -74,23 +78,23 @@ export class ServerClient implements ILibrary {
   }
 
   /**
+   * Find reference by citation ID.
+   * @param id - Citation ID
+   * @returns CSL item or undefined if not found
+   * @deprecated Use find(id) instead
+   */
+  async findById(id: string): Promise<CslItem | undefined> {
+    return this.find(id);
+  }
+
+  /**
    * Find reference by UUID.
    * @param uuid - UUID
    * @returns CSL item or undefined if not found
+   * @deprecated Use find(uuid, { byUuid: true }) instead
    */
   async findByUuid(uuid: string): Promise<CslItem | undefined> {
-    const url = `${this.baseUrl}/api/references/uuid/${encodeURIComponent(uuid)}`;
-    const response = await fetch(url);
-
-    if (response.status === 404) {
-      return undefined;
-    }
-
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
-
-    return (await response.json()) as CslItem;
+    return this.find(uuid, { byUuid: true });
   }
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -107,7 +107,7 @@ describe("ServerClient", () => {
       expect(result).toEqual(mockReference);
     });
 
-    test("should return null on 404", async () => {
+    test("should return undefined on 404", async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -115,7 +115,7 @@ describe("ServerClient", () => {
 
       const result = await client.find("uuid-not-found", { byUuid: true });
 
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     test("should throw error on other fetch failures", async () => {

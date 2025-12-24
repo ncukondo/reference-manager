@@ -20,6 +20,7 @@ describe("removeReference", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
+      find: vi.fn(),
       findById: vi.fn(),
       findByUuid: vi.fn(),
       removeById: vi.fn(),
@@ -30,7 +31,7 @@ describe("removeReference", () => {
 
   describe("remove by ID", () => {
     it("should remove reference by ID successfully", async () => {
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockItem);
+      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
       (mockLibrary.removeById as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const options: RemoveOperationOptions = { identifier: "smith-2023", byUuid: false };
@@ -43,7 +44,7 @@ describe("removeReference", () => {
     });
 
     it("should return removed=false when ID not found", async () => {
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
+      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const options: RemoveOperationOptions = { identifier: "nonexistent", byUuid: false };
       const result = await removeReference(mockLibrary, options);
@@ -57,7 +58,7 @@ describe("removeReference", () => {
 
   describe("remove by UUID", () => {
     it("should remove reference by UUID successfully", async () => {
-      (mockLibrary.findByUuid as ReturnType<typeof vi.fn>).mockReturnValue(mockItem);
+      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
       (mockLibrary.removeByUuid as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const options: RemoveOperationOptions = { identifier: "uuid-1", byUuid: true };
@@ -70,7 +71,7 @@ describe("removeReference", () => {
     });
 
     it("should return removed=false when UUID not found", async () => {
-      (mockLibrary.findByUuid as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
+      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const options: RemoveOperationOptions = { identifier: "nonexistent-uuid", byUuid: true };
       const result = await removeReference(mockLibrary, options);
@@ -84,14 +85,14 @@ describe("removeReference", () => {
 
   describe("byUuid default", () => {
     it("should use byUuid=false by default", async () => {
-      (mockLibrary.findById as ReturnType<typeof vi.fn>).mockReturnValue(mockItem);
+      (mockLibrary.find as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
       (mockLibrary.removeById as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const options: RemoveOperationOptions = { identifier: "smith-2023" };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
-      expect(mockLibrary.findById).toHaveBeenCalledWith("smith-2023");
+      expect(mockLibrary.find).toHaveBeenCalledWith("smith-2023", { byUuid: false });
       expect(mockLibrary.removeById).toHaveBeenCalledWith("smith-2023");
     });
   });

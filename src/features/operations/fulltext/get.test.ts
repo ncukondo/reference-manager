@@ -48,6 +48,7 @@ describe("fulltextGet", () => {
     vi.mocked(FulltextManager).mockImplementation(() => mockManager as unknown as FulltextManager);
 
     mockLibrary = {
+      find: vi.fn(),
       findById: vi.fn(),
       findByUuid: vi.fn(),
     } as unknown as Library;
@@ -56,9 +57,7 @@ describe("fulltextGet", () => {
   describe("reference lookup", () => {
     it("should find reference by id when byUuid is false", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.pdf");
 
@@ -67,15 +66,12 @@ describe("fulltextGet", () => {
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockLibrary.findById).toHaveBeenCalledWith("test-id");
-      expect(mockLibrary.findByUuid).not.toHaveBeenCalled();
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { byUuid: false });
     });
 
     it("should find reference by uuid when byUuid is true", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findByUuid).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findByUuid"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.pdf");
 
@@ -85,12 +81,11 @@ describe("fulltextGet", () => {
         byUuid: true,
       });
 
-      expect(mockLibrary.findByUuid).toHaveBeenCalledWith("test-uuid");
-      expect(mockLibrary.findById).not.toHaveBeenCalled();
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { byUuid: true });
     });
 
     it("should return error when reference not found", async () => {
-      vi.mocked(mockLibrary.findById).mockReturnValue(undefined);
+      vi.mocked(mockLibrary.find).mockResolvedValue(undefined);
 
       const result = await fulltextGet(mockLibrary, {
         identifier: "nonexistent",
@@ -105,9 +100,7 @@ describe("fulltextGet", () => {
   describe("path mode", () => {
     it("should return pdf path when pdf is attached", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.pdf");
 
@@ -122,9 +115,7 @@ describe("fulltextGet", () => {
 
     it("should return markdown path when markdown is attached", async () => {
       const item = createItem("test-id", { markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["markdown"]);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.md");
 
@@ -139,9 +130,7 @@ describe("fulltextGet", () => {
 
     it("should return both paths when both are attached", async () => {
       const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf", "markdown"]);
       mockManager.getFilePath.mockImplementation((_, type) => {
         if (type === "pdf") return "/fulltext/test.pdf";
@@ -161,9 +150,7 @@ describe("fulltextGet", () => {
 
     it("should return only specified type when type option is provided", async () => {
       const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.pdf");
 
       const result = await fulltextGet(mockLibrary, {
@@ -179,9 +166,7 @@ describe("fulltextGet", () => {
 
     it("should return error when no fulltext attached", async () => {
       const item = createItem("test-id");
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue([]);
 
       const result = await fulltextGet(mockLibrary, {
@@ -197,9 +182,7 @@ describe("fulltextGet", () => {
   describe("stdout mode", () => {
     it("should return content when stdout and type are specified", async () => {
       const item = createItem("test-id", { markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.md");
       mockedReadFile.mockResolvedValue(Buffer.from("# Test content"));
 
@@ -216,9 +199,7 @@ describe("fulltextGet", () => {
 
     it("should return error when specified type is not attached", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getFilePath.mockReturnValue(undefined);
 
       const result = await fulltextGet(mockLibrary, {
@@ -234,9 +215,7 @@ describe("fulltextGet", () => {
 
     it("should return error when file read fails", async () => {
       const item = createItem("test-id", { markdown: "test.md" });
-      vi.mocked(mockLibrary.findById).mockReturnValue({ getItem: () => item } as ReturnType<
-        Library["findById"]
-      >);
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getFilePath.mockReturnValue("/fulltext/test.md");
       mockedReadFile.mockRejectedValue(new Error("File not found"));
 

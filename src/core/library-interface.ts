@@ -14,8 +14,13 @@
 import type { CslItem } from "./csl-json/types.js";
 
 /**
- * Options for update operations.
+ * Options for find operations.
  */
+export interface FindOptions {
+  /** If true, treat the identifier as UUID; otherwise treat as citation ID (default: false) */
+  byUuid?: boolean;
+}
+
 export interface UpdateOptions {
   /** How to handle ID collision: 'fail' (default) or 'suffix' */
   onIdCollision?: "fail" | "suffix";
@@ -48,9 +53,18 @@ export interface ILibrary {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
+   * Find a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to find
+   * @param options - Find options (byUuid to use UUID lookup)
+   * @returns The CSL item if found, undefined otherwise
+   */
+  find(identifier: string, options?: FindOptions): Promise<CslItem | undefined>;
+
+  /**
    * Find a reference by citation ID.
    * @param id - The citation ID (Pandoc cite key / BibTeX key)
    * @returns The CSL item if found, undefined otherwise
+   * @deprecated Use find(id) instead
    */
   findById(id: string): Promise<CslItem | undefined>;
 
@@ -58,6 +72,7 @@ export interface ILibrary {
    * Find a reference by UUID.
    * @param uuid - The internal UUID
    * @returns The CSL item if found, undefined otherwise
+   * @deprecated Use find(uuid, { byUuid: true }) instead
    */
   findByUuid(uuid: string): Promise<CslItem | undefined>;
 

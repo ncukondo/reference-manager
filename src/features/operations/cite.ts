@@ -91,7 +91,7 @@ async function generateCitationForIdentifier(
   inText: boolean,
   options: FormatOptions
 ): Promise<CiteItemResult> {
-  const item = byUuid ? await library.findByUuid(identifier) : await library.findById(identifier);
+  const item = await library.find(identifier, { byUuid });
 
   if (!item) {
     const lookupType = byUuid ? "UUID" : "ID";

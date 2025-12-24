@@ -99,7 +99,7 @@ export async function fulltextGet(
   const { identifier, type, stdout, byUuid = false, fulltextDirectory } = options;
 
   // Find reference (returns CslItem directly)
-  const item = byUuid ? await library.findByUuid(identifier) : await library.findById(identifier);
+  const item = await library.find(identifier, { byUuid });
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };

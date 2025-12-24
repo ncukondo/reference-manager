@@ -190,11 +190,13 @@ Key design decisions:
   - Acceptance: All consumers await ILibrary method calls
   - Dependencies: 12.4.6.2c
 
-- [x] **12.4.6.3**: Unified `update()` method and `ServerClient` ILibrary implementation
+- [x] **12.4.6.3**: Unified `update()` and `find()` methods, `ServerClient` ILibrary implementation
   - Dependencies: 12.4.6.2d
-  - Note: Replaces updateById/updateByUuid with unified update() method
-  - **Status**: Complete
-  - **Known issues**: server-client.test.ts has failing tests for find()/remove() methods (not yet implemented)
+  - Note: Replaces updateById/updateByUuid with unified update(), replaces findById/findByUuid with unified find()
+  - **Status**: Complete (update and find)
+  - **Known issues**:
+    - server-client.test.ts has failing tests for remove()/add()/list()/search() methods (not yet implemented)
+    - src/cli/commands/remove.ts uses client.remove() which doesn't exist yet (typecheck fails, will be fixed in 12.4.6.3p-r)
 
   - [x] **12.4.6.3a**: Extend server PUT endpoints for onIdCollision option
     - File: `src/server/routes/references.ts`, `src/server/routes/references.test.ts`
@@ -255,6 +257,52 @@ Key design decisions:
     - File: `src/cli/server-client.test.ts`
     - Acceptance: Tests updated for update() method
     - Dependencies: 12.4.6.3k
+
+  - [x] **12.4.6.3m**: Add unified find() to ILibrary interface
+    - File: `src/core/library-interface.ts`
+    - Acceptance: `find(identifier, options?: { byUuid? })` defined, findById/findByUuid marked deprecated
+    - Dependencies: 12.4.6.3l
+
+  - [x] **12.4.6.3n**: Implement Library.find() and ServerClient.find()
+    - File: `src/core/library.ts`, `src/cli/server-client.ts`, tests
+    - Acceptance: Both implementations work with id and uuid
+    - Dependencies: 12.4.6.3m
+
+  - [x] **12.4.6.3o**: Replace findById/findByUuid usages with find() (operations layer)
+    - Files: `src/features/operations/*.ts`, `src/cli/commands/fulltext.ts`, `src/cli/index.ts`
+    - Acceptance: Operations layer uses find(), tests updated
+    - Dependencies: 12.4.6.3n
+    - Note: mcp, server routes, library.test are updated in 12.4.6.3o2
+
+  - [ ] **12.4.6.3o2**: Replace findById/findByUuid usages with find() (remaining layers)
+    - Files: `src/mcp/**/*.ts`, `src/server/routes/*.ts`, `src/core/library.test.ts`
+    - Acceptance: All layers use find()
+    - Dependencies: 12.4.6.3o
+
+  - [ ] **12.4.6.3o3**: Remove deprecated findById/findByUuid from ILibrary
+    - Files: `src/core/library-interface.ts`, `src/core/library.ts`, `src/cli/server-client.ts`
+    - Acceptance: Only find() remains, no deprecated methods
+    - Dependencies: 12.4.6.3o2
+
+  - [ ] **12.4.6.3p**: Add unified remove() to ILibrary interface
+    - File: `src/core/library-interface.ts`
+    - Acceptance: `remove(identifier, options?: { byUuid? })` defined
+    - Dependencies: 12.4.6.3o
+
+  - [ ] **12.4.6.3q**: Implement Library.remove() and ServerClient.remove()
+    - File: `src/core/library.ts`, `src/cli/server-client.ts`, tests
+    - Acceptance: Both implementations work with id and uuid
+    - Dependencies: 12.4.6.3p
+
+  - [ ] **12.4.6.3r**: Replace removeById/removeByUuid usages with remove()
+    - Files: operations, CLI commands
+    - Acceptance: All operations use remove(), tests updated
+    - Dependencies: 12.4.6.3q
+
+  - [ ] **12.4.6.3s**: Update ILibrary.add() to return CslItem
+    - File: `src/core/library-interface.ts`, `src/core/library.ts`, `src/cli/server-client.ts`
+    - Acceptance: add() returns CslItem instead of void
+    - Dependencies: 12.4.6.3r
 
 - [x] **12.4.6.4**: Update operations to accept `ILibrary` (type parameter)
   - File: `src/features/operations/*.ts`
