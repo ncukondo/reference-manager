@@ -414,17 +414,17 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 
 Full-text attachment management.
 
-- [ ] **12.5.1**: Implement `fulltext_attach` tool
+- [x] **12.5.1**: Implement `fulltext_attach` tool
   - File: `src/mcp/tools/fulltext.ts`, `src/mcp/tools/fulltext.test.ts`
   - Acceptance: Calls fulltextAttach operation, attaches file to reference
   - Dependencies: 12.4.5.5
 
-- [ ] **12.5.2**: Implement `fulltext_get` tool
+- [x] **12.5.2**: Implement `fulltext_get` tool
   - File: `src/mcp/tools/fulltext.ts`
   - Acceptance: Calls fulltextGet operation, PDF returns path, Markdown returns content
   - Dependencies: 12.5.1
 
-- [ ] **12.5.3**: Implement `fulltext_detach` tool
+- [x] **12.5.3**: Implement `fulltext_detach` tool
   - File: `src/mcp/tools/fulltext.ts`
   - Acceptance: Calls fulltextDetach operation, detaches file from reference
   - Dependencies: 12.5.1
