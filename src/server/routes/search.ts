@@ -49,7 +49,7 @@ export function createSearchRoute(library: Library) {
     }
 
     // Call searchReferences operation
-    const result = searchReferences(library, options);
+    const result = await searchReferences(library, options);
 
     return c.json(result);
   });

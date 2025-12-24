@@ -400,10 +400,11 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Acceptance: Remove ServerExecutionContext, LocalExecutionContext types, isServerContext, isLocalContext, getLibrary functions, buildServerCiteOptions
   - Dependencies: 12.4.7.11
 
-- [ ] **12.4.7.13**: Update E2E tests
+- [x] **12.4.7.13**: Update E2E tests
   - File: `src/cli/execution-context.e2e.test.ts`, `src/cli/performance.e2e.test.ts`
   - Acceptance: E2E tests work with new ExecutionContext
   - Dependencies: 12.4.7.12
+  - Note: Fixed missing await in server routes (list.ts, search.ts)
 
 - [ ] **12.4.7.14**: Quality checks
   - Acceptance: typecheck, lint, format, all tests pass
