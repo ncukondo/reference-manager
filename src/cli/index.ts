@@ -541,12 +541,16 @@ function registerServerCommand(program: Command): void {
           library: config.library,
           portfilePath,
           daemon: options.daemon,
+          config,
           ...(options.port && { port: Number.parseInt(options.port, 10) }),
         };
 
         await serverStart(startOptions);
 
-        process.exit(0);
+        // Only exit if daemon mode (foreground keeps running)
+        if (options.daemon) {
+          process.exit(0);
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes("already running") || message.includes("conflict")) {

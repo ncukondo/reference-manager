@@ -1,9 +1,43 @@
+import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../../config/schema.js";
 import { serverStart, serverStatus, serverStop } from "./server.js";
 import type { ServerStartOptions } from "./server.js";
+
+// Mock child_process.spawn for daemon mode tests
+vi.mock("node:child_process", () => ({
+  spawn: vi.fn(() => ({
+    unref: vi.fn(),
+    pid: 12345,
+  })),
+}));
+
+// Create a minimal test config
+function createTestConfig(libraryPath: string): Config {
+  return {
+    library: libraryPath,
+    logLevel: "info",
+    backup: { maxGenerations: 5, maxAgeDays: 30, directory: os.tmpdir() },
+    watch: {
+      debounceMs: 500,
+      pollIntervalMs: 5000,
+      retryIntervalMs: 200,
+      maxRetries: 10,
+    },
+    server: { autoStart: false, autoStopMinutes: 0 },
+    citation: {
+      defaultStyle: "apa",
+      cslDirectory: [],
+      defaultLocale: "en-US",
+      defaultFormat: "text",
+    },
+    pubmed: {},
+    fulltext: { directory: os.tmpdir() },
+  };
+}
 
 describe("server command", () => {
   let testPortfilePath: string;
@@ -51,43 +85,50 @@ describe("server command", () => {
   });
 
   describe("serverStart", () => {
-    it("should start server in daemon mode and create portfile", async () => {
+    it("should start server in daemon mode by spawning child process", async () => {
+      const libraryPath = "/path/to/library.json";
       const options: ServerStartOptions = {
         daemon: true,
-        library: "/path/to/library.json",
+        library: libraryPath,
         portfilePath: testPortfilePath,
+        config: createTestConfig(libraryPath),
       };
 
       await serverStart(options);
 
-      // Verify portfile was created
-      const portfileExists = await fs.access(testPortfilePath).then(
-        () => true,
-        () => false
+      // Verify spawn was called with correct arguments
+      expect(spawn).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining(["server", "start", "--library", libraryPath]),
+        expect.objectContaining({
+          detached: true,
+          stdio: "ignore",
+        })
       );
-      expect(portfileExists).toBe(true);
 
-      // Verify portfile content
-      const content = await fs.readFile(testPortfilePath, "utf-8");
-      const data = JSON.parse(content);
-      expect(data).toHaveProperty("port");
-      expect(data).toHaveProperty("pid");
-      expect(data.library).toBe("/path/to/library.json");
+      // Verify output message
+      const output = mockStdout.join("");
+      expect(output).toContain("Server started in background");
     });
 
-    it("should start server on specified port", async () => {
+    it("should pass port to daemon process when specified", async () => {
+      const libraryPath = "/path/to/library.json";
       const options: ServerStartOptions = {
         port: 4000,
         daemon: true,
-        library: "/path/to/library.json",
+        library: libraryPath,
         portfilePath: testPortfilePath,
+        config: createTestConfig(libraryPath),
       };
 
       await serverStart(options);
 
-      const content = await fs.readFile(testPortfilePath, "utf-8");
-      const data = JSON.parse(content);
-      expect(data.port).toBe(4000);
+      // Verify spawn was called with port argument
+      expect(spawn).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining(["--port", "4000"]),
+        expect.any(Object)
+      );
     });
 
     it("should throw error if server already running", async () => {
@@ -100,10 +141,12 @@ describe("server command", () => {
         "utf-8"
       );
 
+      const libraryPath = "/path/to/library.json";
       const options: ServerStartOptions = {
         daemon: true,
-        library: "/path/to/library.json",
+        library: libraryPath,
         portfilePath: testPortfilePath,
+        config: createTestConfig(libraryPath),
       };
 
       await expect(serverStart(options)).rejects.toThrow("Server is already running");

@@ -1,3 +1,7 @@
+import { spawn } from "node:child_process";
+import { serve } from "@hono/node-server";
+import type { Config } from "../../config/schema.js";
+import { startServerWithFileWatcher } from "../../server/index.js";
 import {
   isProcessRunning,
   readPortfile,
@@ -10,6 +14,7 @@ export interface ServerStartOptions {
   daemon?: boolean;
   library: string;
   portfilePath: string;
+  config: Config;
 }
 
 export interface ServerInfo {
@@ -31,18 +36,88 @@ export async function serverStart(options: ServerStartOptions): Promise<void> {
     throw new Error("Server is already running");
   }
 
-  // Determine port (use provided port or default to 3000 for testing)
-  const port = options.port ?? 3000;
+  // Daemon mode: spawn a new process and exit
+  if (options.daemon) {
+    await startServerDaemon(options);
+    return;
+  }
 
-  // For daemon mode, create portfile with current process PID
-  // (In real implementation, this would be the spawned server process PID)
+  // Foreground mode: start server in this process
+  await startServerForeground(options);
+}
+
+/**
+ * Start server in daemon (background) mode.
+ * Spawns a new process with --daemon removed.
+ */
+async function startServerDaemon(options: ServerStartOptions): Promise<void> {
+  const binaryPath = process.argv[1] || process.execPath;
+
+  // Build arguments without --daemon
+  const args = [binaryPath, "server", "start", "--library", options.library];
+  if (options.port !== undefined) {
+    args.push("--port", String(options.port));
+  }
+
+  // Spawn detached process
+  const child = spawn(process.execPath, args, {
+    detached: true,
+    stdio: "ignore",
+  });
+
+  child.unref();
+
+  // Wait briefly for the server to start
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  process.stdout.write(`Server started in background (PID: ${child.pid})\n`);
+}
+
+/**
+ * Start server in foreground mode.
+ * Server runs until interrupted (Ctrl+C).
+ */
+async function startServerForeground(options: ServerStartOptions): Promise<void> {
+  const port = options.port ?? 0; // 0 = dynamic port allocation
+
+  // Start server with file watcher
+  const { app, dispose } = await startServerWithFileWatcher(options.library, options.config);
+
+  // Start HTTP server
+  const server = serve({
+    fetch: app.fetch,
+    port,
+    hostname: "127.0.0.1",
+  });
+
+  // Get actual port (in case of dynamic allocation)
+  const actualPort = (server.address() as { port: number }).port;
+
+  // Write portfile
   const pid = process.pid;
   const started_at = new Date().toISOString();
+  await writePortfile(options.portfilePath, actualPort, pid, options.library, started_at);
 
-  await writePortfile(options.portfilePath, port, pid, options.library, started_at);
+  process.stdout.write(`Server started on http://127.0.0.1:${actualPort}\n`);
+  process.stdout.write(`Library: ${options.library}\n`);
+  process.stdout.write(`PID: ${pid}\n`);
+  process.stdout.write("Press Ctrl+C to stop\n");
 
-  // In real implementation, this would spawn the server process
-  // For now, we just create the portfile for testing purposes
+  // Cleanup handler
+  const cleanup = async () => {
+    process.stdout.write("\nShutting down...\n");
+    server.close();
+    await dispose();
+    await removePortfile(options.portfilePath);
+    process.exit(0);
+  };
+
+  // Handle termination signals
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+
+  // Keep process running
+  await new Promise(() => {});
 }
 
 /**
