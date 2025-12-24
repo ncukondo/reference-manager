@@ -1,59 +1,124 @@
 /**
  * Execution Context for CLI Commands
  *
- * Provides a discriminated union type to distinguish between server and local execution modes.
- * This enables CLI commands to avoid redundant library loading when a server is available.
+ * Provides a unified interface for CLI commands to interact with the library,
+ * regardless of whether running in local or server mode.
+ *
+ * See: spec/decisions/ADR-009-ilibrary-operations-pattern.md
  */
 
 import type { Config } from "../config/schema.js";
 import type { ILibrary } from "../core/library-interface.js";
 import type { Library } from "../core/library.js";
+import type { ILibraryOperations } from "../features/operations/library-operations.js";
+import { OperationsLibrary } from "../features/operations/operations-library.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
 
 /**
- * Server execution context - uses ServerClient for operations
+ * Execution mode indicating whether CLI is using local file access or server API.
+ */
+export type ExecutionMode = "local" | "server";
+
+/**
+ * Server execution context - uses ServerClient through ILibraryOperations
+ *
+ * @example
+ * ```typescript
+ * // Both library and deprecated client are available
+ * const results = await context.library.search({ query });
+ * // or via deprecated client property
+ * const results = await context.client.search({ query });
+ * ```
  */
 export interface ServerExecutionContext {
+  mode: "server";
+  library: ILibraryOperations;
+  /**
+   * @deprecated Use `mode` instead. Will be removed in 12.4.7.12.
+   */
   type: "server";
+  /**
+   * @deprecated Use `library` instead. Will be removed in 12.4.7.12.
+   */
   client: ServerClient;
 }
 
 /**
- * Local execution context - uses Library directly
- */
-export interface LocalExecutionContext {
-  type: "local";
-  library: Library;
-}
-
-/**
- * Discriminated union type for execution context.
- * Commands can use this to determine whether to use server or local operations.
+ * Local execution context - uses OperationsLibrary wrapping Library
  *
  * @example
  * ```typescript
- * if (context.type === "server") {
- *   // Use context.client for server operations
- *   const result = await context.client.list(options);
- * } else {
- *   // Use context.library for local operations
- *   const items = context.library.getAll();
- * }
+ * const results = await context.library.search({ query });
+ * ```
+ */
+export interface LocalExecutionContext {
+  mode: "local";
+  library: ILibraryOperations;
+  /**
+   * @deprecated Use `mode` instead. Will be removed in 12.4.7.12.
+   */
+  type: "local";
+  /**
+   * @deprecated This property only exists in ServerExecutionContext. Will be removed in 12.4.7.12.
+   */
+  client?: undefined;
+}
+
+/**
+ * Unified execution context for CLI commands.
+ *
+ * Commands use `context.library` for all operations without needing to branch
+ * based on execution mode. The `mode` field is available for diagnostics and logging.
+ *
+ * @example
+ * ```typescript
+ * // No branching needed - same code works for both modes
+ * const results = await context.library.search({ query });
+ * console.log(`Mode: ${context.mode}`);
  * ```
  */
 export type ExecutionContext = ServerExecutionContext | LocalExecutionContext;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deprecated helper functions - Will be removed in 12.4.7.12
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @deprecated Use `context.mode === "server"`. Will be removed in 12.4.7.12.
+ */
+export function isServerContext(context: ExecutionContext): context is ServerExecutionContext {
+  return context.mode === "server";
+}
+
+/**
+ * @deprecated Use `context.mode === "local"`. Will be removed in 12.4.7.12.
+ */
+export function isLocalContext(context: ExecutionContext): context is LocalExecutionContext {
+  return context.mode === "local";
+}
+
+/**
+ * @deprecated Use `context.library` directly (it's now ILibraryOperations). Will be removed in 12.4.7.12.
+ */
+export function getLibrary(context: ExecutionContext): ILibrary {
+  return context.library;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main implementation
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Creates an execution context based on the current configuration.
  *
  * This function checks for an available server connection first.
- * If a server is available, it returns a server context to avoid loading the library.
- * Otherwise, it loads the library and returns a local context.
+ * If a server is available, it returns a context with ServerClient.
+ * Otherwise, it loads the library and returns a context with OperationsLibrary.
  *
  * @param config - The application configuration
  * @param loadLibrary - Function to load the library (injected for testability)
- * @returns Promise resolving to either a server or local execution context
+ * @returns Promise resolving to an ExecutionContext
  */
 export async function createExecutionContext(
   config: Config,
@@ -63,44 +128,21 @@ export async function createExecutionContext(
   const server = await getServerConnection(config.library, config);
 
   if (server) {
-    // Server is available - use server context to avoid loading library
+    // Server is available - use ServerClient to avoid loading library
+    const client = new ServerClient(server.baseUrl);
     return {
-      type: "server",
-      client: new ServerClient(server.baseUrl),
+      mode: "server",
+      type: "server", // deprecated
+      library: client,
+      client, // deprecated
     };
   }
 
-  // No server available - load library for local operations
+  // No server available - load library and wrap with OperationsLibrary
   const library = await loadLibrary(config.library);
   return {
-    type: "local",
-    library,
+    mode: "local",
+    type: "local", // deprecated
+    library: new OperationsLibrary(library),
   };
-}
-
-/**
- * Type guard to check if context is a server context
- */
-export function isServerContext(context: ExecutionContext): context is ServerExecutionContext {
-  return context.type === "server";
-}
-
-/**
- * Type guard to check if context is a local context
- */
-export function isLocalContext(context: ExecutionContext): context is LocalExecutionContext {
-  return context.type === "local";
-}
-
-/**
- * Get ILibrary from execution context.
- *
- * Both Library (local) and ServerClient (server) implement ILibrary,
- * allowing operations to work uniformly regardless of execution mode.
- *
- * @param context - The execution context
- * @returns ILibrary instance (either Library or ServerClient)
- */
-export function getLibrary(context: ExecutionContext): ILibrary {
-  return context.type === "server" ? context.client : context.library;
 }

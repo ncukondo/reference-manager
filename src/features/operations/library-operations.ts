@@ -9,10 +9,10 @@
  */
 
 import type { ILibrary } from "../../core/library-interface.js";
-import type { SearchOperationOptions, SearchResult } from "./search.js";
-import type { ListOptions, ListResult } from "./list.js";
-import type { CiteOperationOptions, CiteResult } from "./cite.js";
 import type { AddReferencesOptions, AddReferencesResult } from "./add.js";
+import type { CiteOperationOptions, CiteResult } from "./cite.js";
+import type { ListOptions, ListResult } from "./list.js";
+import type { SearchOperationOptions, SearchResult } from "./search.js";
 
 /**
  * Options for import operation
@@ -35,36 +35,36 @@ export type ImportResult = AddReferencesResult;
  * - ServerClient: Makes HTTP requests to server endpoints
  */
 export interface ILibraryOperations extends ILibrary {
-	/**
-	 * Search references by query
-	 *
-	 * @param options - Search options including query and format
-	 * @returns Search results with formatted items
-	 */
-	search(options: SearchOperationOptions): Promise<SearchResult>;
+  /**
+   * Search references by query
+   *
+   * @param options - Search options including query and format
+   * @returns Search results with formatted items
+   */
+  search(options: SearchOperationOptions): Promise<SearchResult>;
 
-	/**
-	 * List all references
-	 *
-	 * @param options - List options including format
-	 * @returns List results with formatted items
-	 */
-	list(options?: ListOptions): Promise<ListResult>;
+  /**
+   * List all references
+   *
+   * @param options - List options including format
+   * @returns List results with formatted items
+   */
+  list(options?: ListOptions): Promise<ListResult>;
 
-	/**
-	 * Generate citations for references
-	 *
-	 * @param options - Citation options including identifiers, style, and format
-	 * @returns Citation results
-	 */
-	cite(options: CiteOperationOptions): Promise<CiteResult>;
+  /**
+   * Generate citations for references
+   *
+   * @param options - Citation options including identifiers, style, and format
+   * @returns Citation results
+   */
+  cite(options: CiteOperationOptions): Promise<CiteResult>;
 
-	/**
-	 * Import references from various sources
-	 *
-	 * @param inputs - Array of inputs (PMID, DOI, BibTeX, RIS, file paths)
-	 * @param options - Import options
-	 * @returns Import results with added, failed, and skipped items
-	 */
-	import(inputs: string[], options?: ImportOptions): Promise<ImportResult>;
+  /**
+   * Import references from various sources
+   *
+   * @param inputs - Array of inputs (PMID, DOI, BibTeX, RIS, file paths)
+   * @param options - Import options
+   * @returns Import results with added, failed, and skipped items
+   */
+  import(inputs: string[], options?: ImportOptions): Promise<ImportResult>;
 }

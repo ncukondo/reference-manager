@@ -361,7 +361,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 
 ##### Phase 3: ExecutionContext Updates
 
-- [ ] **12.4.7.6**: Simplify ExecutionContext
+- [x] **12.4.7.6**: Simplify ExecutionContext
   - File: `src/cli/execution-context.ts`, `src/cli/execution-context.test.ts`
   - Acceptance: ExecutionContext has `mode: "local" | "server"` and `library: ILibraryOperations`, createExecutionContext returns OperationsLibrary or ServerClient
   - Dependencies: 12.4.7.5

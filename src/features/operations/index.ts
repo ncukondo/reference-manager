@@ -9,9 +9,9 @@
 
 // ILibraryOperations interface and types
 export type {
-	ILibraryOperations,
-	ImportOptions,
-	ImportResult,
+  ILibraryOperations,
+  ImportOptions,
+  ImportResult,
 } from "./library-operations.js";
 
 // OperationsLibrary class

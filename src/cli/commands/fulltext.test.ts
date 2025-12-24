@@ -91,11 +91,14 @@ describe("fulltext command", () => {
   } as unknown as ServerClient;
 
   const serverContext: ServerExecutionContext = {
+    mode: "server",
     type: "server",
+    library: mockServerClient,
     client: mockServerClient,
   };
 
   const localContext: LocalExecutionContext = {
+    mode: "local",
     type: "local",
     library: mockLibrary,
   };

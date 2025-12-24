@@ -7,10 +7,10 @@ import type {
   UpdateResult,
 } from "../core/library-interface.js";
 import type {
-  ILibraryOperations,
-  ImportOptions,
   AddReferencesResult,
   CiteResult,
+  ILibraryOperations,
+  ImportOptions,
   ListOptions,
   ListResult,
   SearchOperationOptions,
@@ -191,10 +191,7 @@ export class ServerClient implements ILibraryOperations {
    * @param options - Options for import operation
    * @returns Result containing added, failed, and skipped items
    */
-  async import(
-    inputs: string[],
-    options?: ImportOptions
-  ): Promise<AddReferencesResult> {
+  async import(inputs: string[], options?: ImportOptions): Promise<AddReferencesResult> {
     const url = `${this.baseUrl}/api/add`;
     const response = await fetch(url, {
       method: "POST",
