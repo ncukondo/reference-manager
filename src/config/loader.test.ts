@@ -62,7 +62,6 @@ describe("Config Loader", () => {
       expect(config.logLevel).toBe("info");
       expect(config.backup.maxGenerations).toBe(50);
       expect(config.backup.maxAgeDays).toBe(365);
-      expect(config.watch.enabled).toBe(true);
       expect(config.watch.debounceMs).toBe(500);
     });
   });
@@ -284,7 +283,6 @@ debounce_ms = 1000
 
       // Current directory wins for watch
       expect(config.watch.debounceMs).toBe(1000);
-      expect(config.watch.enabled).toBe(true); // Default
 
       // Environment wins for log_level and backup.maxAgeDays
       expect(config.logLevel).toBe("silent");

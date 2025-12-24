@@ -28,7 +28,6 @@ describe("Server", () => {
       logLevel: "info",
       backup: { maxGenerations: 5, maxAgeDays: 30, directory: os.tmpdir() },
       watch: {
-        enabled: false,
         debounceMs: 1000,
         pollIntervalMs: 5000,
         retryIntervalMs: 200,
@@ -114,7 +113,6 @@ describe("startServerWithFileWatcher", () => {
       logLevel: "info",
       backup: { maxGenerations: 5, maxAgeDays: 30, directory: tempDir },
       watch: {
-        enabled: true,
         debounceMs: 100,
         pollIntervalMs: 5000,
         retryIntervalMs: 200,

@@ -104,7 +104,6 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       directory: partial.backup?.directory ?? defaultConfig.backup.directory,
     },
     watch: {
-      enabled: partial.watch?.enabled ?? defaultConfig.watch.enabled,
       debounceMs: partial.watch?.debounceMs ?? defaultConfig.watch.debounceMs,
       pollIntervalMs: partial.watch?.pollIntervalMs ?? defaultConfig.watch.pollIntervalMs,
       retryIntervalMs: partial.watch?.retryIntervalMs ?? defaultConfig.watch.retryIntervalMs,
