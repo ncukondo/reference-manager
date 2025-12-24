@@ -349,7 +349,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 
 ##### Phase 2: ServerClient Updates
 
-- [ ] **12.4.7.4**: Rename ServerClient.addFromInputs to import
+- [x] **12.4.7.4**: Rename ServerClient.addFromInputs to import
   - File: `src/cli/server-client.ts`, `src/cli/server-client.test.ts`
   - Acceptance: Method renamed to `import()`, tests updated
   - Dependencies: 12.4.7.1

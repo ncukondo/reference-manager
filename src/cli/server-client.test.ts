@@ -474,8 +474,8 @@ describe("ServerClient", () => {
     });
   });
 
-  describe("addFromInputs", () => {
-    test("should add references from inputs", async () => {
+  describe("import", () => {
+    test("should import references from inputs", async () => {
       const mockResult = {
         added: [{ id: "Smith-2024", title: "Test Paper" }],
         failed: [],
@@ -487,7 +487,7 @@ describe("ServerClient", () => {
         json: async () => mockResult,
       } as Response);
 
-      const result = await client.addFromInputs(["10.1234/test"], { force: false });
+      const result = await client.import(["10.1234/test"], { force: false });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/add`, {
         method: "POST",
@@ -509,7 +509,7 @@ describe("ServerClient", () => {
         json: async () => mockResult,
       } as Response);
 
-      await client.addFromInputs(["test.bib"], { force: true, format: "bibtex" });
+      await client.import(["test.bib"], { force: true, format: "bibtex" });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/add`, {
         method: "POST",
@@ -524,7 +524,7 @@ describe("ServerClient", () => {
         text: async () => "Server error",
       } as Response);
 
-      await expect(client.addFromInputs(["invalid"])).rejects.toThrow("Server error");
+      await expect(client.import(["invalid"])).rejects.toThrow("Server error");
     });
   });
 });

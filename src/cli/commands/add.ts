@@ -62,7 +62,7 @@ export async function executeAdd(
     if (stdinContent !== undefined) {
       serverOptions.stdinContent = stdinContent;
     }
-    return context.client.addFromInputs(inputs, serverOptions);
+    return context.client.import(inputs, serverOptions);
   }
 
   // Direct library operation - build options without undefined values

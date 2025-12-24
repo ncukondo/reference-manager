@@ -20,7 +20,7 @@ describe("add command", () => {
   describe("executeAdd", () => {
     const mockLibrary = {} as Library;
     const mockServerClient = {
-      addFromInputs: vi.fn(),
+      import: vi.fn(),
     } as unknown as ServerClient;
 
     const serverContext: ServerExecutionContext = {
@@ -38,13 +38,13 @@ describe("add command", () => {
     });
 
     describe("via server", () => {
-      it("should call server addFromInputs when context is server", async () => {
+      it("should call server import when context is server", async () => {
         const mockResult: AddReferencesResult = {
           added: [{ id: "Smith-2024", title: "Test Paper" }],
           failed: [],
           skipped: [],
         };
-        vi.mocked(mockServerClient.addFromInputs).mockResolvedValue(mockResult);
+        vi.mocked(mockServerClient.import).mockResolvedValue(mockResult);
 
         const options: AddCommandOptions = {
           inputs: ["10.1234/test"],
@@ -53,7 +53,7 @@ describe("add command", () => {
 
         const result = await executeAdd(options, serverContext);
 
-        expect(mockServerClient.addFromInputs).toHaveBeenCalledWith(["10.1234/test"], {
+        expect(mockServerClient.import).toHaveBeenCalledWith(["10.1234/test"], {
           force: false,
         });
         expect(result).toEqual(mockResult);
@@ -65,7 +65,7 @@ describe("add command", () => {
           failed: [],
           skipped: [],
         };
-        vi.mocked(mockServerClient.addFromInputs).mockResolvedValue(mockResult);
+        vi.mocked(mockServerClient.import).mockResolvedValue(mockResult);
 
         const options: AddCommandOptions = {
           inputs: ["test.bib"],
@@ -75,7 +75,7 @@ describe("add command", () => {
 
         await executeAdd(options, serverContext);
 
-        expect(mockServerClient.addFromInputs).toHaveBeenCalledWith(["test.bib"], {
+        expect(mockServerClient.import).toHaveBeenCalledWith(["test.bib"], {
           force: true,
           format: "bibtex",
         });

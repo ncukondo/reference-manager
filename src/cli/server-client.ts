@@ -15,7 +15,7 @@ import type { SearchOperationOptions, SearchResult } from "../features/operation
 import type { UpdateOperationResult } from "../features/operations/update.js";
 
 /**
- * Options for addFromInputs method.
+ * Options for import method.
  */
 export interface AddFromInputsOptions {
   force?: boolean;
@@ -189,12 +189,12 @@ export class ServerClient implements ILibrary {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Add references from various input formats.
+   * Import references from various input formats.
    * @param inputs - Array of inputs (file paths, PMIDs, DOIs)
-   * @param options - Options for add operation
+   * @param options - Options for import operation
    * @returns Result containing added, failed, and skipped items
    */
-  async addFromInputs(
+  async import(
     inputs: string[],
     options?: AddFromInputsOptions
   ): Promise<AddReferencesResult> {
