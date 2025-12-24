@@ -406,7 +406,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Dependencies: 12.4.7.12
   - Note: Fixed missing await in server routes (list.ts, search.ts)
 
-- [ ] **12.4.7.14**: Quality checks
+- [x] **12.4.7.14**: Quality checks
   - Acceptance: typecheck, lint, format, all tests pass
   - Dependencies: 12.4.7.13
 
