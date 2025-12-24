@@ -61,22 +61,6 @@ export interface ILibrary {
   find(identifier: string, options?: FindOptions): Promise<CslItem | undefined>;
 
   /**
-   * Find a reference by citation ID.
-   * @param id - The citation ID (Pandoc cite key / BibTeX key)
-   * @returns The CSL item if found, undefined otherwise
-   * @deprecated Use find(id) instead
-   */
-  findById(id: string): Promise<CslItem | undefined>;
-
-  /**
-   * Find a reference by UUID.
-   * @param uuid - The internal UUID
-   * @returns The CSL item if found, undefined otherwise
-   * @deprecated Use find(uuid, { byUuid: true }) instead
-   */
-  findByUuid(uuid: string): Promise<CslItem | undefined>;
-
-  /**
    * Get all references.
    * @returns Array of all CSL items in the library
    */

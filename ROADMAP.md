@@ -279,7 +279,7 @@ Key design decisions:
     - Acceptance: All layers use find()
     - Dependencies: 12.4.6.3o
 
-  - [ ] **12.4.6.3o3**: Remove deprecated findById/findByUuid from ILibrary
+  - [x] **12.4.6.3o3**: Remove deprecated findById/findByUuid from ILibrary
     - Files: `src/core/library-interface.ts`, `src/core/library.ts`, `src/cli/server-client.ts`
     - Acceptance: Only find() remains, no deprecated methods
     - Dependencies: 12.4.6.3o2

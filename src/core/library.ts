@@ -164,22 +164,6 @@ export class Library implements ILibrary {
   }
 
   /**
-   * Find a reference by UUID
-   * @deprecated Use find(uuid, { byUuid: true }) instead
-   */
-  async findByUuid(uuid: string): Promise<CslItem | undefined> {
-    return this.uuidIndex.get(uuid)?.getItem();
-  }
-
-  /**
-   * Find a reference by ID
-   * @deprecated Use find(id) instead
-   */
-  async findById(id: string): Promise<CslItem | undefined> {
-    return this.idIndex.get(id)?.getItem();
-  }
-
-  /**
    * Find a reference by DOI
    */
   findByDoi(doi: string): Reference | undefined {

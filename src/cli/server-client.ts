@@ -82,26 +82,6 @@ export class ServerClient implements ILibrary {
     return (await response.json()) as CslItem;
   }
 
-  /**
-   * Find reference by citation ID.
-   * @param id - Citation ID
-   * @returns CSL item or undefined if not found
-   * @deprecated Use find(id) instead
-   */
-  async findById(id: string): Promise<CslItem | undefined> {
-    return this.find(id);
-  }
-
-  /**
-   * Find reference by UUID.
-   * @param uuid - UUID
-   * @returns CSL item or undefined if not found
-   * @deprecated Use find(uuid, { byUuid: true }) instead
-   */
-  async findByUuid(uuid: string): Promise<CslItem | undefined> {
-    return this.find(uuid, { byUuid: true });
-  }
-
   // ─────────────────────────────────────────────────────────────────────────
   // ILibrary Write methods
   // ─────────────────────────────────────────────────────────────────────────
