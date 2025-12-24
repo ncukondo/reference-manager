@@ -38,7 +38,7 @@ describe("removeReference", () => {
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
-      expect(result.item).toEqual(mockItem);
+      expect(result.removedItem).toEqual(mockItem);
       expect(mockLibrary.removeById).toHaveBeenCalledWith("smith-2023");
       expect(mockLibrary.save).toHaveBeenCalled();
     });
@@ -50,7 +50,7 @@ describe("removeReference", () => {
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(false);
-      expect(result.item).toBeUndefined();
+      expect(result.removedItem).toBeUndefined();
       expect(mockLibrary.removeById).not.toHaveBeenCalled();
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
@@ -65,7 +65,7 @@ describe("removeReference", () => {
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
-      expect(result.item).toEqual(mockItem);
+      expect(result.removedItem).toEqual(mockItem);
       expect(mockLibrary.removeByUuid).toHaveBeenCalledWith("uuid-1");
       expect(mockLibrary.save).toHaveBeenCalled();
     });
@@ -77,7 +77,7 @@ describe("removeReference", () => {
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(false);
-      expect(result.item).toBeUndefined();
+      expect(result.removedItem).toBeUndefined();
       expect(mockLibrary.removeByUuid).not.toHaveBeenCalled();
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });

@@ -302,9 +302,10 @@ describe("References Route", () => {
       const res = await route.fetch(req);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as { removed: boolean; item?: CslItem };
+      const data = (await res.json()) as { removed: boolean; removedItem?: CslItem };
       expect(data.removed).toBe(true);
-      expect(data.item).toBeDefined();
+      expect(data.removedItem).toBeDefined();
+      expect(data.removedItem?.title).toBe("To Delete");
 
       // Verify it was removed from library
       const found = await library.find(uuid, { byUuid: true });
@@ -341,9 +342,10 @@ describe("References Route", () => {
       const res = await route.fetch(req);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as { removed: boolean; item?: CslItem };
+      const data = (await res.json()) as { removed: boolean; removedItem?: CslItem };
       expect(data.removed).toBe(true);
-      expect(data.item).toBeDefined();
+      expect(data.removedItem).toBeDefined();
+      expect(data.removedItem?.title).toBe("To Delete");
 
       // Verify it was removed from library
       const found = await library.find(id);

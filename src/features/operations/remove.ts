@@ -17,8 +17,8 @@ export interface RemoveOperationOptions {
 export interface RemoveResult {
   /** Whether the reference was removed */
   removed: boolean;
-  /** The removed item (if found) */
-  item?: CslItem;
+  /** The removed item (if found and removal succeeded) */
+  removedItem?: CslItem;
 }
 
 /**
@@ -50,5 +50,5 @@ export async function removeReference(
     await library.save();
   }
 
-  return { removed, item };
+  return { removed, removedItem: item };
 }

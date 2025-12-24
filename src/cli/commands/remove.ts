@@ -53,7 +53,7 @@ export function formatRemoveOutput(result: RemoveCommandResult, identifier: stri
     return `Reference not found: ${identifier}`;
   }
 
-  const item = result.item;
+  const item = result.removedItem;
   if (item) {
     return `Removed: [${item.id}] ${item.title || "(no title)"}`;
   }

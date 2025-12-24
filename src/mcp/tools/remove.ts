@@ -57,7 +57,7 @@ export function registerRemoveTool(server: McpServer, getLibrary: () => Library)
         };
       }
 
-      const title = result.item?.title || "Unknown";
+      const title = result.removedItem?.title || "Unknown";
       return {
         content: [
           {

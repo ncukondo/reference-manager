@@ -149,7 +149,7 @@ export class ServerClient implements ILibrary {
    * Remove a reference by citation ID or UUID.
    * @param identifier - The citation ID or UUID of the reference to remove
    * @param options - Remove options (byUuid to use UUID lookup)
-   * @returns Remove result with removed status (removedItem not available from server yet)
+   * @returns Remove result with removed status and removedItem
    */
   async remove(identifier: string, options: RemoveOptions = {}): Promise<ILibraryRemoveResult> {
     const { byUuid = false } = options;
@@ -165,8 +165,11 @@ export class ServerClient implements ILibrary {
     }
 
     const result = (await response.json()) as RemoveResult;
-    // Note: removedItem is not yet available from server API (TODO: Phase 12.4.6.3q2)
-    return { removed: result.removed };
+    const removeResult: ILibraryRemoveResult = { removed: result.removed };
+    if (result.removedItem !== undefined) {
+      removeResult.removedItem = result.removedItem;
+    }
+    return removeResult;
   }
 
   /**

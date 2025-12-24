@@ -293,9 +293,13 @@ describe("ServerClient", () => {
 
   describe("remove", () => {
     test("should remove reference by UUID when byUuid is true", async () => {
-      // Server API currently returns { removed: boolean } without removedItem
-      // removedItem will be added in a future phase (12.4.6.3q2)
-      const serverResponse = { removed: true };
+      const mockItem = {
+        id: "Smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+        custom: { uuid: "uuid-1" },
+      };
+      const serverResponse = { removed: true, removedItem: mockItem };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -304,15 +308,19 @@ describe("ServerClient", () => {
 
       const result = await client.remove("uuid-1", { byUuid: true });
 
-      expect(result).toEqual({ removed: true });
+      expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
         method: "DELETE",
       });
     });
 
     test("should remove reference by citation ID when byUuid is false", async () => {
-      // Server API currently returns { removed: boolean } without removedItem
-      const serverResponse = { removed: true };
+      const mockItem = {
+        id: "Smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+      };
+      const serverResponse = { removed: true, removedItem: mockItem };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -321,14 +329,19 @@ describe("ServerClient", () => {
 
       const result = await client.remove("Smith-2024", { byUuid: false });
 
-      expect(result).toEqual({ removed: true });
+      expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "DELETE",
       });
     });
 
     test("should default to ID lookup when no options provided", async () => {
-      const serverResponse = { removed: true };
+      const mockItem = {
+        id: "Smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+      };
+      const serverResponse = { removed: true, removedItem: mockItem };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -337,7 +350,7 @@ describe("ServerClient", () => {
 
       const result = await client.remove("Smith-2024");
 
-      expect(result).toEqual({ removed: true });
+      expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "DELETE",
       });

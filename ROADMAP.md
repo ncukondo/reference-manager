@@ -292,12 +292,12 @@ Key design decisions:
   - [x] **12.4.6.3q**: Implement Library.remove() and ServerClient.remove()
     - File: `src/core/library.ts`, `src/cli/server-client.ts`, tests
     - Acceptance: Both implementations work with id and uuid
-    - Note: Library.remove() returns removedItem; ServerClient.remove() returns only removed (server API pending 12.4.6.3q2)
+    - Note: Library.remove() returns removedItem; ServerClient.remove() returns removedItem
     - Dependencies: 12.4.6.3p
 
-  - [ ] **12.4.6.3q2**: Update server DELETE API to return removedItem
-    - File: `src/server/routes/references.ts`, tests
-    - Acceptance: DELETE endpoints return `{ removed, item? }` and ServerClient.remove() returns removedItem
+  - [x] **12.4.6.3q2**: Update server DELETE API to return removedItem
+    - File: `src/server/routes/references.ts`, `src/features/operations/remove.ts`, tests
+    - Acceptance: DELETE endpoints return `{ removed, removedItem? }` and ServerClient.remove() returns removedItem
     - Dependencies: 12.4.6.3q
 
   - [ ] **12.4.6.3r**: Replace removeById/removeByUuid usages with remove()
