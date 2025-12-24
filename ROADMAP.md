@@ -447,7 +447,7 @@ Connect MCP server to CLI.
 
 Add file watching and auto-reload to HTTP server using Library.reload().
 
-- [ ] **12.6.5.1**: Integrate FileWatcher into HTTP server
+- [x] **12.6.5.1**: Integrate FileWatcher into HTTP server
   - File: `src/server/index.ts`, `src/server/index.test.ts`
   - Acceptance: HTTP server monitors library file, calls Library.reload() on change
   - Dependencies: 12.1.4
