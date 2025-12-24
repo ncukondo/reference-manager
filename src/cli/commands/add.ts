@@ -55,9 +55,9 @@ export async function executeAdd(
 
   if (context.type === "server") {
     // Route through server - build options without undefined values
-    const serverOptions: { force: boolean; format?: string; stdinContent?: string } = { force };
+    const serverOptions: AddReferencesOptions = { force };
     if (format !== undefined) {
-      serverOptions.format = format;
+      serverOptions.format = format as InputFormat | "auto";
     }
     if (stdinContent !== undefined) {
       serverOptions.stdinContent = stdinContent;

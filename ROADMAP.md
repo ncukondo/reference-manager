@@ -354,7 +354,7 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
   - Acceptance: Method renamed to `import()`, tests updated
   - Dependencies: 12.4.7.1
 
-- [ ] **12.4.7.5**: Update ServerClient to implement ILibraryOperations
+- [x] **12.4.7.5**: Update ServerClient to implement ILibraryOperations
   - File: `src/cli/server-client.ts`, `src/cli/server-client.test.ts`
   - Acceptance: ServerClient implements ILibraryOperations, existing HTTP methods preserved
   - Dependencies: 12.4.7.4

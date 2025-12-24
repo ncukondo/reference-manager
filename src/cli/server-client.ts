@@ -1,26 +1,23 @@
 import type { CslItem } from "../core/csl-json/types.js";
 import type {
   FindOptions,
-  ILibrary,
   RemoveResult as ILibraryRemoveResult,
   RemoveOptions,
   UpdateOptions,
   UpdateResult,
 } from "../core/library-interface.js";
-import type { AddReferencesResult } from "../features/operations/add.js";
-import type { CiteResult } from "../features/operations/cite.js";
-import type { ListOptions, ListResult } from "../features/operations/list.js";
+import type {
+  ILibraryOperations,
+  ImportOptions,
+  AddReferencesResult,
+  CiteResult,
+  ListOptions,
+  ListResult,
+  SearchOperationOptions,
+  SearchResult,
+} from "../features/operations/index.js";
 import type { RemoveResult } from "../features/operations/remove.js";
-import type { SearchOperationOptions, SearchResult } from "../features/operations/search.js";
 import type { UpdateOperationResult } from "../features/operations/update.js";
-
-/**
- * Options for import method.
- */
-export interface AddFromInputsOptions {
-  force?: boolean;
-  format?: string;
-}
 
 /**
  * Options for cite method.
@@ -38,7 +35,7 @@ export interface CiteOptions {
 /**
  * Client for communicating with the reference-manager HTTP server.
  */
-export class ServerClient implements ILibrary {
+export class ServerClient implements ILibraryOperations {
   constructor(private baseUrl: string) {}
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -196,7 +193,7 @@ export class ServerClient implements ILibrary {
    */
   async import(
     inputs: string[],
-    options?: AddFromInputsOptions
+    options?: ImportOptions
   ): Promise<AddReferencesResult> {
     const url = `${this.baseUrl}/api/add`;
     const response = await fetch(url, {
