@@ -89,8 +89,9 @@ export interface ILibrary {
   /**
    * Add a new reference to the library.
    * @param item - The CSL item to add
+   * @returns The added CSL item (with generated ID and UUID if not present)
    */
-  add(item: CslItem): Promise<void>;
+  add(item: CslItem): Promise<CslItem>;
 
   /**
    * Update a reference by citation ID or UUID.

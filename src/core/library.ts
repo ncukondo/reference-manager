@@ -99,8 +99,10 @@ export class Library implements ILibrary {
 
   /**
    * Add a reference to the library
+   * @param item - The CSL item to add
+   * @returns The added CSL item (with generated ID and UUID)
    */
-  async add(item: CslItem): Promise<void> {
+  async add(item: CslItem): Promise<CslItem> {
     // Collect existing IDs for collision check
     const existingIds = new Set(this.references.map((ref) => ref.getId()));
 
@@ -110,6 +112,9 @@ export class Library implements ILibrary {
     // Add to library
     this.references.push(ref);
     this.addToIndices(ref);
+
+    // Return the added item
+    return ref.getItem();
   }
 
   /**

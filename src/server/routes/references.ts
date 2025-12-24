@@ -46,16 +46,8 @@ export function createReferencesRoute(library: Library) {
     try {
       const body = await c.req.json();
 
-      // Create and add reference (library.add handles validation)
-      await library.add(body);
-
-      // Find the newly added item (it was just added, so it's the last one)
-      const allItems = await library.getAll();
-      const addedItem = allItems[allItems.length - 1];
-
-      if (!addedItem) {
-        return c.json({ error: "Failed to add reference" }, 500);
-      }
+      // Create and add reference (library.add handles validation and returns the added item)
+      const addedItem = await library.add(body);
 
       return c.json(addedItem, 201);
     } catch (error) {

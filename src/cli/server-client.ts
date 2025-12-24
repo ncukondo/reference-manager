@@ -91,8 +91,9 @@ export class ServerClient implements ILibrary {
   /**
    * Add new reference to the library.
    * @param item - CSL item to add
+   * @returns The added CSL item (with generated ID and UUID)
    */
-  async add(item: CslItem): Promise<void> {
+  async add(item: CslItem): Promise<CslItem> {
     const url = `${this.baseUrl}/api/references`;
     const response = await fetch(url, {
       method: "POST",
@@ -104,8 +105,8 @@ export class ServerClient implements ILibrary {
       throw new Error(await response.text());
     }
 
-    // Consume response but don't return (ILibrary.add returns void)
-    await response.json();
+    // Return the added item from server response
+    return (await response.json()) as CslItem;
   }
 
   /**

@@ -305,7 +305,7 @@ Key design decisions:
     - Acceptance: All operations use remove(), tests updated
     - Dependencies: 12.4.6.3q
 
-  - [ ] **12.4.6.3s**: Update ILibrary.add() to return CslItem
+  - [x] **12.4.6.3s**: Update ILibrary.add() to return CslItem
     - File: `src/core/library-interface.ts`, `src/core/library.ts`, `src/cli/server-client.ts`
     - Acceptance: add() returns CslItem instead of void
     - Dependencies: 12.4.6.3r
