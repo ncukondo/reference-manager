@@ -316,7 +316,7 @@ Key design decisions:
   - Dependencies: 12.4.6.2, 12.4.6.3
   - Note: Already done in 12.4.6.2, will need async updates in 12.4.6.2c
 
-- [ ] **12.4.6.5**: Simplify CLI fulltext commands
+- [x] **12.4.6.5**: Simplify CLI fulltext commands
   - File: `src/cli/commands/fulltext.ts`, `src/cli/execution-context.ts`
   - Acceptance: CLI fulltext commands pass ILibrary to operations, no mode branching needed
   - Dependencies: 12.4.6.3

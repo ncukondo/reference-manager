@@ -6,6 +6,7 @@
  */
 
 import type { Config } from "../config/schema.js";
+import type { ILibrary } from "../core/library-interface.js";
 import type { Library } from "../core/library.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
@@ -89,4 +90,17 @@ export function isServerContext(context: ExecutionContext): context is ServerExe
  */
 export function isLocalContext(context: ExecutionContext): context is LocalExecutionContext {
   return context.type === "local";
+}
+
+/**
+ * Get ILibrary from execution context.
+ *
+ * Both Library (local) and ServerClient (server) implement ILibrary,
+ * allowing operations to work uniformly regardless of execution mode.
+ *
+ * @param context - The execution context
+ * @returns ILibrary instance (either Library or ServerClient)
+ */
+export function getLibrary(context: ExecutionContext): ILibrary {
+  return context.type === "server" ? context.client : context.library;
 }
