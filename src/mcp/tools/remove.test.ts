@@ -82,7 +82,7 @@ describe("MCP remove tool", () => {
       expect(text.toLowerCase()).toContain("true");
 
       // Verify reference still exists
-      expect(await library.findById("smith2024")).toBeDefined();
+      expect(await library.find("smith2024")).toBeDefined();
     });
 
     it("should remove reference when force is true", async () => {
@@ -106,7 +106,7 @@ describe("MCP remove tool", () => {
       expect(text).toContain("smith2024");
 
       // Verify reference is gone
-      expect(await library.findById("smith2024")).toBeUndefined();
+      expect(await library.find("smith2024")).toBeUndefined();
     });
 
     it("should report when reference not found", async () => {

@@ -35,7 +35,10 @@ export interface SearchResult {
  * @param options - Search query and formatting options
  * @returns Formatted strings for each matching reference
  */
-export async function searchReferences(library: ILibrary, options: SearchOperationOptions): Promise<SearchResult> {
+export async function searchReferences(
+  library: ILibrary,
+  options: SearchOperationOptions
+): Promise<SearchResult> {
   const format = options.format ?? "pretty";
   const query = options.query;
 

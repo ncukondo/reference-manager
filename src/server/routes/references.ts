@@ -20,7 +20,7 @@ export function createReferencesRoute(library: Library) {
   // GET /uuid/:uuid - Get reference by UUID
   route.get("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
-    const item = await library.findByUuid(uuid);
+    const item = await library.find(uuid, { byUuid: true });
 
     if (!item) {
       return c.json({ error: "Reference not found" }, 404);
@@ -32,7 +32,7 @@ export function createReferencesRoute(library: Library) {
   // GET /id/:id - Get reference by citation ID
   route.get("/id/:id", async (c) => {
     const id = c.req.param("id");
-    const item = await library.findById(id);
+    const item = await library.find(id);
 
     if (!item) {
       return c.json({ error: "Reference not found" }, 404);

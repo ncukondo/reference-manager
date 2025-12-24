@@ -210,7 +210,7 @@ describe("References Route", () => {
       expect(data.item?.title).toBe("Updated Title");
 
       // Verify it was updated in library
-      const found = await library.findByUuid(uuid ?? "");
+      const found = await library.find(uuid ?? "", { byUuid: true });
       expect(found?.title).toBe("Updated Title");
     });
 
@@ -262,7 +262,7 @@ describe("References Route", () => {
       expect(data.item?.title).toBe("Updated Title");
 
       // Verify it was updated in library
-      const found = await library.findById(id);
+      const found = await library.find(id);
       expect(found?.title).toBe("Updated Title");
     });
 
@@ -307,7 +307,7 @@ describe("References Route", () => {
       expect(data.item).toBeDefined();
 
       // Verify it was removed from library
-      const found = await library.findByUuid(uuid);
+      const found = await library.find(uuid, { byUuid: true });
       expect(found).toBeUndefined();
     });
 
@@ -346,7 +346,7 @@ describe("References Route", () => {
       expect(data.item).toBeDefined();
 
       // Verify it was removed from library
-      const found = await library.findById(id);
+      const found = await library.find(id);
       expect(found).toBeUndefined();
     });
 

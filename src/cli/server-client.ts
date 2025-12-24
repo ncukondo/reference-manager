@@ -1,5 +1,10 @@
 import type { CslItem } from "../core/csl-json/types.js";
-import type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "../core/library-interface.js";
+import type {
+  FindOptions,
+  ILibrary,
+  UpdateOptions,
+  UpdateResult,
+} from "../core/library-interface.js";
 import type { AddReferencesResult } from "../features/operations/add.js";
 import type { CiteResult } from "../features/operations/cite.js";
 import type { ListOptions, ListResult } from "../features/operations/list.js";

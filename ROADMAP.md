@@ -274,7 +274,7 @@ Key design decisions:
     - Dependencies: 12.4.6.3n
     - Note: mcp, server routes, library.test are updated in 12.4.6.3o2
 
-  - [ ] **12.4.6.3o2**: Replace findById/findByUuid usages with find() (remaining layers)
+  - [x] **12.4.6.3o2**: Replace findById/findByUuid usages with find() (remaining layers)
     - Files: `src/mcp/**/*.ts`, `src/server/routes/*.ts`, `src/core/library.test.ts`
     - Acceptance: All layers use find()
     - Dependencies: 12.4.6.3o

@@ -69,8 +69,8 @@ export function registerReferenceResource(server: McpServer, getLibrary: () => L
     async (uri, variables) => {
       const library = getLibrary();
       const id = variables.id as string;
-      // findById() now returns Promise<CslItem | undefined>
-      const item = await library.findById(id);
+      // find() returns Promise<CslItem | undefined>
+      const item = await library.find(id);
 
       if (!item) {
         throw new Error(`Reference not found: ${id}`);

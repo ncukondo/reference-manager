@@ -115,7 +115,7 @@ describe("McpContext", () => {
       try {
         // Verify Library interface
         expect(typeof ctx.library.getAll).toBe("function");
-        expect(typeof ctx.library.findById).toBe("function");
+        expect(typeof ctx.library.find).toBe("function");
         expect(typeof ctx.library.add).toBe("function");
       } finally {
         await ctx.dispose();
@@ -148,7 +148,7 @@ describe("McpContext", () => {
 
       try {
         expect(await ctx.library.getAll()).toHaveLength(1);
-        expect(await ctx.library.findById("initial2024")).toBeDefined();
+        expect(await ctx.library.find("initial2024")).toBeDefined();
 
         // Simulate external file change
         const newRef = {
@@ -166,8 +166,8 @@ describe("McpContext", () => {
 
         // Library should be reloaded with new content
         expect(await ctx.library.getAll()).toHaveLength(1);
-        expect(await ctx.library.findById("external2024")).toBeDefined();
-        expect(await ctx.library.findById("initial2024")).toBeUndefined();
+        expect(await ctx.library.find("external2024")).toBeDefined();
+        expect(await ctx.library.find("initial2024")).toBeUndefined();
       } finally {
         await ctx.dispose();
       }
@@ -204,8 +204,8 @@ describe("McpContext", () => {
         // Library should NOT be reloaded (self-write detected)
         // Both references should still be present
         expect(await ctx.library.getAll()).toHaveLength(2);
-        expect(await ctx.library.findById("test2024")).toBeDefined();
-        expect(await ctx.library.findById("added2024")).toBeDefined();
+        expect(await ctx.library.find("test2024")).toBeDefined();
+        expect(await ctx.library.find("added2024")).toBeDefined();
       } finally {
         await ctx.dispose();
       }

@@ -42,7 +42,9 @@ export async function removeReference(
   }
 
   // Remove from library
-  const removed = byUuid ? await library.removeByUuid(identifier) : await library.removeById(identifier);
+  const removed = byUuid
+    ? await library.removeByUuid(identifier)
+    : await library.removeById(identifier);
 
   if (removed) {
     await library.save();
