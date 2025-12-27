@@ -469,7 +469,7 @@ End-to-end testing with MCP client.
   - Acceptance: Claude Code integration guide included
   - Dependencies: 12.7.1
 
-- [ ] **12.8.2**: Quality checks
+- [x] **12.8.2**: Quality checks
   - Acceptance: typecheck, lint, format, all tests pass
   - Dependencies: 12.8.1
 
