@@ -218,27 +218,6 @@ export class Library implements ILibrary {
   }
 
   /**
-   * Find a reference by DOI
-   */
-  findByDoi(doi: string): Reference | undefined {
-    return this.doiIndex.get(doi);
-  }
-
-  /**
-   * Find a reference by PMID
-   */
-  findByPmid(pmid: string): Reference | undefined {
-    return this.pmidIndex.get(pmid);
-  }
-
-  /**
-   * Find a reference by ISBN
-   */
-  findByIsbn(isbn: string): Reference | undefined {
-    return this.isbnIndex.get(isbn);
-  }
-
-  /**
    * Get all references
    */
   async getAll(): Promise<CslItem[]> {

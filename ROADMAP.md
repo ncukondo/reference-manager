@@ -182,10 +182,10 @@ Add ISBN (International Standard Book Number) support to the add command.
     - Update `addToIndices()` / `removeFromIndices()` for ISBN
     - Tests: `library.test.ts`
 
-  - [ ] **14.10.5**: Migrate findByDoi/findByPmid to idType
-    - Investigate usage (currently test-only)
-    - Convert internal implementation to use `find(x, { idType: 'doi' })`
-    - Or deprecate and remove (breaking change acceptable in pre-release)
+  - [x] **14.10.5**: Migrate findByDoi/findByPmid to idType
+    - Investigated usage (test-only)
+    - Removed `findByDoi`, `findByPmid`, `findByIsbn` methods
+    - Migrated all usages to `find(x, { idType: 'doi/pmid/isbn' })`
 
   - [ ] **14.10.6**: Remove byUuid from FindOptions
     - Investigate `byUuid` usage across codebase
