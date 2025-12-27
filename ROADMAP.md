@@ -56,7 +56,7 @@ Enable publishing to MCPB (MCP Bundles) registry alongside GitHub releases.
   - Run `mcpb pack` to create `.mcpb` bundle
   - Attach `.mcpb` file to GitHub release
 
-- [ ] **Step 3: Local testing**
+- [x] **Step 3: Local testing**
   - Build MCPB bundle locally: `npx @anthropic-ai/mcpb pack`
   - Test installation on Claude Desktop (macOS/Windows)
   - Verify MCP server starts correctly with user-provided config path
