@@ -464,7 +464,7 @@ End-to-end testing with MCP client.
 
 #### 12.8 Documentation & Quality
 
-- [ ] **12.8.1**: Update README with MCP section
+- [x] **12.8.1**: Update README with MCP section
   - File: `README.md`
   - Acceptance: Claude Code integration guide included
   - Dependencies: 12.7.1
