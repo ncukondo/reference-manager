@@ -215,7 +215,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Test ISBN duplicate after library reload
   - Dependencies: All above
 
-- [ ] **14.14**: Documentation
+- [x] **14.14**: Documentation
   - Update README.md with ISBN examples
   - Verify help text includes ISBN
 
