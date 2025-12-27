@@ -1,0 +1,49 @@
+{
+  "manifest_version": "0.3",
+  "name": "reference-manager",
+  "display_name": "Reference Manager",
+  "description": "A local reference management tool using CSL-JSON as the single source of truth. Search, add, cite references, and manage full-text attachments.",
+  "author": {
+    "name": "ncukondo",
+    "url": "https://github.com/ncukondo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ncukondo/reference-manager.git"
+  },
+  "homepage": "https://github.com/ncukondo/reference-manager",
+  "support": "https://github.com/ncukondo/reference-manager/issues",
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "bin/reference-manager.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/bin/reference-manager.js", "mcp", "--config", "${user_config.config_path}"]
+    }
+  },
+  "tools": [
+    { "name": "search", "description": "Search references by query" },
+    { "name": "list", "description": "List all references" },
+    { "name": "add", "description": "Add references from PMID, DOI, BibTeX, RIS, or CSL-JSON" },
+    { "name": "remove", "description": "Remove a reference (requires force: true)" },
+    { "name": "cite", "description": "Generate formatted citations" },
+    { "name": "fulltext_attach", "description": "Attach full-text file to a reference" },
+    { "name": "fulltext_get", "description": "Get full-text content for a reference" },
+    { "name": "fulltext_detach", "description": "Detach full-text file from a reference" }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=22.0.0"
+    }
+  },
+  "user_config": {
+    "config_path": {
+      "type": "file",
+      "title": "Config File Path",
+      "description": "Path to the reference-manager configuration file (.toml). If not specified, default locations will be used.",
+      "required": true
+    }
+  }
+}

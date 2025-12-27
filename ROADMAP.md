@@ -41,7 +41,7 @@ Enable publishing to MCPB (MCP Bundles) registry alongside GitHub releases.
 
 #### Implementation Steps
 
-- [ ] **Step 1: Create manifest.json**
+- [x] **Step 1: Create manifest.json**
   - Create `manifest.json` in project root (without version field)
   - Required fields: manifest_version, name, display_name, description, author, server
   - Configure `user_config` for config file path input
