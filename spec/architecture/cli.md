@@ -22,16 +22,19 @@
 | `cite <id>...` | Generate formatted citations |
 | `fulltext <subcommand>` | Manage full-text files (attach/get/detach) |
 | `server start\|stop\|status` | Manage HTTP server |
+| `mcp` | Start MCP stdio server |
 
 ## Output Formats
 
-Available for `list` and `search` commands (mutually exclusive):
+Available for `list` and `search` commands:
 
-- Default: Pretty-printed format
-- `--json`: Compact JSON
-- `--ids-only`: Citation keys only
-- `--uuid`: Internal UUIDs only
-- `--bibtex`: BibTeX format
+| Flag | Description |
+|------|-------------|
+| (default) | Pretty-printed format |
+| `--json` | Compact JSON |
+| `--ids-only` | Citation keys only |
+| `--uuid` | Internal UUIDs only |
+| `--bibtex` | BibTeX format |
 
 ## Exit Codes
 
@@ -90,61 +93,21 @@ directory = "~/.reference-manager/fulltext"
 
 ### Two Modes of Operation
 
-1. **Direct file access**: When server not running (via `OperationsLibrary`)
-2. **Server-backed**: When server running (via `ServerClient`, faster for large libraries)
+1. **Local mode**: Direct file access (via `OperationsLibrary`)
+2. **Server mode**: HTTP API access (via `ServerClient`, faster for large libraries)
 
 ### Automatic Detection
 
-CLI automatically detects running server via portfile (`~/.reference-manager/server.port`):
-
-- Server running and serving same library → Use server API
-- Server not running and `auto_start = true` → Start server, use API
+CLI automatically detects running server via portfile:
+- Server running → Use server API
+- Server not running + `auto_start = true` → Start server
 - Otherwise → Direct file access
 
-### Behavior
+### ILibraryOperations Pattern
 
-- Users don't need to manage server manually
-- Automatic fallback if server unavailable
-- Write operations via server update in-memory index immediately
-
-### ExecutionContext Pattern
+CLI commands use unified `ILibraryOperations` interface, eliminating mode-specific branching.
 
 See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
-
-The CLI uses `ILibraryOperations` interface to unify local and server modes:
-
-```typescript
-type ExecutionMode = "local" | "server";
-
-interface ExecutionContext {
-  mode: ExecutionMode;
-  library: ILibraryOperations;
-}
-```
-
-The `mode` field is preserved for status/diagnostic commands and future extensibility (e.g., MCP mode).
-
-- **Local mode**: `OperationsLibrary` wraps `Library` and delegates to operation functions
-- **Server mode**: `ServerClient` makes direct HTTP requests to server endpoints
-
-This eliminates branching logic in CLI commands:
-
-```typescript
-// Unified - no mode checking needed
-export async function executeSearch(options, context: ExecutionContext) {
-  return context.library.search({ query: options.query, format });
-}
-```
-
-### Layer Responsibilities
-
-| Layer | Local Mode | Server Mode |
-|-------|------------|-------------|
-| `core/Library` | CRUD operations | - |
-| `features/operations/*` | Business logic | - |
-| `features/operations/OperationsLibrary` | Wraps Library | - |
-| `cli/ServerClient` | - | HTTP API calls |
-| `cli/ExecutionContext` | Provides `OperationsLibrary` | Provides `ServerClient` |
 
 ## Global Options
 

@@ -1,5 +1,8 @@
 # HTTP Server
 
+> **Internal component** — Used for performance optimization only.
+> External access should use CLI or MCP.
+
 ## Framework
 
 - HTTP framework: **Hono**
@@ -11,6 +14,8 @@ Performance optimization for large CSL files:
 - Keep library in memory for fast access
 - File watching for external change detection
 - Shared across CLI invocations
+
+This is an internal implementation detail. Users interact via CLI commands, which automatically use the server when available.
 
 ## Port Management
 
@@ -44,7 +49,7 @@ Format (JSON):
 | `POST` | `/api/cite` | Generate citations |
 | `GET` | `/health` | Health check |
 
-**Note:** Internal API only, no public stability guarantee.
+**Note:** Internal API — no public stability guarantee.
 
 ## File Watching
 

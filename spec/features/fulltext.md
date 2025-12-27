@@ -202,7 +202,7 @@ No additional server API endpoints required.
 
 ## Limitations
 
-### Out of Scope (Phase 10)
+### Out of Scope
 
 - Full-text search within PDF/Markdown content
 - PDF metadata extraction
