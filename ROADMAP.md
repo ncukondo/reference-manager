@@ -206,11 +206,13 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Add `isbn` to format choices and help text
   - Tests: `add.test.ts`
 
-- [ ] **14.13**: E2E tests
+- [x] **14.13**: E2E tests
   - File: `src/cli/add.e2e.test.ts`
-  - Test ISBN add with prefix
-  - Test `--format isbn` option
-  - Test duplicate detection by ISBN
+  - Test ISBN duplicate detection for book type
+  - Test different chapters with same ISBN allowed
+  - Test duplicate chapters with same ISBN + title
+  - File: `src/features/operations/add.integration.test.ts`
+  - Test ISBN duplicate after library reload
   - Dependencies: All above
 
 - [ ] **14.14**: Documentation
