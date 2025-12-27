@@ -44,7 +44,7 @@ describe("remove command", () => {
     it("should format successful removal with item", () => {
       const result: RemoveResult = {
         removed: true,
-        item: createItem("Smith-2020", "Test Article"),
+        removedItem: createItem("Smith-2020", "Test Article"),
       };
 
       const output = formatRemoveOutput(result, "Smith-2020");
@@ -57,7 +57,7 @@ describe("remove command", () => {
       item.title = undefined;
       const result: RemoveResult = {
         removed: true,
-        item,
+        removedItem: item,
       };
 
       const output = formatRemoveOutput(result, "Smith-2020");

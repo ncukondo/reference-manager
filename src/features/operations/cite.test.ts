@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import type { Reference } from "../../core/reference.js";
 import { type CiteOperationOptions, citeReferences } from "./cite.js";
 
 // Mock Library
@@ -28,24 +27,17 @@ describe("citeReferences", () => {
     },
   ];
 
-  const createMockReference = (item: CslItem) =>
-    ({
-      getItem: () => item,
-      getId: () => item.id,
-      getUuid: () => item.custom?.uuid,
-    }) as unknown as Reference;
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      findById: vi.fn((id: string) => {
-        const item = mockItems.find((i) => i.id === id);
-        return item ? createMockReference(item) : undefined;
+      find: vi.fn((id: string, options?: { byUuid?: boolean }) => {
+        if (options?.byUuid) {
+          return Promise.resolve(mockItems.find((i) => i.custom?.uuid === id));
+        }
+        return Promise.resolve(mockItems.find((i) => i.id === id));
       }),
-      findByUuid: vi.fn((uuid: string) => {
-        const item = mockItems.find((i) => i.custom?.uuid === uuid);
-        return item ? createMockReference(item) : undefined;
-      }),
+      findById: vi.fn((id: string) => mockItems.find((i) => i.id === id)),
+      findByUuid: vi.fn((uuid: string) => mockItems.find((i) => i.custom?.uuid === uuid)),
     } as unknown as Library;
   });
 
@@ -165,8 +157,7 @@ describe("citeReferences", () => {
       };
       await citeReferences(mockLibrary, options);
 
-      expect(mockLibrary.findById).toHaveBeenCalledWith("smith-2023");
-      expect(mockLibrary.findByUuid).not.toHaveBeenCalled();
+      expect(mockLibrary.find).toHaveBeenCalledWith("smith-2023", { byUuid: false });
     });
   });
 });

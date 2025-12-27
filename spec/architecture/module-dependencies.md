@@ -226,9 +226,43 @@ export async function addReferences(
 
 **Benefits**:
 - CLI and Server share the same business logic
-- CLI only handles: routing (direct vs server API), output formatting, exit codes
+- CLI only handles: output formatting, exit codes
 - Server only handles: HTTP request/response
 - Easy to test domain logic in isolation
+
+#### ILibraryOperations Pattern
+
+See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
+
+`operations/` also provides `ILibraryOperations` interface that extends `ILibrary` with high-level operations:
+
+```typescript
+// features/operations/library-operations.ts
+interface ILibraryOperations extends ILibrary {
+  search(options): Promise<SearchResult>;
+  list(options): Promise<ListResult>;
+  cite(options): Promise<CiteResult>;
+  import(inputs, options?): Promise<ImportResult>;
+}
+```
+
+And `OperationsLibrary` class that implements it by wrapping `Library`:
+
+```typescript
+// features/operations/operations-library.ts
+class OperationsLibrary implements ILibraryOperations {
+  constructor(private library: ILibrary) {}
+
+  // Delegates ILibrary methods to wrapped library
+  // Implements high-level methods using operation functions
+  search(options) { return searchReferences(this.library, options); }
+}
+```
+
+**Dependency direction**:
+- `ILibraryOperations` extends `ILibrary` (features → core) OK
+- `OperationsLibrary` uses operation functions (same layer) OK
+- `cli/ServerClient` implements `ILibraryOperations` (cli → features) OK
 
 **Example**:
 ```typescript
@@ -293,21 +327,27 @@ export function createReferencesRouter(library: Library) {
 
 #### ExecutionContext Pattern
 
-The `ExecutionContext` type enables server mode optimization by eliminating redundant library loading:
+See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
+
+The `ExecutionContext` provides a unified `ILibraryOperations` interface for CLI commands:
 
 ```typescript
 // cli/execution-context.ts
-export type ExecutionContext =
-  | { type: "server"; client: ServerClient }
-  | { type: "local"; library: Library };
+export type ExecutionMode = "local" | "server";
+
+export interface ExecutionContext {
+  mode: ExecutionMode;
+  library: ILibraryOperations;
+}
 
 export async function createExecutionContext(config: Config): Promise<ExecutionContext>
 ```
 
 **Benefits**:
-- In server mode, commands communicate via HTTP API (library stays loaded in server process)
-- In local mode, library is loaded once and passed to commands
-- Discriminated union pattern enables type-safe mode-specific logic
+- In server mode, `ServerClient` makes direct HTTP API calls (efficient)
+- In local mode, `OperationsLibrary` wraps `Library` and delegates to operation functions
+- Unified `library` interface eliminates branching logic in commands
+- `mode` field preserved for status/diagnostic commands and future extensibility
 
 **Usage in commands**:
 ```typescript
@@ -316,11 +356,8 @@ export async function executeList(
   options: ListOptions,
   context: ExecutionContext
 ): Promise<ListResult> {
-  if (context.type === "server") {
-    return context.client.list(options);
-  }
-  // Local mode: use library directly
-  return listReferences(context.library, options);
+  // No branching needed - same interface for both modes
+  return context.library.list(options);
 }
 ```
 

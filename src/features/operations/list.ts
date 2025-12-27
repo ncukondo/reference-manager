@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
+import type { ILibrary } from "../../core/library-interface.js";
 import { formatBibtex, formatPretty } from "../format/index.js";
 
 /**
@@ -30,10 +30,9 @@ export interface ListResult {
  * @param options - Formatting options
  * @returns Formatted strings for each reference
  */
-export function listReferences(library: Library, options: ListOptions): ListResult {
+export async function listReferences(library: ILibrary, options: ListOptions): Promise<ListResult> {
   const format = options.format ?? "pretty";
-  const references = library.getAll();
-  const items = references.map((ref) => ref.getItem());
+  const items = await library.getAll();
 
   switch (format) {
     case "json":

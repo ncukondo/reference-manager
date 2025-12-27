@@ -20,9 +20,10 @@ export const backupConfigSchema = z.object({
 
 /**
  * File watching configuration schema
+ * Note: File watching is always enabled in server mode (HTTP/MCP).
+ * CLI mode does not use file watching.
  */
 export const watchConfigSchema = z.object({
-  enabled: z.boolean(),
   debounceMs: z.number().int().nonnegative(),
   pollIntervalMs: z.number().int().positive(),
   retryIntervalMs: z.number().int().positive(),
@@ -101,7 +102,6 @@ export const partialConfigSchema = z
       .optional(),
     watch: z
       .object({
-        enabled: z.boolean().optional(),
         debounceMs: z.number().int().nonnegative().optional(),
         debounce_ms: z.number().int().nonnegative().optional(),
         pollIntervalMs: z.number().int().positive().optional(),
@@ -211,7 +211,6 @@ function normalizeBackupConfig(
  */
 function normalizeWatchConfig(
   watch: Partial<{
-    enabled?: boolean;
     debounceMs?: number;
     debounce_ms?: number;
     pollIntervalMs?: number;
@@ -223,10 +222,6 @@ function normalizeWatchConfig(
   }>
 ): Partial<WatchConfig> | undefined {
   const normalized: Partial<WatchConfig> = {};
-
-  if (watch.enabled !== undefined) {
-    normalized.enabled = watch.enabled;
-  }
 
   const debounceMs = watch.debounceMs ?? watch.debounce_ms;
   if (debounceMs !== undefined) {

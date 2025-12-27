@@ -30,6 +30,7 @@ import {
   getFulltextExitCode,
 } from "./commands/fulltext.js";
 import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
+import { mcpStart } from "./commands/mcp.js";
 import {
   type RemoveCommandOptions,
   deleteFulltextFiles,
@@ -83,6 +84,7 @@ export function createProgram(): Command {
   registerCiteCommand(program);
   registerServerCommand(program);
   registerFulltextCommand(program);
+  registerMcpCommand(program);
 
   return program;
 }
@@ -260,15 +262,7 @@ async function findReferenceToRemove(
   byUuid: boolean,
   context: ExecutionContext
 ): Promise<CslItem | undefined> {
-  if (context.type === "server") {
-    const item = await context.client.find(identifier, { byUuid });
-    return item ?? undefined;
-  }
-
-  const ref = byUuid
-    ? context.library.findByUuid(identifier)
-    : context.library.findById(identifier);
-  return ref?.getItem();
+  return context.library.find(identifier, { byUuid });
 }
 
 async function confirmRemoval(
@@ -547,12 +541,16 @@ function registerServerCommand(program: Command): void {
           library: config.library,
           portfilePath,
           daemon: options.daemon,
+          config,
           ...(options.port && { port: Number.parseInt(options.port, 10) }),
         };
 
         await serverStart(startOptions);
 
-        process.exit(0);
+        // Only exit if daemon mode (foreground keeps running)
+        if (options.daemon) {
+          process.exit(0);
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes("already running") || message.includes("conflict")) {
@@ -605,6 +603,46 @@ function registerServerCommand(program: Command): void {
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
         process.exit(4);
+      }
+    });
+}
+
+/**
+ * Register 'mcp' command - MCP stdio server
+ */
+function registerMcpCommand(program: Command): void {
+  program
+    .command("mcp")
+    .description("Start MCP stdio server for AI agent integration")
+    .action(async () => {
+      try {
+        const globalOpts = program.opts();
+
+        const mcpOptions: Parameters<typeof mcpStart>[0] = {
+          configPath: globalOpts.config ?? "",
+        };
+        if (globalOpts.library !== undefined) {
+          mcpOptions.libraryPath = globalOpts.library;
+        }
+        const result = await mcpStart(mcpOptions);
+
+        // MCP server runs until stdin closes or signal received
+        // The server keeps running and handles requests via stdio
+        // Wait for server to close (happens on stdin close or dispose)
+        await new Promise<void>((resolve) => {
+          process.stdin.on("close", async () => {
+            await result.dispose();
+            resolve();
+          });
+
+          process.stdin.on("end", async () => {
+            await result.dispose();
+            resolve();
+          });
+        });
+      } catch (error) {
+        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.exit(1);
       }
     });
 }

@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Library } from "../../core/library.js";
+import type { ILibrary } from "../../core/library-interface.js";
 
 /**
  * Options for updateReference operation
@@ -39,15 +39,13 @@ export interface UpdateOperationResult {
  * @returns Result indicating success and the updated item
  */
 export async function updateReference(
-  library: Library,
+  library: ILibrary,
   options: UpdateOperationOptions
 ): Promise<UpdateOperationResult> {
   const { identifier, byUuid = false, updates, onIdCollision = "fail" } = options;
 
-  // Update the reference
-  const updateResult = byUuid
-    ? library.updateByUuid(identifier, updates, { onIdCollision })
-    : library.updateById(identifier, updates, { onIdCollision });
+  // Update the reference using unified update() method
+  const updateResult = await library.update(identifier, updates, { byUuid, onIdCollision });
 
   if (!updateResult.updated) {
     const result: UpdateOperationResult = { updated: false };
@@ -60,16 +58,11 @@ export async function updateReference(
   // Save the library
   await library.save();
 
-  // Get the updated reference to return its item
-  const reference = byUuid
-    ? library.findByUuid(identifier)
-    : library.findById(updateResult.newId ?? identifier);
-
+  // Build result from UpdateResult (item is now included)
   const result: UpdateOperationResult = { updated: true };
 
-  const item = reference?.getItem();
-  if (item) {
-    result.item = item;
+  if (updateResult.item) {
+    result.item = updateResult.item;
   }
 
   if (updateResult.idChanged && updateResult.newId) {

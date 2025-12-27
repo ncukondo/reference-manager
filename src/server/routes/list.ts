@@ -46,7 +46,7 @@ export function createListRoute(library: Library) {
     }
 
     // Call listReferences operation
-    const result = listReferences(library, options);
+    const result = await listReferences(library, options);
 
     return c.json(result);
   });

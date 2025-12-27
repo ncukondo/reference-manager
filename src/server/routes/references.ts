@@ -11,35 +11,34 @@ import { updateReference } from "../../features/operations/update.js";
 export function createReferencesRoute(library: Library) {
   const route = new Hono();
 
-  // GET / - Get all references
-  route.get("/", (c) => {
-    const references = library.getAll();
-    const items = references.map((ref) => ref.getItem());
+  // GET / - Get all references (getAll now returns Promise<CslItem[]>)
+  route.get("/", async (c) => {
+    const items = await library.getAll();
     return c.json(items);
   });
 
   // GET /uuid/:uuid - Get reference by UUID
-  route.get("/uuid/:uuid", (c) => {
+  route.get("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
-    const ref = library.findByUuid(uuid);
+    const item = await library.find(uuid, { byUuid: true });
 
-    if (!ref) {
+    if (!item) {
       return c.json({ error: "Reference not found" }, 404);
     }
 
-    return c.json(ref.getItem());
+    return c.json(item);
   });
 
   // GET /id/:id - Get reference by citation ID
-  route.get("/id/:id", (c) => {
+  route.get("/id/:id", async (c) => {
     const id = c.req.param("id");
-    const ref = library.findById(id);
+    const item = await library.find(id);
 
-    if (!ref) {
+    if (!item) {
       return c.json({ error: "Reference not found" }, 404);
     }
 
-    return c.json(ref.getItem());
+    return c.json(item);
   });
 
   // POST / - Create new reference
@@ -47,18 +46,10 @@ export function createReferencesRoute(library: Library) {
     try {
       const body = await c.req.json();
 
-      // Create and add reference (library.add handles validation)
-      library.add(body);
+      // Create and add reference (library.add handles validation and returns the added item)
+      const addedItem = await library.add(body);
 
-      // Find the newly added reference by UUID (it was just added)
-      const allRefs = library.getAll();
-      const addedRef = allRefs[allRefs.length - 1];
-
-      if (!addedRef) {
-        return c.json({ error: "Failed to add reference" }, 500);
-      }
-
-      return c.json(addedRef.getItem(), 201);
+      return c.json(addedItem, 201);
     } catch (error) {
       return c.json(
         {
@@ -71,6 +62,7 @@ export function createReferencesRoute(library: Library) {
   });
 
   // PUT /uuid/:uuid - Update reference by UUID
+  // Request body: { updates: Partial<CslItem>, onIdCollision?: "fail" | "suffix" }
   route.put("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
 
@@ -85,12 +77,21 @@ export function createReferencesRoute(library: Library) {
       return c.json({ error: "Request body must be an object" }, 400);
     }
 
+    const { updates, onIdCollision } = body as {
+      updates?: Partial<import("../../core/csl-json/types.js").CslItem>;
+      onIdCollision?: "fail" | "suffix";
+    };
+
+    if (!updates || typeof updates !== "object") {
+      return c.json({ error: "Request body must contain 'updates' object" }, 400);
+    }
+
     // Use updateReference operation
     const result = await updateReference(library, {
       identifier: uuid,
       byUuid: true,
-      updates: body as Partial<import("../../core/csl-json/types.js").CslItem>,
-      onIdCollision: "suffix",
+      updates,
+      onIdCollision: onIdCollision ?? "suffix",
     });
 
     // Return operation result with appropriate status code
@@ -103,6 +104,7 @@ export function createReferencesRoute(library: Library) {
   });
 
   // PUT /id/:id - Update reference by citation ID
+  // Request body: { updates: Partial<CslItem>, onIdCollision?: "fail" | "suffix" }
   route.put("/id/:id", async (c) => {
     const id = c.req.param("id");
 
@@ -117,12 +119,21 @@ export function createReferencesRoute(library: Library) {
       return c.json({ error: "Request body must be an object" }, 400);
     }
 
+    const { updates, onIdCollision } = body as {
+      updates?: Partial<import("../../core/csl-json/types.js").CslItem>;
+      onIdCollision?: "fail" | "suffix";
+    };
+
+    if (!updates || typeof updates !== "object") {
+      return c.json({ error: "Request body must contain 'updates' object" }, 400);
+    }
+
     // Use updateReference operation with byUuid: false
     const result = await updateReference(library, {
       identifier: id,
       byUuid: false,
-      updates: body as Partial<import("../../core/csl-json/types.js").CslItem>,
-      onIdCollision: "suffix",
+      updates,
+      onIdCollision: onIdCollision ?? "suffix",
     });
 
     // Return operation result with appropriate status code

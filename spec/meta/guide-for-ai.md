@@ -68,11 +68,11 @@ See `spec/architecture/module-dependencies.md` for complete rules.
 ```
 cli/
 server/  ──> features/ ──> core/ ──> utils/
-                                 └──> config/
+mcp/                            └──> config/
 ```
 
 - Lower layers must not import from upper layers
-- Core is independent (no imports from features/cli/server)
+- Core is independent (no imports from features/cli/server/mcp)
 
 ### 4. Quality Gates
 
@@ -84,43 +84,36 @@ npm run format     # Apply formatting
 npm test           # All tests must pass
 ```
 
-See `spec/meta/development-process.md` section 4.6 for details.
+### 5. Verify Types Before Using Existing Code
 
-### 5. Use Serena MCP Tools
-
-When working with existing code:
-- `mcp__serena__get_symbols_overview` - Understand file structure
-- `mcp__serena__find_symbol` - Find functions/classes
-- `mcp__serena__search_for_pattern` - Search codebase
-- Verify types and signatures before usage
-
-See `spec/guidelines/testing.md` section "When importing already-implemented files".
+When importing from existing modules:
+- Check function/class signatures in source code
+- Verify parameter types and return types
+- Read JSDoc comments if available
 
 ## Task-Specific Specs
 
 | Task | Read These Specs |
 |------|------------------|
-| New feature | `spec/features/` (relevant), `spec/guidelines/testing.md`, `spec/patterns/` |
+| New feature | `spec/features/` (relevant), `spec/guidelines/testing.md` |
 | Bug fix | `spec/features/` (relevant), `spec/guidelines/testing.md` |
-| Refactoring | `spec/architecture/`, `spec/patterns/`, `spec/decisions/` |
+| Refactoring | `spec/architecture/`, `spec/decisions/` |
 | CLI work | `spec/architecture/cli.md` |
-| Server work | `spec/architecture/http-server.md` |
-| Architecture change | `spec/core/`, `spec/architecture/`, create ADR in `spec/decisions/` |
+| MCP work | `spec/architecture/mcp-server.md` |
+| Architecture change | `spec/core/`, `spec/architecture/`, create ADR |
 
 ## Pre-release Context
 
-**Current phase: Pre-release**
+**Current phase: Pre-release (Alpha)**
 
 - Breaking changes are acceptable
 - Focus on clean, simple design
 - Refactor aggressively for clarity
 - No backward compatibility required
 
-See `spec/meta/development-process.md` "Pre-release Development Notes" for details.
-
 ## Common Mistakes to Avoid
 
-### ❌ Never
+### Don't
 - Write code before reading specs
 - Skip TDD process
 - Import from upper layers (violate module dependencies)
@@ -128,7 +121,7 @@ See `spec/meta/development-process.md` "Pre-release Development Notes" for detai
 - Skip quality checks
 - Forget to update `ROADMAP.md`
 
-### ✅ Always
+### Do
 - Read all relevant specs first
 - Follow TDD: tests first, verify failure, then implement
 - Respect module dependency rules
@@ -136,25 +129,12 @@ See `spec/meta/development-process.md` "Pre-release Development Notes" for detai
 - Run all quality checks
 - Update `ROADMAP.md` and specs
 
-## Response Format
-
-When completing tasks:
-
-1. **Confirm understanding**: "I've read spec/_index.md, spec/meta/development-process.md, and spec/features/X.md"
-2. **State approach**: "Following TDD process from spec/guidelines/testing.md"
-3. **Show progress**: Use TodoWrite tool to track steps
-4. **Provide file references**: Use `file:line` format (e.g., `src/core/library.ts:42`)
-5. **Confirm quality**: "All tests pass, typecheck clean, lint clean"
-6. **Show updates**: "Updated ROADMAP.md"
-
 ## Documentation Updates
 
 After implementation:
 - Mark tasks complete in `ROADMAP.md`
 - Update specs if behavior changed
 - Create ADR in `spec/decisions/` if architectural decision was made
-
-See `spec/meta/development-process.md` section 4.7 for details.
 
 ## References
 

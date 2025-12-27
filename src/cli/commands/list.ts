@@ -1,8 +1,4 @@
-import {
-  type ListFormat,
-  type ListResult,
-  listReferences,
-} from "../../features/operations/list.js";
+import type { ListFormat, ListResult } from "../../features/operations/list.js";
 import type { ExecutionContext } from "../execution-context.js";
 
 /**
@@ -48,10 +44,10 @@ function validateOptions(options: ListCommandOptions): void {
 
 /**
  * Execute list command.
- * Routes to server API or direct library operation based on execution context.
+ * Uses context.library.list() which works for both local and server modes.
  *
  * @param options - List command options
- * @param context - Execution context (server or local)
+ * @param context - Execution context
  * @returns List result containing formatted items
  */
 export async function executeList(
@@ -61,13 +57,7 @@ export async function executeList(
   validateOptions(options);
   const format = getListFormat(options);
 
-  if (context.type === "server") {
-    // Use server's list API with format option
-    return context.client.list({ format });
-  }
-
-  // Direct library operation
-  return listReferences(context.library, { format });
+  return context.library.list({ format });
 }
 
 /**

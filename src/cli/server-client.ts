@@ -1,18 +1,23 @@
 import type { CslItem } from "../core/csl-json/types.js";
-import type { AddReferencesResult } from "../features/operations/add.js";
-import type { CiteResult } from "../features/operations/cite.js";
-import type { ListOptions, ListResult } from "../features/operations/list.js";
+import type {
+  FindOptions,
+  RemoveResult as ILibraryRemoveResult,
+  RemoveOptions,
+  UpdateOptions,
+  UpdateResult,
+} from "../core/library-interface.js";
+import type {
+  AddReferencesResult,
+  CiteResult,
+  ILibraryOperations,
+  ImportOptions,
+  ListOptions,
+  ListResult,
+  SearchOperationOptions,
+  SearchResult,
+} from "../features/operations/index.js";
 import type { RemoveResult } from "../features/operations/remove.js";
-import type { SearchOperationOptions, SearchResult } from "../features/operations/search.js";
 import type { UpdateOperationResult } from "../features/operations/update.js";
-
-/**
- * Options for addFromInputs method.
- */
-export interface AddFromInputsOptions {
-  force?: boolean;
-  format?: string;
-}
 
 /**
  * Options for cite method.
@@ -30,8 +35,12 @@ export interface CiteOptions {
 /**
  * Client for communicating with the reference-manager HTTP server.
  */
-export class ServerClient {
+export class ServerClient implements ILibraryOperations {
   constructor(private baseUrl: string) {}
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ILibrary Query methods
+  // ─────────────────────────────────────────────────────────────────────────
 
   /**
    * Get all references from the server.
@@ -49,21 +58,20 @@ export class ServerClient {
   }
 
   /**
-   * Find reference by identifier.
+   * Find reference by citation ID or UUID.
    * @param identifier - Citation ID or UUID
-   * @param options - Options object
-   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
-   * @returns CSL item or null if not found
+   * @param options - Find options (byUuid to use UUID lookup)
+   * @returns CSL item or undefined if not found
    */
-  async find(identifier: string, options?: { byUuid?: boolean }): Promise<CslItem | null> {
-    const path = options?.byUuid
-      ? `/api/references/uuid/${identifier}`
-      : `/api/references/id/${identifier}`;
-    const url = `${this.baseUrl}${path}`;
+  async find(identifier: string, options: FindOptions = {}): Promise<CslItem | undefined> {
+    const { byUuid = false } = options;
+    const url = byUuid
+      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
     const response = await fetch(url);
 
     if (response.status === 404) {
-      return null;
+      return undefined;
     }
 
     if (!response.ok) {
@@ -73,10 +81,14 @@ export class ServerClient {
     return (await response.json()) as CslItem;
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ILibrary Write methods
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
    * Add new reference to the library.
    * @param item - CSL item to add
-   * @returns Created CSL item with UUID
+   * @returns The added CSL item (with generated ID and UUID)
    */
   async add(item: CslItem): Promise<CslItem> {
     const url = `${this.baseUrl}/api/references`;
@@ -90,51 +102,58 @@ export class ServerClient {
       throw new Error(await response.text());
     }
 
+    // Return the added item from server response
     return (await response.json()) as CslItem;
   }
 
   /**
-   * Update existing reference.
+   * Update reference by citation ID or UUID.
    * @param identifier - Citation ID or UUID
    * @param updates - Partial CSL item with fields to update
-   * @param options - Options object
-   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
-   * @returns Update operation result
+   * @param options - Update options (byUuid to use UUID lookup, onIdCollision for collision handling)
+   * @returns Update result with updated item, success status, and any ID changes
    */
   async update(
     identifier: string,
     updates: Partial<CslItem>,
-    options?: { byUuid?: boolean }
-  ): Promise<UpdateOperationResult> {
-    const path = options?.byUuid
-      ? `/api/references/uuid/${identifier}`
-      : `/api/references/id/${identifier}`;
-    const url = `${this.baseUrl}${path}`;
+    options?: UpdateOptions
+  ): Promise<UpdateResult> {
+    const { byUuid = false, onIdCollision } = options ?? {};
+    const url = byUuid
+      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
+
     const response = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ updates, onIdCollision }),
     });
 
     if (!response.ok && response.status !== 404 && response.status !== 409) {
       throw new Error(await response.text());
     }
 
-    return (await response.json()) as UpdateOperationResult;
+    const result = (await response.json()) as UpdateOperationResult;
+    // Return UpdateResult with item if available
+    const updateResult: UpdateResult = { updated: result.updated };
+    if (result.item !== undefined) updateResult.item = result.item;
+    if (result.idCollision !== undefined) updateResult.idCollision = result.idCollision;
+    if (result.idChanged !== undefined) updateResult.idChanged = result.idChanged;
+    if (result.newId !== undefined) updateResult.newId = result.newId;
+    return updateResult;
   }
 
   /**
-   * Remove reference by identifier.
-   * @param identifier - Citation ID or UUID
-   * @param options - Options object
-   * @param options.byUuid - If true, treat identifier as UUID; otherwise as citation ID
-   * @returns Remove operation result
+   * Remove a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to remove
+   * @param options - Remove options (byUuid to use UUID lookup)
+   * @returns Remove result with removed status and removedItem
    */
-  async remove(identifier: string, options?: { byUuid?: boolean }): Promise<RemoveResult> {
-    const path = options?.byUuid
-      ? `/api/references/uuid/${identifier}`
-      : `/api/references/id/${identifier}`;
-    const url = `${this.baseUrl}${path}`;
+  async remove(identifier: string, options: RemoveOptions = {}): Promise<ILibraryRemoveResult> {
+    const { byUuid = false } = options;
+    const url = byUuid
+      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
     const response = await fetch(url, {
       method: "DELETE",
     });
@@ -143,19 +162,36 @@ export class ServerClient {
       throw new Error(await response.text());
     }
 
-    return (await response.json()) as RemoveResult;
+    const result = (await response.json()) as RemoveResult;
+    const removeResult: ILibraryRemoveResult = { removed: result.removed };
+    if (result.removedItem !== undefined) {
+      removeResult.removedItem = result.removedItem;
+    }
+    return removeResult;
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ILibrary Persistence
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
-   * Add references from various input formats.
+   * Save is a no-op for ServerClient (HTTP requests are already persisted).
+   */
+  async save(): Promise<void> {
+    // No-op: HTTP requests are immediately persisted by the server
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // High-level methods (not part of ILibrary)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Import references from various input formats.
    * @param inputs - Array of inputs (file paths, PMIDs, DOIs)
-   * @param options - Options for add operation
+   * @param options - Options for import operation
    * @returns Result containing added, failed, and skipped items
    */
-  async addFromInputs(
-    inputs: string[],
-    options?: AddFromInputsOptions
-  ): Promise<AddReferencesResult> {
+  async import(inputs: string[], options?: ImportOptions): Promise<AddReferencesResult> {
     const url = `${this.baseUrl}/api/add`;
     const response = await fetch(url, {
       method: "POST",

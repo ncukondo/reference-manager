@@ -2,34 +2,24 @@ import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
+import type {
+  FindOptions,
+  ILibrary,
+  RemoveOptions,
+  RemoveResult,
+  UpdateOptions,
+  UpdateResult,
+} from "./library-interface.js";
 import { Reference } from "./reference";
 
-/**
- * Options for update operations
- */
-export interface UpdateOptions {
-  /** How to handle ID collision: 'fail' (default) or 'suffix' */
-  onIdCollision?: "fail" | "suffix";
-}
+// Re-export types from library-interface for backward compatibility
+export type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
 
 /**
- * Result of an update operation
+ * Library manager for CSL-JSON references.
+ * Implements ILibrary interface for use with operations layer.
  */
-export interface UpdateResult {
-  /** Whether the update was successful */
-  updated: boolean;
-  /** True if ID collision occurred (only when updated=false and onIdCollision='fail') */
-  idCollision?: boolean;
-  /** True if the ID was changed due to collision resolution */
-  idChanged?: boolean;
-  /** The new ID after collision resolution (only when idChanged=true) */
-  newId?: string;
-}
-
-/**
- * Library manager for CSL-JSON references
- */
-export class Library {
+export class Library implements ILibrary {
   private filePath: string;
   private references: Reference[] = [];
   private currentHash: string | null = null;
@@ -73,9 +63,46 @@ export class Library {
   }
 
   /**
-   * Add a reference to the library
+   * Reloads the library from file if it was modified externally.
+   * Self-writes (detected via hash comparison) are skipped.
+   * @returns true if reload occurred, false if skipped (self-write detected)
    */
-  add(item: CslItem): void {
+  async reload(): Promise<boolean> {
+    const newHash = await computeFileHash(this.filePath);
+
+    if (newHash === this.currentHash) {
+      // Self-write detected, skip reload
+      return false;
+    }
+
+    // External change detected, reload
+    const items = await parseCslJson(this.filePath);
+
+    // Clear and rebuild indices
+    this.references = [];
+    this.uuidIndex.clear();
+    this.idIndex.clear();
+    this.doiIndex.clear();
+    this.pmidIndex.clear();
+
+    for (const item of items) {
+      const ref = new Reference(item);
+      this.references.push(ref);
+      this.addToIndices(ref);
+    }
+
+    // Update hash
+    this.currentHash = newHash;
+
+    return true;
+  }
+
+  /**
+   * Add a reference to the library
+   * @param item - The CSL item to add
+   * @returns The added CSL item (with generated ID and UUID)
+   */
+  async add(item: CslItem): Promise<CslItem> {
     // Collect existing IDs for collision check
     const existingIds = new Set(this.references.map((ref) => ref.getId()));
 
@@ -85,74 +112,60 @@ export class Library {
     // Add to library
     this.references.push(ref);
     this.addToIndices(ref);
+
+    // Return the added item
+    return ref.getItem();
   }
 
   /**
-   * Remove a reference by UUID
+   * Remove a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to remove
+   * @param options - Remove options (byUuid to use UUID lookup)
+   * @returns Remove result with removed status and the removed item
    */
-  removeByUuid(uuid: string): boolean {
-    const ref = this.uuidIndex.get(uuid);
+  async remove(identifier: string, options: RemoveOptions = {}): Promise<RemoveResult> {
+    const { byUuid = false } = options;
+    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
     if (!ref) {
-      return false;
+      return { removed: false };
     }
-
-    return this.removeReference(ref);
+    const removedItem = ref.getItem();
+    const removed = this.removeReference(ref);
+    return { removed, removedItem };
   }
 
   /**
-   * Remove a reference by ID
-   */
-  removeById(id: string): boolean {
-    const ref = this.idIndex.get(id);
-    if (!ref) {
-      return false;
-    }
-
-    return this.removeReference(ref);
-  }
-
-  /**
-   * Update a reference by UUID.
-   * @param uuid - The UUID of the reference to update
+   * Update a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to update
    * @param updates - Partial updates to apply to the reference
-   * @returns true if the reference was found and updated, false otherwise
+   * @param options - Update options (byUuid to use UUID lookup, onIdCollision for collision handling)
+   * @returns Update result with updated item, success status, and any ID changes
    */
-  updateByUuid(uuid: string, updates: Partial<CslItem>, options: UpdateOptions = {}): UpdateResult {
-    const ref = this.uuidIndex.get(uuid);
+  async update(
+    identifier: string,
+    updates: Partial<CslItem>,
+    options: UpdateOptions = {}
+  ): Promise<UpdateResult> {
+    const { byUuid = false, ...updateOptions } = options;
+    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+
     if (!ref) {
       return { updated: false };
     }
 
-    return this.updateReference(ref, updates, options);
+    return this.updateReference(ref, updates, updateOptions);
   }
 
   /**
-   * Update a reference by ID.
-   * @param id - The ID of the reference to update
-   * @param updates - Partial updates to apply to the reference
-   * @returns true if the reference was found and updated, false otherwise
+   * Find a reference by citation ID or UUID.
+   * @param identifier - The citation ID or UUID of the reference to find
+   * @param options - Find options (byUuid to use UUID lookup)
+   * @returns The CSL item if found, undefined otherwise
    */
-  updateById(id: string, updates: Partial<CslItem>, options: UpdateOptions = {}): UpdateResult {
-    const ref = this.idIndex.get(id);
-    if (!ref) {
-      return { updated: false };
-    }
-
-    return this.updateReference(ref, updates, options);
-  }
-
-  /**
-   * Find a reference by UUID
-   */
-  findByUuid(uuid: string): Reference | undefined {
-    return this.uuidIndex.get(uuid);
-  }
-
-  /**
-   * Find a reference by ID
-   */
-  findById(id: string): Reference | undefined {
-    return this.idIndex.get(id);
+  async find(identifier: string, options: FindOptions = {}): Promise<CslItem | undefined> {
+    const { byUuid = false } = options;
+    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+    return ref?.getItem();
   }
 
   /**
@@ -172,8 +185,8 @@ export class Library {
   /**
    * Get all references
    */
-  getAll(): Reference[] {
-    return [...this.references];
+  async getAll(): Promise<CslItem[]> {
+    return this.references.map((ref) => ref.getItem());
   }
 
   /**
@@ -263,7 +276,7 @@ export class Library {
     this.references[index] = newRef;
     this.addToIndices(newRef);
 
-    const result: UpdateResult = { updated: true };
+    const result: UpdateResult = { updated: true, item: newRef.getItem() };
     if (idChanged) {
       result.idChanged = true;
       result.newId = newId;

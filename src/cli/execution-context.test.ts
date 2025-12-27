@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { Config } from "../config/schema.js";
 import type { Library } from "../core/library.js";
-import {
-  type ExecutionContext,
-  createExecutionContext,
-  isLocalContext,
-  isServerContext,
-} from "./execution-context.js";
+import { type ExecutionMode, createExecutionContext } from "./execution-context.js";
 import * as serverDetection from "./server-detection.js";
 
 // Mock the server-detection module
@@ -37,6 +32,11 @@ describe("execution-context", () => {
 
   const mockLibrary = {
     getAll: vi.fn(),
+    find: vi.fn(),
+    add: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    save: vi.fn(),
     filePath: mockLibraryPath,
   } as unknown as Library;
 
@@ -55,8 +55,8 @@ describe("execution-context", () => {
 
       const context = await createExecutionContext(mockConfig, mockLoadLibrary);
 
-      expect(context.type).toBe("server");
-      expect(context).toHaveProperty("client");
+      expect(context.mode).toBe("server");
+      expect(context.library).toBeDefined();
       expect(mockLoadLibrary).not.toHaveBeenCalled();
     });
 
@@ -65,8 +65,8 @@ describe("execution-context", () => {
 
       const context = await createExecutionContext(mockConfig, mockLoadLibrary);
 
-      expect(context.type).toBe("local");
-      expect(context).toHaveProperty("library");
+      expect(context.mode).toBe("local");
+      expect(context.library).toBeDefined();
       expect(mockLoadLibrary).toHaveBeenCalledWith(mockLibraryPath);
     });
 
@@ -82,7 +82,7 @@ describe("execution-context", () => {
       expect(mockLoadLibrary).not.toHaveBeenCalled();
     });
 
-    test("should create ServerClient with correct base URL", async () => {
+    test("should create ServerClient in server mode with correct base URL", async () => {
       vi.mocked(serverDetection.getServerConnection).mockResolvedValue({
         baseUrl: "http://localhost:4567",
         pid: 99999,
@@ -90,66 +90,65 @@ describe("execution-context", () => {
 
       const context = await createExecutionContext(mockConfig, mockLoadLibrary);
 
-      expect(context.type).toBe("server");
-      if (context.type === "server") {
-        expect(context.client.baseUrl).toBe("http://localhost:4567");
-      }
+      expect(context.mode).toBe("server");
+      // ServerClient has baseUrl property
+      expect((context.library as { baseUrl: string }).baseUrl).toBe("http://localhost:4567");
+    });
+
+    test("should create OperationsLibrary in local mode", async () => {
+      vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
+
+      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
+
+      expect(context.mode).toBe("local");
+      // OperationsLibrary wraps the loaded library
+      expect(context.library).toBeDefined();
+      expect(typeof context.library.search).toBe("function");
+      expect(typeof context.library.list).toBe("function");
+      expect(typeof context.library.cite).toBe("function");
+      expect(typeof context.library.import).toBe("function");
     });
   });
 
-  describe("isServerContext", () => {
-    test("should return true for server context", () => {
-      const context: ExecutionContext = {
-        type: "server",
-        client: { baseUrl: "http://localhost:3000" },
-      } as ExecutionContext;
-
-      expect(isServerContext(context)).toBe(true);
+  describe("ExecutionMode type", () => {
+    test("should allow 'local' mode", () => {
+      const mode: ExecutionMode = "local";
+      expect(mode).toBe("local");
     });
 
-    test("should return false for local context", () => {
-      const context: ExecutionContext = {
-        type: "local",
-        library: mockLibrary,
-      };
-
-      expect(isServerContext(context)).toBe(false);
+    test("should allow 'server' mode", () => {
+      const mode: ExecutionMode = "server";
+      expect(mode).toBe("server");
     });
   });
 
-  describe("isLocalContext", () => {
-    test("should return true for local context", () => {
-      const context: ExecutionContext = {
-        type: "local",
-        library: mockLibrary,
-      };
-
-      expect(isLocalContext(context)).toBe(true);
-    });
-
-    test("should return false for server context", () => {
-      const context: ExecutionContext = {
-        type: "server",
-        client: { baseUrl: "http://localhost:3000" },
-      } as ExecutionContext;
-
-      expect(isLocalContext(context)).toBe(false);
-    });
-  });
-
-  describe("discriminated union pattern", () => {
-    test("should allow type narrowing with if statement", async () => {
+  describe("ExecutionContext interface", () => {
+    test("should provide ILibraryOperations through library property", async () => {
       vi.mocked(serverDetection.getServerConnection).mockResolvedValue(null);
       const context = await createExecutionContext(mockConfig, mockLoadLibrary);
 
-      // TypeScript should narrow the type based on context.type
-      if (context.type === "server") {
-        // In server mode, client should be available
-        expect(context.client).toBeDefined();
-      } else {
-        // In local mode, library should be available
-        expect(context.library).toBeDefined();
-      }
+      // ILibraryOperations methods should be available
+      expect(context.library.find).toBeDefined();
+      expect(context.library.getAll).toBeDefined();
+      expect(context.library.add).toBeDefined();
+      expect(context.library.update).toBeDefined();
+      expect(context.library.remove).toBeDefined();
+      expect(context.library.save).toBeDefined();
+      expect(context.library.search).toBeDefined();
+      expect(context.library.list).toBeDefined();
+      expect(context.library.cite).toBeDefined();
+      expect(context.library.import).toBeDefined();
+    });
+
+    test("should provide mode for diagnostic purposes", async () => {
+      vi.mocked(serverDetection.getServerConnection).mockResolvedValue({
+        baseUrl: "http://localhost:3000",
+        pid: 12345,
+      });
+      const context = await createExecutionContext(mockConfig, mockLoadLibrary);
+
+      // Mode should be available for diagnostics/logging
+      expect(["local", "server"]).toContain(context.mode);
     });
   });
 });

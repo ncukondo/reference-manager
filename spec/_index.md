@@ -37,7 +37,8 @@ spec/
 │   ├── directory-structure.md   # Project layout
 │   ├── module-dependencies.md   # Layer rules
 │   ├── cli.md                   # CLI commands, config, server integration
-│   └── http-server.md           # HTTP server, portfile, API
+│   ├── http-server.md           # HTTP server, portfile, API
+│   └── mcp-server.md            # MCP stdio server for AI agents
 ├── features/                    # Feature specifications
 │   ├── add.md                   # Multi-format import (PMID, DOI, BibTeX, RIS)
 │   ├── citation.md              # Citation generation
@@ -85,6 +86,7 @@ spec/
 | `fulltext` | `features/fulltext.md` |
 | `search` / `list` | `features/search.md` |
 | `server` | `architecture/http-server.md` |
+| `mcp` | `architecture/mcp-server.md` |
 
 ### Core Concepts
 

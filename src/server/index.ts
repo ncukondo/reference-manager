@@ -1,12 +1,27 @@
 import { Hono } from "hono";
 import type { Config } from "../config/schema.js";
-import type { Library } from "../core/library.js";
+import { Library } from "../core/library.js";
+import { FileWatcher } from "../features/file-watcher/file-watcher.js";
 import { createAddRoute } from "./routes/add.js";
 import { createCiteRoute } from "./routes/cite.js";
 import { healthRoute } from "./routes/health.js";
 import { createListRoute } from "./routes/list.js";
 import { createReferencesRoute } from "./routes/references.js";
 import { createSearchRoute } from "./routes/search.js";
+
+/**
+ * Result of starting a server with file watcher.
+ */
+export interface ServerWithFileWatcherResult {
+  /** The Hono application */
+  app: Hono;
+  /** The library instance */
+  library: Library;
+  /** The file watcher instance */
+  fileWatcher: FileWatcher;
+  /** Dispose function to clean up resources */
+  dispose: () => Promise<void>;
+}
 
 /**
  * Create the main Hono server application.
@@ -41,4 +56,53 @@ export function createServer(library: Library, config: Config) {
   app.route("/api/search", searchRoute);
 
   return app;
+}
+
+/**
+ * Start a server with file watcher for automatic library reload.
+ * Uses the same pattern as MCP server file monitoring.
+ * @param libraryPath - Path to the library file
+ * @param config - Configuration for the server
+ * @returns Server with file watcher result
+ */
+export async function startServerWithFileWatcher(
+  libraryPath: string,
+  config: Config
+): Promise<ServerWithFileWatcherResult> {
+  // Load library
+  const library = await Library.load(libraryPath);
+
+  // Create the Hono app
+  const app = createServer(library, config);
+
+  // Create and start file watcher
+  const fileWatcher = new FileWatcher(libraryPath, {
+    debounceMs: config.watch.debounceMs,
+    maxRetries: config.watch.maxRetries,
+    retryDelayMs: config.watch.retryIntervalMs,
+    pollIntervalMs: config.watch.pollIntervalMs,
+  });
+
+  // Listen for file changes
+  // Library.reload() handles self-write detection via hash comparison
+  fileWatcher.on("change", () => {
+    library.reload().catch((error) => {
+      // Log error but don't crash - library continues with previous state
+      console.error("Failed to reload library:", error);
+    });
+  });
+
+  await fileWatcher.start();
+
+  // Create dispose function
+  const dispose = async (): Promise<void> => {
+    fileWatcher.close();
+  };
+
+  return {
+    app,
+    library,
+    fileWatcher,
+    dispose,
+  };
 }

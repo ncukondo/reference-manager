@@ -107,7 +107,7 @@ describe("ServerClient", () => {
       expect(result).toEqual(mockReference);
     });
 
-    test("should return null on 404", async () => {
+    test("should return undefined on 404", async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -115,7 +115,7 @@ describe("ServerClient", () => {
 
       const result = await client.find("uuid-not-found", { byUuid: true });
 
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     test("should throw error on other fetch failures", async () => {
@@ -197,7 +197,7 @@ describe("ServerClient", () => {
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ updates, onIdCollision: undefined }),
       });
       expect(result).toEqual(updateResult);
     });
@@ -223,7 +223,7 @@ describe("ServerClient", () => {
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ updates, onIdCollision: undefined }),
       });
       expect(result).toEqual(updateResult);
     });
@@ -242,7 +242,7 @@ describe("ServerClient", () => {
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ updates, onIdCollision: undefined }),
       });
     });
 
@@ -293,47 +293,64 @@ describe("ServerClient", () => {
 
   describe("remove", () => {
     test("should remove reference by UUID when byUuid is true", async () => {
-      const removeResult = { removed: true, item: { id: "test-1", type: "article" } };
+      const mockItem = {
+        id: "Smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+        custom: { uuid: "uuid-1" },
+      };
+      const serverResponse = { removed: true, removedItem: mockItem };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => removeResult,
+        json: async () => serverResponse,
       } as Response);
 
       const result = await client.remove("uuid-1", { byUuid: true });
 
-      expect(result).toEqual(removeResult);
+      expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
         method: "DELETE",
       });
     });
 
     test("should remove reference by citation ID when byUuid is false", async () => {
-      const removeResult = { removed: true, item: { id: "Smith-2024", type: "article" } };
+      const mockItem = {
+        id: "Smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+      };
+      const serverResponse = { removed: true, removedItem: mockItem };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => removeResult,
+        json: async () => serverResponse,
       } as Response);
 
       const result = await client.remove("Smith-2024", { byUuid: false });
 
-      expect(result).toEqual(removeResult);
+      expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "DELETE",
       });
     });
 
     test("should default to ID lookup when no options provided", async () => {
-      const removeResult = { removed: true };
+      const mockItem = {
+        id: "Smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+      };
+      const serverResponse = { removed: true, removedItem: mockItem };
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => removeResult,
+        json: async () => serverResponse,
       } as Response);
 
-      await client.remove("Smith-2024");
+      const result = await client.remove("Smith-2024");
 
+      expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "DELETE",
       });
@@ -457,8 +474,8 @@ describe("ServerClient", () => {
     });
   });
 
-  describe("addFromInputs", () => {
-    test("should add references from inputs", async () => {
+  describe("import", () => {
+    test("should import references from inputs", async () => {
       const mockResult = {
         added: [{ id: "Smith-2024", title: "Test Paper" }],
         failed: [],
@@ -470,7 +487,7 @@ describe("ServerClient", () => {
         json: async () => mockResult,
       } as Response);
 
-      const result = await client.addFromInputs(["10.1234/test"], { force: false });
+      const result = await client.import(["10.1234/test"], { force: false });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/add`, {
         method: "POST",
@@ -492,7 +509,7 @@ describe("ServerClient", () => {
         json: async () => mockResult,
       } as Response);
 
-      await client.addFromInputs(["test.bib"], { force: true, format: "bibtex" });
+      await client.import(["test.bib"], { force: true, format: "bibtex" });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/add`, {
         method: "POST",
@@ -507,7 +524,7 @@ describe("ServerClient", () => {
         text: async () => "Server error",
       } as Response);
 
-      await expect(client.addFromInputs(["invalid"])).rejects.toThrow("Server error");
+      await expect(client.import(["invalid"])).rejects.toThrow("Server error");
     });
   });
 });

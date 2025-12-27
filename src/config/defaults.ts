@@ -67,7 +67,6 @@ export const defaultConfig: Config = {
     directory: getDefaultBackupDirectory(),
   },
   watch: {
-    enabled: true,
     debounceMs: 500,
     pollIntervalMs: 5000,
     retryIntervalMs: 200,

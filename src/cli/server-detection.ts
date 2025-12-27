@@ -64,6 +64,7 @@ export async function getServerConnection(
 
 /**
  * Start server in daemon mode.
+ * Spawns server process directly (without --daemon flag) in background.
  * @param libraryPath - Path to the library file
  * @param _config - Configuration (reserved for future use)
  */
@@ -71,15 +72,11 @@ export async function startServerDaemon(libraryPath: string, _config: Config): P
   // Get the binary path (argv[1] is the script being executed)
   const binaryPath = process.argv[1] || process.execPath;
 
-  // Spawn server in detached daemon mode
-  const child = spawn(
-    process.execPath,
-    [binaryPath, "server", "start", "--daemon", "--library", libraryPath],
-    {
-      detached: true,
-      stdio: "ignore",
-    }
-  );
+  // Spawn server in detached mode (without --daemon to run foreground in child)
+  const child = spawn(process.execPath, [binaryPath, "server", "start", "--library", libraryPath], {
+    detached: true,
+    stdio: "ignore",
+  });
 
   child.unref(); // Allow parent to exit
 }
