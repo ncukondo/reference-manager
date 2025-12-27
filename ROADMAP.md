@@ -122,7 +122,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Add `@citation-js/plugin-isbn` package
   - Run `npm install`
 
-- [ ] **14.5**: ISBN detection
+- [x] **14.5**: ISBN detection
   - File: `src/features/import/detector.ts`
   - Add `isIsbn(input: string): boolean` function
   - Add `"isbn"` to `InputFormat` type
