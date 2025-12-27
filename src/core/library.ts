@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
 import { computeFileHash } from "../utils/hash";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
@@ -42,9 +45,19 @@ export class Library implements ILibrary {
   }
 
   /**
-   * Load library from file
+   * Load library from file.
+   * If the file does not exist, creates an empty library file.
    */
   static async load(filePath: string): Promise<Library> {
+    // Check if file exists, create empty library if not
+    if (!existsSync(filePath)) {
+      // Create parent directories if needed
+      const dir = dirname(filePath);
+      await mkdir(dir, { recursive: true });
+      // Create empty library file
+      await writeCslJson(filePath, []);
+    }
+
     const items = await parseCslJson(filePath);
     const library = new Library(filePath, items);
     // Compute and store file hash after loading

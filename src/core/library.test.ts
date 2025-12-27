@@ -108,6 +108,25 @@ describe("Library", () => {
         /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       );
     });
+
+    it("should create empty library when file does not exist", async () => {
+      const nonExistentPath = join(testDir, "non-existent", "library.json");
+
+      const library = await Library.load(nonExistentPath);
+      expect(await library.getAll()).toHaveLength(0);
+      expect(library.getFilePath()).toBe(nonExistentPath);
+    });
+
+    it("should create parent directories when loading non-existent file", async () => {
+      const deepPath = join(testDir, "deep", "nested", "path", "library.json");
+
+      const library = await Library.load(deepPath);
+      expect(await library.getAll()).toHaveLength(0);
+
+      // Verify the file was created
+      const { existsSync } = await import("node:fs");
+      expect(existsSync(deepPath)).toBe(true);
+    });
   });
 
   describe("save", () => {

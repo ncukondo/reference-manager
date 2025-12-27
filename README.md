@@ -121,13 +121,13 @@ reference-manager provides an MCP (Model Context Protocol) server for direct int
 Add reference-manager as an MCP server (no global installation required):
 
 ```bash
-claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp
+claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-manager mcp
 ```
 
 Or with a custom library path:
 
 ```bash
-claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp --library ~/my-references.json
+claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-manager mcp --library ~/my-references.json
 ```
 
 ### Claude Desktop Setup
