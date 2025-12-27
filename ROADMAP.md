@@ -170,13 +170,13 @@ Add ISBN (International Standard Book Number) support to the add command.
     - Add `getIsbn(): string | undefined`
     - Tests: `reference.test.ts`
 
-  - [ ] **14.10.3**: Add IdentifierType & extend FindOptions
+  - [x] **14.10.3**: Add IdentifierType & extend FindOptions
     - File: `src/core/library-interface.ts`
     - Add `IdentifierType = 'id' | 'uuid' | 'doi' | 'pmid' | 'isbn'`
     - Add `idType?: IdentifierType` to FindOptions
     - Keep `byUuid` temporarily for backward compatibility (mark deprecated)
 
-  - [ ] **14.10.4**: Update Library.find for idType
+  - [x] **14.10.4**: Update Library.find for idType
     - File: `src/core/library.ts`
     - Update `find()` to handle `idType` parameter
     - Update `addToIndices()` / `removeFromIndices()` for ISBN
