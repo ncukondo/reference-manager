@@ -117,7 +117,7 @@ Add ISBN (International Standard Book Number) support to the add command.
 
 #### Implementation Steps
 
-- [ ] **14.4**: Add dependency
+- [x] **14.4**: Add dependency
   - File: `package.json`
   - Add `@citation-js/plugin-isbn` package
   - Run `npm install`
