@@ -47,7 +47,7 @@ Enable publishing to MCPB (MCP Bundles) registry alongside GitHub releases.
   - Configure `user_config` for config file path input
   - Set compatibility (platforms, Node.js runtime requirement)
 
-- [ ] **Step 2: Update release workflow**
+- [x] **Step 2: Update release workflow**
   - Add Node.js setup step
   - Add `npm ci` and `npm run build` steps
   - Add production dependencies installation (`npm ci --production`)
