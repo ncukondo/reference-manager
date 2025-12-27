@@ -27,9 +27,71 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Current Phase
+
+### Phase 13: MCPB Publishing
+
+Enable publishing to MCPB (MCP Bundles) registry alongside GitHub releases.
+
+#### Overview
+
+- Create MCPB manifest for Claude Desktop integration
+- Automate `.mcpb` bundle creation in release workflow
+- Submit to Anthropic's official extension registry
+
+#### Implementation Steps
+
+- [ ] **Step 1: Create manifest.json**
+  - Create `manifest.json` in project root (without version field)
+  - Required fields: manifest_version, name, display_name, description, author, server
+  - Configure `user_config` for config file path input
+  - Set compatibility (platforms, Node.js runtime requirement)
+
+- [ ] **Step 2: Update release workflow**
+  - Add Node.js setup step
+  - Add `npm ci` and `npm run build` steps
+  - Add production dependencies installation (`npm ci --production`)
+  - Install `@anthropic-ai/mcpb` CLI
+  - Inject version from package.json into manifest.json
+  - Run `mcpb pack` to create `.mcpb` bundle
+  - Attach `.mcpb` file to GitHub release
+
+- [ ] **Step 3: Local testing**
+  - Build MCPB bundle locally: `npx @anthropic-ai/mcpb pack`
+  - Test installation on Claude Desktop (macOS/Windows)
+  - Verify MCP server starts correctly with user-provided config path
+  - Test all MCP tools (add, search, cite, etc.)
+
+- [ ] **Step 4: Documentation**
+  - Add MCPB installation instructions to README
+  - Document `user_config.config_path` requirement
+  - Add troubleshooting section for common issues
+
+- [ ] **Step 5: Registry submission (optional)**
+  - Prepare icon.png (256x256)
+  - Submit via [Anthropic extension form](https://docs.google.com/forms/d/14_Dmcig4z8NeRMB_e7TOyrKzuZ88-BLYdLvS6LPhiZU/edit)
+  - Address review feedback if any
+
+#### Technical Notes
+
+| Item | Details |
+|------|---------|
+| Entry point | `bin/reference-manager.js mcp --config <path>` |
+| Server type | `node` |
+| User config | `config_path` (required string) |
+| Platforms | darwin, win32, linux |
+| Node.js | >=22.0.0 |
+
+#### References
+
+- [MCPB Specification](https://github.com/anthropics/dxt/blob/main/MANIFEST.md)
+- [Desktop Extensions Guide](https://www.anthropic.com/engineering/desktop-extensions)
+
+---
+
 ## Future Phases
 
-### Phase 13: Citation Enhancements
+### Phase 14: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -39,7 +101,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 14: Advanced Features
+### Phase 15: Advanced Features
 
 Additional features beyond core functionality:
 
