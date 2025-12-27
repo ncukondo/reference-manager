@@ -159,11 +159,38 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Dependencies: 14.5, 14.6, 14.7, 14.8
   - Tests: `importer.test.ts`
 
-- [ ] **14.10**: Library ISBN index
-  - File: `src/core/library.ts`
-  - Add `findByIsbn(isbn: string): Reference | undefined`
-  - Build ISBN index on load
-  - Tests: `library.test.ts`
+- [ ] **14.10**: Library ISBN index & Find API unification
+
+  - [x] **14.10.1**: Add isbnIndex
+    - File: `src/core/library.ts`
+    - Add `isbnIndex: Map<string, Reference>`
+
+  - [x] **14.10.2**: Add Reference.getIsbn
+    - File: `src/core/reference.ts`
+    - Add `getIsbn(): string | undefined`
+    - Tests: `reference.test.ts`
+
+  - [ ] **14.10.3**: Add IdentifierType & extend FindOptions
+    - File: `src/core/library-interface.ts`
+    - Add `IdentifierType = 'id' | 'uuid' | 'doi' | 'pmid' | 'isbn'`
+    - Add `idType?: IdentifierType` to FindOptions
+    - Keep `byUuid` temporarily for backward compatibility (mark deprecated)
+
+  - [ ] **14.10.4**: Update Library.find for idType
+    - File: `src/core/library.ts`
+    - Update `find()` to handle `idType` parameter
+    - Update `addToIndices()` / `removeFromIndices()` for ISBN
+    - Tests: `library.test.ts`
+
+  - [ ] **14.10.5**: Migrate findByDoi/findByPmid to idType
+    - Investigate usage (currently test-only)
+    - Convert internal implementation to use `find(x, { idType: 'doi' })`
+    - Or deprecate and remove (breaking change acceptable in pre-release)
+
+  - [ ] **14.10.6**: Remove byUuid from FindOptions
+    - Investigate `byUuid` usage across codebase
+    - Migrate all usages to `idType: 'uuid'`
+    - Remove `byUuid` from FindOptions
 
 - [ ] **14.11**: Duplicate detection
   - File: `src/features/duplicate/detector.ts`

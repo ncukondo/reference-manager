@@ -107,6 +107,10 @@ export class Reference {
     return this.item.PMID;
   }
 
+  getIsbn(): string | undefined {
+    return this.item.ISBN;
+  }
+
   /**
    * Get the PMCID
    */

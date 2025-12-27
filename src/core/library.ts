@@ -32,6 +32,7 @@ export class Library implements ILibrary {
   private idIndex: Map<string, Reference> = new Map();
   private doiIndex: Map<string, Reference> = new Map();
   private pmidIndex: Map<string, Reference> = new Map();
+  private isbnIndex: Map<string, Reference> = new Map();
 
   private constructor(filePath: string, items: CslItem[]) {
     this.filePath = filePath;
