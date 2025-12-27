@@ -19,7 +19,7 @@ Where `input` can be:
 
 ```
 -f, --force          Skip duplicate detection
---format <format>    Explicit format: json|bibtex|ris|pmid|doi|auto (default: auto)
+--format <format>    Explicit format: json|bibtex|ris|pmid|doi|isbn|auto (default: auto)
 --verbose            Show detailed error information
 ```
 
@@ -30,8 +30,9 @@ Where `input` can be:
 | CSL-JSON | `.json` | Starts with `[` or `{` |
 | BibTeX | `.bib` | Starts with `@` |
 | RIS | `.ris` | Starts with `TY  -` |
-| PMID | - | Numeric only |
+| PMID | - | Numeric only, or `PMID:` prefix |
 | DOI | - | Starts with `10.` or DOI URL |
+| ISBN | - | `ISBN:` prefix required (see below) |
 
 ### DOI Input Patterns
 
@@ -39,6 +40,19 @@ All recognized as DOI:
 - `10.1000/xyz123`
 - `https://doi.org/10.1000/xyz123`
 - `http://dx.doi.org/10.1000/xyz123`
+
+### ISBN Input Patterns
+
+ISBN requires explicit prefix or `--format isbn` option:
+- `ISBN:978-4-00-000000-0` (with prefix)
+- `isbn:4000000000` (case-insensitive prefix)
+- `9784000000000 --format isbn` (explicit format)
+
+**Note**: Pure numeric strings are interpreted as PMID by default. Use `ISBN:` prefix or `--format isbn` for ISBNs.
+
+Supported formats:
+- ISBN-13: 13 digits (starting with 978 or 979)
+- ISBN-10: 10 digits (last may be X for check digit)
 
 ## Behavior
 
@@ -96,6 +110,7 @@ reference-manager add --force paper.json
 - `@citation-js/plugin-bibtex`: BibTeX parsing
 - `@citation-js/plugin-ris`: RIS parsing
 - `@citation-js/plugin-doi`: DOI fetching
+- `@citation-js/plugin-isbn`: ISBN fetching (Google Books API, Open Library)
 
 PMID fetching uses PMC Citation Exporter API directly (see ADR-007).
 
@@ -106,3 +121,4 @@ PMID fetching uses PMC Citation Exporter API directly (see ADR-007).
 | PubMed (no API key) | 3 req/sec |
 | PubMed (with API key) | 10 req/sec |
 | Crossref (DOI) | 50 req/sec |
+| Google Books (ISBN) | 1,000 req/day |

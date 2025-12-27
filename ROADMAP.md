@@ -103,7 +103,7 @@ Add ISBN (International Standard Book Number) support to the add command.
 
 #### Specification Updates
 
-- [ ] **14.1**: Update `spec/features/add.md`
+- [x] **14.1**: Update `spec/features/add.md`
   - Add ISBN to supported formats table
   - Document input patterns (`ISBN:`, `isbn:` prefix)
   - Document `--format isbn` option
