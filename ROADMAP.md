@@ -62,7 +62,7 @@ Enable publishing to MCPB (MCP Bundles) registry alongside GitHub releases.
   - Verify MCP server starts correctly with user-provided config path
   - Test all MCP tools (add, search, cite, etc.)
 
-- [ ] **Step 4: Documentation**
+- [x] **Step 4: Documentation**
   - Add MCPB installation instructions to README
   - Document `user_config.config_path` requirement
   - Add troubleshooting section for common issues

@@ -132,6 +132,23 @@ claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp --lib
 
 ### Claude Desktop Setup
 
+#### Option 1: MCPB Bundle (Recommended)
+
+Download the `.mcpb` file from the [latest release](https://github.com/ncukondo/reference-manager/releases/latest) and install it via Claude Desktop:
+
+1. Download `reference-manager.mcpb` from the release page
+2. Open Claude Desktop and go to **Settings** → **Extensions**
+3. Click **Install from file** and select the downloaded `.mcpb` file
+4. Configure the **Config File Path** when prompted (e.g., `~/.reference-manager/config.toml`)
+
+The config file should contain at minimum:
+
+```toml
+library = "~/.reference-manager/csl.library.json"
+```
+
+#### Option 2: Manual Configuration
+
 Add to your Claude Desktop configuration file:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
