@@ -52,7 +52,7 @@ describe("ServerClient", () => {
   });
 
   describe("find", () => {
-    test("should fetch reference by UUID when byUuid is true", async () => {
+    test("should fetch reference by UUID when idType is 'uuid'", async () => {
       const mockReference: CslItem = {
         type: "article-journal",
         title: "Test Article",
@@ -64,13 +64,13 @@ describe("ServerClient", () => {
         json: async () => mockReference,
       } as Response);
 
-      const result = await client.find("uuid-1", { byUuid: true });
+      const result = await client.find("uuid-1", { idType: "uuid" });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`);
       expect(result).toEqual(mockReference);
     });
 
-    test("should fetch reference by citation ID when byUuid is false", async () => {
+    test("should fetch reference by citation ID when idType is 'id'", async () => {
       const mockReference: CslItem = {
         id: "Smith-2024",
         type: "article-journal",
@@ -83,7 +83,7 @@ describe("ServerClient", () => {
         json: async () => mockReference,
       } as Response);
 
-      const result = await client.find("Smith-2024", { byUuid: false });
+      const result = await client.find("Smith-2024", { idType: "id" });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`);
       expect(result).toEqual(mockReference);
@@ -113,7 +113,7 @@ describe("ServerClient", () => {
         status: 404,
       } as Response);
 
-      const result = await client.find("uuid-not-found", { byUuid: true });
+      const result = await client.find("uuid-not-found", { idType: "uuid" });
 
       expect(result).toBeUndefined();
     });
@@ -125,7 +125,7 @@ describe("ServerClient", () => {
         text: async () => "Internal server error",
       } as Response);
 
-      await expect(client.find("uuid-1", { byUuid: true })).rejects.toThrow(
+      await expect(client.find("uuid-1", { idType: "uuid" })).rejects.toThrow(
         "Internal server error"
       );
     });
@@ -175,7 +175,7 @@ describe("ServerClient", () => {
   });
 
   describe("update", () => {
-    test("should update reference by UUID when byUuid is true", async () => {
+    test("should update reference by UUID when idType is 'uuid'", async () => {
       const updates = { title: "Updated Article" };
       const updateResult = {
         updated: true,
@@ -192,7 +192,7 @@ describe("ServerClient", () => {
         json: async () => updateResult,
       } as Response);
 
-      const result = await client.update("uuid-1", updates, { byUuid: true });
+      const result = await client.update("uuid-1", updates, { idType: "uuid" });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
         method: "PUT",
@@ -202,7 +202,7 @@ describe("ServerClient", () => {
       expect(result).toEqual(updateResult);
     });
 
-    test("should update reference by citation ID when byUuid is false", async () => {
+    test("should update reference by citation ID when idType is 'id'", async () => {
       const updates = { title: "Updated Article" };
       const updateResult = {
         updated: true,
@@ -218,7 +218,7 @@ describe("ServerClient", () => {
         json: async () => updateResult,
       } as Response);
 
-      const result = await client.update("Smith-2024", updates, { byUuid: false });
+      const result = await client.update("Smith-2024", updates, { idType: "id" });
 
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
         method: "PUT",
@@ -256,7 +256,7 @@ describe("ServerClient", () => {
         json: async () => updateResult,
       } as Response);
 
-      const result = await client.update("uuid-1", updates, { byUuid: true });
+      const result = await client.update("uuid-1", updates, { idType: "uuid" });
 
       expect(result).toEqual(updateResult);
     });
@@ -271,7 +271,7 @@ describe("ServerClient", () => {
         json: async () => updateResult,
       } as Response);
 
-      const result = await client.update("uuid-1", updates, { byUuid: true });
+      const result = await client.update("uuid-1", updates, { idType: "uuid" });
 
       expect(result).toEqual(updateResult);
     });
@@ -285,14 +285,14 @@ describe("ServerClient", () => {
         text: async () => "Server error",
       } as Response);
 
-      await expect(client.update("uuid-1", updates, { byUuid: true })).rejects.toThrow(
+      await expect(client.update("uuid-1", updates, { idType: "uuid" })).rejects.toThrow(
         "Server error"
       );
     });
   });
 
   describe("remove", () => {
-    test("should remove reference by UUID when byUuid is true", async () => {
+    test("should remove reference by UUID when idType is 'uuid'", async () => {
       const mockItem = {
         id: "Smith-2024",
         type: "article-journal" as const,
@@ -306,7 +306,7 @@ describe("ServerClient", () => {
         json: async () => serverResponse,
       } as Response);
 
-      const result = await client.remove("uuid-1", { byUuid: true });
+      const result = await client.remove("uuid-1", { idType: "uuid" });
 
       expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/uuid/uuid-1`, {
@@ -314,7 +314,7 @@ describe("ServerClient", () => {
       });
     });
 
-    test("should remove reference by citation ID when byUuid is false", async () => {
+    test("should remove reference by citation ID when idType is 'id'", async () => {
       const mockItem = {
         id: "Smith-2024",
         type: "article-journal" as const,
@@ -327,7 +327,7 @@ describe("ServerClient", () => {
         json: async () => serverResponse,
       } as Response);
 
-      const result = await client.remove("Smith-2024", { byUuid: false });
+      const result = await client.remove("Smith-2024", { idType: "id" });
 
       expect(result).toEqual({ removed: true, removedItem: mockItem });
       expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/references/id/Smith-2024`, {
@@ -364,7 +364,7 @@ describe("ServerClient", () => {
         json: async () => removeResult,
       } as Response);
 
-      const result = await client.remove("uuid-1", { byUuid: true });
+      const result = await client.remove("uuid-1", { idType: "uuid" });
 
       expect(result).toEqual(removeResult);
     });
@@ -376,7 +376,7 @@ describe("ServerClient", () => {
         text: async () => "Server error",
       } as Response);
 
-      await expect(client.remove("uuid-1", { byUuid: true })).rejects.toThrow("Server error");
+      await expect(client.remove("uuid-1", { idType: "uuid" })).rejects.toThrow("Server error");
     });
   });
 

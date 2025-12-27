@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { ILibrary } from "../../core/library-interface.js";
+import type { ILibrary, IdentifierType } from "../../core/library-interface.js";
 
 /**
  * Options for removeReference operation
@@ -7,8 +7,8 @@ import type { ILibrary } from "../../core/library-interface.js";
 export interface RemoveOperationOptions {
   /** Reference ID or UUID */
   identifier: string;
-  /** If true, identifier is treated as UUID; otherwise as ID (default: false) */
-  byUuid?: boolean;
+  /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
+  idType?: IdentifierType;
 }
 
 /**
@@ -32,9 +32,9 @@ export async function removeReference(
   library: ILibrary,
   options: RemoveOperationOptions
 ): Promise<RemoveResult> {
-  const { identifier, byUuid = false } = options;
+  const { identifier, idType = "id" } = options;
 
-  const result = await library.remove(identifier, { byUuid });
+  const result = await library.remove(identifier, { idType });
 
   if (result.removed) {
     await library.save();

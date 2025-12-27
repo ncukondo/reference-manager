@@ -7,7 +7,7 @@ import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
-import type { ILibrary } from "../../../core/library-interface.js";
+import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { FulltextIOError, FulltextManager, type FulltextType } from "../../fulltext/index.js";
 import { updateReference } from "../update.js";
 
@@ -25,8 +25,8 @@ export interface FulltextAttachOptions {
   move?: boolean | undefined;
   /** Force overwrite existing file */
   force?: boolean | undefined;
-  /** Use uuid instead of id for lookup */
-  byUuid?: boolean | undefined;
+  /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
+  idType?: IdentifierType | undefined;
   /** Directory for fulltext files */
   fulltextDirectory: string;
   /** Content from stdin */
@@ -180,13 +180,13 @@ export async function fulltextAttach(
     type: explicitType,
     move,
     force,
-    byUuid = false,
+    idType = "id",
     fulltextDirectory,
     stdinContent,
   } = options;
 
   // Find reference (returns CslItem directly)
-  const item = await library.find(identifier, { byUuid });
+  const item = await library.find(identifier, { idType });
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
@@ -225,7 +225,7 @@ export async function fulltextAttach(
       updates: {
         custom: { fulltext: newFulltext },
       } as Partial<CslItem>,
-      byUuid,
+      idType,
     });
     await cleanupTempDir(tempDir);
 

@@ -1,4 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import type { IdentifierType } from "../../core/library-interface.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import type { ExecutionContext } from "../execution-context.js";
 
@@ -8,7 +9,7 @@ import type { ExecutionContext } from "../execution-context.js";
 export interface UpdateCommandOptions {
   identifier: string;
   updates: Partial<CslItem>;
-  byUuid?: boolean;
+  idType?: IdentifierType;
 }
 
 /**
@@ -28,9 +29,9 @@ export async function executeUpdate(
   options: UpdateCommandOptions,
   context: ExecutionContext
 ): Promise<UpdateCommandResult> {
-  const { identifier, updates, byUuid = false } = options;
+  const { identifier, updates, idType = "id" } = options;
 
-  return context.library.update(identifier, updates, { byUuid });
+  return context.library.update(identifier, updates, { idType });
 }
 
 /**

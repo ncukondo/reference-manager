@@ -57,7 +57,7 @@ describe("fulltextAttach", () => {
   });
 
   describe("reference lookup", () => {
-    it("should find reference by id when byUuid is false", async () => {
+    it("should find reference by id when idType is 'id'", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
@@ -68,10 +68,10 @@ describe("fulltextAttach", () => {
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { byUuid: false });
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { idType: "id" });
     });
 
-    it("should find reference by uuid when byUuid is true", async () => {
+    it("should find reference by uuid when idType is 'uuid'", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
@@ -80,10 +80,10 @@ describe("fulltextAttach", () => {
         identifier: "test-uuid",
         filePath: "/path/to/file.pdf",
         fulltextDirectory: "/fulltext",
-        byUuid: true,
+        idType: "uuid",
       });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { byUuid: true });
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { idType: "uuid" });
     });
 
     it("should return error when reference not found", async () => {
@@ -254,7 +254,7 @@ describe("fulltextAttach", () => {
         mockLibrary,
         expect.objectContaining({
           identifier: "test-id",
-          byUuid: false,
+          idType: "id",
         })
       );
     });
@@ -279,7 +279,7 @@ describe("fulltextAttach", () => {
             fulltext: { pdf: "test-id.pdf" },
           },
         },
-        byUuid: false,
+        idType: "id",
       });
     });
 
@@ -301,7 +301,7 @@ describe("fulltextAttach", () => {
             fulltext: { markdown: "existing.md", pdf: "test-id.pdf" },
           },
         },
-        byUuid: false,
+        idType: "id",
       });
     });
   });

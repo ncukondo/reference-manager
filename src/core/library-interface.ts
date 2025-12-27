@@ -23,12 +23,6 @@ export type IdentifierType = "id" | "uuid" | "doi" | "pmid" | "isbn";
  */
 export interface FindOptions {
   /**
-   * @deprecated Use `idType: 'uuid'` instead. Will be removed in a future version.
-   * If true, treat the identifier as UUID; otherwise treat as citation ID (default: false)
-   */
-  byUuid?: boolean;
-
-  /**
    * Specifies the type of identifier being searched.
    * - 'id': Citation ID (default)
    * - 'uuid': Internal UUID
@@ -58,12 +52,6 @@ export interface RemoveResult {
 export interface UpdateOptions {
   /** How to handle ID collision: 'fail' (default) or 'suffix' */
   onIdCollision?: "fail" | "suffix";
-
-  /**
-   * @deprecated Use `idType: 'uuid'` instead. Will be removed in a future version.
-   * If true, treat the identifier as UUID; otherwise treat as citation ID (default: false)
-   */
-  byUuid?: boolean;
 
   /**
    * Specifies the type of identifier being searched.

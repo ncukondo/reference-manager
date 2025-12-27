@@ -259,10 +259,10 @@ function registerAddCommand(program: Command): void {
  */
 async function findReferenceToRemove(
   identifier: string,
-  byUuid: boolean,
+  useUuid: boolean,
   context: ExecutionContext
 ): Promise<CslItem | undefined> {
-  return context.library.find(identifier, { byUuid });
+  return context.library.find(identifier, { idType: useUuid ? "uuid" : "id" });
 }
 
 async function confirmRemoval(
@@ -362,8 +362,8 @@ async function handleRemoveAction(
     const removeOptions: RemoveCommandOptions = {
       identifier,
     };
-    if (options.uuid !== undefined) {
-      removeOptions.byUuid = options.uuid;
+    if (options.uuid) {
+      removeOptions.idType = "uuid";
     }
 
     const result = await executeRemove(removeOptions, context);
@@ -435,8 +435,8 @@ async function handleUpdateAction(
       identifier,
       updates: validatedUpdates as Partial<CslItem>,
     };
-    if (options.uuid !== undefined) {
-      updateOptions.byUuid = options.uuid;
+    if (options.uuid) {
+      updateOptions.idType = "uuid";
     }
 
     const result = await executeUpdate(updateOptions, context);
@@ -706,7 +706,7 @@ async function handleFulltextAttachAction(
       ...(type && { type }),
       ...(options.move && { move: options.move }),
       ...(options.force && { force: options.force }),
-      ...(options.uuid && { byUuid: options.uuid }),
+      ...(options.uuid && { idType: "uuid" as const }),
       ...(stdinContent && { stdinContent }),
     };
 
@@ -745,7 +745,7 @@ async function handleFulltextGetAction(
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.stdout && { stdout: options.stdout }),
-      ...(options.uuid && { byUuid: options.uuid }),
+      ...(options.uuid && { idType: "uuid" as const }),
     };
 
     const result = await executeFulltextGet(getOptions, context);
@@ -796,7 +796,7 @@ async function handleFulltextDetachAction(
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.delete && { delete: options.delete }),
       ...(options.force && { force: options.force }),
-      ...(options.uuid && { byUuid: options.uuid }),
+      ...(options.uuid && { idType: "uuid" as const }),
     };
 
     const result = await executeFulltextDetach(detachOptions, context);

@@ -1,6 +1,7 @@
 import { unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
+import type { IdentifierType } from "../../core/library-interface.js";
 import type { FulltextType } from "../../features/fulltext/index.js";
 import type { RemoveResult } from "../../features/operations/remove.js";
 import type { ExecutionContext } from "../execution-context.js";
@@ -10,7 +11,7 @@ import type { ExecutionContext } from "../execution-context.js";
  */
 export interface RemoveCommandOptions {
   identifier: string;
-  byUuid?: boolean;
+  idType?: IdentifierType;
 }
 
 /**
@@ -30,9 +31,9 @@ export async function executeRemove(
   options: RemoveCommandOptions,
   context: ExecutionContext
 ): Promise<RemoveCommandResult> {
-  const { identifier, byUuid = false } = options;
+  const { identifier, idType = "id" } = options;
 
-  return context.library.remove(identifier, { byUuid });
+  return context.library.remove(identifier, { idType });
 }
 
 /**

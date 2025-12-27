@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { ILibrary } from "../../core/library-interface.js";
+import type { ILibrary, IdentifierType } from "../../core/library-interface.js";
 
 /**
  * Options for updateReference operation
@@ -7,8 +7,8 @@ import type { ILibrary } from "../../core/library-interface.js";
 export interface UpdateOperationOptions {
   /** Reference ID or UUID */
   identifier: string;
-  /** If true, identifier is treated as UUID; otherwise as ID (default: false) */
-  byUuid?: boolean;
+  /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
+  idType?: IdentifierType;
   /** Partial updates to apply to the reference */
   updates: Partial<CslItem>;
   /** How to handle ID collision: 'fail' (default) or 'suffix' */
@@ -42,10 +42,10 @@ export async function updateReference(
   library: ILibrary,
   options: UpdateOperationOptions
 ): Promise<UpdateOperationResult> {
-  const { identifier, byUuid = false, updates, onIdCollision = "fail" } = options;
+  const { identifier, idType = "id", updates, onIdCollision = "fail" } = options;
 
   // Update the reference using unified update() method
-  const updateResult = await library.update(identifier, updates, { byUuid, onIdCollision });
+  const updateResult = await library.update(identifier, updates, { idType, onIdCollision });
 
   if (!updateResult.updated) {
     const result: UpdateOperationResult = { updated: false };

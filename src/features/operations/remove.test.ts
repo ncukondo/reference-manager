@@ -32,24 +32,24 @@ describe("removeReference", () => {
         removedItem: mockItem,
       });
 
-      const options: RemoveOperationOptions = { identifier: "smith-2023", byUuid: false };
+      const options: RemoveOperationOptions = { identifier: "smith-2023", idType: "id" };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
       expect(result.removedItem).toEqual(mockItem);
-      expect(mockLibrary.remove).toHaveBeenCalledWith("smith-2023", { byUuid: false });
+      expect(mockLibrary.remove).toHaveBeenCalledWith("smith-2023", { idType: "id" });
       expect(mockLibrary.save).toHaveBeenCalled();
     });
 
     it("should return removed=false when ID not found", async () => {
       (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({ removed: false });
 
-      const options: RemoveOperationOptions = { identifier: "nonexistent", byUuid: false };
+      const options: RemoveOperationOptions = { identifier: "nonexistent", idType: "id" };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(false);
       expect(result.removedItem).toBeUndefined();
-      expect(mockLibrary.remove).toHaveBeenCalledWith("nonexistent", { byUuid: false });
+      expect(mockLibrary.remove).toHaveBeenCalledWith("nonexistent", { idType: "id" });
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
   });
@@ -61,30 +61,30 @@ describe("removeReference", () => {
         removedItem: mockItem,
       });
 
-      const options: RemoveOperationOptions = { identifier: "uuid-1", byUuid: true };
+      const options: RemoveOperationOptions = { identifier: "uuid-1", idType: "uuid" };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
       expect(result.removedItem).toEqual(mockItem);
-      expect(mockLibrary.remove).toHaveBeenCalledWith("uuid-1", { byUuid: true });
+      expect(mockLibrary.remove).toHaveBeenCalledWith("uuid-1", { idType: "uuid" });
       expect(mockLibrary.save).toHaveBeenCalled();
     });
 
     it("should return removed=false when UUID not found", async () => {
       (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({ removed: false });
 
-      const options: RemoveOperationOptions = { identifier: "nonexistent-uuid", byUuid: true };
+      const options: RemoveOperationOptions = { identifier: "nonexistent-uuid", idType: "uuid" };
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(false);
       expect(result.removedItem).toBeUndefined();
-      expect(mockLibrary.remove).toHaveBeenCalledWith("nonexistent-uuid", { byUuid: true });
+      expect(mockLibrary.remove).toHaveBeenCalledWith("nonexistent-uuid", { idType: "uuid" });
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
   });
 
-  describe("byUuid default", () => {
-    it("should use byUuid=false by default", async () => {
+  describe("idType default", () => {
+    it("should use idType='id' by default", async () => {
       (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({
         removed: true,
         removedItem: mockItem,
@@ -94,7 +94,7 @@ describe("removeReference", () => {
       const result = await removeReference(mockLibrary, options);
 
       expect(result.removed).toBe(true);
-      expect(mockLibrary.remove).toHaveBeenCalledWith("smith-2023", { byUuid: false });
+      expect(mockLibrary.remove).toHaveBeenCalledWith("smith-2023", { idType: "id" });
     });
   });
 });

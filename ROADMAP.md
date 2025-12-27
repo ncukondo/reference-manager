@@ -187,10 +187,10 @@ Add ISBN (International Standard Book Number) support to the add command.
     - Removed `findByDoi`, `findByPmid`, `findByIsbn` methods
     - Migrated all usages to `find(x, { idType: 'doi/pmid/isbn' })`
 
-  - [ ] **14.10.6**: Remove byUuid from FindOptions
-    - Investigate `byUuid` usage across codebase
-    - Migrate all usages to `idType: 'uuid'`
-    - Remove `byUuid` from FindOptions
+  - [x] **14.10.6**: Remove byUuid from FindOptions
+    - Investigated `byUuid` usage across codebase
+    - Migrated all usages to `idType: 'uuid'` (or `idType: 'id'` for default)
+    - Removed `byUuid` from FindOptions and UpdateOptions
 
 - [ ] **14.11**: Duplicate detection
   - File: `src/features/duplicate/detector.ts`

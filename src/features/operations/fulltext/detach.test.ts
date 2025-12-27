@@ -65,7 +65,7 @@ describe("fulltextDetach", () => {
   });
 
   describe("reference lookup", () => {
-    it("should find reference by id when byUuid is false", async () => {
+    it("should find reference by id when idType is 'id'", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
@@ -76,10 +76,10 @@ describe("fulltextDetach", () => {
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { byUuid: false });
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { idType: "id" });
     });
 
-    it("should find reference by uuid when byUuid is true", async () => {
+    it("should find reference by uuid when idType is 'uuid'", async () => {
       const item = createItem("test-id", { pdf: "test.pdf" });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
       mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
@@ -88,10 +88,10 @@ describe("fulltextDetach", () => {
       await fulltextDetach(mockLibrary, {
         identifier: "test-uuid",
         fulltextDirectory: "/fulltext",
-        byUuid: true,
+        idType: "uuid",
       });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { byUuid: true });
+      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { idType: "uuid" });
     });
 
     it("should return error when reference not found", async () => {
@@ -206,7 +206,7 @@ describe("fulltextDetach", () => {
         updates: {
           custom: { fulltext: undefined },
         },
-        byUuid: false,
+        idType: "id",
       });
     });
 
@@ -226,7 +226,7 @@ describe("fulltextDetach", () => {
         updates: {
           custom: { fulltext: { markdown: "test.md" } },
         },
-        byUuid: false,
+        idType: "id",
       });
     });
   });
