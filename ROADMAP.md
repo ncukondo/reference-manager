@@ -137,7 +137,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Acceptance: `ISBN:978-4-00-000000-0` → `9784000000000`
   - Tests: `normalizer.test.ts`
 
-- [ ] **14.7**: ISBN fetching
+- [x] **14.7**: ISBN fetching
   - File: `src/features/import/fetcher.ts`
   - Add `fetchIsbn(isbn: string): Promise<FetchResult>` function
   - Use `@citation-js/plugin-isbn` for API calls
