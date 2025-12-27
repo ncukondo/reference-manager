@@ -8,6 +8,8 @@
  * - Multiple whitespace-separated identifiers
  */
 
+import { normalizePmid } from "./normalizer.js";
+
 /**
  * Supported input formats
  */
@@ -204,6 +206,13 @@ export function isPmid(input: string): boolean {
     return false;
   }
 
+  // Normalize input (removes PMID: prefix if present)
+  const normalized = normalizePmid(input);
+
+  if (!normalized) {
+    return false;
+  }
+
   // PMID is all digits
-  return /^\d+$/.test(input);
+  return /^\d+$/.test(normalized);
 }

@@ -440,5 +440,86 @@ ER  - `;
         expect(result.results).toHaveLength(0);
       });
     });
+
+    describe("PMID prefix support", () => {
+      it("should fetch PMID with PMID: prefix", async () => {
+        const mockItem: CslItem = {
+          id: "pmid_12345678",
+          type: "article-journal",
+          title: "PMID Article",
+          PMID: "12345678",
+        };
+
+        mockFetchPmids.mockResolvedValue([{ pmid: "12345678", success: true, item: mockItem }]);
+
+        const result = await importFromIdentifiers(["PMID:12345678"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        // fetchPmids should be called with normalized PMID (without prefix)
+        expect(mockFetchPmids).toHaveBeenCalledWith(["12345678"], {});
+      });
+
+      it("should fetch PMID with pmid: prefix (lowercase)", async () => {
+        const mockItem: CslItem = {
+          id: "pmid_12345678",
+          type: "article-journal",
+          title: "PMID Article",
+          PMID: "12345678",
+        };
+
+        mockFetchPmids.mockResolvedValue([{ pmid: "12345678", success: true, item: mockItem }]);
+
+        const result = await importFromIdentifiers(["pmid:12345678"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        expect(mockFetchPmids).toHaveBeenCalledWith(["12345678"], {});
+      });
+
+      it("should fetch PMID with PMID: prefix and space after colon", async () => {
+        const mockItem: CslItem = {
+          id: "pmid_12345678",
+          type: "article-journal",
+          title: "PMID Article",
+          PMID: "12345678",
+        };
+
+        mockFetchPmids.mockResolvedValue([{ pmid: "12345678", success: true, item: mockItem }]);
+
+        const result = await importFromIdentifiers(["PMID: 12345678"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        expect(mockFetchPmids).toHaveBeenCalledWith(["12345678"], {});
+      });
+
+      it("should handle mixed prefixed and non-prefixed PMIDs", async () => {
+        const mockItems: CslItem[] = [
+          { id: "p1", type: "article-journal", title: "First", PMID: "111" },
+          { id: "p2", type: "article-journal", title: "Second", PMID: "222" },
+        ];
+
+        mockFetchPmids.mockResolvedValue([
+          { pmid: "111", success: true, item: mockItems[0] },
+          { pmid: "222", success: true, item: mockItems[1] },
+        ]);
+
+        const result = await importFromIdentifiers(["PMID:111", "222"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(2);
+        expect(result.results.every((r) => r.success)).toBe(true);
+        // Both should be normalized to just the number
+        expect(mockFetchPmids).toHaveBeenCalledWith(["111", "222"], {});
+      });
+    });
   });
 });
