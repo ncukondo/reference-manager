@@ -1,0 +1,36 @@
+# Source files (not needed for runtime)
+src/
+*.ts
+!*.d.ts
+
+# Tests and specs
+spec/
+*.test.ts
+*.test.js
+vitest.config.ts
+vitest.workspace.ts
+
+# Coverage
+coverage/
+
+# Development tools
+.github/
+.devcontainer/
+.serena/
+.claude/
+.mcp.json
+
+# Build configuration
+tsconfig*.json
+biome.json
+vite.config.ts
+
+# Documentation (not needed for runtime)
+CHANGELOG.md
+ROADMAP.md
+CLAUDE.md
+
+# Other
+.gitattributes
+*.tgz
+*.mcpb

@@ -619,7 +619,8 @@ function registerMcpCommand(program: Command): void {
         const globalOpts = program.opts();
 
         const mcpOptions: Parameters<typeof mcpStart>[0] = {
-          configPath: globalOpts.config ?? "",
+          // Treat empty string as undefined to use default config path
+          configPath: globalOpts.config || undefined,
         };
         if (globalOpts.library !== undefined) {
           mcpOptions.libraryPath = globalOpts.library;
