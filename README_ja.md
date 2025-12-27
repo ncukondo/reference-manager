@@ -121,13 +121,13 @@ reference-managerはAIエージェントと直接連携するためのMCP（Mode
 MCPサーバーとして追加（グローバルインストール不要）：
 
 ```bash
-claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp
+claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-manager mcp
 ```
 
 カスタムライブラリパスを指定する場合：
 
 ```bash
-claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp --library ~/my-references.json
+claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-manager mcp --library ~/my-references.json
 ```
 
 ### Claude Desktop セットアップ
