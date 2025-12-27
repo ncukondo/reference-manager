@@ -7,7 +7,7 @@ import type { CslItem } from "../../core/csl-json/types.js";
 /**
  * Type of duplicate match
  */
-export type DuplicateType = "doi" | "pmid" | "title-author-year";
+export type DuplicateType = "doi" | "pmid" | "isbn" | "title-author-year";
 
 /**
  * A single duplicate match result
@@ -29,6 +29,7 @@ export interface DuplicateMatch {
   details?: {
     doi?: string;
     pmid?: string;
+    isbn?: string;
     normalizedTitle?: string;
     normalizedAuthors?: string;
     year?: string;

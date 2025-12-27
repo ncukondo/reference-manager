@@ -120,6 +120,77 @@ describe("detectDuplicate", () => {
     });
   });
 
+  // Sample books for ISBN testing
+  const bookOriginal: CslItem = {
+    id: "book2023",
+    type: "book",
+    title: "Introduction to Climate Science",
+    author: [{ family: "Anderson", given: "James" }],
+    issued: { "date-parts": [[2023]] },
+    publisher: "Academic Press",
+    ISBN: "9784000000000",
+    custom: {
+      uuid: "660e8400-e29b-41d4-a716-446655440010",
+      timestamp: "2024-01-01T00:00:00.000Z",
+    },
+  };
+
+  const bookDuplicateIsbn: CslItem = {
+    id: "book_duplicate",
+    type: "book",
+    title: "Different Book Title",
+    author: [{ family: "Smith", given: "John" }],
+    issued: { "date-parts": [[2022]] },
+    publisher: "Other Publisher",
+    ISBN: "9784000000000",
+    custom: {
+      uuid: "660e8400-e29b-41d4-a716-446655440011",
+      timestamp: "2024-01-01T00:00:00.000Z",
+    },
+  };
+
+  const bookSectionOriginal: CslItem = {
+    id: "chapter2023",
+    type: "chapter",
+    title: "Chapter 1: Fundamentals",
+    author: [{ family: "Anderson", given: "James" }],
+    issued: { "date-parts": [[2023]] },
+    "container-title": "Introduction to Climate Science",
+    ISBN: "9784000000000",
+    custom: {
+      uuid: "660e8400-e29b-41d4-a716-446655440012",
+      timestamp: "2024-01-01T00:00:00.000Z",
+    },
+  };
+
+  const bookSectionSameIsbnSameTitle: CslItem = {
+    id: "chapter_duplicate",
+    type: "chapter",
+    title: "Chapter 1: Fundamentals",
+    author: [{ family: "Smith", given: "John" }],
+    issued: { "date-parts": [[2023]] },
+    "container-title": "Introduction to Climate Science",
+    ISBN: "9784000000000",
+    custom: {
+      uuid: "660e8400-e29b-41d4-a716-446655440013",
+      timestamp: "2024-01-01T00:00:00.000Z",
+    },
+  };
+
+  const bookSectionSameIsbnDifferentTitle: CslItem = {
+    id: "chapter_different",
+    type: "chapter",
+    title: "Chapter 2: Advanced Topics",
+    author: [{ family: "Anderson", given: "James" }],
+    issued: { "date-parts": [[2023]] },
+    "container-title": "Introduction to Climate Science",
+    ISBN: "9784000000000",
+    custom: {
+      uuid: "660e8400-e29b-41d4-a716-446655440014",
+      timestamp: "2024-01-01T00:00:00.000Z",
+    },
+  };
+
   describe("PMID-based detection (second priority)", () => {
     it("should detect duplicate by PMID", () => {
       const result = detectDuplicate(duplicatePmid, [original]);
@@ -161,6 +232,124 @@ describe("detectDuplicate", () => {
 
       expect(result.isDuplicate).toBe(true);
       expect(result.matches[0].type).toBe("doi"); // DOI takes priority
+    });
+  });
+
+  describe("ISBN-based detection (third priority)", () => {
+    it("should detect duplicate by ISBN for book type", () => {
+      const result = detectDuplicate(bookDuplicateIsbn, [bookOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches).toHaveLength(1);
+      expect(result.matches[0].type).toBe("isbn");
+      expect(result.matches[0].existing.id).toBe("book2023");
+    });
+
+    it("should detect duplicate by ISBN + title for chapter type", () => {
+      const result = detectDuplicate(bookSectionSameIsbnSameTitle, [bookSectionOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches).toHaveLength(1);
+      expect(result.matches[0].type).toBe("isbn");
+    });
+
+    it("should NOT detect duplicate for chapter with same ISBN but different title", () => {
+      const result = detectDuplicate(bookSectionSameIsbnDifferentTitle, [bookSectionOriginal]);
+
+      expect(result.isDuplicate).toBe(false);
+    });
+
+    it("should normalize ISBN for comparison (remove hyphens)", () => {
+      const itemWithHyphenatedIsbn: CslItem = {
+        ...bookDuplicateIsbn,
+        ISBN: "978-4-00-000000-0",
+      };
+      const result = detectDuplicate(itemWithHyphenatedIsbn, [bookOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("isbn");
+    });
+
+    it("should prioritize DOI over ISBN", () => {
+      const bookWithDoi: CslItem = {
+        ...bookOriginal,
+        DOI: "10.1234/book.2023",
+      };
+      const itemWithMatchingDoiAndIsbn: CslItem = {
+        ...bookDuplicateIsbn,
+        DOI: "10.1234/book.2023",
+      };
+      const result = detectDuplicate(itemWithMatchingDoiAndIsbn, [bookWithDoi]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("doi"); // DOI takes priority over ISBN
+    });
+
+    it("should prioritize PMID over ISBN", () => {
+      const bookWithPmid: CslItem = {
+        ...bookOriginal,
+        PMID: "12345678",
+      };
+      const itemWithMatchingPmidAndIsbn: CslItem = {
+        ...bookDuplicateIsbn,
+        PMID: "12345678",
+      };
+      const result = detectDuplicate(itemWithMatchingPmidAndIsbn, [bookWithPmid]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("pmid"); // PMID takes priority over ISBN
+    });
+
+    it("should use ISBN when PMID and DOI are absent", () => {
+      const result = detectDuplicate(bookDuplicateIsbn, [bookOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("isbn");
+    });
+
+    it("should handle ISBN-10 format with X check digit", () => {
+      const bookWithIsbn10: CslItem = {
+        ...bookOriginal,
+        ISBN: "400000000X",
+      };
+      const itemWithIsbn10: CslItem = {
+        ...bookDuplicateIsbn,
+        ISBN: "4-00-000000-X",
+      };
+      const result = detectDuplicate(itemWithIsbn10, [bookWithIsbn10]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("isbn");
+    });
+
+    it("should be case-insensitive for ISBN-10 X check digit", () => {
+      const bookWithUpperX: CslItem = {
+        ...bookOriginal,
+        ISBN: "400000000X",
+      };
+      const itemWithLowerX: CslItem = {
+        ...bookDuplicateIsbn,
+        ISBN: "400000000x",
+      };
+      const result = detectDuplicate(itemWithLowerX, [bookWithUpperX]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("isbn");
+    });
+
+    it("should handle ISBN field as array (use first)", () => {
+      const bookWithIsbnArray: CslItem = {
+        ...bookOriginal,
+        ISBN: "9784000000000",
+      };
+      const itemWithIsbnArray: CslItem = {
+        ...bookDuplicateIsbn,
+        ISBN: "9784000000000",
+      };
+      const result = detectDuplicate(itemWithIsbnArray, [bookWithIsbnArray]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("isbn");
     });
   });
 

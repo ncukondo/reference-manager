@@ -192,7 +192,7 @@ Add ISBN (International Standard Book Number) support to the add command.
     - Migrated all usages to `idType: 'uuid'` (or `idType: 'id'` for default)
     - Removed `byUuid` from FindOptions and UpdateOptions
 
-- [ ] **14.11**: Duplicate detection
+- [x] **14.11**: Duplicate detection
   - File: `src/features/duplicate/detector.ts`
   - Add ISBN matching (priority: DOI > PMID > ISBN > Title+Author+Year)
   - Design: ISBN + type based comparison
