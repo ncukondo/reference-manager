@@ -42,8 +42,8 @@
     "config_path": {
       "type": "file",
       "title": "Config File Path",
-      "description": "Path to the reference-manager configuration file (.toml). If not specified, default locations will be used.",
-      "required": true
+      "description": "Path to the reference-manager configuration file (.toml). Leave empty to use default location (~/.reference-manager/config.toml).",
+      "required": false
     }
   }
 }
