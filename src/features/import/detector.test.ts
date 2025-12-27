@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type InputFormat, detectFormat } from "./detector.js";
+import { type InputFormat, detectFormat, isPmid } from "./detector.js";
 
 describe("detectFormat", () => {
   describe("file extension detection", () => {
@@ -288,6 +288,78 @@ describe("detectFormat", () => {
         const result = detectFormat(input);
         expect(validFormats).toContain(result);
       }
+    });
+  });
+});
+
+describe("isPmid", () => {
+  describe("numeric PMID", () => {
+    it("should return true for numeric string", () => {
+      expect(isPmid("12345678")).toBe(true);
+    });
+
+    it("should return true for short numeric string", () => {
+      expect(isPmid("123")).toBe(true);
+    });
+
+    it("should return true for long numeric string", () => {
+      expect(isPmid("123456789012")).toBe(true);
+    });
+
+    it("should return true for PMID with leading zeros", () => {
+      expect(isPmid("00123456")).toBe(true);
+    });
+  });
+
+  describe("PMID with prefix", () => {
+    it("should return true for PMID: prefix", () => {
+      expect(isPmid("PMID:12345678")).toBe(true);
+    });
+
+    it("should return true for pmid: prefix (lowercase)", () => {
+      expect(isPmid("pmid:12345678")).toBe(true);
+    });
+
+    it("should return true for Pmid: prefix (mixed case)", () => {
+      expect(isPmid("Pmid:12345678")).toBe(true);
+    });
+
+    it("should return true for PMID: with space after colon", () => {
+      expect(isPmid("PMID: 12345678")).toBe(true);
+    });
+
+    it("should return true for pmid: with multiple spaces after colon", () => {
+      expect(isPmid("pmid:  12345678")).toBe(true);
+    });
+
+    it("should return true for PMID: with leading/trailing whitespace", () => {
+      expect(isPmid("  PMID:12345678  ")).toBe(true);
+    });
+  });
+
+  describe("invalid inputs", () => {
+    it("should return false for empty string", () => {
+      expect(isPmid("")).toBe(false);
+    });
+
+    it("should return false for non-numeric string", () => {
+      expect(isPmid("abc123")).toBe(false);
+    });
+
+    it("should return false for DOI", () => {
+      expect(isPmid("10.1000/xyz")).toBe(false);
+    });
+
+    it("should return false for PMID: without number", () => {
+      expect(isPmid("PMID:")).toBe(false);
+    });
+
+    it("should return false for PMID: with non-numeric value", () => {
+      expect(isPmid("PMID:abc123")).toBe(false);
+    });
+
+    it("should return false for partial prefix", () => {
+      expect(isPmid("PMI:12345678")).toBe(false);
     });
   });
 });

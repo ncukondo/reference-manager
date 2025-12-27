@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeDoi } from "./normalizer.js";
+import { normalizeDoi, normalizePmid } from "./normalizer.js";
 
 describe("normalizeDoi", () => {
   describe("standard DOI passthrough", () => {
@@ -82,6 +82,89 @@ describe("normalizeDoi", () => {
 
     it("should trim whitespace around URL", () => {
       expect(normalizeDoi("  https://doi.org/10.1000/xyz123  ")).toBe("10.1000/xyz123");
+    });
+  });
+});
+
+describe("normalizePmid", () => {
+  describe("numeric PMID passthrough", () => {
+    it("should return numeric PMID as-is", () => {
+      expect(normalizePmid("12345678")).toBe("12345678");
+    });
+
+    it("should preserve short PMID", () => {
+      expect(normalizePmid("123")).toBe("123");
+    });
+
+    it("should preserve long PMID", () => {
+      expect(normalizePmid("123456789012")).toBe("123456789012");
+    });
+  });
+
+  describe("prefix removal", () => {
+    it("should remove PMID: prefix", () => {
+      expect(normalizePmid("PMID:12345678")).toBe("12345678");
+    });
+
+    it("should remove pmid: prefix (lowercase)", () => {
+      expect(normalizePmid("pmid:12345678")).toBe("12345678");
+    });
+
+    it("should remove Pmid: prefix (mixed case)", () => {
+      expect(normalizePmid("Pmid:12345678")).toBe("12345678");
+    });
+
+    it("should remove PMID: prefix with single space after colon", () => {
+      expect(normalizePmid("PMID: 12345678")).toBe("12345678");
+    });
+
+    it("should remove pmid: prefix with multiple spaces after colon", () => {
+      expect(normalizePmid("pmid:  12345678")).toBe("12345678");
+    });
+
+    it("should remove PMID: prefix with tab after colon", () => {
+      expect(normalizePmid("PMID:\t12345678")).toBe("12345678");
+    });
+  });
+
+  describe("whitespace handling", () => {
+    it("should trim leading whitespace", () => {
+      expect(normalizePmid("  12345678")).toBe("12345678");
+    });
+
+    it("should trim trailing whitespace", () => {
+      expect(normalizePmid("12345678  ")).toBe("12345678");
+    });
+
+    it("should trim whitespace around prefixed PMID", () => {
+      expect(normalizePmid("  PMID:12345678  ")).toBe("12345678");
+    });
+
+    it("should trim whitespace with space after colon", () => {
+      expect(normalizePmid("  PMID: 12345678  ")).toBe("12345678");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty string", () => {
+      expect(normalizePmid("")).toBe("");
+    });
+
+    it("should handle whitespace-only string", () => {
+      expect(normalizePmid("   ")).toBe("");
+    });
+
+    it("should not remove partial prefix", () => {
+      // "PMI:" is not a valid prefix
+      expect(normalizePmid("PMI:12345678")).toBe("PMI:12345678");
+    });
+
+    it("should handle PMID: without number", () => {
+      expect(normalizePmid("PMID:")).toBe("");
+    });
+
+    it("should handle PMID: with only spaces", () => {
+      expect(normalizePmid("PMID:   ")).toBe("");
     });
   });
 });

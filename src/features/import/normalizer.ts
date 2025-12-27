@@ -43,3 +43,29 @@ export function normalizeDoi(doi: string): string {
   // No prefix found, return as-is
   return trimmed;
 }
+
+/**
+ * Normalizes a PMID by removing the optional "PMID:" prefix and trimming whitespace.
+ *
+ * Supported formats:
+ * - "12345678" -> "12345678"
+ * - "PMID:12345678" -> "12345678"
+ * - "pmid:12345678" -> "12345678"
+ * - "PMID: 12345678" -> "12345678" (space after colon)
+ *
+ * @param pmid - The PMID string to normalize
+ * @returns The normalized PMID (digits only) or empty string if invalid
+ */
+export function normalizePmid(pmid: string): string {
+  // Trim whitespace
+  const trimmed = pmid.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  // Remove "PMID:" prefix (case-insensitive, optional whitespace after colon)
+  const normalized = trimmed.replace(/^pmid:\s*/i, "");
+
+  return normalized.trim();
+}

@@ -13,7 +13,7 @@ import { detectByContent, detectByExtension, isDoi, isPmid } from "./detector.js
 import type { InputFormat } from "./detector.js";
 import { fetchDoi, fetchPmids } from "./fetcher.js";
 import type { PubmedConfig } from "./fetcher.js";
-import { normalizeDoi } from "./normalizer.js";
+import { normalizeDoi, normalizePmid } from "./normalizer.js";
 import { parseBibtex, parseRis } from "./parser.js";
 
 /**
@@ -56,7 +56,7 @@ function classifyIdentifiers(identifiers: string[]): ClassifiedIdentifiers {
 
   for (const id of identifiers) {
     if (isPmid(id)) {
-      pmids.push(id);
+      pmids.push(normalizePmid(id));
     } else if (isDoi(id)) {
       dois.push(normalizeDoi(id));
     } else {
