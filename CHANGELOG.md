@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **MCP Server (Phase 12)**: Model Context Protocol stdio server for AI agent integration
+  - New `mcp` CLI command: `reference-manager mcp [--library <path>]`
+  - **Tools**: search, list, cite, add, remove, fulltext_attach, fulltext_get, fulltext_detach
+  - **Resources**: `library://references`, `library://reference/{id}`, `library://styles`
+  - File watching with auto-reload on library file changes
+  - Compatible with Claude Code, Cursor, and other MCP-enabled AI tools
+  - Configuration example for Claude Code in `~/.config/claude/claude_desktop_config.json`
+
+- **ILibrary Interface**: Unified interface for local and server mode operations
+  - All ILibrary methods are async (Promise-based)
+  - Unified `find()`, `update()`, `remove()` methods (replaces id/uuid-specific variants)
+  - `ILibraryOperations` interface for high-level operations (search, list, cite, import)
+  - `OperationsLibrary` class wrapping ILibrary with operation functions
+  - `ServerClient` implements `ILibraryOperations` for HTTP server mode
+  - Simplified CLI commands with no mode branching logic
+
+- **HTTP Server File Reload**: Auto-reload on library file changes (same pattern as MCP server)
+
 - **Search Enhancements (Phase 11)**: Improved search functionality
   - Case-sensitive matching for consecutive uppercase letters (AI, RNA, API, etc.)
     - Query "AI" matches "AI therapy" but not "ai therapy" or "Ai therapy"
