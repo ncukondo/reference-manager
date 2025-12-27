@@ -150,7 +150,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Same pattern as PMID/DOI caching
   - Tests: `cache.test.ts`
 
-- [ ] **14.9**: Importer integration
+- [x] **14.9**: Importer integration
   - File: `src/features/import/importer.ts`
   - Add `isbns: string[]` to `ClassifiedIdentifiers`
   - Update `classifyIdentifiers()` to classify ISBNs
