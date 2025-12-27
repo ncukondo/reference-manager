@@ -3,8 +3,10 @@ import type { CslItem } from "../../core/csl-json/types.js";
 import {
   type CacheConfig,
   cacheDoiResult,
+  cacheIsbnResult,
   cachePmidResult,
   getDoiFromCache,
+  getIsbnFromCache,
   getPmidFromCache,
   resetCache,
 } from "./cache.js";
@@ -150,17 +152,77 @@ describe("cache module", () => {
     });
   });
 
+  describe("ISBN cache", () => {
+    it("should return undefined for uncached ISBN", () => {
+      const result = getIsbnFromCache("9784000000000");
+      expect(result).toBeUndefined();
+    });
+
+    it("should cache and retrieve ISBN result", () => {
+      cacheIsbnResult("9784000000000", mockCslItem);
+      const result = getIsbnFromCache("9784000000000");
+      expect(result).toEqual(mockCslItem);
+    });
+
+    it("should return undefined after TTL expires", () => {
+      cacheIsbnResult("9784000000000", mockCslItem);
+
+      // Advance time past default TTL (1 hour)
+      vi.advanceTimersByTime(60 * 60 * 1000 + 1);
+
+      const result = getIsbnFromCache("9784000000000");
+      expect(result).toBeUndefined();
+    });
+
+    it("should return result within TTL", () => {
+      cacheIsbnResult("9784000000000", mockCslItem);
+
+      // Advance time within TTL
+      vi.advanceTimersByTime(30 * 60 * 1000); // 30 minutes
+
+      const result = getIsbnFromCache("9784000000000");
+      expect(result).toEqual(mockCslItem);
+    });
+
+    it("should support custom TTL", () => {
+      const config: CacheConfig = { ttlMs: 5000 }; // 5 seconds
+      cacheIsbnResult("9784000000000", mockCslItem, config);
+
+      // Within custom TTL
+      vi.advanceTimersByTime(4000);
+      expect(getIsbnFromCache("9784000000000")).toEqual(mockCslItem);
+
+      // After custom TTL
+      vi.advanceTimersByTime(2000);
+      expect(getIsbnFromCache("9784000000000")).toBeUndefined();
+    });
+
+    it("should cache multiple ISBNs independently", () => {
+      const item1: CslItem = { ...mockCslItem, id: "isbn:9784000000000" };
+      const item2: CslItem = { ...mockCslItem, id: "isbn:9784000000001" };
+
+      cacheIsbnResult("9784000000000", item1);
+      cacheIsbnResult("9784000000001", item2);
+
+      expect(getIsbnFromCache("9784000000000")).toEqual(item1);
+      expect(getIsbnFromCache("9784000000001")).toEqual(item2);
+    });
+  });
+
   describe("cache isolation", () => {
-    it("should keep PMID and DOI caches separate", () => {
-      // Use same key for both (hypothetical edge case)
+    it("should keep PMID, DOI and ISBN caches separate", () => {
+      // Use same key for all (hypothetical edge case)
       const pmidItem: CslItem = { ...mockCslItem, title: "PMID Article" };
       const doiItem: CslItem = { ...mockCslItem, title: "DOI Article" };
+      const isbnItem: CslItem = { ...mockCslItem, title: "ISBN Book" };
 
       cachePmidResult("12345678", pmidItem);
       cacheDoiResult("12345678", doiItem);
+      cacheIsbnResult("12345678", isbnItem);
 
       expect(getPmidFromCache("12345678")?.title).toBe("PMID Article");
       expect(getDoiFromCache("12345678")?.title).toBe("DOI Article");
+      expect(getIsbnFromCache("12345678")?.title).toBe("ISBN Book");
     });
   });
 
@@ -168,11 +230,13 @@ describe("cache module", () => {
     it("should clear all cached entries", () => {
       cachePmidResult("12345678", mockCslItem);
       cacheDoiResult("10.1000/test", mockCslItem);
+      cacheIsbnResult("9784000000000", mockCslItem);
 
       resetCache();
 
       expect(getPmidFromCache("12345678")).toBeUndefined();
       expect(getDoiFromCache("10.1000/test")).toBeUndefined();
+      expect(getIsbnFromCache("9784000000000")).toBeUndefined();
     });
   });
 });

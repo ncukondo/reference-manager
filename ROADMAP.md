@@ -144,7 +144,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Handle errors (not found, rate limit)
   - Tests: `fetcher.test.ts` (mocked)
 
-- [ ] **14.8**: ISBN caching
+- [x] **14.8**: ISBN caching
   - File: `src/features/import/cache.ts`
   - Add `getIsbnFromCache()`, `cacheIsbnResult()` functions
   - Same pattern as PMID/DOI caching
