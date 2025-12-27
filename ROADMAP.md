@@ -195,6 +195,9 @@ Add ISBN (International Standard Book Number) support to the add command.
 - [ ] **14.11**: Duplicate detection
   - File: `src/features/duplicate/detector.ts`
   - Add ISBN matching (priority: DOI > PMID > ISBN > Title+Author+Year)
+  - Design: ISBN + type based comparison
+    - `book` type: ISBN only
+    - `book-section` type: ISBN + title (same book can have multiple chapters)
   - Dependencies: 14.10
   - Tests: `detector.test.ts`
 
