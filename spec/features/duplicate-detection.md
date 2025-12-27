@@ -4,7 +4,8 @@
 
 1. DOI
 2. PMID
-3. Title + Authors + Year
+3. ISBN
+4. Title + Authors + Year
 
 ## Default Behavior
 

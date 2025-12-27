@@ -112,7 +112,7 @@ Add ISBN (International Standard Book Number) support to the add command.
 - [x] **14.2**: Update `spec/core/data-model.md`
   - Add ISBN field documentation
 
-- [ ] **14.3**: Update `spec/features/duplicate-detection.md`
+- [x] **14.3**: Update `spec/features/duplicate-detection.md`
   - Add ISBN to duplicate detection priority (after PMID)
 
 #### Implementation Steps
