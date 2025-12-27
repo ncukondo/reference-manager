@@ -109,7 +109,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Document `--format isbn` option
   - Add rate limiting info (Google Books: 1,000 req/day)
 
-- [ ] **14.2**: Update `spec/core/data-model.md`
+- [x] **14.2**: Update `spec/core/data-model.md`
   - Add ISBN field documentation
 
 - [ ] **14.3**: Update `spec/features/duplicate-detection.md`
