@@ -130,7 +130,7 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Acceptance: Detects `ISBN:978...`, `isbn:4-00-...` patterns
   - Tests: `detector.test.ts`
 
-- [ ] **14.6**: ISBN normalization
+- [x] **14.6**: ISBN normalization
   - File: `src/features/import/normalizer.ts`
   - Add `normalizeIsbn(isbn: string): string` function
   - Remove hyphens/spaces, strip `ISBN:` prefix, uppercase X
