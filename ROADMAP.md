@@ -201,9 +201,9 @@ Add ISBN (International Standard Book Number) support to the add command.
   - Dependencies: 14.10
   - Tests: `detector.test.ts`
 
-- [ ] **14.12**: CLI integration
-  - File: `src/cli/commands/add.ts`
-  - Add `isbn` to format choices
+- [x] **14.12**: CLI integration
+  - File: `src/cli/index.ts`
+  - Add `isbn` to format choices and help text
   - Tests: `add.test.ts`
 
 - [ ] **14.13**: E2E tests

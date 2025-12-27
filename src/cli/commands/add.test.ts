@@ -71,6 +71,29 @@ describe("add command", () => {
       });
     });
 
+    it("should pass isbn format option", async () => {
+      const mockResult: AddReferencesResult = {
+        added: [],
+        failed: [],
+        skipped: [],
+      };
+      mockImport.mockResolvedValue(mockResult);
+
+      const options: AddCommandOptions = {
+        inputs: ["ISBN:9784000000000"],
+        force: true,
+        format: "isbn",
+      };
+      const context = createContext();
+
+      await executeAdd(options, context);
+
+      expect(mockImport).toHaveBeenCalledWith(["ISBN:9784000000000"], {
+        force: true,
+        format: "isbn",
+      });
+    });
+
     it("should pass pubmedConfig option", async () => {
       const mockResult: AddReferencesResult = {
         added: [],

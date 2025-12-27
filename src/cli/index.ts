@@ -245,9 +245,13 @@ function registerAddCommand(program: Command): void {
   program
     .command("add")
     .description("Add new reference(s) to the library")
-    .argument("[input...]", "File paths or identifiers (PMID/DOI), or use stdin")
+    .argument("[input...]", "File paths or identifiers (PMID/DOI/ISBN), or use stdin")
     .option("-f, --force", "Skip duplicate detection")
-    .option("--format <format>", "Explicit input format: json|bibtex|ris|pmid|doi|auto", "auto")
+    .option(
+      "--format <format>",
+      "Explicit input format: json|bibtex|ris|pmid|doi|isbn|auto",
+      "auto"
+    )
     .option("--verbose", "Show detailed error information")
     .action(async (inputs: string[], options: AddCommandOptions) => {
       await handleAddAction(inputs, options, program);
