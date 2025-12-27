@@ -1,0 +1,365 @@
+# reference-manager
+
+> 文献管理ワークフローを自動化 — システマティックレビューから論文執筆まで
+
+[![npm version](https://img.shields.io/npm/v/@ncukondo/reference-manager.svg)](https://www.npmjs.com/package/@ncukondo/reference-manager)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Status: Alpha](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
+
+自動化を前提に設計されたコマンドライン文献管理ツールです。MCP経由でAIエージェント（Claude Code、Claude Desktop）と連携し、シェルスクリプトやPandocとシームレスに統合できます。
+
+## なぜ reference-manager？
+
+従来の文献管理ツール（Zotero、Mendeley、EndNote）は手動のGUIベースのワークフロー向けに設計されています。**reference-manager** は異なるアプローチを取ります：
+
+- **自動化ファースト**: すべての操作がCLIとMCPで利用可能 — GUIは不要
+- **AIネイティブ**: Model Context Protocolを通じてClaudeなどのAIエージェントと直接連携
+- **Single Source of Truth**: CSL-JSON形式で互換性と透明性を確保
+- **Pandoc対応**: あらゆるスタイルで引用を生成、学術論文執筆に対応
+
+## ユースケース
+
+### システマティックレビュー / スコーピングレビュー
+
+文献レビューの煩雑な作業を自動化：
+
+```bash
+# 複数のソースから文献をインポート
+ref add pmid:12345678 pmid:23456789
+ref add "10.1234/example.doi"
+ref add exported-from-pubmed.nbib
+
+# AIによるスクリーニング支援（Claude Codeと連携）
+# 「ライブラリ内の抄録をレビューして、AI医学教育に関するレビューに関連しそうな論文にフラグを付けて」
+
+# 分析用にエクスポート
+ref list --format json > references.json
+```
+
+### 論文執筆
+
+執筆ワークフローを効率化：
+
+```bash
+# 引用を生成
+ref cite smith2024 jones2023 --style apa
+# 出力: (Smith, 2024; Jones, 2023)
+
+# フルテキストPDFを添付・管理
+ref fulltext attach smith2024 ~/papers/smith2024.pdf
+
+# Pandoc用にエクスポート
+ref list --format json > references.json
+pandoc manuscript.md --bibliography references.json -o manuscript.docx
+```
+
+### AI支援リサーチ
+
+Claudeに文献管理を任せる：
+
+```
+あなた: 「2020年以降のSmithの論文をすべて見つけて」
+Claude: [searchツールを使用] 3件の文献が見つかりました...
+
+あなた: 「機械学習の論文のAPA引用を生成して」
+Claude: [citeツールを使用] Smith, J. (2024). Machine learning applications...
+
+あなた: 「この論文を追加: 10.1234/example」
+Claude: [addツールを使用] 文献を追加しました: example2024
+```
+
+## インストール
+
+### 必要環境
+
+- Node.js 22以上
+
+### npmから
+
+```bash
+npm install -g @ncukondo/reference-manager
+```
+
+### ソースから
+
+```bash
+git clone https://github.com/ncukondo/reference-manager.git
+cd reference-manager
+npm install
+npm run build
+npm link
+```
+
+## クイックスタート
+
+```bash
+# 初期化（デフォルト設定と空のライブラリを作成）
+ref list
+
+# DOIで文献を追加
+ref add "10.1038/nature12373"
+
+# PubMedから追加
+ref add pmid:25056061
+
+# ライブラリを検索
+ref search "author:smith machine learning"
+
+# 引用を生成
+ref cite smith2024 --style apa
+
+# すべての文献を一覧表示
+ref list
+```
+
+## AI連携（MCP）
+
+reference-managerはAIエージェントと直接連携するためのMCP（Model Context Protocol）サーバーを提供します。
+
+### Claude Code セットアップ
+
+MCPサーバーとして追加（グローバルインストール不要）：
+
+```bash
+claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp
+```
+
+カスタムライブラリパスを指定する場合：
+
+```bash
+claude mcp add reference-manager -- npx -y @ncukondo/reference-manager mcp --library ~/my-references.json
+```
+
+### Claude Desktop セットアップ
+
+設定ファイルに追加：
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "reference-manager": {
+      "command": "npx",
+      "args": ["-y", "@ncukondo/reference-manager", "mcp"]
+    }
+  }
+}
+```
+
+カスタムライブラリを使用する場合：
+
+```json
+{
+  "mcpServers": {
+    "reference-manager": {
+      "command": "npx",
+      "args": ["-y", "@ncukondo/reference-manager", "mcp", "--library", "/path/to/library.json"]
+    }
+  }
+}
+```
+
+### 利用可能なツール
+
+| ツール | 説明 | パラメータ |
+|--------|------|------------|
+| `search` | 文献を検索 | `query`: 検索文字列（例: `"author:smith 2024"`） |
+| `list` | すべての文献を一覧表示 | `format?`: `"json"` \| `"bibtex"` \| `"pretty"` |
+| `add` | 新しい文献を追加 | `input`: DOI、PMID、BibTeX、RIS、またはCSL-JSON |
+| `remove` | 文献を削除 | `id`: 文献ID、`force`: `true`が必須 |
+| `cite` | フォーマット済み引用を生成 | `ids`: 文献IDの配列、`style?`: 引用スタイル、`format?`: `"text"` \| `"html"` |
+| `fulltext_attach` | PDF/Markdownを添付 | `id`: 文献ID、`path`: ファイルパス |
+| `fulltext_get` | フルテキストを取得 | `id`: 文献ID |
+| `fulltext_detach` | フルテキストを切り離す | `id`: 文献ID |
+
+### 利用可能なリソース
+
+| URI | 説明 |
+|-----|------|
+| `library://references` | CSL-JSON配列としてのすべての文献 |
+| `library://reference/{id}` | IDで指定した単一の文献 |
+| `library://styles` | 利用可能な引用スタイル |
+
+## CLIリファレンス
+
+### 基本コマンド
+
+```bash
+# すべての文献を一覧表示
+ref list
+ref list --format json
+ref list --format bibtex
+
+# 文献を検索
+ref search "machine learning"
+ref search "author:smith"
+ref search "author:jones year:2024"
+ref search "title:\"deep learning\""
+
+# 文献を追加
+ref add paper.json                    # CSL-JSONファイルから
+ref add references.bib                # BibTeXから
+ref add export.ris                    # RISから
+ref add "10.1038/nature12373"         # DOIから
+ref add pmid:25056061                 # PubMed IDから
+cat references.json | ref add         # 標準入力から
+
+# 文献を削除
+ref remove smith2024
+ref remove smith2024 --force          # 確認をスキップ
+
+# 文献を更新
+ref update smith2024 updates.json
+ref update smith2024 --set "title=New Title"
+
+# 引用を生成
+ref cite smith2024
+ref cite smith2024 jones2023 --style apa
+ref cite smith2024 --style chicago-author-date --format html
+```
+
+### フルテキスト管理
+
+```bash
+# ファイルを添付
+ref fulltext attach smith2024 ~/papers/smith2024.pdf
+ref fulltext attach smith2024 ~/notes/smith2024.md
+ref fulltext attach smith2024 paper.pdf --move    # コピーではなく移動
+ref fulltext attach smith2024 paper.pdf --force   # 既存を上書き
+
+# 添付ファイルを取得
+ref fulltext get smith2024 --pdf                  # PDFパスを取得
+ref fulltext get smith2024 --md                   # Markdownパスを取得
+ref fulltext get smith2024 --pdf --stdout         # 内容を標準出力に
+
+# ファイルを切り離す
+ref fulltext detach smith2024 --pdf
+ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
+```
+
+### 出力フォーマット
+
+| フォーマット | フラグ | 説明 |
+|--------------|--------|------|
+| Pretty | （デフォルト） | 人間が読みやすい形式 |
+| JSON | `--format json` | CSL-JSON配列 |
+| BibTeX | `--format bibtex` | BibTeX形式 |
+| IDのみ | `--format ids-only` | 1行に1つのID |
+
+### 検索クエリ構文
+
+- **シンプル検索**: `machine learning`（任意のフィールドにマッチ）
+- **フィールド指定**: `author:smith`, `title:neural`, `year:2024`
+- **フレーズ検索**: `"machine learning"`（完全一致）
+- **組み合わせ**: `author:smith "deep learning" 2024`
+
+対応フィールドプレフィックス: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+
+## 設定
+
+設定ファイル: `~/.reference-manager.config.toml`
+
+```toml
+# ライブラリファイルのパス
+library = "~/references.json"
+
+# ログレベル: silent, info, debug
+log_level = "info"
+
+[backup]
+enabled = true
+max_count = 10
+max_age_days = 30
+
+[fulltext]
+directory = "~/references/fulltext"
+
+[server]
+auto_start = true
+auto_stop_minutes = 60
+```
+
+### 環境変数
+
+| 変数 | 説明 |
+|------|------|
+| `REFERENCE_MANAGER_LIBRARY` | ライブラリファイルパスを上書き |
+| `REFERENCE_MANAGER_FULLTEXT_DIR` | フルテキストディレクトリを上書き |
+
+## データ形式
+
+reference-managerは[CSL-JSON](https://citeproc-js.readthedocs.io/en/latest/csl-json/markup.html)をネイティブ形式として使用します。これはPandoc、Zotero、その他の学術ツールで使用されているのと同じ形式です。
+
+### Pandoc連携
+
+```bash
+# ライブラリをエクスポート
+ref list --format json > references.json
+
+# Pandocで使用
+pandoc manuscript.md \
+  --bibliography references.json \
+  --csl apa.csl \
+  -o manuscript.docx
+```
+
+### カスタムフィールド
+
+reference-managerは追加メタデータ用に`custom`オブジェクトでCSL-JSONを拡張しています：
+
+```json
+{
+  "id": "smith2024",
+  "type": "article-journal",
+  "title": "Example Paper",
+  "custom": {
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "tags": ["important", "to-read"],
+    "fulltext_pdf": "smith2024.pdf",
+    "fulltext_md": "smith2024.md"
+  }
+}
+```
+
+## プロジェクトステータス
+
+**Alpha** — このプロジェクトは活発に開発中です。APIやコマンドはバージョン間で変更される可能性があります。
+
+開発の進捗と予定機能については[ROADMAP.md](./ROADMAP.md)を参照してください。
+
+## 開発
+
+### ビルド
+
+```bash
+npm run build
+```
+
+### テスト
+
+```bash
+npm test                 # すべてのテストを実行
+npm run test:watch       # ウォッチモード
+npm run test:coverage    # カバレッジレポート
+```
+
+### 品質チェック
+
+```bash
+npm run typecheck        # TypeScript型チェック
+npm run lint             # リント
+npm run format           # コードフォーマット
+```
+
+## ライセンス
+
+MIT
+
+## リンク
+
+- [リポジトリ](https://github.com/ncukondo/reference-manager)
+- [npmパッケージ](https://www.npmjs.com/package/@ncukondo/reference-manager)
+- [Issues](https://github.com/ncukondo/reference-manager/issues)
+- [ドキュメント](./spec/)
