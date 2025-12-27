@@ -457,7 +457,7 @@ Add file watching and auto-reload to HTTP server using Library.reload().
 
 End-to-end testing with MCP client.
 
-- [ ] **12.7.1**: E2E test for tool invocation
+- [x] **12.7.1**: E2E test for tool invocation
   - File: `src/mcp/mcp.e2e.test.ts`
   - Acceptance: Start server, invoke tools, verify responses
   - Dependencies: 12.6.2
