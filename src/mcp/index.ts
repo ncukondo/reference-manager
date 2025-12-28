@@ -40,11 +40,11 @@ export async function createMcpServer(options: CreateMcpServerOptions): Promise<
   const server = new McpServer(serverInfo);
 
   // Register tools and resources
-  // Use getters to always get current library/config (for file watcher updates)
-  const getLibrary = () => context.library;
+  // Use getters to always get current libraryOperations/config (for file watcher updates)
+  const getLibraryOperations = () => context.libraryOperations;
   const getConfig = () => context.config;
-  registerAllTools(server, getLibrary, getConfig);
-  registerAllResources(server, getLibrary);
+  registerAllTools(server, getLibraryOperations, getConfig);
+  registerAllResources(server, getLibraryOperations);
 
   // Create stdio transport
   const transport = new StdioServerTransport(

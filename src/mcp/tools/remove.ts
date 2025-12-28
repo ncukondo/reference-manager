@@ -1,7 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Library } from "../../core/library.js";
-import { removeReference } from "../../features/operations/remove.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 
 /**
  * Parameters for the remove tool
@@ -17,9 +16,12 @@ export interface RemoveToolParams {
  * Register the remove tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerRemoveTool(server: McpServer, getLibrary: () => Library): void {
+export function registerRemoveTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
   server.registerTool(
     "remove",
     {
@@ -43,8 +45,8 @@ export function registerRemoveTool(server: McpServer, getLibrary: () => Library)
         };
       }
 
-      const library = getLibrary();
-      const result = await removeReference(library, { identifier: args.id });
+      const libraryOps = getLibraryOperations();
+      const result = await libraryOps.remove(args.id);
 
       if (!result.removed) {
         return {

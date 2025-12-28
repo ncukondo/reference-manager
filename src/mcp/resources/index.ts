@@ -1,5 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 import {
   registerReferenceResource,
   registerReferencesResource,
@@ -10,10 +10,13 @@ import {
  * Register all resources with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerAllResources(server: McpServer, getLibrary: () => Library): void {
-  registerReferencesResource(server, getLibrary);
-  registerReferenceResource(server, getLibrary);
+export function registerAllResources(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
+  registerReferencesResource(server, getLibraryOperations);
+  registerReferenceResource(server, getLibraryOperations);
   registerStylesResource(server);
 }

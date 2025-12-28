@@ -1,12 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Config } from "../../config/schema.js";
-import type { Library } from "../../core/library.js";
 import {
   fulltextAttach,
   fulltextDetach,
   fulltextGet,
 } from "../../features/operations/fulltext/index.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 
 /**
  * Parameters for the fulltext_attach tool
@@ -38,12 +38,12 @@ export interface FulltextDetachToolParams {
  * Register the fulltext_attach tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  * @param getConfig - Function to get the current config
  */
 export function registerFulltextAttachTool(
   server: McpServer,
-  getLibrary: () => Library,
+  getLibraryOperations: () => ILibraryOperations,
   getConfig: () => Config
 ): void {
   server.registerTool(
@@ -57,10 +57,10 @@ export function registerFulltextAttachTool(
       },
     },
     async (args: FulltextAttachToolParams) => {
-      const library = getLibrary();
+      const libraryOps = getLibraryOperations();
       const config = getConfig();
 
-      const result = await fulltextAttach(library, {
+      const result = await fulltextAttach(libraryOps, {
         identifier: args.id,
         filePath: args.path,
         force: true, // MCP tools don't support interactive confirmation
@@ -90,12 +90,12 @@ export function registerFulltextAttachTool(
  * Register the fulltext_get tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  * @param getConfig - Function to get the current config
  */
 export function registerFulltextGetTool(
   server: McpServer,
-  getLibrary: () => Library,
+  getLibraryOperations: () => ILibraryOperations,
   getConfig: () => Config
 ): void {
   server.registerTool(
@@ -108,11 +108,11 @@ export function registerFulltextGetTool(
       },
     },
     async (args: FulltextGetToolParams) => {
-      const library = getLibrary();
+      const libraryOps = getLibraryOperations();
       const config = getConfig();
 
       // First, check what types are attached
-      const pathResult = await fulltextGet(library, {
+      const pathResult = await fulltextGet(libraryOps, {
         identifier: args.id,
         fulltextDirectory: config.fulltext.directory,
       });
@@ -128,7 +128,7 @@ export function registerFulltextGetTool(
 
       // For Markdown, return content directly
       if (pathResult.paths?.markdown) {
-        const contentResult = await fulltextGet(library, {
+        const contentResult = await fulltextGet(libraryOps, {
           identifier: args.id,
           type: "markdown",
           stdout: true,
@@ -167,12 +167,12 @@ export function registerFulltextGetTool(
  * Register the fulltext_detach tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  * @param getConfig - Function to get the current config
  */
 export function registerFulltextDetachTool(
   server: McpServer,
-  getLibrary: () => Library,
+  getLibraryOperations: () => ILibraryOperations,
   getConfig: () => Config
 ): void {
   server.registerTool(
@@ -185,10 +185,10 @@ export function registerFulltextDetachTool(
       },
     },
     async (args: FulltextDetachToolParams) => {
-      const library = getLibrary();
+      const libraryOps = getLibraryOperations();
       const config = getConfig();
 
-      const result = await fulltextDetach(library, {
+      const result = await fulltextDetach(libraryOps, {
         identifier: args.id,
         fulltextDirectory: config.fulltext.directory,
       });

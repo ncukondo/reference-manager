@@ -3,12 +3,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type RemoveToolParams, registerRemoveTool } from "./remove.js";
 
 describe("MCP remove tool", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-remove-test-"));
@@ -32,7 +34,8 @@ describe("MCP remove tool", () => {
       },
     ];
     await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -52,7 +55,7 @@ describe("MCP remove tool", () => {
         },
       };
 
-      registerRemoveTool(mockServer as never, () => library);
+      registerRemoveTool(mockServer as never, () => libraryOperations);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("remove");
@@ -72,7 +75,7 @@ describe("MCP remove tool", () => {
         },
       };
 
-      registerRemoveTool(mockServer as never, () => library);
+      registerRemoveTool(mockServer as never, () => libraryOperations);
 
       // Try to remove without force
       const result = await capturedCallback?.({ id: "smith2024", force: false });
@@ -82,7 +85,7 @@ describe("MCP remove tool", () => {
       expect(text.toLowerCase()).toContain("true");
 
       // Verify reference still exists
-      expect(await library.find("smith2024")).toBeDefined();
+      expect(await libraryOperations.find("smith2024")).toBeDefined();
     });
 
     it("should remove reference when force is true", async () => {
@@ -96,7 +99,7 @@ describe("MCP remove tool", () => {
         },
       };
 
-      registerRemoveTool(mockServer as never, () => library);
+      registerRemoveTool(mockServer as never, () => libraryOperations);
 
       // Remove with force
       const result = await capturedCallback?.({ id: "smith2024", force: true });
@@ -106,7 +109,7 @@ describe("MCP remove tool", () => {
       expect(text).toContain("smith2024");
 
       // Verify reference is gone
-      expect(await library.find("smith2024")).toBeUndefined();
+      expect(await libraryOperations.find("smith2024")).toBeUndefined();
     });
 
     it("should report when reference not found", async () => {
@@ -120,7 +123,7 @@ describe("MCP remove tool", () => {
         },
       };
 
-      registerRemoveTool(mockServer as never, () => library);
+      registerRemoveTool(mockServer as never, () => libraryOperations);
 
       // Try to remove non-existent reference
       const result = await capturedCallback?.({ id: "nonexistent", force: true });
@@ -140,7 +143,7 @@ describe("MCP remove tool", () => {
         },
       };
 
-      registerRemoveTool(mockServer as never, () => library);
+      registerRemoveTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ id: "jones2023", force: true });
 

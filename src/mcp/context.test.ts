@@ -2,6 +2,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ILibraryOperations } from "../features/operations/library-operations.js";
 import { createMcpContext } from "./context.js";
 
 describe("McpContext", () => {
@@ -31,12 +32,12 @@ describe("McpContext", () => {
   });
 
   describe("createMcpContext", () => {
-    it("should create context with library, config, and file watcher", async () => {
+    it("should create context with libraryOperations, config, and file watcher", async () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
         expect(ctx).toBeDefined();
-        expect(ctx.library).toBeDefined();
+        expect(ctx.libraryOperations).toBeDefined();
         expect(ctx.config).toBeDefined();
         expect(ctx.fileWatcher).toBeDefined();
       } finally {
@@ -56,7 +57,7 @@ describe("McpContext", () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
-        const items = await ctx.library.getAll();
+        const items = await ctx.libraryOperations.getAll();
         expect(items).toHaveLength(1);
         expect(items[0].id).toBe("test2024");
       } finally {
@@ -79,7 +80,7 @@ describe("McpContext", () => {
       });
 
       try {
-        const items = await ctx.library.getAll();
+        const items = await ctx.libraryOperations.getAll();
         expect(items).toHaveLength(1);
         expect(items[0].id).toBe("override2024");
       } finally {
@@ -109,14 +110,22 @@ describe("McpContext", () => {
   });
 
   describe("McpContext type", () => {
-    it("should have library property of type Library", async () => {
+    it("should have libraryOperations property implementing ILibraryOperations", async () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
-        // Verify Library interface
-        expect(typeof ctx.library.getAll).toBe("function");
-        expect(typeof ctx.library.find).toBe("function");
-        expect(typeof ctx.library.add).toBe("function");
+        // Verify ILibrary methods (inherited)
+        expect(typeof ctx.libraryOperations.getAll).toBe("function");
+        expect(typeof ctx.libraryOperations.find).toBe("function");
+        expect(typeof ctx.libraryOperations.add).toBe("function");
+        // Verify ILibraryOperations methods
+        expect(typeof ctx.libraryOperations.search).toBe("function");
+        expect(typeof ctx.libraryOperations.list).toBe("function");
+        expect(typeof ctx.libraryOperations.cite).toBe("function");
+        expect(typeof ctx.libraryOperations.import).toBe("function");
+        // Type check - should satisfy ILibraryOperations
+        const _typeCheck: ILibraryOperations = ctx.libraryOperations;
+        expect(_typeCheck).toBe(ctx.libraryOperations);
       } finally {
         await ctx.dispose();
       }
@@ -147,8 +156,8 @@ describe("McpContext", () => {
       const ctx = await createMcpContext({ configPath });
 
       try {
-        expect(await ctx.library.getAll()).toHaveLength(1);
-        expect(await ctx.library.find("initial2024")).toBeDefined();
+        expect(await ctx.libraryOperations.getAll()).toHaveLength(1);
+        expect(await ctx.libraryOperations.find("initial2024")).toBeDefined();
 
         // Simulate external file change
         const newRef = {
@@ -165,9 +174,9 @@ describe("McpContext", () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Library should be reloaded with new content
-        expect(await ctx.library.getAll()).toHaveLength(1);
-        expect(await ctx.library.find("external2024")).toBeDefined();
-        expect(await ctx.library.find("initial2024")).toBeUndefined();
+        expect(await ctx.libraryOperations.getAll()).toHaveLength(1);
+        expect(await ctx.libraryOperations.find("external2024")).toBeDefined();
+        expect(await ctx.libraryOperations.find("initial2024")).toBeUndefined();
       } finally {
         await ctx.dispose();
       }
@@ -190,10 +199,10 @@ describe("McpContext", () => {
           type: "article-journal" as const,
           title: "Added Item",
         };
-        await ctx.library.add(newItem);
-        await ctx.library.save();
+        await ctx.libraryOperations.add(newItem);
+        await ctx.libraryOperations.save();
 
-        expect(await ctx.library.getAll()).toHaveLength(2);
+        expect(await ctx.libraryOperations.getAll()).toHaveLength(2);
 
         // Emit change event (as if file watcher detected the self-write)
         ctx.fileWatcher.emit("change");
@@ -203,9 +212,9 @@ describe("McpContext", () => {
 
         // Library should NOT be reloaded (self-write detected)
         // Both references should still be present
-        expect(await ctx.library.getAll()).toHaveLength(2);
-        expect(await ctx.library.find("test2024")).toBeDefined();
-        expect(await ctx.library.find("added2024")).toBeDefined();
+        expect(await ctx.libraryOperations.getAll()).toHaveLength(2);
+        expect(await ctx.libraryOperations.find("test2024")).toBeDefined();
+        expect(await ctx.libraryOperations.find("added2024")).toBeDefined();
       } finally {
         await ctx.dispose();
       }

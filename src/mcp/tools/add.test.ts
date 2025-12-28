@@ -3,12 +3,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type AddToolParams, registerAddTool } from "./add.js";
 
 describe("MCP add tool", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-add-test-"));
@@ -16,7 +18,8 @@ describe("MCP add tool", () => {
 
     // Create empty library
     await fs.writeFile(libraryPath, JSON.stringify([]), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -36,7 +39,7 @@ describe("MCP add tool", () => {
         },
       };
 
-      registerAddTool(mockServer as never, () => library);
+      registerAddTool(mockServer as never, () => libraryOperations);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("add");
@@ -56,7 +59,7 @@ describe("MCP add tool", () => {
         },
       };
 
-      registerAddTool(mockServer as never, () => library);
+      registerAddTool(mockServer as never, () => libraryOperations);
 
       // Add CSL-JSON directly
       const cslJson = JSON.stringify({
@@ -84,7 +87,7 @@ describe("MCP add tool", () => {
         },
       };
 
-      registerAddTool(mockServer as never, () => library);
+      registerAddTool(mockServer as never, () => libraryOperations);
 
       // Add multiple CSL-JSON entries
       const cslJson1 = JSON.stringify({
@@ -118,7 +121,7 @@ describe("MCP add tool", () => {
         },
       };
 
-      registerAddTool(mockServer as never, () => library);
+      registerAddTool(mockServer as never, () => libraryOperations);
 
       const cslJson = JSON.stringify({
         id: "report2024",
@@ -146,7 +149,7 @@ describe("MCP add tool", () => {
         },
       };
 
-      registerAddTool(mockServer as never, () => library);
+      registerAddTool(mockServer as never, () => libraryOperations);
 
       // Invalid input that can't be parsed
       const result = await capturedCallback?.({ input: "invalid-not-a-reference" });
@@ -166,7 +169,8 @@ describe("MCP add tool", () => {
         issued: { "date-parts": [[2024]] as [[number]] },
       };
       await fs.writeFile(libraryPath, JSON.stringify([existingRef]), "utf-8");
-      library = await Library.load(libraryPath);
+      const library = await Library.load(libraryPath);
+      const localLibraryOps = new OperationsLibrary(library);
 
       let capturedCallback: (
         args: AddToolParams
@@ -178,7 +182,7 @@ describe("MCP add tool", () => {
         },
       };
 
-      registerAddTool(mockServer as never, () => library);
+      registerAddTool(mockServer as never, () => localLibraryOps);
 
       // Try to add duplicate
       const duplicateCsl = JSON.stringify({
