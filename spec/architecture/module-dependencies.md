@@ -301,10 +301,37 @@ export function matchReferences(
 - `index.ts`: MCP server entry point
 - `tools/`: MCP tool handlers
 - `resources/`: MCP resource handlers
+- `context.ts`: MCP context with `ILibraryOperations`
 
 **Dependencies**: `core/`, `features/`, `utils/`, `config/`
 
 **Cannot import from**: `cli/`, `server/`
+
+#### ILibraryOperations Pattern
+
+MCP uses the same `ILibraryOperations` pattern as CLI (see ADR-009, ADR-010):
+
+```typescript
+// mcp/context.ts
+export interface McpContext {
+  libraryOperations: ILibraryOperations;  // Uses same interface as CLI
+  config: Config;
+  fileWatcher: FileWatcher;
+  dispose: () => Promise<void>;
+}
+```
+
+**Usage in tools**:
+```typescript
+// mcp/tools/search.ts
+export function registerSearchTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
+  // Uses libraryOperations.search() instead of direct function call
+  const result = await libraryOperations.search({ query, format });
+}
+```
 
 See: `spec/architecture/mcp-server.md` for protocol details.
 

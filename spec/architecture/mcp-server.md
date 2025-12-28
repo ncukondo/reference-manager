@@ -113,8 +113,30 @@ Uses MCP standard error format:
 | `-32602` | Invalid params |
 | `-32000` | Application error |
 
+## Architecture
+
+### ILibraryOperations Pattern
+
+MCP uses the same `ILibraryOperations` pattern as CLI (see ADR-009, ADR-010):
+
+```
+McpContext
+└── libraryOperations: ILibraryOperations
+      └── OperationsLibrary (wraps Library)
+```
+
+**Benefits**:
+- Consistent pattern with CLI
+- Tools use unified interface: `libraryOperations.search()`, `.list()`, `.cite()`, `.import()`
+- Resources use inherited `ILibrary` methods: `.getAll()`, `.find()`
+- Foundation for future HTTP-based mode
+
+See: `src/mcp/context.ts`, `src/features/operations/library-operations.ts`
+
 ## Related
 
 - ADR-008: MCP stdio Server
+- ADR-009: ILibraryOperations Pattern for CLI
+- ADR-010: MCP ILibraryOperations Pattern
 - `spec/architecture/cli.md`: CLI commands
 - `spec/features/file-monitoring.md`: File watching
