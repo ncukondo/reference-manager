@@ -34,8 +34,8 @@ reference-manager mcp [--library <path>]
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `search` | Search references | `query: string` |
-| `list` | List all references | `format?: "json" \| "bibtex" \| "pretty"` |
+| `search` | Search references | `query: string`, pagination options |
+| `list` | List all references | `format?`, pagination options |
 | `add` | Add references | `input: string \| string[]` |
 | `remove` | Remove reference | `id: string, force: boolean` |
 | `cite` | Generate citations | `ids: string[], style?: string, format?: "text" \| "html"` |
@@ -43,11 +43,23 @@ reference-manager mcp [--library <path>]
 | `fulltext_get` | Get full-text | `id: string` |
 | `fulltext_detach` | Detach file | `id: string` |
 
+### Pagination Parameters
+
+For `list` and `search` tools. See `spec/features/pagination.md` for details.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `sort` | `string` | Sort field: `created`, `updated`, `published`, `author`, `title`, `relevance` (search only) |
+| `order` | `string` | Sort order: `asc`, `desc` |
+| `limit` | `number` | Maximum results (default: 20) |
+| `offset` | `number` | Skip count (default: 0) |
+
 ### Tool Behavior
 
 - `remove` requires `force: true` to execute (safety)
 - `add` accepts PMID, DOI, BibTeX, RIS, or CSL-JSON
 - `cite` defaults to APA style, text format
+- `list` and `search` default to limit=20 for token efficiency
 
 ## Resources
 

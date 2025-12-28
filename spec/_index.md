@@ -44,6 +44,7 @@ spec/
 │   ├── citation.md              # Citation generation
 │   ├── fulltext.md              # Full-text PDF/Markdown management
 │   ├── search.md                # Search query syntax
+│   ├── pagination.md            # Sorting, limit, offset for list/search
 │   ├── duplicate-detection.md   # Duplicate detection rules
 │   ├── file-monitoring.md       # File watching, reload
 │   ├── write-safety.md          # Atomic write, backup, merge
@@ -84,7 +85,7 @@ spec/
 | `add` | `features/add.md` |
 | `cite` | `features/citation.md` |
 | `fulltext` | `features/fulltext.md` |
-| `search` / `list` | `features/search.md` |
+| `search` / `list` | `features/search.md`, `features/pagination.md` |
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |
 

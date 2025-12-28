@@ -51,6 +51,30 @@ Format (JSON):
 
 **Note:** Internal API — no public stability guarantee.
 
+### Pagination Query Parameters
+
+For `GET /api/references`. See `spec/features/pagination.md` for details.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `query` | `string` | Search query (optional, omit for list all) |
+| `sort` | `string` | Sort field: `created`, `updated`, `published`, `author`, `title`, `relevance` |
+| `order` | `string` | Sort order: `asc`, `desc` |
+| `limit` | `number` | Maximum results (0 = unlimited, default: unlimited) |
+| `offset` | `number` | Skip count (default: 0) |
+
+**Response format:**
+
+```json
+{
+  "items": [...],
+  "total": 150,
+  "limit": 10,
+  "offset": 0,
+  "nextOffset": 10
+}
+```
+
 ## File Watching
 
 Server mode enables file watching (via `chokidar`):
