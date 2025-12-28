@@ -14,11 +14,23 @@
 import type { CslItem } from "./csl-json/types.js";
 
 /**
+ * Identifier types for find/remove/update operations.
+ */
+export type IdentifierType = "id" | "uuid" | "doi" | "pmid" | "isbn";
+
+/**
  * Options for find operations.
  */
 export interface FindOptions {
-  /** If true, treat the identifier as UUID; otherwise treat as citation ID (default: false) */
-  byUuid?: boolean;
+  /**
+   * Specifies the type of identifier being searched.
+   * - 'id': Citation ID (default)
+   * - 'uuid': Internal UUID
+   * - 'doi': Digital Object Identifier
+   * - 'pmid': PubMed ID
+   * - 'isbn': International Standard Book Number
+   */
+  idType?: IdentifierType;
 }
 
 /**
@@ -40,8 +52,16 @@ export interface RemoveResult {
 export interface UpdateOptions {
   /** How to handle ID collision: 'fail' (default) or 'suffix' */
   onIdCollision?: "fail" | "suffix";
-  /** If true, treat the identifier as UUID; otherwise treat as citation ID (default: false) */
-  byUuid?: boolean;
+
+  /**
+   * Specifies the type of identifier being searched.
+   * - 'id': Citation ID (default)
+   * - 'uuid': Internal UUID
+   * - 'doi': Digital Object Identifier
+   * - 'pmid': PubMed ID
+   * - 'isbn': International Standard Book Number
+   */
+  idType?: IdentifierType;
 }
 
 /**

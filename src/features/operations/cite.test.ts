@@ -30,8 +30,8 @@ describe("citeReferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLibrary = {
-      find: vi.fn((id: string, options?: { byUuid?: boolean }) => {
-        if (options?.byUuid) {
+      find: vi.fn((id: string, options?: { idType?: string }) => {
+        if (options?.idType === "uuid") {
           return Promise.resolve(mockItems.find((i) => i.custom?.uuid === id));
         }
         return Promise.resolve(mockItems.find((i) => i.id === id));
@@ -45,7 +45,7 @@ describe("citeReferences", () => {
     it("should generate citation for single reference", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["smith-2023"],
-        byUuid: false,
+        idType: "id",
       };
       const result = await citeReferences(mockLibrary, options);
 
@@ -58,7 +58,7 @@ describe("citeReferences", () => {
     it("should generate citation for multiple references", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["smith-2023", "doe-2024"],
-        byUuid: false,
+        idType: "id",
       };
       const result = await citeReferences(mockLibrary, options);
 
@@ -72,7 +72,7 @@ describe("citeReferences", () => {
     it("should return error result when reference not found", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["nonexistent"],
-        byUuid: false,
+        idType: "id",
       };
       const result = await citeReferences(mockLibrary, options);
 
@@ -87,7 +87,7 @@ describe("citeReferences", () => {
     it("should return results for each identifier independently", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["smith-2023", "nonexistent", "doe-2024"],
-        byUuid: false,
+        idType: "id",
       };
       const result = await citeReferences(mockLibrary, options);
 
@@ -105,7 +105,7 @@ describe("citeReferences", () => {
     it("should generate citation using UUID", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["uuid-1"],
-        byUuid: true,
+        idType: "uuid",
       };
       const result = await citeReferences(mockLibrary, options);
 
@@ -117,7 +117,7 @@ describe("citeReferences", () => {
     it("should return error when UUID not found", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["nonexistent-uuid"],
-        byUuid: true,
+        idType: "uuid",
       };
       const result = await citeReferences(mockLibrary, options);
 
@@ -150,14 +150,14 @@ describe("citeReferences", () => {
     });
   });
 
-  describe("byUuid default", () => {
-    it("should use byUuid=false by default", async () => {
+  describe("idType default", () => {
+    it("should use idType='id' by default", async () => {
       const options: CiteOperationOptions = {
         identifiers: ["smith-2023"],
       };
       await citeReferences(mockLibrary, options);
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("smith-2023", { byUuid: false });
+      expect(mockLibrary.find).toHaveBeenCalledWith("smith-2023", { idType: "id" });
     });
   });
 });

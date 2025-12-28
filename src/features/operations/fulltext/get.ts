@@ -4,7 +4,7 @@
 
 import { readFile } from "node:fs/promises";
 import type { CslItem } from "../../../core/csl-json/types.js";
-import type { ILibrary } from "../../../core/library-interface.js";
+import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { FulltextManager, type FulltextType } from "../../fulltext/index.js";
 
 /**
@@ -17,8 +17,8 @@ export interface FulltextGetOptions {
   type?: FulltextType | undefined;
   /** If true, return file content instead of path */
   stdout?: boolean | undefined;
-  /** Use uuid instead of id for lookup */
-  byUuid?: boolean | undefined;
+  /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
+  idType?: IdentifierType | undefined;
   /** Directory for fulltext files */
   fulltextDirectory: string;
 }
@@ -96,10 +96,10 @@ export async function fulltextGet(
   library: ILibrary,
   options: FulltextGetOptions
 ): Promise<FulltextGetResult> {
-  const { identifier, type, stdout, byUuid = false, fulltextDirectory } = options;
+  const { identifier, type, stdout, idType = "id", fulltextDirectory } = options;
 
   // Find reference (returns CslItem directly)
-  const item = await library.find(identifier, { byUuid });
+  const item = await library.find(identifier, { idType });
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };

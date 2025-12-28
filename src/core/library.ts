@@ -16,7 +16,13 @@ import type {
 import { Reference } from "./reference";
 
 // Re-export types from library-interface for backward compatibility
-export type { FindOptions, ILibrary, UpdateOptions, UpdateResult } from "./library-interface.js";
+export type {
+  FindOptions,
+  IdentifierType,
+  ILibrary,
+  UpdateOptions,
+  UpdateResult,
+} from "./library-interface.js";
 
 /**
  * Library manager for CSL-JSON references.
@@ -32,6 +38,7 @@ export class Library implements ILibrary {
   private idIndex: Map<string, Reference> = new Map();
   private doiIndex: Map<string, Reference> = new Map();
   private pmidIndex: Map<string, Reference> = new Map();
+  private isbnIndex: Map<string, Reference> = new Map();
 
   private constructor(filePath: string, items: CslItem[]) {
     this.filePath = filePath;
@@ -137,8 +144,25 @@ export class Library implements ILibrary {
    * @returns Remove result with removed status and the removed item
    */
   async remove(identifier: string, options: RemoveOptions = {}): Promise<RemoveResult> {
-    const { byUuid = false } = options;
-    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+    const { idType = "id" } = options;
+    let ref: Reference | undefined;
+    switch (idType) {
+      case "uuid":
+        ref = this.uuidIndex.get(identifier);
+        break;
+      case "doi":
+        ref = this.doiIndex.get(identifier);
+        break;
+      case "pmid":
+        ref = this.pmidIndex.get(identifier);
+        break;
+      case "isbn":
+        ref = this.isbnIndex.get(identifier);
+        break;
+      default: // "id" or unknown
+        ref = this.idIndex.get(identifier);
+        break;
+    }
     if (!ref) {
       return { removed: false };
     }
@@ -159,8 +183,25 @@ export class Library implements ILibrary {
     updates: Partial<CslItem>,
     options: UpdateOptions = {}
   ): Promise<UpdateResult> {
-    const { byUuid = false, ...updateOptions } = options;
-    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+    const { idType = "id", ...updateOptions } = options;
+    let ref: Reference | undefined;
+    switch (idType) {
+      case "uuid":
+        ref = this.uuidIndex.get(identifier);
+        break;
+      case "doi":
+        ref = this.doiIndex.get(identifier);
+        break;
+      case "pmid":
+        ref = this.pmidIndex.get(identifier);
+        break;
+      case "isbn":
+        ref = this.isbnIndex.get(identifier);
+        break;
+      default: // "id" or unknown
+        ref = this.idIndex.get(identifier);
+        break;
+    }
 
     if (!ref) {
       return { updated: false };
@@ -176,23 +217,28 @@ export class Library implements ILibrary {
    * @returns The CSL item if found, undefined otherwise
    */
   async find(identifier: string, options: FindOptions = {}): Promise<CslItem | undefined> {
-    const { byUuid = false } = options;
-    const ref = byUuid ? this.uuidIndex.get(identifier) : this.idIndex.get(identifier);
+    const { idType = "id" } = options;
+
+    let ref: Reference | undefined;
+    switch (idType) {
+      case "uuid":
+        ref = this.uuidIndex.get(identifier);
+        break;
+      case "doi":
+        ref = this.doiIndex.get(identifier);
+        break;
+      case "pmid":
+        ref = this.pmidIndex.get(identifier);
+        break;
+      case "isbn":
+        ref = this.isbnIndex.get(identifier);
+        break;
+      default: // "id" or unknown
+        ref = this.idIndex.get(identifier);
+        break;
+    }
+
     return ref?.getItem();
-  }
-
-  /**
-   * Find a reference by DOI
-   */
-  findByDoi(doi: string): Reference | undefined {
-    return this.doiIndex.get(doi);
-  }
-
-  /**
-   * Find a reference by PMID
-   */
-  findByPmid(pmid: string): Reference | undefined {
-    return this.pmidIndex.get(pmid);
   }
 
   /**
@@ -237,6 +283,12 @@ export class Library implements ILibrary {
     const pmid = ref.getPmid();
     if (pmid) {
       this.pmidIndex.set(pmid, ref);
+    }
+
+    // ISBN index
+    const isbn = ref.getIsbn();
+    if (isbn) {
+      this.isbnIndex.set(isbn, ref);
     }
   }
 
@@ -364,6 +416,11 @@ export class Library implements ILibrary {
     const pmid = ref.getPmid();
     if (pmid) {
       this.pmidIndex.delete(pmid);
+    }
+
+    const isbn = ref.getIsbn();
+    if (isbn) {
+      this.isbnIndex.delete(isbn);
     }
   }
 

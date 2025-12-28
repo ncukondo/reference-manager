@@ -591,6 +591,109 @@ ER  - `,
       expect(result.added).toHaveLength(1);
       expect(result.skipped).toHaveLength(0);
     });
+
+    it("should skip ISBN duplicates for book type", async () => {
+      // Add existing book
+      await library.add({
+        id: "book2024",
+        type: "book",
+        title: "Existing Book",
+        ISBN: "9784000000000",
+      });
+      await library.save();
+
+      // Try to add book with same ISBN
+      const jsonPath = path.join(testDir, "dup-book.json");
+      await fs.writeFile(
+        jsonPath,
+        JSON.stringify([
+          {
+            id: "newbook2024",
+            type: "book",
+            title: "Different Title Same ISBN",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      const result = await addReferences([jsonPath], library, { force: false });
+
+      expect(result.added).toHaveLength(0);
+      expect(result.skipped).toHaveLength(1);
+      expect(result.skipped[0].existingId).toBe("book2024");
+    });
+
+    it("should allow different chapters with same ISBN", async () => {
+      // Add first chapter
+      await library.add({
+        id: "chapter1",
+        type: "chapter",
+        title: "Chapter 1: Introduction",
+        ISBN: "9784000000000",
+      });
+      await library.save();
+
+      // Add different chapter from same book
+      const jsonPath = path.join(testDir, "chapter2.json");
+      await fs.writeFile(
+        jsonPath,
+        JSON.stringify([
+          {
+            id: "chapter2",
+            type: "chapter",
+            title: "Chapter 2: Advanced Topics",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      const result = await addReferences([jsonPath], library, { force: false });
+
+      expect(result.added).toHaveLength(1);
+      expect(result.skipped).toHaveLength(0);
+    });
+
+    it("should detect ISBN duplicate after library reload", async () => {
+      // Add first book
+      await library.add({
+        id: "book2024",
+        type: "book",
+        title: "Existing Book",
+        ISBN: "9784000000001",
+      });
+      await library.save();
+
+      // Reload library from file (simulating CLI restart)
+      const { Library } = await import("../../core/library.js");
+      const reloadedLibrary = await Library.load(libraryPath);
+
+      // Verify ISBN is preserved after reload
+      const items = await reloadedLibrary.getAll();
+      expect(items[0].ISBN).toBe("9784000000001");
+
+      // Try to add book with same ISBN
+      const jsonPath = path.join(testDir, "dup-book-reload.json");
+      await fs.writeFile(
+        jsonPath,
+        JSON.stringify([
+          {
+            id: "newbook2024",
+            type: "book",
+            title: "Different Title Same ISBN",
+            ISBN: "9784000000001",
+          },
+        ]),
+        "utf-8"
+      );
+
+      const result = await addReferences([jsonPath], reloadedLibrary, { force: false });
+
+      expect(result.added).toHaveLength(0);
+      expect(result.skipped).toHaveLength(1);
+      expect(result.skipped[0].existingId).toBe("book2024");
+    });
   });
 
   describe("ID collision resolution", () => {

@@ -134,7 +134,7 @@ describe("Cite Route", () => {
       expect(data.results[0].error).toContain("not found");
     });
 
-    it("should pass byUuid option", async () => {
+    it("should pass idType option", async () => {
       mockCiteReferences.mockResolvedValue({ results: [] });
 
       const req = new Request("http://localhost/", {
@@ -142,7 +142,7 @@ describe("Cite Route", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           identifiers: ["some-uuid"],
-          byUuid: true,
+          idType: "uuid",
         }),
       });
 
@@ -150,7 +150,7 @@ describe("Cite Route", () => {
 
       expect(mockCiteReferences).toHaveBeenCalledWith(
         library,
-        expect.objectContaining({ byUuid: true })
+        expect.objectContaining({ idType: "uuid" })
       );
     });
 

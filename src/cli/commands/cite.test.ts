@@ -69,7 +69,7 @@ describe("cite command", () => {
 
       expect(mockCite).toHaveBeenCalledWith({
         identifiers: ["abc-123"],
-        byUuid: true,
+        idType: "uuid",
         style: "vancouver",
         locale: "ja-JP",
         format: "html",

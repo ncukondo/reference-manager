@@ -12,7 +12,7 @@ import {
  */
 const CiteRequestSchema = z.object({
   identifiers: z.array(z.string()).min(1, "identifiers must be a non-empty array"),
-  byUuid: z.boolean().optional(),
+  idType: z.enum(["id", "uuid", "doi", "pmid", "isbn"]).optional(),
   inText: z.boolean().optional(),
   style: z.string().optional(),
   cslFile: z.string().optional(),
@@ -28,7 +28,7 @@ type CiteRequestBody = z.infer<typeof CiteRequestSchema>;
 function buildCiteOptions(body: CiteRequestBody): CiteOperationOptions {
   return {
     identifiers: body.identifiers,
-    ...(body.byUuid !== undefined && { byUuid: body.byUuid }),
+    ...(body.idType !== undefined && { idType: body.idType }),
     ...(body.inText !== undefined && { inText: body.inText }),
     ...(body.style !== undefined && { style: body.style }),
     ...(body.cslFile !== undefined && { cslFile: body.cslFile }),

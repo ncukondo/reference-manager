@@ -69,3 +69,40 @@ export function normalizePmid(pmid: string): string {
 
   return normalized.trim();
 }
+
+/**
+ * Normalizes an ISBN by removing the "ISBN:" prefix, hyphens, spaces, and uppercasing X.
+ *
+ * Supported formats:
+ * - "ISBN:978-4-00-000000-0" -> "9784000000000"
+ * - "isbn:4-00-000000-0" -> "4000000000"
+ * - "ISBN: 978 4 00 000000 0" -> "9784000000000"
+ * - "ISBN:400000000x" -> "400000000X" (uppercase X)
+ *
+ * @param isbn - The ISBN string to normalize
+ * @returns The normalized ISBN (digits only, X uppercase at end for ISBN-10) or empty string if invalid
+ */
+export function normalizeIsbn(isbn: string): string {
+  // Trim whitespace
+  const trimmed = isbn.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  // Check for ISBN: prefix (case-insensitive)
+  if (!/^isbn:/i.test(trimmed)) {
+    return "";
+  }
+
+  // Remove "ISBN:" prefix (case-insensitive, optional whitespace after colon)
+  let normalized = trimmed.replace(/^isbn:\s*/i, "");
+
+  // Remove hyphens and spaces
+  normalized = normalized.replace(/[-\s]/g, "");
+
+  // Uppercase X (for ISBN-10 check digit)
+  normalized = normalized.toUpperCase();
+
+  return normalized;
+}

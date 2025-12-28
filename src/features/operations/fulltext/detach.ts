@@ -3,7 +3,7 @@
  */
 
 import type { CslItem } from "../../../core/csl-json/types.js";
-import type { ILibrary } from "../../../core/library-interface.js";
+import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import {
   FulltextIOError,
   FulltextManager,
@@ -22,8 +22,8 @@ export interface FulltextDetachOptions {
   type?: FulltextType | undefined;
   /** Delete the file from disk */
   delete?: boolean | undefined;
-  /** Use uuid instead of id for lookup */
-  byUuid?: boolean | undefined;
+  /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
+  idType?: IdentifierType | undefined;
   /** Directory for fulltext files */
   fulltextDirectory: string;
 }
@@ -100,10 +100,10 @@ export async function fulltextDetach(
   library: ILibrary,
   options: FulltextDetachOptions
 ): Promise<FulltextDetachResult> {
-  const { identifier, type, delete: deleteFile, byUuid = false, fulltextDirectory } = options;
+  const { identifier, type, delete: deleteFile, idType = "id", fulltextDirectory } = options;
 
   // Find reference (returns CslItem directly)
-  const item = await library.find(identifier, { byUuid });
+  const item = await library.find(identifier, { idType });
 
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
@@ -130,7 +130,7 @@ export async function fulltextDetach(
       updates: {
         custom: { fulltext: updatedFulltext },
       } as Partial<CslItem>,
-      byUuid,
+      idType,
     });
 
     const resultData: FulltextDetachResult = { success: true, detached };

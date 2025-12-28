@@ -7,6 +7,7 @@
 
 import { Cite } from "@citation-js/core";
 import "@citation-js/plugin-doi";
+import "@citation-js/plugin-isbn";
 import { type CslItem, CslItemSchema } from "../../core/csl-json/types.js";
 import { getRateLimiter } from "./rate-limiter.js";
 
@@ -224,6 +225,62 @@ export async function fetchDoi(doi: string): Promise<FetchResult> {
       return {
         success: false,
         error: `Invalid CSL-JSON data for DOI ${doi}: ${parseResult.error.message}`,
+      };
+    }
+
+    return { success: true, item: parseResult.data };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      error: errorMsg,
+    };
+  }
+}
+
+/** ISBN-10 pattern: 9 digits + (digit or X) */
+const ISBN10_PATTERN = /^\d{9}[\dX]$/;
+
+/** ISBN-13 pattern: 13 digits */
+const ISBN13_PATTERN = /^\d{13}$/;
+
+/**
+ * Fetch metadata for an ISBN using Google Books API via citation-js
+ *
+ * @param isbn - Normalized ISBN (10 or 13 digits, no hyphens)
+ * @returns FetchResult with CSL-JSON item or error
+ */
+export async function fetchIsbn(isbn: string): Promise<FetchResult> {
+  // Validate ISBN format
+  if (!ISBN10_PATTERN.test(isbn) && !ISBN13_PATTERN.test(isbn)) {
+    return {
+      success: false,
+      error: `Invalid ISBN format: ${isbn}`,
+    };
+  }
+
+  // Apply rate limiting (google books - daily limit so we use a generic limiter)
+  const rateLimiter = getRateLimiter("isbn", {});
+  await rateLimiter.acquire();
+
+  try {
+    // Use citation-js Cite.async for ISBN resolution
+    const cite = await Cite.async(isbn);
+    const rawItems = cite.get({ format: "real", type: "json" });
+
+    if (!rawItems || !Array.isArray(rawItems) || rawItems.length === 0) {
+      return {
+        success: false,
+        error: `No data returned for ISBN ${isbn}`,
+      };
+    }
+
+    // Validate using zod schema
+    const parseResult = CslItemSchema.safeParse(rawItems[0]);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: `Invalid CSL-JSON data for ISBN ${isbn}: ${parseResult.error.message}`,
       };
     }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type InputFormat, detectFormat, isPmid } from "./detector.js";
+import { type InputFormat, detectFormat, isIsbn, isPmid } from "./detector.js";
 
 describe("detectFormat", () => {
   describe("file extension detection", () => {
@@ -104,6 +104,29 @@ describe("detectFormat", () => {
       });
     });
 
+    describe("ISBN detection", () => {
+      it("should detect ISBN with prefix", () => {
+        expect(detectFormat("ISBN:9784000000000")).toBe("isbn");
+      });
+
+      it("should detect ISBN with lowercase prefix", () => {
+        expect(detectFormat("isbn:9784000000000")).toBe("isbn");
+      });
+
+      it("should detect ISBN with hyphens", () => {
+        expect(detectFormat("ISBN:978-4-00-000000-0")).toBe("isbn");
+      });
+
+      it("should detect ISBN-10 with X check digit", () => {
+        expect(detectFormat("ISBN:400000000X")).toBe("isbn");
+      });
+
+      it("should not detect ISBN without prefix as isbn", () => {
+        // Without prefix, 13-digit number is PMID
+        expect(detectFormat("9784000000000")).toBe("pmid");
+      });
+    });
+
     describe("DOI detection", () => {
       it("should detect standard DOI format", () => {
         expect(detectFormat("10.1000/xyz123")).toBe("doi");
@@ -151,6 +174,14 @@ describe("detectFormat", () => {
 
     it("should detect mixed PMID and DOI as identifiers", () => {
       expect(detectFormat("12345678 10.1000/xyz")).toBe("identifiers");
+    });
+
+    it("should detect mixed ISBN with PMID as identifiers", () => {
+      expect(detectFormat("ISBN:9784000000000 12345678")).toBe("identifiers");
+    });
+
+    it("should detect mixed ISBN with DOI as identifiers", () => {
+      expect(detectFormat("ISBN:9784000000000 10.1000/xyz")).toBe("identifiers");
     });
 
     it("should detect tab-separated identifiers", () => {
@@ -269,6 +300,7 @@ describe("detectFormat", () => {
         "ris",
         "pmid",
         "doi",
+        "isbn",
         "identifiers",
         "unknown",
       ];
@@ -280,6 +312,7 @@ describe("detectFormat", () => {
         "paper.ris",
         "12345678",
         "10.1000/xyz",
+        "ISBN:9784000000000",
         "12345678 10.1000/xyz",
         "random",
       ];
@@ -360,6 +393,105 @@ describe("isPmid", () => {
 
     it("should return false for partial prefix", () => {
       expect(isPmid("PMI:12345678")).toBe(false);
+    });
+  });
+});
+
+describe("isIsbn", () => {
+  describe("ISBN with prefix", () => {
+    it("should return true for ISBN: prefix with ISBN-13", () => {
+      expect(isIsbn("ISBN:9784000000000")).toBe(true);
+    });
+
+    it("should return true for isbn: prefix (lowercase)", () => {
+      expect(isIsbn("isbn:9784000000000")).toBe(true);
+    });
+
+    it("should return true for ISBN: with hyphens", () => {
+      expect(isIsbn("ISBN:978-4-00-000000-0")).toBe(true);
+    });
+
+    it("should return true for isbn: with hyphens", () => {
+      expect(isIsbn("isbn:4-00-000000-0")).toBe(true);
+    });
+
+    it("should return true for ISBN: with space after colon", () => {
+      expect(isIsbn("ISBN: 9784000000000")).toBe(true);
+    });
+
+    it("should return true for ISBN: with leading/trailing whitespace", () => {
+      expect(isIsbn("  ISBN:9784000000000  ")).toBe(true);
+    });
+
+    it("should return true for ISBN-10 with X check digit", () => {
+      expect(isIsbn("ISBN:400000000X")).toBe(true);
+    });
+
+    it("should return true for ISBN-10 with lowercase x check digit", () => {
+      expect(isIsbn("isbn:400000000x")).toBe(true);
+    });
+  });
+
+  describe("ISBN-13 format", () => {
+    it("should return true for 13 digit ISBN starting with 978", () => {
+      expect(isIsbn("ISBN:9780000000000")).toBe(true);
+    });
+
+    it("should return true for 13 digit ISBN starting with 979", () => {
+      expect(isIsbn("ISBN:9790000000000")).toBe(true);
+    });
+  });
+
+  describe("ISBN-10 format", () => {
+    it("should return true for 10 digit ISBN", () => {
+      expect(isIsbn("ISBN:4000000000")).toBe(true);
+    });
+
+    it("should return true for ISBN-10 with X at end", () => {
+      expect(isIsbn("ISBN:123456789X")).toBe(true);
+    });
+  });
+
+  describe("invalid inputs", () => {
+    it("should return false for empty string", () => {
+      expect(isIsbn("")).toBe(false);
+    });
+
+    it("should return false for ISBN without prefix", () => {
+      // Pure numeric without prefix is treated as PMID
+      expect(isIsbn("9784000000000")).toBe(false);
+    });
+
+    it("should return false for ISBN: without number", () => {
+      expect(isIsbn("ISBN:")).toBe(false);
+    });
+
+    it("should return false for ISBN: with non-numeric value", () => {
+      expect(isIsbn("ISBN:abcdefghij")).toBe(false);
+    });
+
+    it("should return false for partial prefix", () => {
+      expect(isIsbn("ISB:9784000000000")).toBe(false);
+    });
+
+    it("should return false for PMID", () => {
+      expect(isIsbn("12345678")).toBe(false);
+    });
+
+    it("should return false for DOI", () => {
+      expect(isIsbn("10.1000/xyz")).toBe(false);
+    });
+
+    it("should return false for too short ISBN", () => {
+      expect(isIsbn("ISBN:123456")).toBe(false);
+    });
+
+    it("should return false for too long ISBN", () => {
+      expect(isIsbn("ISBN:12345678901234")).toBe(false);
+    });
+
+    it("should return false for X not at end of ISBN-10", () => {
+      expect(isIsbn("ISBN:12345X7890")).toBe(false);
     });
   });
 });

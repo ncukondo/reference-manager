@@ -47,6 +47,7 @@
     "@citation-js/plugin-bibtex": "^0.7.21",
     "@citation-js/plugin-csl": "^0.7.16",
     "@citation-js/plugin-doi": "^0.7.21",
+    "@citation-js/plugin-isbn": "^0.4.0",
     "@citation-js/plugin-ris": "^0.7.21",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.25.1",

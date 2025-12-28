@@ -35,6 +35,9 @@ const pmidCache = new Map<string, CacheEntry>();
 /** DOI cache: Map<doi, CacheEntry> */
 const doiCache = new Map<string, CacheEntry>();
 
+/** ISBN cache: Map<isbn, CacheEntry> */
+const isbnCache = new Map<string, CacheEntry>();
+
 /**
  * Check if a cache entry is still valid
  */
@@ -104,9 +107,24 @@ export function cacheDoiResult(doi: string, item: CslItem, config?: CacheConfig)
 }
 
 /**
+ * Get cached ISBN result
+ */
+export function getIsbnFromCache(isbn: string): CslItem | undefined {
+  return getFromCache(isbnCache, isbn);
+}
+
+/**
+ * Cache ISBN result
+ */
+export function cacheIsbnResult(isbn: string, item: CslItem, config?: CacheConfig): void {
+  storeInCache(isbnCache, isbn, item, config);
+}
+
+/**
  * Reset all caches (for test isolation)
  */
 export function resetCache(): void {
   pmidCache.clear();
   doiCache.clear();
+  isbnCache.clear();
 }

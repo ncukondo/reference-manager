@@ -4,6 +4,7 @@
  * Uses ILibrary interface for unified operations across local and server modes.
  */
 
+import type { IdentifierType } from "../../core/library-interface.js";
 import type { FulltextType } from "../../features/fulltext/index.js";
 import {
   type FulltextAttachResult,
@@ -27,7 +28,7 @@ export interface FulltextAttachOptions {
   type?: FulltextType;
   move?: boolean;
   force?: boolean;
-  byUuid?: boolean;
+  idType?: IdentifierType;
   fulltextDirectory: string;
   stdinContent?: Buffer;
 }
@@ -39,7 +40,7 @@ export interface FulltextGetOptions {
   identifier: string;
   type?: FulltextType;
   stdout?: boolean;
-  byUuid?: boolean;
+  idType?: IdentifierType;
   fulltextDirectory: string;
 }
 
@@ -51,7 +52,7 @@ export interface FulltextDetachOptions {
   type?: FulltextType;
   delete?: boolean;
   force?: boolean;
-  byUuid?: boolean;
+  idType?: IdentifierType;
   fulltextDirectory: string;
 }
 
@@ -71,7 +72,7 @@ export async function executeFulltextAttach(
     type: options.type,
     move: options.move,
     force: options.force,
-    byUuid: options.byUuid,
+    idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
     stdinContent: options.stdinContent,
   };
@@ -90,7 +91,7 @@ export async function executeFulltextGet(
     identifier: options.identifier,
     type: options.type,
     stdout: options.stdout,
-    byUuid: options.byUuid,
+    idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
   };
 
@@ -108,7 +109,7 @@ export async function executeFulltextDetach(
     identifier: options.identifier,
     type: options.type,
     delete: options.delete,
-    byUuid: options.byUuid,
+    idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
   };
 
