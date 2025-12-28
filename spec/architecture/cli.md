@@ -14,7 +14,7 @@
 
 | Command | Purpose |
 |---------|---------|
-| `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI) |
+| `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI, ISBN) |
 | `list` | List all references |
 | `search <query>` | Search references |
 | `remove <id>` | Remove a reference |
