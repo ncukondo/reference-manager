@@ -3,12 +3,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type CiteToolParams, registerCiteTool } from "./cite.js";
 
 describe("MCP cite tool", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-cite-test-"));
@@ -34,7 +36,8 @@ describe("MCP cite tool", () => {
       },
     ];
     await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -54,7 +57,7 @@ describe("MCP cite tool", () => {
         },
       };
 
-      registerCiteTool(mockServer as never, () => library);
+      registerCiteTool(mockServer as never, () => libraryOperations);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("cite");
@@ -74,7 +77,7 @@ describe("MCP cite tool", () => {
         },
       };
 
-      registerCiteTool(mockServer as never, () => library);
+      registerCiteTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ ids: ["smith2024"] });
 
@@ -94,7 +97,7 @@ describe("MCP cite tool", () => {
         },
       };
 
-      registerCiteTool(mockServer as never, () => library);
+      registerCiteTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({
         ids: ["smith2024", "jones2023"],
@@ -116,7 +119,7 @@ describe("MCP cite tool", () => {
         },
       };
 
-      registerCiteTool(mockServer as never, () => library);
+      registerCiteTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({
         ids: ["smith2024"],
@@ -139,7 +142,7 @@ describe("MCP cite tool", () => {
         },
       };
 
-      registerCiteTool(mockServer as never, () => library);
+      registerCiteTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({
         ids: ["smith2024"],
@@ -162,7 +165,7 @@ describe("MCP cite tool", () => {
         },
       };
 
-      registerCiteTool(mockServer as never, () => library);
+      registerCiteTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ ids: ["nonexistent"] });
 

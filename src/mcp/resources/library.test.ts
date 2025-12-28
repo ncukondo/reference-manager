@@ -4,6 +4,8 @@ import * as path from "node:path";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import {
   registerReferenceResource,
   registerReferencesResource,
@@ -13,7 +15,7 @@ import {
 describe("MCP library resources", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-resources-test-"));
@@ -37,7 +39,8 @@ describe("MCP library resources", () => {
       },
     ];
     await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -63,7 +66,7 @@ describe("MCP library resources", () => {
         },
       };
 
-      registerReferencesResource(mockServer as never, () => library);
+      registerReferencesResource(mockServer as never, () => libraryOperations);
 
       expect(registeredResources).toHaveLength(1);
       expect(registeredResources[0].name).toBe("references");
@@ -87,7 +90,7 @@ describe("MCP library resources", () => {
         },
       };
 
-      registerReferencesResource(mockServer as never, () => library);
+      registerReferencesResource(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.(new URL("library://references"));
 
@@ -150,7 +153,7 @@ describe("MCP library resources", () => {
         },
       };
 
-      registerReferenceResource(mockServer as never, () => library);
+      registerReferenceResource(mockServer as never, () => libraryOperations);
 
       expect(registeredResources).toHaveLength(1);
       expect(registeredResources[0].name).toBe("reference");
@@ -175,7 +178,7 @@ describe("MCP library resources", () => {
         },
       };
 
-      registerReferenceResource(mockServer as never, () => library);
+      registerReferenceResource(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.(new URL("library://reference/smith2024"), {
         id: "smith2024",
@@ -207,7 +210,7 @@ describe("MCP library resources", () => {
         },
       };
 
-      registerReferenceResource(mockServer as never, () => library);
+      registerReferenceResource(mockServer as never, () => libraryOperations);
 
       await expect(
         capturedCallback?.(new URL("library://reference/nonexistent"), {
@@ -232,7 +235,7 @@ describe("MCP library resources", () => {
         },
       };
 
-      registerReferenceResource(mockServer as never, () => library);
+      registerReferenceResource(mockServer as never, () => libraryOperations);
 
       const result = await capturedListCallback?.();
 

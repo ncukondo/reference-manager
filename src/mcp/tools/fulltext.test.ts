@@ -4,6 +4,8 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import {
   type FulltextAttachToolParams,
   type FulltextDetachToolParams,
@@ -17,7 +19,7 @@ describe("MCP fulltext tools", () => {
   let tempDir: string;
   let libraryPath: string;
   let fulltextDir: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
   let config: Config;
 
   beforeEach(async () => {
@@ -58,7 +60,8 @@ describe("MCP fulltext tools", () => {
       },
     ];
     await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
 
     // Create existing fulltext file
     await fs.writeFile(
@@ -95,7 +98,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextAttachTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -121,7 +124,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextAttachTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -149,7 +152,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextAttachTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -175,7 +178,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextGetTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -197,7 +200,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextGetTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -222,7 +225,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextGetTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -248,7 +251,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextDetachTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -270,7 +273,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextDetachTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 
@@ -294,7 +297,7 @@ describe("MCP fulltext tools", () => {
 
       registerFulltextDetachTool(
         mockServer as never,
-        () => library,
+        () => libraryOperations,
         () => config
       );
 

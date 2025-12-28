@@ -1,16 +1,19 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { BUILTIN_STYLES } from "../../config/csl-styles.js";
-import type { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 
 /**
  * Register the references resource with the MCP server.
  * Returns all references as CSL-JSON.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerReferencesResource(server: McpServer, getLibrary: () => Library): void {
+export function registerReferencesResource(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
   server.registerResource(
     "references",
     "library://references",
@@ -19,9 +22,8 @@ export function registerReferencesResource(server: McpServer, getLibrary: () => 
       mimeType: "application/json",
     },
     async (uri) => {
-      const library = getLibrary();
-      // getAll() now returns Promise<CslItem[]>
-      const items = await library.getAll();
+      const libraryOps = getLibraryOperations();
+      const items = await libraryOps.getAll();
 
       return {
         contents: [
@@ -41,14 +43,16 @@ export function registerReferencesResource(server: McpServer, getLibrary: () => 
  * Returns a single reference by ID.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerReferenceResource(server: McpServer, getLibrary: () => Library): void {
+export function registerReferenceResource(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
   const template = new ResourceTemplate("library://reference/{id}", {
     list: async () => {
-      const library = getLibrary();
-      // getAll() now returns Promise<CslItem[]>
-      const items = await library.getAll();
+      const libraryOps = getLibraryOperations();
+      const items = await libraryOps.getAll();
 
       return {
         resources: items.map((item) => ({
@@ -67,10 +71,9 @@ export function registerReferenceResource(server: McpServer, getLibrary: () => L
       mimeType: "application/json",
     },
     async (uri, variables) => {
-      const library = getLibrary();
+      const libraryOps = getLibraryOperations();
       const id = variables.id as string;
-      // find() returns Promise<CslItem | undefined>
-      const item = await library.find(id);
+      const item = await libraryOps.find(id);
 
       if (!item) {
         throw new Error(`Reference not found: ${id}`);

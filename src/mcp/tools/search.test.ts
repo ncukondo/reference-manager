@@ -3,12 +3,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type SearchToolParams, registerSearchTool } from "./search.js";
 
 describe("MCP search tool", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-search-test-"));
@@ -39,7 +41,8 @@ describe("MCP search tool", () => {
       },
     ];
     await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -59,7 +62,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => library);
+      registerSearchTool(mockServer as never, () => libraryOperations);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("search");
@@ -79,7 +82,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => library);
+      registerSearchTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ query: "machine learning" });
 
@@ -100,7 +103,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => library);
+      registerSearchTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ query: "" });
 
@@ -118,7 +121,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => library);
+      registerSearchTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ query: "nonexistent" });
 
@@ -136,7 +139,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => library);
+      registerSearchTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ query: "author:jones" });
 
@@ -155,7 +158,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => library);
+      registerSearchTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ query: "year:2022" });
 

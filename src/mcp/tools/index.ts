@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Config } from "../../config/schema.js";
-import type { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 import { registerAddTool } from "./add.js";
 import { registerCiteTool } from "./cite.js";
 import {
@@ -16,20 +16,20 @@ import { registerSearchTool } from "./search.js";
  * Register all tools with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  * @param getConfig - Function to get the current config (required for fulltext tools)
  */
 export function registerAllTools(
   server: McpServer,
-  getLibrary: () => Library,
+  getLibraryOperations: () => ILibraryOperations,
   getConfig: () => Config
 ): void {
-  registerSearchTool(server, getLibrary);
-  registerListTool(server, getLibrary);
-  registerCiteTool(server, getLibrary);
-  registerAddTool(server, getLibrary);
-  registerRemoveTool(server, getLibrary);
-  registerFulltextAttachTool(server, getLibrary, getConfig);
-  registerFulltextGetTool(server, getLibrary, getConfig);
-  registerFulltextDetachTool(server, getLibrary, getConfig);
+  registerSearchTool(server, getLibraryOperations);
+  registerListTool(server, getLibraryOperations);
+  registerCiteTool(server, getLibraryOperations);
+  registerAddTool(server, getLibraryOperations);
+  registerRemoveTool(server, getLibraryOperations);
+  registerFulltextAttachTool(server, getLibraryOperations, getConfig);
+  registerFulltextGetTool(server, getLibraryOperations, getConfig);
+  registerFulltextDetachTool(server, getLibraryOperations, getConfig);
 }

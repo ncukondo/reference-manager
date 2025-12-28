@@ -3,12 +3,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type ListToolParams, registerListTool } from "./list.js";
 
 describe("MCP list tool", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-list-test-"));
@@ -32,7 +34,8 @@ describe("MCP list tool", () => {
       },
     ];
     await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -52,7 +55,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => library);
+      registerListTool(mockServer as never, () => libraryOperations);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("list");
@@ -72,7 +75,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => library);
+      registerListTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({});
 
@@ -92,7 +95,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => library);
+      registerListTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ format: "json" });
 
@@ -113,7 +116,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => library);
+      registerListTool(mockServer as never, () => libraryOperations);
 
       const result = await capturedCallback?.({ format: "bibtex" });
 
@@ -125,6 +128,7 @@ describe("MCP list tool", () => {
       const emptyLibraryPath = path.join(tempDir, "empty.json");
       await fs.writeFile(emptyLibraryPath, "[]", "utf-8");
       const emptyLibrary = await Library.load(emptyLibraryPath);
+      const emptyLibraryOps = new OperationsLibrary(emptyLibrary);
 
       let capturedCallback: (
         args: ListToolParams
@@ -136,7 +140,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => emptyLibrary);
+      registerListTool(mockServer as never, () => emptyLibraryOps);
 
       const result = await capturedCallback?.({});
 

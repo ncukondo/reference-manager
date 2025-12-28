@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Library } from "../../core/library.js";
-import { type AddReferencesResult, addReferences } from "../../features/operations/add.js";
+import type { ImportResult } from "../../features/operations/library-operations.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 
 /**
  * Parameters for the add tool
@@ -14,7 +14,7 @@ export interface AddToolParams {
 /**
  * Format add operation result as text output.
  */
-function formatAddResult(result: AddReferencesResult): string {
+function formatAddResult(result: ImportResult): string {
   const lines: string[] = [];
 
   if (result.added.length > 0) {
@@ -50,9 +50,12 @@ function formatAddResult(result: AddReferencesResult): string {
  * Register the add tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerAddTool(server: McpServer, getLibrary: () => Library): void {
+export function registerAddTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
   server.registerTool(
     "add",
     {
@@ -65,7 +68,7 @@ export function registerAddTool(server: McpServer, getLibrary: () => Library): v
       },
     },
     async (args: AddToolParams) => {
-      const library = getLibrary();
+      const libraryOps = getLibraryOperations();
 
       // Normalize input to array
       const inputs = Array.isArray(args.input) ? args.input : [args.input];
@@ -74,7 +77,7 @@ export function registerAddTool(server: McpServer, getLibrary: () => Library): v
       // This allows CSL-JSON, BibTeX, RIS to be properly parsed
       const stdinContent = inputs.join("\n");
 
-      const result = await addReferences([], library, { stdinContent });
+      const result = await libraryOps.import([], { stdinContent });
 
       return {
         content: [

@@ -4,18 +4,21 @@ import * as path from "node:path";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Library } from "../../core/library.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { registerAllResources } from "./index.js";
 
 describe("MCP resources registration", () => {
   let tempDir: string;
   let libraryPath: string;
-  let library: Library;
+  let libraryOperations: ILibraryOperations;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-resources-test-"));
     libraryPath = path.join(tempDir, "references.json");
     await fs.writeFile(libraryPath, "[]", "utf-8");
-    library = await Library.load(libraryPath);
+    const library = await Library.load(libraryPath);
+    libraryOperations = new OperationsLibrary(library);
   });
 
   afterEach(async () => {
@@ -37,7 +40,7 @@ describe("MCP resources registration", () => {
         },
       };
 
-      registerAllResources(mockServer as never, () => library);
+      registerAllResources(mockServer as never, () => libraryOperations);
 
       expect(registeredResources).toHaveLength(3);
 

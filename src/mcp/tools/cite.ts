@@ -1,7 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Library } from "../../core/library.js";
-import { citeReferences } from "../../features/operations/cite.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 
 export interface CiteToolParams {
   ids: string[];
@@ -13,9 +12,12 @@ export interface CiteToolParams {
  * Register the cite tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerCiteTool(server: McpServer, getLibrary: () => Library): void {
+export function registerCiteTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
   server.registerTool(
     "cite",
     {
@@ -34,8 +36,8 @@ export function registerCiteTool(server: McpServer, getLibrary: () => Library): 
       },
     },
     async (args: CiteToolParams) => {
-      const library = getLibrary();
-      const result = await citeReferences(library, {
+      const libraryOps = getLibraryOperations();
+      const result = await libraryOps.cite({
         identifiers: args.ids,
         style: args.style ?? "apa",
         format: args.format ?? "text",

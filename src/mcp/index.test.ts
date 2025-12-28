@@ -82,7 +82,7 @@ describe("McpServer", () => {
       }
     });
 
-    it("should provide context with library and config", async () => {
+    it("should provide context with libraryOperations and config", async () => {
       const mockStdin = new Readable({ read() {} });
       const mockStdout = new Writable({
         write(_chunk, _encoding, callback) {
@@ -97,7 +97,7 @@ describe("McpServer", () => {
       });
 
       try {
-        expect(context.library).toBeDefined();
+        expect(context.libraryOperations).toBeDefined();
         expect(context.config).toBeDefined();
         expect(context.fileWatcher).toBeDefined();
       } finally {
@@ -131,7 +131,7 @@ describe("McpServer", () => {
       });
 
       try {
-        const items = await context.library.getAll();
+        const items = await context.libraryOperations.getAll();
         expect(items).toHaveLength(1);
         expect(items[0].id).toBe("override2024");
       } finally {

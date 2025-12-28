@@ -1,7 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Library } from "../../core/library.js";
-import { searchReferences } from "../../features/operations/search.js";
+import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 
 export interface SearchToolParams {
   query: string;
@@ -11,9 +10,12 @@ export interface SearchToolParams {
  * Register the search tool with the MCP server.
  *
  * @param server - The MCP server instance
- * @param getLibrary - Function to get the current library instance
+ * @param getLibraryOperations - Function to get the current library operations instance
  */
-export function registerSearchTool(server: McpServer, getLibrary: () => Library): void {
+export function registerSearchTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations
+): void {
   server.registerTool(
     "search",
     {
@@ -24,8 +26,8 @@ export function registerSearchTool(server: McpServer, getLibrary: () => Library)
       },
     },
     async (args: SearchToolParams) => {
-      const library = getLibrary();
-      const result = await searchReferences(library, {
+      const libraryOps = getLibraryOperations();
+      const result = await libraryOps.search({
         query: args.query,
         format: "pretty",
       });
