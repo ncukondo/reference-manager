@@ -4,16 +4,40 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g., v0.4.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (skip actual publish)'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
     permissions:
       contents: read
       id-token: write  # Required for provenance
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Verify tag is on main branch
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 ${{ inputs.tag || github.ref_name }})
+          if ! git branch -r --contains "$TAG_COMMIT" | grep -q 'origin/main'; then
+            echo "::error::Tag ${{ inputs.tag || github.ref_name }} is not on main branch"
+            exit 1
+          fi
+          echo "✓ Tag is on main branch"
 
       - name: Use Node.js 22
         uses: actions/setup-node@v4
@@ -43,4 +67,10 @@ jobs:
         run: npm run build
 
       - name: Publish to NPM with provenance
-        run: npm publish --provenance --access public
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "::notice::Dry run mode - skipping actual publish"
+            npm publish --provenance --access public --dry-run
+          else
+            npm publish --provenance --access public
+          fi

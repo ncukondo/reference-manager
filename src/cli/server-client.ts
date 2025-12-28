@@ -19,12 +19,14 @@ import type {
 import type { RemoveResult } from "../features/operations/remove.js";
 import type { UpdateOperationResult } from "../features/operations/update.js";
 
+import type { IdentifierType } from "../core/library-interface.js";
+
 /**
  * Options for cite method.
  */
 export interface CiteOptions {
   identifiers: string[];
-  byUuid?: boolean;
+  idType?: IdentifierType;
   inText?: boolean;
   style?: string;
   cslFile?: string;
@@ -60,14 +62,15 @@ export class ServerClient implements ILibraryOperations {
   /**
    * Find reference by citation ID or UUID.
    * @param identifier - Citation ID or UUID
-   * @param options - Find options (byUuid to use UUID lookup)
+   * @param options - Find options (idType to specify identifier type)
    * @returns CSL item or undefined if not found
    */
   async find(identifier: string, options: FindOptions = {}): Promise<CslItem | undefined> {
-    const { byUuid = false } = options;
-    const url = byUuid
-      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
-      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
+    const { idType = "id" } = options;
+    const url =
+      idType === "uuid"
+        ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+        : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
     const response = await fetch(url);
 
     if (response.status === 404) {
@@ -110,7 +113,7 @@ export class ServerClient implements ILibraryOperations {
    * Update reference by citation ID or UUID.
    * @param identifier - Citation ID or UUID
    * @param updates - Partial CSL item with fields to update
-   * @param options - Update options (byUuid to use UUID lookup, onIdCollision for collision handling)
+   * @param options - Update options (idType to specify identifier type, onIdCollision for collision handling)
    * @returns Update result with updated item, success status, and any ID changes
    */
   async update(
@@ -118,10 +121,11 @@ export class ServerClient implements ILibraryOperations {
     updates: Partial<CslItem>,
     options?: UpdateOptions
   ): Promise<UpdateResult> {
-    const { byUuid = false, onIdCollision } = options ?? {};
-    const url = byUuid
-      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
-      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
+    const { idType = "id", onIdCollision } = options ?? {};
+    const url =
+      idType === "uuid"
+        ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+        : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
 
     const response = await fetch(url, {
       method: "PUT",
@@ -146,14 +150,15 @@ export class ServerClient implements ILibraryOperations {
   /**
    * Remove a reference by citation ID or UUID.
    * @param identifier - The citation ID or UUID of the reference to remove
-   * @param options - Remove options (byUuid to use UUID lookup)
+   * @param options - Remove options (idType to specify identifier type)
    * @returns Remove result with removed status and removedItem
    */
   async remove(identifier: string, options: RemoveOptions = {}): Promise<ILibraryRemoveResult> {
-    const { byUuid = false } = options;
-    const url = byUuid
-      ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
-      : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
+    const { idType = "id" } = options;
+    const url =
+      idType === "uuid"
+        ? `${this.baseUrl}/api/references/uuid/${encodeURIComponent(identifier)}`
+        : `${this.baseUrl}/api/references/id/${encodeURIComponent(identifier)}`;
     const response = await fetch(url, {
       method: "DELETE",
     });

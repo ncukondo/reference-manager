@@ -332,7 +332,7 @@ describe("fulltext command", () => {
 
         const result = await executeFulltextAttach(options, serverContext);
 
-        expect(mockServerClient.find).toHaveBeenCalledWith("Smith-2024", { byUuid: false });
+        expect(mockServerClient.find).toHaveBeenCalledWith("Smith-2024", { idType: "id" });
         expect(result.success).toBe(true);
       });
     });

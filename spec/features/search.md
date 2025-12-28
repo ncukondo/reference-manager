@@ -20,6 +20,7 @@
   - `doi:` - Search in DOI field
   - `pmid:` - Search in PMID field
   - `pmcid:` - Search in PMCID field
+  - `isbn:` - Search in ISBN field
   - `url:` - Search in URL field (both primary `URL` and `custom.additional_urls`)
   - `keyword:` - Search in keyword field
   - `tag:` - Search in custom tags field (`custom.tags`)
@@ -50,6 +51,7 @@ See: `src/features/search/uppercase.ts` for implementation, `uppercase.test.ts` 
 - `PMID` - PubMed ID
 - `PMCID` - PubMed Central ID
 - `DOI` - Digital Object Identifier
+- `ISBN` - International Standard Book Number
 - `URL` - Primary URL
 - `custom.additional_urls` - Additional URLs (array)
 

@@ -98,6 +98,79 @@ function checkPmidMatch(item: CslItem, existing: CslItem): DuplicateMatch | null
 }
 
 /**
+ * Normalize ISBN by removing hyphens, spaces, and uppercasing X
+ */
+function normalizeIsbn(isbn: string): string {
+  return isbn.replace(/[-\s]/g, "").toUpperCase();
+}
+
+/**
+ * Types that should match by ISBN only (not title)
+ */
+const BOOK_TYPES = ["book"];
+
+/**
+ * Types that should match by ISBN + title (chapters in the same book can differ)
+ */
+const BOOK_SECTION_TYPES = ["chapter"];
+
+/**
+ * Check if two items match by ISBN
+ * - For book type: ISBN only
+ * - For chapter type: ISBN + title
+ */
+function checkIsbnMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
+  if (!item.ISBN || !existing.ISBN) {
+    return null;
+  }
+
+  const normalizedItemIsbn = normalizeIsbn(item.ISBN);
+  const normalizedExistingIsbn = normalizeIsbn(existing.ISBN);
+
+  if (normalizedItemIsbn !== normalizedExistingIsbn) {
+    return null;
+  }
+
+  // For book type: ISBN only is enough
+  if (BOOK_TYPES.includes(item.type) || BOOK_TYPES.includes(existing.type)) {
+    return {
+      type: "isbn",
+      existing,
+      details: {
+        isbn: normalizedExistingIsbn,
+      },
+    };
+  }
+
+  // For chapter type: ISBN + title must match
+  if (BOOK_SECTION_TYPES.includes(item.type) || BOOK_SECTION_TYPES.includes(existing.type)) {
+    const itemTitle = item.title ? normalize(item.title) : null;
+    const existingTitle = existing.title ? normalize(existing.title) : null;
+
+    if (itemTitle && existingTitle && itemTitle === existingTitle) {
+      return {
+        type: "isbn",
+        existing,
+        details: {
+          isbn: normalizedExistingIsbn,
+          normalizedTitle: existingTitle,
+        },
+      };
+    }
+    return null;
+  }
+
+  // For other types with ISBN: treat as book
+  return {
+    type: "isbn",
+    existing,
+    details: {
+      isbn: normalizedExistingIsbn,
+    },
+  };
+}
+
+/**
  * Check if two items match by Title + Author + Year
  */
 function checkTitleAuthorYearMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
@@ -152,7 +225,13 @@ function checkSingleDuplicate(item: CslItem, existing: CslItem): DuplicateMatch 
     return pmidMatch;
   }
 
-  // Priority 3: Title + Author + Year matching (lowest priority)
+  // Priority 3: ISBN matching
+  const isbnMatch = checkIsbnMatch(item, existing);
+  if (isbnMatch) {
+    return isbnMatch;
+  }
+
+  // Priority 4: Title + Author + Year matching (lowest priority)
   return checkTitleAuthorYearMatch(item, existing);
 }
 

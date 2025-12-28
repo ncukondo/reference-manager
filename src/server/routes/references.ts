@@ -20,7 +20,7 @@ export function createReferencesRoute(library: Library) {
   // GET /uuid/:uuid - Get reference by UUID
   route.get("/uuid/:uuid", async (c) => {
     const uuid = c.req.param("uuid");
-    const item = await library.find(uuid, { byUuid: true });
+    const item = await library.find(uuid, { idType: "uuid" });
 
     if (!item) {
       return c.json({ error: "Reference not found" }, 404);
@@ -89,7 +89,7 @@ export function createReferencesRoute(library: Library) {
     // Use updateReference operation
     const result = await updateReference(library, {
       identifier: uuid,
-      byUuid: true,
+      idType: "uuid",
       updates,
       onIdCollision: onIdCollision ?? "suffix",
     });
@@ -128,10 +128,9 @@ export function createReferencesRoute(library: Library) {
       return c.json({ error: "Request body must contain 'updates' object" }, 400);
     }
 
-    // Use updateReference operation with byUuid: false
+    // Use updateReference operation with idType: 'id'
     const result = await updateReference(library, {
       identifier: id,
-      byUuid: false,
       updates,
       onIdCollision: onIdCollision ?? "suffix",
     });
@@ -152,7 +151,7 @@ export function createReferencesRoute(library: Library) {
     // Use removeReference operation
     const result = await removeReference(library, {
       identifier: uuid,
-      byUuid: true,
+      idType: "uuid",
     });
 
     // Return operation result with appropriate status code
@@ -167,10 +166,9 @@ export function createReferencesRoute(library: Library) {
   route.delete("/id/:id", async (c) => {
     const id = c.req.param("id");
 
-    // Use removeReference operation with byUuid: false
+    // Use removeReference operation
     const result = await removeReference(library, {
       identifier: id,
-      byUuid: false,
     });
 
     // Return operation result with appropriate status code

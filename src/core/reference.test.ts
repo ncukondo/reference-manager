@@ -222,6 +222,21 @@ describe("Reference", () => {
       expect(ref.getPmcid()).toBeUndefined();
     });
 
+    it("should return ISBN", () => {
+      const itemWithIsbn: CslItem = {
+        ...sampleItem,
+        ISBN: "978-4-00-000000-0",
+      };
+      const ref = new Reference(itemWithIsbn);
+      expect(ref.getIsbn()).toBe("978-4-00-000000-0");
+    });
+
+    it("should return undefined for missing ISBN", () => {
+      const itemWithoutIsbn: CslItem = { id: "test", type: "article" };
+      const ref = new Reference(itemWithoutIsbn);
+      expect(ref.getIsbn()).toBeUndefined();
+    });
+
     it("should return URL", () => {
       const itemWithUrl: CslItem = {
         ...sampleItem,

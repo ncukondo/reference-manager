@@ -56,11 +56,11 @@ Researchers who use AI and scripts to automate:
 
 | Feature | Description |
 |---------|-------------|
-| Multi-format import | DOI, PMID, BibTeX, RIS, CSL-JSON |
+| Multi-format import | DOI, PMID, ISBN, BibTeX, RIS, CSL-JSON |
 | Smart search | Field-specific queries, phrase search |
 | Citation generation | Multiple styles (APA, Chicago, etc.) |
 | Full-text management | PDF and Markdown attachments |
-| Duplicate detection | DOI/PMID/title+author+year matching |
+| Duplicate detection | DOI/PMID/ISBN/title+author+year matching |
 | File monitoring | Auto-reload on external changes |
 
 ## Non-Goals

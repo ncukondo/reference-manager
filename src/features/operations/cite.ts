@@ -1,6 +1,6 @@
 import { isBuiltinStyle } from "../../config/csl-styles.js";
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { ILibrary } from "../../core/library-interface.js";
+import type { ILibrary, IdentifierType } from "../../core/library-interface.js";
 import {
   formatBibliography,
   formatBibliographyCSL,
@@ -14,8 +14,8 @@ import {
 export interface CiteOperationOptions {
   /** Reference IDs or UUIDs to cite */
   identifiers: string[];
-  /** If true, identifiers are treated as UUIDs; otherwise as IDs (default: false) */
-  byUuid?: boolean;
+  /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
+  idType?: IdentifierType;
   /** CSL style name or path to CSL file */
   style?: string;
   /** Path to custom CSL file */
@@ -87,14 +87,14 @@ function formatCitation(item: CslItem, inText: boolean, options: FormatOptions):
 async function generateCitationForIdentifier(
   library: ILibrary,
   identifier: string,
-  byUuid: boolean,
+  idType: IdentifierType,
   inText: boolean,
   options: FormatOptions
 ): Promise<CiteItemResult> {
-  const item = await library.find(identifier, { byUuid });
+  const item = await library.find(identifier, { idType });
 
   if (!item) {
-    const lookupType = byUuid ? "UUID" : "ID";
+    const lookupType = idType === "uuid" ? "UUID" : idType.toUpperCase();
     return {
       success: false,
       identifier,
@@ -122,11 +122,11 @@ export async function citeReferences(
   library: ILibrary,
   options: CiteOperationOptions
 ): Promise<CiteResult> {
-  const { identifiers, byUuid = false, inText = false, style, cslFile, locale, format } = options;
+  const { identifiers, idType = "id", inText = false, style, cslFile, locale, format } = options;
   const results: CiteItemResult[] = [];
 
   for (const identifier of identifiers) {
-    const result = await generateCitationForIdentifier(library, identifier, byUuid, inText, {
+    const result = await generateCitationForIdentifier(library, identifier, idType, inText, {
       style,
       cslFile,
       locale,

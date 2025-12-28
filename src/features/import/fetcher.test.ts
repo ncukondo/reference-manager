@@ -20,6 +20,7 @@ import {
   type FetchResults,
   type PubmedConfig,
   fetchDoi,
+  fetchIsbn,
   fetchPmids,
 } from "./fetcher.js";
 import { resetRateLimiters } from "./rate-limiter.js";
@@ -355,5 +356,116 @@ describe("FetchResults type", () => {
 
     expect(results[0].pmid).toBe("12345678");
     expect(results[1].pmid).toBe("99999999");
+  });
+});
+
+describe("fetchIsbn", () => {
+  beforeEach(() => {
+    resetRateLimiters();
+    mockCiteAsync.mockReset();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("successful fetching", () => {
+    it("should fetch an ISBN and return CSL-JSON", async () => {
+      const mockCslResponse: CslItem[] = [
+        {
+          id: "9784000000000",
+          type: "book",
+          title: "ISBN Test Book",
+          ISBN: "9784000000000",
+          author: [{ family: "Author", given: "Test" }],
+        },
+      ];
+
+      mockCiteAsync.mockResolvedValueOnce({
+        get: () => mockCslResponse,
+      });
+
+      const result = await fetchIsbn("9784000000000");
+
+      expect(result.success).toBe(true);
+      expect(result.item).toBeDefined();
+      expect(result.item?.title).toBe("ISBN Test Book");
+      expect(mockCiteAsync).toHaveBeenCalledWith("9784000000000");
+    });
+
+    it("should fetch ISBN-10 with X check digit", async () => {
+      const mockCslResponse: CslItem[] = [
+        {
+          id: "400000000X",
+          type: "book",
+          title: "ISBN-10 Book",
+          ISBN: "400000000X",
+        },
+      ];
+
+      mockCiteAsync.mockResolvedValueOnce({
+        get: () => mockCslResponse,
+      });
+
+      const result = await fetchIsbn("400000000X");
+
+      expect(result.success).toBe(true);
+      expect(result.item?.title).toBe("ISBN-10 Book");
+    });
+  });
+
+  describe("error handling", () => {
+    it("should return error when ISBN not found", async () => {
+      mockCiteAsync.mockRejectedValueOnce(new Error("ISBN not found"));
+
+      const result = await fetchIsbn("9789999999990");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("not found");
+    });
+
+    it("should return error for network failure", async () => {
+      mockCiteAsync.mockRejectedValueOnce(new Error("Network error"));
+
+      const result = await fetchIsbn("9784000000000");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Network error");
+    });
+
+    it("should return error for invalid ISBN format (too short)", async () => {
+      const result = await fetchIsbn("123456");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Invalid ISBN");
+      expect(mockCiteAsync).not.toHaveBeenCalled();
+    });
+
+    it("should return error for invalid ISBN format (too long)", async () => {
+      const result = await fetchIsbn("12345678901234");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Invalid ISBN");
+      expect(mockCiteAsync).not.toHaveBeenCalled();
+    });
+
+    it("should return error for non-numeric ISBN", async () => {
+      const result = await fetchIsbn("abcdefghij");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Invalid ISBN");
+      expect(mockCiteAsync).not.toHaveBeenCalled();
+    });
+
+    it("should return error when no items returned", async () => {
+      mockCiteAsync.mockResolvedValueOnce({
+        get: () => [],
+      });
+
+      const result = await fetchIsbn("9784000000000");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("No data");
+    });
   });
 });

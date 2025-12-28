@@ -85,5 +85,6 @@ This ensures:
 | `DOI` | `10.xxxx/...` | Normalized on read/write |
 | `PMID` | Numeric string | e.g., `"12345678"` |
 | `PMCID` | `PMC` + number | Normalized with prefix |
+| `ISBN` | 10 or 13 digits | Normalized: hyphens removed, X uppercase |
 | `URL` | URL string | Primary URL |
 | `keyword` | Semicolon-separated string | Parsed to array in memory |

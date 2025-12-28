@@ -27,6 +27,7 @@ Automate the tedious parts of literature reviews:
 # Import references from multiple sources
 ref add pmid:12345678 pmid:23456789
 ref add "10.1234/example.doi"
+ref add "ISBN:978-4-00-000000-0"
 ref add exported-from-pubmed.nbib
 
 # AI-assisted screening (with Claude Code)
@@ -101,6 +102,9 @@ ref add "10.1038/nature12373"
 
 # Add from PubMed
 ref add pmid:25056061
+
+# Add a book by ISBN
+ref add "ISBN:978-4-00-000000-0"
 
 # Search your library
 ref search "author:smith machine learning"
@@ -184,7 +188,7 @@ With a custom library:
 |------|-------------|------------|
 | `search` | Search references by query | `query`: Search string (e.g., `"author:smith 2024"`) |
 | `list` | List all references | `format?`: `"json"` \| `"bibtex"` \| `"pretty"` |
-| `add` | Add new reference(s) | `input`: DOI, PMID, BibTeX, RIS, or CSL-JSON |
+| `add` | Add new reference(s) | `input`: DOI, PMID, ISBN, BibTeX, RIS, or CSL-JSON |
 | `remove` | Remove a reference | `id`: Reference ID, `force`: must be `true` |
 | `cite` | Generate formatted citation | `ids`: Array of reference IDs, `style?`: Citation style, `format?`: `"text"` \| `"html"` |
 | `fulltext_attach` | Attach PDF/Markdown to reference | `id`: Reference ID, `path`: File path |
@@ -221,6 +225,7 @@ ref add references.bib                # From BibTeX
 ref add export.ris                    # From RIS
 ref add "10.1038/nature12373"         # From DOI
 ref add pmid:25056061                 # From PubMed ID
+ref add "ISBN:978-4-00-000000-0"      # From ISBN
 cat references.json | ref add         # From stdin
 
 # Remove a reference

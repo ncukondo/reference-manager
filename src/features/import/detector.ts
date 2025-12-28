@@ -8,12 +8,20 @@
  * - Multiple whitespace-separated identifiers
  */
 
-import { normalizePmid } from "./normalizer.js";
+import { normalizeIsbn, normalizePmid } from "./normalizer.js";
 
 /**
  * Supported input formats
  */
-export type InputFormat = "json" | "bibtex" | "ris" | "pmid" | "doi" | "identifiers" | "unknown";
+export type InputFormat =
+  | "json"
+  | "bibtex"
+  | "ris"
+  | "pmid"
+  | "doi"
+  | "isbn"
+  | "identifiers"
+  | "unknown";
 
 /**
  * Extension to format mapping
@@ -110,7 +118,7 @@ export function detectByContent(content: string): InputFormat {
 }
 
 /**
- * Detect if input is an identifier (PMID, DOI) or multiple identifiers
+ * Detect if input is an identifier (PMID, DOI, ISBN) or multiple identifiers
  */
 function detectIdentifier(input: string): InputFormat {
   // Split by whitespace
@@ -121,7 +129,7 @@ function detectIdentifier(input: string): InputFormat {
   }
 
   // Check each part
-  const formats: ("pmid" | "doi")[] = [];
+  const formats: ("pmid" | "doi" | "isbn")[] = [];
   for (const part of parts) {
     const format = detectSingleIdentifier(part);
     if (format === "unknown") {
@@ -134,7 +142,7 @@ function detectIdentifier(input: string): InputFormat {
   // Single identifier returns its specific format
   if (formats.length === 1) {
     // formats[0] is guaranteed to exist when length === 1
-    return formats[0] as "pmid" | "doi";
+    return formats[0] as "pmid" | "doi" | "isbn";
   }
 
   // Multiple valid identifiers
@@ -142,15 +150,20 @@ function detectIdentifier(input: string): InputFormat {
 }
 
 /**
- * Detect if a single string is a PMID or DOI
+ * Detect if a single string is a PMID, DOI, or ISBN
  */
-export function detectSingleIdentifier(input: string): "pmid" | "doi" | "unknown" {
+export function detectSingleIdentifier(input: string): "pmid" | "doi" | "isbn" | "unknown" {
   // DOI: starts with 10. or is a DOI URL
   if (isDoi(input)) {
     return "doi";
   }
 
-  // PMID: numeric only
+  // ISBN: requires ISBN: prefix
+  if (isIsbn(input)) {
+    return "isbn";
+  }
+
+  // PMID: numeric only (must be after ISBN check to avoid conflicts)
   if (isPmid(input)) {
     return "pmid";
   }
@@ -215,4 +228,45 @@ export function isPmid(input: string): boolean {
 
   // PMID is all digits
   return /^\d+$/.test(normalized);
+}
+
+/**
+ * Check if string is a valid ISBN (requires ISBN: prefix)
+ *
+ * ISBN must have ISBN: prefix and be either:
+ * - ISBN-13: 13 digits
+ * - ISBN-10: 10 digits (last may be X)
+ */
+export function isIsbn(input: string): boolean {
+  if (!input || input.length === 0) {
+    return false;
+  }
+
+  // Normalize input (removes ISBN: prefix if present, hyphens, spaces)
+  const normalized = normalizeIsbn(input);
+
+  if (!normalized) {
+    return false;
+  }
+
+  // Check length: ISBN-10 (10 chars) or ISBN-13 (13 chars)
+  if (normalized.length !== 10 && normalized.length !== 13) {
+    return false;
+  }
+
+  // ISBN-10: 9 digits + (digit or X)
+  if (normalized.length === 10) {
+    // First 9 must be digits, last can be digit or X
+    if (!/^\d{9}[\dX]$/.test(normalized)) {
+      return false;
+    }
+    return true;
+  }
+
+  // ISBN-13: all digits
+  if (!/^\d{13}$/.test(normalized)) {
+    return false;
+  }
+
+  return true;
 }

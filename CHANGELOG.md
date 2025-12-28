@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ISBN Support (Phase 14)**: Add ISBN support to the add command
+  - ISBN-10 and ISBN-13 format detection and normalization
+  - Metadata fetching via `@citation-js/plugin-isbn` (Google Books API, Open Library)
+  - Response caching for ISBN queries (same pattern as DOI/PMID)
+  - Duplicate detection with ISBN matching (priority: DOI > PMID > ISBN)
+    - `book` type: ISBN only
+    - `book-section` type: ISBN + title (same book can have multiple chapters)
+  - Library ISBN index with `idType: 'isbn'` support in `find()` method
+  - Unified `idType` parameter in FindOptions (replaces deprecated `byUuid`)
+  - CLI: `--format isbn` option and `ISBN:` prefix detection
+  - Examples: `add ISBN:978-4-00-000000-0`, `add --format isbn 9784000000000`
+
+- **MCPB Publishing (Phase 13)**: Enable publishing to MCPB registry
+  - `manifest.json` for Claude Desktop integration
+  - Automated `.mcpb` bundle creation in GitHub release workflow
+  - MCPB installation instructions in README
+  - User config: `config_path` for library configuration file path
+
 - **MCP Server (Phase 12)**: Model Context Protocol stdio server for AI agent integration
   - New `mcp` CLI command: `reference-manager mcp [--library <path>]`
   - **Tools**: search, list, cite, add, remove, fulltext_attach, fulltext_get, fulltext_detach

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeDoi, normalizePmid } from "./normalizer.js";
+import { normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 
 describe("normalizeDoi", () => {
   describe("standard DOI passthrough", () => {
@@ -165,6 +165,103 @@ describe("normalizePmid", () => {
 
     it("should handle PMID: with only spaces", () => {
       expect(normalizePmid("PMID:   ")).toBe("");
+    });
+  });
+});
+
+describe("normalizeIsbn", () => {
+  describe("ISBN-13 normalization", () => {
+    it("should normalize ISBN-13 with prefix", () => {
+      expect(normalizeIsbn("ISBN:9784000000000")).toBe("9784000000000");
+    });
+
+    it("should remove hyphens from ISBN-13", () => {
+      expect(normalizeIsbn("ISBN:978-4-00-000000-0")).toBe("9784000000000");
+    });
+
+    it("should remove spaces from ISBN-13", () => {
+      expect(normalizeIsbn("ISBN:978 4 00 000000 0")).toBe("9784000000000");
+    });
+
+    it("should handle mixed hyphens and spaces", () => {
+      expect(normalizeIsbn("ISBN:978-4 00-000000 0")).toBe("9784000000000");
+    });
+  });
+
+  describe("ISBN-10 normalization", () => {
+    it("should normalize ISBN-10 with prefix", () => {
+      expect(normalizeIsbn("ISBN:4000000000")).toBe("4000000000");
+    });
+
+    it("should remove hyphens from ISBN-10", () => {
+      expect(normalizeIsbn("ISBN:4-00-000000-0")).toBe("4000000000");
+    });
+
+    it("should uppercase X check digit", () => {
+      expect(normalizeIsbn("ISBN:400000000x")).toBe("400000000X");
+    });
+
+    it("should preserve uppercase X check digit", () => {
+      expect(normalizeIsbn("ISBN:400000000X")).toBe("400000000X");
+    });
+
+    it("should handle ISBN-10 with hyphens and lowercase x", () => {
+      expect(normalizeIsbn("ISBN:4-00-000000-x")).toBe("400000000X");
+    });
+  });
+
+  describe("prefix handling", () => {
+    it("should handle lowercase isbn: prefix", () => {
+      expect(normalizeIsbn("isbn:9784000000000")).toBe("9784000000000");
+    });
+
+    it("should handle mixed case Isbn: prefix", () => {
+      expect(normalizeIsbn("Isbn:9784000000000")).toBe("9784000000000");
+    });
+
+    it("should handle space after colon", () => {
+      expect(normalizeIsbn("ISBN: 9784000000000")).toBe("9784000000000");
+    });
+
+    it("should handle multiple spaces after colon", () => {
+      expect(normalizeIsbn("ISBN:  9784000000000")).toBe("9784000000000");
+    });
+  });
+
+  describe("whitespace handling", () => {
+    it("should trim leading whitespace", () => {
+      expect(normalizeIsbn("  ISBN:9784000000000")).toBe("9784000000000");
+    });
+
+    it("should trim trailing whitespace", () => {
+      expect(normalizeIsbn("ISBN:9784000000000  ")).toBe("9784000000000");
+    });
+
+    it("should trim whitespace around prefixed ISBN", () => {
+      expect(normalizeIsbn("  ISBN:9784000000000  ")).toBe("9784000000000");
+    });
+  });
+
+  describe("invalid inputs", () => {
+    it("should return empty string for empty input", () => {
+      expect(normalizeIsbn("")).toBe("");
+    });
+
+    it("should return empty string for whitespace-only input", () => {
+      expect(normalizeIsbn("   ")).toBe("");
+    });
+
+    it("should return empty string without ISBN: prefix", () => {
+      // ISBN without prefix is not valid
+      expect(normalizeIsbn("9784000000000")).toBe("");
+    });
+
+    it("should return empty string for partial prefix", () => {
+      expect(normalizeIsbn("ISB:9784000000000")).toBe("");
+    });
+
+    it("should return empty string for ISBN: without number", () => {
+      expect(normalizeIsbn("ISBN:")).toBe("");
     });
   });
 });

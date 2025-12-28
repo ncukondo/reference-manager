@@ -8,31 +8,37 @@ import type { CslItem } from "../../core/types.js";
 vi.mock("./fetcher.js", () => ({
   fetchPmids: vi.fn(),
   fetchDoi: vi.fn(),
+  fetchIsbn: vi.fn(),
 }));
 
 // Mock the cache module
 vi.mock("./cache.js", () => ({
   getPmidFromCache: vi.fn(),
   getDoiFromCache: vi.fn(),
+  getIsbnFromCache: vi.fn(),
   cachePmidResult: vi.fn(),
   cacheDoiResult: vi.fn(),
+  cacheIsbnResult: vi.fn(),
   resetCache: vi.fn(),
 }));
 
-import { getDoiFromCache, getPmidFromCache } from "./cache.js";
-import { fetchDoi, fetchPmids } from "./fetcher.js";
+import { getDoiFromCache, getIsbnFromCache, getPmidFromCache } from "./cache.js";
+import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import { importFromContent, importFromIdentifiers } from "./importer.js";
 
 const mockFetchPmids = vi.mocked(fetchPmids);
 const mockFetchDoi = vi.mocked(fetchDoi);
+const mockFetchIsbn = vi.mocked(fetchIsbn);
 const mockGetPmidFromCache = vi.mocked(getPmidFromCache);
 const mockGetDoiFromCache = vi.mocked(getDoiFromCache);
+const mockGetIsbnFromCache = vi.mocked(getIsbnFromCache);
 
 describe("importer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetPmidFromCache.mockReturnValue(null);
     mockGetDoiFromCache.mockReturnValue(null);
+    mockGetIsbnFromCache.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -371,6 +377,110 @@ ER  - `;
       });
     });
 
+    describe("ISBN fetching", () => {
+      it("should fetch single ISBN with prefix", async () => {
+        const mockItem: CslItem = {
+          id: "isbn_9784000000000",
+          type: "book",
+          title: "ISBN Book",
+          ISBN: "9784000000000",
+        };
+
+        mockFetchIsbn.mockResolvedValue({ success: true, item: mockItem });
+
+        const result = await importFromIdentifiers(["ISBN:978-4-00-000000-0"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        if (result.results[0].success) {
+          expect(result.results[0].item.ISBN).toBe("9784000000000");
+          expect(result.results[0].source).toBe("9784000000000");
+        }
+        // fetchIsbn should be called with normalized ISBN
+        expect(mockFetchIsbn).toHaveBeenCalledWith("9784000000000");
+      });
+
+      it("should fetch ISBN-10 with prefix", async () => {
+        const mockItem: CslItem = {
+          id: "isbn_400000000X",
+          type: "book",
+          title: "ISBN-10 Book",
+          ISBN: "400000000X",
+        };
+
+        mockFetchIsbn.mockResolvedValue({ success: true, item: mockItem });
+
+        const result = await importFromIdentifiers(["isbn:4-00-000000-X"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        // fetchIsbn should be called with normalized ISBN-10
+        expect(mockFetchIsbn).toHaveBeenCalledWith("400000000X");
+      });
+
+      it("should handle ISBN not found", async () => {
+        mockFetchIsbn.mockResolvedValue({
+          success: false,
+          error: "No data returned for ISBN 9789999999999",
+        });
+
+        const result = await importFromIdentifiers(["ISBN:9789999999999"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(false);
+        if (!result.results[0].success) {
+          expect(result.results[0].error).toContain("ISBN");
+          expect(result.results[0].source).toBe("9789999999999");
+        }
+      });
+
+      it("should use cached ISBN result", async () => {
+        const cachedItem: CslItem = {
+          id: "cached_isbn",
+          type: "book",
+          title: "Cached ISBN Book",
+          ISBN: "9784000000000",
+        };
+
+        mockGetIsbnFromCache.mockReturnValue(cachedItem);
+
+        const result = await importFromIdentifiers(["ISBN:9784000000000"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        if (result.results[0].success) {
+          expect(result.results[0].item.title).toBe("Cached ISBN Book");
+        }
+        expect(mockFetchIsbn).not.toHaveBeenCalled();
+      });
+
+      it("should fetch multiple ISBNs", async () => {
+        const mockItems: CslItem[] = [
+          { id: "i1", type: "book", title: "First Book", ISBN: "9784000000001" },
+          { id: "i2", type: "book", title: "Second Book", ISBN: "9784000000002" },
+        ];
+
+        mockFetchIsbn
+          .mockResolvedValueOnce({ success: true, item: mockItems[0] })
+          .mockResolvedValueOnce({ success: true, item: mockItems[1] });
+
+        const result = await importFromIdentifiers(["ISBN:9784000000001", "ISBN:9784000000002"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(2);
+        expect(result.results.every((r) => r.success)).toBe(true);
+      });
+    });
+
     describe("mixed identifiers", () => {
       it("should handle mixed PMID and DOI", async () => {
         const pmidItem: CslItem = {
@@ -394,6 +504,39 @@ ER  - `;
         });
 
         expect(result.results).toHaveLength(2);
+        expect(result.results.every((r) => r.success)).toBe(true);
+      });
+
+      it("should handle mixed PMID, DOI, and ISBN", async () => {
+        const pmidItem: CslItem = {
+          id: "p1",
+          type: "article-journal",
+          title: "PMID Article",
+          PMID: "12345678",
+        };
+        const doiItem: CslItem = {
+          id: "d1",
+          type: "article-journal",
+          title: "DOI Article",
+          DOI: "10.1000/xyz",
+        };
+        const isbnItem: CslItem = {
+          id: "i1",
+          type: "book",
+          title: "ISBN Book",
+          ISBN: "9784000000000",
+        };
+
+        mockFetchPmids.mockResolvedValue([{ pmid: "12345678", success: true, item: pmidItem }]);
+        mockFetchDoi.mockResolvedValue({ success: true, item: doiItem });
+        mockFetchIsbn.mockResolvedValue({ success: true, item: isbnItem });
+
+        const result = await importFromIdentifiers(
+          ["12345678", "10.1000/xyz", "ISBN:9784000000000"],
+          { pubmedConfig: {} }
+        );
+
+        expect(result.results).toHaveLength(3);
         expect(result.results.every((r) => r.success)).toBe(true);
       });
 

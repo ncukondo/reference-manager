@@ -8,12 +8,19 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { CslItemSchema } from "../../core/csl-json/types.js";
-import { cacheDoiResult, cachePmidResult, getDoiFromCache, getPmidFromCache } from "./cache.js";
-import { detectByContent, detectByExtension, isDoi, isPmid } from "./detector.js";
+import {
+  cacheDoiResult,
+  cacheIsbnResult,
+  cachePmidResult,
+  getDoiFromCache,
+  getIsbnFromCache,
+  getPmidFromCache,
+} from "./cache.js";
+import { detectByContent, detectByExtension, isDoi, isIsbn, isPmid } from "./detector.js";
 import type { InputFormat } from "./detector.js";
-import { fetchDoi, fetchPmids } from "./fetcher.js";
+import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import type { PubmedConfig } from "./fetcher.js";
-import { normalizeDoi, normalizePmid } from "./normalizer.js";
+import { normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 import { parseBibtex, parseRis } from "./parser.js";
 
 /**
@@ -43,6 +50,7 @@ export interface ImportOptions {
 interface ClassifiedIdentifiers {
   pmids: string[];
   dois: string[];
+  isbns: string[];
   unknowns: string[];
 }
 
@@ -52,6 +60,7 @@ interface ClassifiedIdentifiers {
 function classifyIdentifiers(identifiers: string[]): ClassifiedIdentifiers {
   const pmids: string[] = [];
   const dois: string[] = [];
+  const isbns: string[] = [];
   const unknowns: string[] = [];
 
   for (const id of identifiers) {
@@ -59,12 +68,14 @@ function classifyIdentifiers(identifiers: string[]): ClassifiedIdentifiers {
       pmids.push(normalizePmid(id));
     } else if (isDoi(id)) {
       dois.push(normalizeDoi(id));
+    } else if (isIsbn(id)) {
+      isbns.push(normalizeIsbn(id));
     } else {
       unknowns.push(id);
     }
   }
 
-  return { pmids, dois, unknowns };
+  return { pmids, dois, isbns, unknowns };
 }
 
 /**
@@ -141,6 +152,31 @@ async function fetchDoisWithCache(dois: string[]): Promise<ImportItemResult[]> {
       results.push({ success: true, item: fetchResult.item, source: doi });
     } else {
       results.push({ success: false, error: fetchResult.error, source: doi });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Fetch ISBNs with caching
+ */
+async function fetchIsbnsWithCache(isbns: string[]): Promise<ImportItemResult[]> {
+  const results: ImportItemResult[] = [];
+
+  for (const isbn of isbns) {
+    const cached = getIsbnFromCache(isbn);
+    if (cached) {
+      results.push({ success: true, item: cached, source: isbn });
+      continue;
+    }
+
+    const fetchResult = await fetchIsbn(isbn);
+    if (fetchResult.success) {
+      cacheIsbnResult(isbn, fetchResult.item);
+      results.push({ success: true, item: fetchResult.item, source: isbn });
+    } else {
+      results.push({ success: false, error: fetchResult.error, source: isbn });
     }
   }
 
@@ -304,7 +340,7 @@ export async function importFromIdentifiers(
   }
 
   // Classify identifiers
-  const { pmids, dois, unknowns } = classifyIdentifiers(identifiers);
+  const { pmids, dois, isbns, unknowns } = classifyIdentifiers(identifiers);
 
   // Collect results
   const results: ImportItemResult[] = [];
@@ -319,6 +355,10 @@ export async function importFromIdentifiers(
   // Fetch DOIs with cache
   const doiResults = await fetchDoisWithCache(dois);
   results.push(...doiResults);
+
+  // Fetch ISBNs with cache
+  const isbnResults = await fetchIsbnsWithCache(isbns);
+  results.push(...isbnResults);
 
   return { results };
 }

@@ -307,6 +307,128 @@ ER  - `;
       expect(result.stderr).toContain("Added 1 reference");
       expect(result.stderr).not.toContain("Skipped");
     });
+
+    it("should detect ISBN duplicates for book type", async () => {
+      // Add first book with ISBN
+      const file1 = path.join(testDir, "book1.json");
+      await fs.writeFile(
+        file1,
+        JSON.stringify([
+          {
+            id: "book2024",
+            type: "book",
+            title: "Introduction to Programming",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      await runCli(["add", "--library", libraryPath, file1]);
+
+      // Try to add book with same ISBN (different title)
+      const file2 = path.join(testDir, "book2.json");
+      await fs.writeFile(
+        file2,
+        JSON.stringify([
+          {
+            id: "book2024new",
+            type: "book",
+            title: "Different Title Same ISBN",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      const result = await runCli(["add", "--library", libraryPath, file2]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Skipped 1 duplicate");
+    });
+
+    it("should allow different chapters with same ISBN", async () => {
+      // Add first chapter
+      const file1 = path.join(testDir, "chapter1.json");
+      await fs.writeFile(
+        file1,
+        JSON.stringify([
+          {
+            id: "chapter1",
+            type: "chapter",
+            title: "Chapter 1: Introduction",
+            "container-title": "Programming Book",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      await runCli(["add", "--library", libraryPath, file1]);
+
+      // Add different chapter from same book
+      const file2 = path.join(testDir, "chapter2.json");
+      await fs.writeFile(
+        file2,
+        JSON.stringify([
+          {
+            id: "chapter2",
+            type: "chapter",
+            title: "Chapter 2: Advanced Topics",
+            "container-title": "Programming Book",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      const result = await runCli(["add", "--library", libraryPath, file2]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Added 1 reference");
+      expect(result.stderr).not.toContain("Skipped");
+    });
+
+    it("should detect duplicate chapters with same ISBN and title", async () => {
+      // Add first chapter
+      const file1 = path.join(testDir, "chapter1.json");
+      await fs.writeFile(
+        file1,
+        JSON.stringify([
+          {
+            id: "chapter1",
+            type: "chapter",
+            title: "Chapter 1: Introduction",
+            "container-title": "Programming Book",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      await runCli(["add", "--library", libraryPath, file1]);
+
+      // Try to add same chapter again
+      const file2 = path.join(testDir, "chapter2.json");
+      await fs.writeFile(
+        file2,
+        JSON.stringify([
+          {
+            id: "chapter1new",
+            type: "chapter",
+            title: "Chapter 1: Introduction",
+            "container-title": "Programming Book",
+            ISBN: "9784000000000",
+          },
+        ]),
+        "utf-8"
+      );
+
+      const result = await runCli(["add", "--library", libraryPath, file2]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Skipped 1 duplicate");
+    });
   });
 });
 

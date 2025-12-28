@@ -41,7 +41,7 @@ async function validateOptions(options: CiteCommandOptions): Promise<void> {
 function buildCiteOptions(options: CiteCommandOptions): CiteOperationOptions {
   return {
     identifiers: options.identifiers,
-    ...(options.uuid !== undefined && { byUuid: options.uuid }),
+    ...(options.uuid && { idType: "uuid" as const }),
     ...(options.style !== undefined && { style: options.style }),
     ...(options.cslFile !== undefined && { cslFile: options.cslFile }),
     ...(options.locale !== undefined && { locale: options.locale }),

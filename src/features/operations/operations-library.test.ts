@@ -54,15 +54,15 @@ describe("OperationsLibrary", () => {
       expect(result).toBe(mockItem);
     });
 
-    it("should delegate find() with byUuid option", async () => {
+    it("should delegate find() with idType option", async () => {
       const { OperationsLibrary } = await import("./operations-library.js");
       const mockLibrary = createMockLibrary();
       vi.mocked(mockLibrary.find).mockResolvedValue(mockItem);
 
       const ops = new OperationsLibrary(mockLibrary);
-      const result = await ops.find("some-uuid", { byUuid: true });
+      const result = await ops.find("some-uuid", { idType: "uuid" });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("some-uuid", { byUuid: true });
+      expect(mockLibrary.find).toHaveBeenCalledWith("some-uuid", { idType: "uuid" });
       expect(result).toBe(mockItem);
     });
 

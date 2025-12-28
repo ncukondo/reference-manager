@@ -6,8 +6,8 @@ Module dependency rules and architecture layers.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  cli/                           │  ← Top layer
-│  (User interface)                               │
+│              cli/ and mcp/                      │  ← Top layer
+│  (User interfaces)                              │
 └────────────────────┬────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────┐
@@ -24,6 +24,8 @@ Module dependency rules and architecture layers.
 │  - duplicate/                   │
 │  - merge/                       │
 │  - file-watcher/                │
+│  - operations/                  │
+│  - import/                      │
 └────────────────────┬────────────┘
                      │
 ┌────────────────────▼────────────┐
@@ -289,27 +291,22 @@ export function matchReferences(
 
 **Dependencies**: `core/`, `features/`, `utils/`, `config/`
 
-**Cannot import from**: `cli/`
+**Cannot import from**: `cli/`, `mcp/`
 
-**Example**:
-```typescript
-// server/routes/references.ts
-import { Hono } from 'hono';
-import type { Library } from '../../core/library.js';
-import { search } from '../../features/search/index.js';
+### mcp/
 
-export function createReferencesRouter(library: Library) {
-  const app = new Hono();
+**Purpose**: MCP (Model Context Protocol) stdio server for AI agents
 
-  app.get('/search', async (c) => {
-    const query = c.req.query('q') || '';
-    const results = search(library, query);
-    return c.json(results);
-  });
+**Exports**:
+- `index.ts`: MCP server entry point
+- `tools/`: MCP tool handlers
+- `resources/`: MCP resource handlers
 
-  return app;
-}
-```
+**Dependencies**: `core/`, `features/`, `utils/`, `config/`
+
+**Cannot import from**: `cli/`, `server/`
+
+See: `spec/architecture/mcp-server.md` for protocol details.
 
 ### cli/
 

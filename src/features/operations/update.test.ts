@@ -39,7 +39,7 @@ describe("updateReference", () => {
 
       const options: UpdateOperationOptions = {
         identifier: "smith-2023",
-        byUuid: false,
+        idType: "id",
         updates: { title: "Updated Title" },
       };
       const result = await updateReference(mockLibrary, options);
@@ -49,7 +49,7 @@ describe("updateReference", () => {
       expect(mockLibrary.update).toHaveBeenCalledWith(
         "smith-2023",
         { title: "Updated Title" },
-        { byUuid: false, onIdCollision: "fail" }
+        { idType: "id", onIdCollision: "fail" }
       );
       expect(mockLibrary.save).toHaveBeenCalled();
     });
@@ -60,7 +60,7 @@ describe("updateReference", () => {
 
       const options: UpdateOperationOptions = {
         identifier: "nonexistent",
-        byUuid: false,
+        idType: "id",
         updates: { title: "Updated Title" },
       };
       const result = await updateReference(mockLibrary, options);
@@ -78,7 +78,7 @@ describe("updateReference", () => {
 
       const options: UpdateOperationOptions = {
         identifier: "uuid-1",
-        byUuid: true,
+        idType: "uuid",
         updates: { title: "Updated Title" },
       };
       const result = await updateReference(mockLibrary, options);
@@ -88,7 +88,7 @@ describe("updateReference", () => {
       expect(mockLibrary.update).toHaveBeenCalledWith(
         "uuid-1",
         { title: "Updated Title" },
-        { byUuid: true, onIdCollision: "fail" }
+        { idType: "uuid", onIdCollision: "fail" }
       );
       expect(mockLibrary.save).toHaveBeenCalled();
     });
@@ -133,13 +133,13 @@ describe("updateReference", () => {
       expect(mockLibrary.update).toHaveBeenCalledWith(
         "smith-2023",
         { id: "existing-id" },
-        { byUuid: false, onIdCollision: "suffix" }
+        { idType: "id", onIdCollision: "suffix" }
       );
     });
   });
 
-  describe("byUuid default", () => {
-    it("should use byUuid=false by default", async () => {
+  describe("idType default", () => {
+    it("should use idType='id' by default", async () => {
       const updateResult: UpdateResult = { updated: true, item: updatedMockItem };
       (mockLibrary.update as ReturnType<typeof vi.fn>).mockResolvedValue(updateResult);
 
@@ -153,7 +153,7 @@ describe("updateReference", () => {
       expect(mockLibrary.update).toHaveBeenCalledWith(
         "smith-2023",
         { title: "Updated Title" },
-        { byUuid: false, onIdCollision: "fail" }
+        { idType: "id", onIdCollision: "fail" }
       );
     });
   });
