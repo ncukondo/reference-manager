@@ -185,14 +185,14 @@ Add request body parameters for pagination.
 
 Add tool parameters for pagination with default limit.
 
-- [ ] **16.6.1**: Update list tool parameters
+- [x] **16.6.1**: Update list tool parameters
   - File: `src/mcp/tools/list.ts`
   - Add: `sort`, `order`, `limit`, `offset` parameters
   - Default: `limit=20` from config
   - TDD: `src/mcp/tools/list.test.ts`
   - Acceptance: Parameters work, default limit applied
 
-- [ ] **16.6.2**: Update search tool parameters
+- [x] **16.6.2**: Update search tool parameters
   - File: `src/mcp/tools/search.ts`
   - Add: `sort`, `order`, `limit`, `offset` parameters
   - Add: `relevance` as valid sort option
@@ -200,11 +200,10 @@ Add tool parameters for pagination with default limit.
   - TDD: `src/mcp/tools/search.test.ts`
   - Acceptance: Parameters work, default limit applied
 
-- [ ] **16.6.3**: Update MCP context for config
-  - File: `src/mcp/context.ts`
-  - Add: Access to MCP config for default limit
-  - TDD: `src/mcp/context.test.ts`
-  - Acceptance: Context provides MCP config
+- [x] **16.6.3**: Update MCP context for config
+  - File: `src/mcp/tools/index.ts`
+  - Pass: `getConfig` to list and search tools
+  - Acceptance: Tools have access to MCP config
 
 #### 16.7 Integration and Documentation
 

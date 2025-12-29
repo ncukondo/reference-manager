@@ -2,10 +2,15 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type ListToolParams, registerListTool } from "./list.js";
+
+// Mock config with MCP settings
+const mockConfig = { mcp: { defaultLimit: 20 } } as Config;
+const getConfig = () => mockConfig;
 
 describe("MCP list tool", () => {
   let tempDir: string;
@@ -55,7 +60,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("list");
@@ -75,7 +80,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({});
 
@@ -98,7 +103,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ format: "json" });
 
@@ -120,7 +125,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ format: "bibtex" });
 
@@ -144,7 +149,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => emptyLibraryOps);
+      registerListTool(mockServer as never, () => emptyLibraryOps, getConfig);
 
       const result = await capturedCallback?.({});
 
