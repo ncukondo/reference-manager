@@ -35,7 +35,19 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Completed: Phase 16
+
+- ✅ **Phase 16**: Pagination and Sorting (see details below)
+
+---
+
 ## Current Work
+
+(No active work - Phase 16 completed)
+
+---
+
+## Completed Phase 16 Details
 
 ### Phase 16: Pagination and Sorting
 
@@ -207,12 +219,12 @@ Add tool parameters for pagination with default limit.
 
 #### 16.7 Integration and Documentation
 
-- [ ] **16.7.1**: E2E tests for pagination
-  - Files: `src/cli/cli.e2e.test.ts`, `src/mcp/mcp.e2e.test.ts`
+- [x] **16.7.1**: E2E tests for pagination
+  - Files: `src/cli/pagination.e2e.test.ts`, `src/mcp/mcp.e2e.test.ts`
   - Test: Full flow from CLI/MCP to results with pagination
   - Acceptance: E2E tests pass
 
-- [ ] **16.7.2**: Final verification
+- [x] **16.7.2**: Final verification
   - Run: `npm run typecheck && npm run lint && npm test`
   - Acceptance: All quality checks pass
 

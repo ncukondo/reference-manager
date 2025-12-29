@@ -1,7 +1,26 @@
 import type { SearchFormat, SearchResult } from "../../features/operations/search.js";
-import type { SearchSortField, SortOrder } from "../../features/pagination/index.js";
+import {
+  type SearchSortField,
+  type SortOrder,
+  paginationOptionsSchema,
+  sortOrderSchema,
+} from "../../features/pagination/index.js";
 import { pickDefined } from "../../utils/object.js";
 import type { ExecutionContext } from "../execution-context.js";
+
+// Valid sort fields for search command (includes "relevance" and aliases)
+const VALID_SEARCH_SORT_FIELDS = new Set([
+  "created",
+  "updated",
+  "published",
+  "author",
+  "title",
+  "relevance",
+  "add",
+  "mod",
+  "pub",
+  "rel",
+]);
 
 /**
  * Options for the search command.
@@ -35,9 +54,11 @@ function getSearchFormat(options: SearchCommandOptions): SearchFormat {
 }
 
 /**
- * Validate that only one output format is specified.
+ * Validate search command options.
+ * @throws Error if options are invalid
  */
 function validateOptions(options: SearchCommandOptions): void {
+  // Validate output format
   const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
     Boolean
   );
@@ -46,6 +67,32 @@ function validateOptions(options: SearchCommandOptions): void {
     throw new Error(
       "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
     );
+  }
+
+  // Validate sort field (if provided)
+  if (options.sort !== undefined) {
+    const sortStr = String(options.sort);
+    if (!VALID_SEARCH_SORT_FIELDS.has(sortStr)) {
+      throw new Error(`Invalid sort field: ${sortStr}`);
+    }
+  }
+
+  // Validate sort order (if provided)
+  if (options.order !== undefined) {
+    const result = sortOrderSchema.safeParse(options.order);
+    if (!result.success) {
+      throw new Error(`Invalid sort order: ${options.order}`);
+    }
+  }
+
+  // Validate pagination options
+  const paginationResult = paginationOptionsSchema.safeParse({
+    limit: options.limit,
+    offset: options.offset,
+  });
+  if (!paginationResult.success) {
+    const issue = paginationResult.error.issues[0];
+    throw new Error(`Invalid pagination option: ${issue?.message ?? "unknown error"}`);
   }
 }
 

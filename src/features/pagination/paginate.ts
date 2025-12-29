@@ -22,6 +22,15 @@ export interface PaginateResult<T> {
 export function paginate<T>(items: T[], options: PaginateOptions): PaginateResult<T> {
   const offset = options.offset ?? 0;
   const limit = options.limit ?? 0;
+
+  // Validate inputs
+  if (limit < 0) {
+    throw new Error("limit must be non-negative");
+  }
+  if (offset < 0) {
+    throw new Error("offset must be non-negative");
+  }
+
   const isUnlimited = limit === 0;
 
   // Apply offset

@@ -1,7 +1,24 @@
 import type { ListFormat, ListResult } from "../../features/operations/list.js";
-import type { SortField, SortOrder } from "../../features/pagination/index.js";
+import {
+  type SortField,
+  type SortOrder,
+  paginationOptionsSchema,
+  sortOrderSchema,
+} from "../../features/pagination/index.js";
 import { pickDefined } from "../../utils/object.js";
 import type { ExecutionContext } from "../execution-context.js";
+
+// Valid sort fields for list command (excludes "relevance")
+const VALID_LIST_SORT_FIELDS = new Set([
+  "created",
+  "updated",
+  "published",
+  "author",
+  "title",
+  "add",
+  "mod",
+  "pub",
+]);
 
 /**
  * Options for the list command.
@@ -34,9 +51,11 @@ function getListFormat(options: ListCommandOptions): ListFormat {
 }
 
 /**
- * Validate that only one output format is specified.
+ * Validate list command options.
+ * @throws Error if options are invalid
  */
 function validateOptions(options: ListCommandOptions): void {
+  // Validate output format
   const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
     Boolean
   );
@@ -45,6 +64,32 @@ function validateOptions(options: ListCommandOptions): void {
     throw new Error(
       "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
     );
+  }
+
+  // Validate sort field (if provided)
+  if (options.sort !== undefined) {
+    const sortStr = String(options.sort);
+    if (!VALID_LIST_SORT_FIELDS.has(sortStr)) {
+      throw new Error(`Invalid sort field: ${sortStr}`);
+    }
+  }
+
+  // Validate sort order (if provided)
+  if (options.order !== undefined) {
+    const result = sortOrderSchema.safeParse(options.order);
+    if (!result.success) {
+      throw new Error(`Invalid sort order: ${options.order}`);
+    }
+  }
+
+  // Validate pagination options
+  const paginationResult = paginationOptionsSchema.safeParse({
+    limit: options.limit,
+    offset: options.offset,
+  });
+  if (!paginationResult.success) {
+    const issue = paginationResult.error.issues[0];
+    throw new Error(`Invalid pagination option: ${issue?.message ?? "unknown error"}`);
   }
 }
 

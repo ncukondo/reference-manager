@@ -126,4 +126,18 @@ describe("paginate", () => {
       expect(original).toEqual(copy);
     });
   });
+
+  describe("validation", () => {
+    it("should throw error for negative limit", () => {
+      expect(() => paginate(items, { limit: -1 })).toThrow("limit must be non-negative");
+    });
+
+    it("should throw error for negative offset", () => {
+      expect(() => paginate(items, { offset: -1 })).toThrow("offset must be non-negative");
+    });
+
+    it("should throw error for both negative", () => {
+      expect(() => paginate(items, { limit: -1, offset: -1 })).toThrow();
+    });
+  });
 });
