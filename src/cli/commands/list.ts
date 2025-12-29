@@ -1,5 +1,7 @@
 import type { ListFormat, ListResult } from "../../features/operations/list.js";
+import type { SortField, SortOrder } from "../../features/pagination/index.js";
 import type { ExecutionContext } from "../execution-context.js";
+import { pickDefined } from "../helpers.js";
 
 /**
  * Options for the list command.
@@ -9,6 +11,10 @@ export interface ListCommandOptions {
   idsOnly?: boolean;
   uuid?: boolean;
   bibtex?: boolean;
+  sort?: SortField;
+  order?: SortOrder;
+  limit?: number;
+  offset?: number;
 }
 
 /**
@@ -57,18 +63,44 @@ export async function executeList(
   validateOptions(options);
   const format = getListFormat(options);
 
-  return context.library.list({ format });
+  return context.library.list({
+    format,
+    ...pickDefined(options, ["sort", "order", "limit", "offset"] as const),
+  });
 }
 
 /**
  * Format list result for CLI output.
  *
  * @param result - List result
+ * @param isJson - Whether the output format is JSON
  * @returns Formatted output string
  */
-export function formatListOutput(result: ListCommandResult): string {
+export function formatListOutput(result: ListCommandResult, isJson = false): string {
+  if (isJson) {
+    // JSON output includes pagination metadata
+    return JSON.stringify({
+      items: result.items,
+      total: result.total,
+      limit: result.limit,
+      offset: result.offset,
+      nextOffset: result.nextOffset,
+    });
+  }
+
   if (result.items.length === 0) {
     return "";
   }
-  return result.items.join("\n");
+
+  const lines: string[] = [];
+
+  // Add header line when limit is applied and not showing all
+  if (result.limit > 0 && result.total > 0) {
+    const start = result.offset + 1;
+    const end = result.offset + result.items.length;
+    lines.push(`# Showing ${start}-${end} of ${result.total} references`);
+  }
+
+  lines.push(...result.items);
+  return lines.join("\n");
 }

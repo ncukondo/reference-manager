@@ -130,35 +130,35 @@ Update list and search operations to support pagination.
 
 Add command-line options for pagination.
 
-- [ ] **16.4.1**: Update list command options
+- [x] **16.4.1**: Update list command options
   - File: `src/cli/commands/list.ts`
   - Add: `--sort`, `--order`, `--limit/-n`, `--offset`
   - Map: CLI options to `ListOptions`
   - TDD: `src/cli/commands/list.test.ts`
   - Acceptance: Options parsed correctly
 
-- [ ] **16.4.2**: Update list command output
+- [x] **16.4.2**: Update list command output
   - File: `src/cli/commands/list.ts`
   - Add: Header line when limit applied (`# Showing 1-10 of 150 references`)
   - JSON output: Include pagination metadata
   - TDD: Test output format
   - Acceptance: Header shown when paginated, JSON includes metadata
 
-- [ ] **16.4.3**: Update search command options
+- [x] **16.4.3**: Update search command options
   - File: `src/cli/commands/search.ts`
   - Add: `--sort`, `--order`, `--limit/-n`, `--offset`
   - Map: CLI options to `SearchOperationOptions`
   - TDD: `src/cli/commands/search.test.ts`
   - Acceptance: Options parsed correctly, `relevance` sort available
 
-- [ ] **16.4.4**: Update search command output
+- [x] **16.4.4**: Update search command output
   - File: `src/cli/commands/search.ts`
   - Add: Header line when limit applied
   - JSON output: Include pagination metadata
   - TDD: Test output format
   - Acceptance: Same as list command
 
-- [ ] **16.4.5**: Register CLI options in Commander
+- [x] **16.4.5**: Register CLI options in Commander
   - File: `src/cli/index.ts`
   - Add: Options to `list` and `search` commands
   - TDD: E2E test with actual CLI invocation

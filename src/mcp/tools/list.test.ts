@@ -81,7 +81,10 @@ describe("MCP list tool", () => {
 
       expect(result.content).toHaveLength(2);
       expect(result.content[0].type).toBe("text");
-      expect(result.content[0].text).toContain("smith2024");
+      // Check that both references are present (order depends on default sorting)
+      const allText = result.content.map((c) => c.text).join("\n");
+      expect(allText).toContain("smith2024");
+      expect(allText).toContain("jones2023");
     });
 
     it("should return references in json format", async () => {
@@ -100,9 +103,10 @@ describe("MCP list tool", () => {
       const result = await capturedCallback?.({ format: "json" });
 
       expect(result.content).toHaveLength(2);
-      // Verify JSON is valid
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.id).toBe("smith2024");
+      // Verify JSON is valid and contains expected references
+      const ids = result.content.map((c) => JSON.parse(c.text).id);
+      expect(ids).toContain("smith2024");
+      expect(ids).toContain("jones2023");
     });
 
     it("should return references in bibtex format", async () => {

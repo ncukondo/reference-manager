@@ -1,5 +1,7 @@
 import type { SearchFormat, SearchResult } from "../../features/operations/search.js";
+import type { SearchSortField, SortOrder } from "../../features/pagination/index.js";
 import type { ExecutionContext } from "../execution-context.js";
+import { pickDefined } from "../helpers.js";
 
 /**
  * Options for the search command.
@@ -10,6 +12,10 @@ export interface SearchCommandOptions {
   idsOnly?: boolean;
   uuid?: boolean;
   bibtex?: boolean;
+  sort?: SearchSortField;
+  order?: SortOrder;
+  limit?: number;
+  offset?: number;
 }
 
 /**
@@ -58,18 +64,45 @@ export async function executeSearch(
   validateOptions(options);
   const format = getSearchFormat(options);
 
-  return context.library.search({ query: options.query, format });
+  return context.library.search({
+    query: options.query,
+    format,
+    ...pickDefined(options, ["sort", "order", "limit", "offset"] as const),
+  });
 }
 
 /**
  * Format search result for CLI output.
  *
  * @param result - Search result
+ * @param isJson - Whether the output format is JSON
  * @returns Formatted output string
  */
-export function formatSearchOutput(result: SearchCommandResult): string {
+export function formatSearchOutput(result: SearchCommandResult, isJson = false): string {
+  if (isJson) {
+    // JSON output includes pagination metadata
+    return JSON.stringify({
+      items: result.items,
+      total: result.total,
+      limit: result.limit,
+      offset: result.offset,
+      nextOffset: result.nextOffset,
+    });
+  }
+
   if (result.items.length === 0) {
     return "";
   }
-  return result.items.join("\n");
+
+  const lines: string[] = [];
+
+  // Add header line when limit is applied and not showing all
+  if (result.limit > 0 && result.total > 0) {
+    const start = result.offset + 1;
+    const end = result.offset + result.items.length;
+    lines.push(`# Showing ${start}-${end} of ${result.total} references`);
+  }
+
+  lines.push(...result.items);
+  return lines.join("\n");
 }
