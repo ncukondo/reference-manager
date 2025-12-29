@@ -25,6 +25,9 @@ describe("Pagination E2E", () => {
     await fs.mkdir(testDir, { recursive: true });
 
     // Create library with test references
+    // Note: timestamp order is REVERSED from issued order to ensure alias tests don't pass by coincidence
+    // issued (publication year): smith2024 > jones2023 > brown2022 > adams2021 > clark2020
+    // timestamp (updated): clark2020 > adams2021 > brown2022 > jones2023 > smith2024
     const refs = [
       {
         id: "smith2024",
@@ -34,8 +37,8 @@ describe("Pagination E2E", () => {
         issued: { "date-parts": [[2024]] },
         custom: {
           uuid: "uuid-smith-2024",
-          timestamp: "2024-01-01T00:00:00Z",
-          created_at: "2024-01-01T00:00:00Z",
+          timestamp: "2020-01-01T00:00:00Z", // oldest update
+          created_at: "2020-01-01T00:00:00Z",
         },
       },
       {
@@ -46,8 +49,8 @@ describe("Pagination E2E", () => {
         issued: { "date-parts": [[2023]] },
         custom: {
           uuid: "uuid-jones-2023",
-          timestamp: "2023-06-01T00:00:00Z",
-          created_at: "2023-06-01T00:00:00Z",
+          timestamp: "2021-01-01T00:00:00Z",
+          created_at: "2021-01-01T00:00:00Z",
         },
       },
       {
@@ -70,8 +73,8 @@ describe("Pagination E2E", () => {
         issued: { "date-parts": [[2021]] },
         custom: {
           uuid: "uuid-adams-2021",
-          timestamp: "2021-01-01T00:00:00Z",
-          created_at: "2021-01-01T00:00:00Z",
+          timestamp: "2023-01-01T00:00:00Z",
+          created_at: "2023-01-01T00:00:00Z",
         },
       },
       {
@@ -82,8 +85,8 @@ describe("Pagination E2E", () => {
         issued: { "date-parts": [[2020]] },
         custom: {
           uuid: "uuid-clark-2020",
-          timestamp: "2020-01-01T00:00:00Z",
-          created_at: "2020-01-01T00:00:00Z",
+          timestamp: "2024-01-01T00:00:00Z", // newest update
+          created_at: "2024-01-01T00:00:00Z",
         },
       },
     ];
@@ -227,13 +230,13 @@ describe("Pagination E2E", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      // Machine Learning (2024) and Deep Learning (2023) match
-      // Machine Learning should come first (more recent timestamp)
+      // Machine Learning (timestamp 2020) and Deep Learning (timestamp 2021) match
+      // Deep Learning should come first (more recent timestamp)
       const output = result.stdout;
       const machinePos = output.indexOf("Machine");
       const deepPos = output.indexOf("Deep");
       if (machinePos !== -1 && deepPos !== -1) {
-        expect(machinePos).toBeLessThan(deepPos);
+        expect(deepPos).toBeLessThan(machinePos);
       }
     });
 

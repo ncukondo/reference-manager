@@ -3,6 +3,7 @@ import {
   type SortField,
   type SortOrder,
   paginationOptionsSchema,
+  resolveSortAlias,
   sortOrderSchema,
 } from "../../features/pagination/index.js";
 import { pickDefined } from "../../utils/object.js";
@@ -108,9 +109,13 @@ export async function executeList(
   validateOptions(options);
   const format = getListFormat(options);
 
+  // Resolve sort alias (e.g., "pub" -> "published")
+  const sort = options.sort ? (resolveSortAlias(options.sort) as SortField) : undefined;
+
   return context.library.list({
     format,
-    ...pickDefined(options, ["sort", "order", "limit", "offset"] as const),
+    ...(sort !== undefined && { sort }),
+    ...pickDefined(options, ["order", "limit", "offset"] as const),
   });
 }
 
