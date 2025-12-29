@@ -116,6 +116,8 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     citation: fillCitationDefaults(partial.citation),
     pubmed: fillPubmedDefaults(partial.pubmed),
     fulltext: fillFulltextDefaults(partial.fulltext),
+    cli: fillCliDefaults(partial.cli),
+    mcp: fillMcpDefaults(partial.mcp),
   };
 }
 
@@ -169,6 +171,46 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
   const directory = envDir ?? partial?.directory ?? defaultConfig.fulltext.directory;
   return {
     directory: expandTilde(directory),
+  };
+}
+
+/**
+ * Fill CLI config with defaults
+ *
+ * Priority:
+ * 1. Environment variable REFERENCE_MANAGER_CLI_DEFAULT_LIMIT
+ * 2. Config file setting
+ * 3. Default value
+ */
+function fillCliDefaults(partial: DeepPartialConfig["cli"]): Config["cli"] {
+  const envLimit = process.env.REFERENCE_MANAGER_CLI_DEFAULT_LIMIT;
+  const defaultLimit =
+    envLimit !== undefined
+      ? Number(envLimit)
+      : (partial?.defaultLimit ?? defaultConfig.cli.defaultLimit);
+  return {
+    defaultLimit,
+    defaultSort: partial?.defaultSort ?? defaultConfig.cli.defaultSort,
+    defaultOrder: partial?.defaultOrder ?? defaultConfig.cli.defaultOrder,
+  };
+}
+
+/**
+ * Fill MCP config with defaults
+ *
+ * Priority:
+ * 1. Environment variable REFERENCE_MANAGER_MCP_DEFAULT_LIMIT
+ * 2. Config file setting
+ * 3. Default value
+ */
+function fillMcpDefaults(partial: DeepPartialConfig["mcp"]): Config["mcp"] {
+  const envLimit = process.env.REFERENCE_MANAGER_MCP_DEFAULT_LIMIT;
+  const defaultLimit =
+    envLimit !== undefined
+      ? Number(envLimit)
+      : (partial?.defaultLimit ?? defaultConfig.mcp.defaultLimit);
+  return {
+    defaultLimit,
   };
 }
 

@@ -3,11 +3,28 @@
  */
 
 import { z } from "zod";
+import { sortFieldSchema, sortOrderSchema } from "../features/pagination/types.js";
 
 /**
  * Log level schema
  */
 export const logLevelSchema = z.enum(["silent", "info", "debug"]);
+
+/**
+ * CLI configuration schema
+ */
+export const cliConfigSchema = z.object({
+  defaultLimit: z.number().int().nonnegative(),
+  defaultSort: sortFieldSchema,
+  defaultOrder: sortOrderSchema,
+});
+
+/**
+ * MCP configuration schema
+ */
+export const mcpConfigSchema = z.object({
+  defaultLimit: z.number().int().nonnegative(),
+});
 
 /**
  * Backup configuration schema
@@ -80,6 +97,8 @@ export const configSchema = z.object({
   citation: citationConfigSchema,
   pubmed: pubmedConfigSchema,
   fulltext: fulltextConfigSchema,
+  cli: cliConfigSchema,
+  mcp: mcpConfigSchema,
 });
 
 /**
@@ -144,6 +163,22 @@ export const partialConfigSchema = z
         directory: z.string().min(1).optional(),
       })
       .optional(),
+    cli: z
+      .object({
+        defaultLimit: z.number().int().nonnegative().optional(),
+        default_limit: z.number().int().nonnegative().optional(),
+        defaultSort: sortFieldSchema.optional(),
+        default_sort: sortFieldSchema.optional(),
+        defaultOrder: sortOrderSchema.optional(),
+        default_order: sortOrderSchema.optional(),
+      })
+      .optional(),
+    mcp: z
+      .object({
+        defaultLimit: z.number().int().nonnegative().optional(),
+        default_limit: z.number().int().nonnegative().optional(),
+      })
+      .optional(),
   })
   .passthrough(); // Allow unknown fields in TOML files
 
@@ -158,6 +193,8 @@ export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
+export type CliConfig = z.infer<typeof cliConfigSchema>;
+export type McpConfig = z.infer<typeof mcpConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
 export type PartialConfig = z.infer<typeof partialConfigSchema>;
 
@@ -173,6 +210,8 @@ export type DeepPartialConfig = {
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
   fulltext?: Partial<FulltextConfig>;
+  cli?: Partial<CliConfig>;
+  mcp?: Partial<McpConfig>;
 };
 
 /**
@@ -338,72 +377,57 @@ function normalizePubmedConfig(
 }
 
 /**
+ * Section normalizers mapping
+ */
+const sectionNormalizers = {
+  backup: normalizeBackupConfig,
+  watch: normalizeWatchConfig,
+  server: normalizeServerConfig,
+  citation: normalizeCitationConfig,
+  pubmed: normalizePubmedConfig,
+  fulltext: normalizeFulltextConfig,
+  cli: normalizeCliConfig,
+  mcp: normalizeMcpConfig,
+} as const;
+
+type SectionKey = keyof typeof sectionNormalizers;
+
+/**
+ * Helper to apply a normalizer function to a config section
+ */
+function applyNormalizer<K extends SectionKey>(
+  normalized: DeepPartialConfig,
+  partial: PartialConfig,
+  key: K,
+  normalizer: (typeof sectionNormalizers)[K]
+): void {
+  const value = partial[key];
+  if (value !== undefined) {
+    const result = (normalizer as (input: unknown) => DeepPartialConfig[K] | undefined)(value);
+    if (result) {
+      normalized[key] = result;
+    }
+  }
+}
+
+/**
  * Normalize snake_case fields to camelCase
  */
 export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfig {
   const normalized: DeepPartialConfig = {};
 
-  // Library
+  // Simple fields
   if (partial.library !== undefined) {
     normalized.library = partial.library;
   }
-
-  // Log level (prefer camelCase, fallback to snake_case)
   const logLevel = partial.logLevel ?? partial.log_level;
   if (logLevel !== undefined) {
     normalized.logLevel = logLevel;
   }
 
-  // Backup
-  const backup =
-    partial.backup !== undefined
-      ? normalizeBackupConfig(partial.backup as Parameters<typeof normalizeBackupConfig>[0])
-      : undefined;
-  if (backup) {
-    normalized.backup = backup;
-  }
-
-  // Watch
-  const watch =
-    partial.watch !== undefined
-      ? normalizeWatchConfig(partial.watch as Parameters<typeof normalizeWatchConfig>[0])
-      : undefined;
-  if (watch) {
-    normalized.watch = watch;
-  }
-
-  // Server
-  const server =
-    partial.server !== undefined
-      ? normalizeServerConfig(partial.server as Parameters<typeof normalizeServerConfig>[0])
-      : undefined;
-  if (server) {
-    normalized.server = server;
-  }
-
-  // Citation
-  const citation =
-    partial.citation !== undefined
-      ? normalizeCitationConfig(partial.citation as Parameters<typeof normalizeCitationConfig>[0])
-      : undefined;
-  if (citation) {
-    normalized.citation = citation;
-  }
-
-  // PubMed
-  const pubmed =
-    partial.pubmed !== undefined
-      ? normalizePubmedConfig(partial.pubmed as Parameters<typeof normalizePubmedConfig>[0])
-      : undefined;
-  if (pubmed) {
-    normalized.pubmed = pubmed;
-  }
-
-  // Fulltext
-  const fulltext =
-    partial.fulltext !== undefined ? normalizeFulltextConfig(partial.fulltext) : undefined;
-  if (fulltext) {
-    normalized.fulltext = fulltext;
+  // Section fields
+  for (const key of Object.keys(sectionNormalizers) as SectionKey[]) {
+    applyNormalizer(normalized, partial, key, sectionNormalizers[key]);
   }
 
   return normalized;
@@ -419,6 +443,58 @@ function normalizeFulltextConfig(fulltext: {
 
   if (fulltext.directory !== undefined) {
     normalized.directory = fulltext.directory;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
+ * Normalize CLI configuration from snake_case to camelCase
+ */
+function normalizeCliConfig(
+  cli: Partial<{
+    defaultLimit?: number;
+    default_limit?: number;
+    defaultSort?: CliConfig["defaultSort"];
+    default_sort?: CliConfig["defaultSort"];
+    defaultOrder?: CliConfig["defaultOrder"];
+    default_order?: CliConfig["defaultOrder"];
+  }>
+): Partial<CliConfig> | undefined {
+  const normalized: Partial<CliConfig> = {};
+
+  const defaultLimit = cli.defaultLimit ?? cli.default_limit;
+  if (defaultLimit !== undefined) {
+    normalized.defaultLimit = defaultLimit;
+  }
+
+  const defaultSort = cli.defaultSort ?? cli.default_sort;
+  if (defaultSort !== undefined) {
+    normalized.defaultSort = defaultSort;
+  }
+
+  const defaultOrder = cli.defaultOrder ?? cli.default_order;
+  if (defaultOrder !== undefined) {
+    normalized.defaultOrder = defaultOrder;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
+ * Normalize MCP configuration from snake_case to camelCase
+ */
+function normalizeMcpConfig(
+  mcp: Partial<{
+    defaultLimit?: number;
+    default_limit?: number;
+  }>
+): Partial<McpConfig> | undefined {
+  const normalized: Partial<McpConfig> = {};
+
+  const defaultLimit = mcp.defaultLimit ?? mcp.default_limit;
+  if (defaultLimit !== undefined) {
+    normalized.defaultLimit = defaultLimit;
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

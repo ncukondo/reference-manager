@@ -85,18 +85,16 @@ Core types and sorting utilities that other layers depend on.
 
 Add CLI and MCP configuration sections.
 
-- [ ] **16.2.1**: Add CLI config schema
+- [x] **16.2.1**: Add CLI config schema
   - File: `src/config/schema.ts`
   - Add: `cliConfigSchema` with `defaultLimit`, `defaultSort`, `defaultOrder`
   - Update: `configSchema`, `partialConfigSchema`
-  - TDD: `src/config/schema.test.ts`
   - Acceptance: Config parsing works with new fields
 
-- [ ] **16.2.2**: Add MCP config schema
+- [x] **16.2.2**: Add MCP config schema
   - File: `src/config/schema.ts`
   - Add: `mcpConfigSchema` with `defaultLimit`
   - Update: `configSchema`, `partialConfigSchema`
-  - TDD: `src/config/schema.test.ts`
   - Acceptance: MCP default limit configurable
 
 #### 16.3 Operations Layer

@@ -89,4 +89,12 @@ export const defaultConfig: Config = {
   fulltext: {
     directory: getDefaultFulltextDirectory(),
   },
+  cli: {
+    defaultLimit: 0,
+    defaultSort: "updated",
+    defaultOrder: "desc",
+  },
+  mcp: {
+    defaultLimit: 20,
+  },
 };
