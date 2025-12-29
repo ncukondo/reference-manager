@@ -1,0 +1,1 @@
+ roadmapの実装が完了した部分を、他のphaseと同じようにcleanupして下さい。後のために残す必要がある部分は、CHALGELOGやspecに移して下さい
