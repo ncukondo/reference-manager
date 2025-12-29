@@ -101,33 +101,29 @@ Add CLI and MCP configuration sections.
 
 Update list and search operations to support pagination.
 
-- [ ] **16.3.1**: Update ListOptions and ListResult types
+- [x] **16.3.1**: Update ListOptions and ListResult types
   - File: `src/features/operations/list.ts`
   - Change: Extend `ListOptions` with `PaginationOptions & SortOptions`
   - Change: Extend `ListResult` to include `total`, `limit`, `offset`, `nextOffset`
-  - TDD: Update `src/features/operations/list.test.ts`
   - Acceptance: Types updated, backward compatible (optional fields)
 
-- [ ] **16.3.2**: Implement listReferences with pagination
+- [x] **16.3.2**: Implement listReferences with pagination
   - File: `src/features/operations/list.ts`
   - Change: Apply sorting → pagination → formatting
   - Default sort: `updated` (desc)
-  - TDD: Add tests for sort, limit, offset combinations
   - Acceptance: Pagination works, result includes metadata
 
-- [ ] **16.3.3**: Update SearchOperationOptions and SearchResult types
+- [x] **16.3.3**: Update SearchOperationOptions and SearchResult types
   - File: `src/features/operations/search.ts`
   - Change: Extend with `PaginationOptions & SortOptions<SearchSortField>`
   - Change: Extend result with pagination metadata
-  - TDD: Update `src/features/operations/search.test.ts`
   - Acceptance: Types updated, `relevance` sort available for search only
 
-- [ ] **16.3.4**: Implement searchReferences with pagination
+- [x] **16.3.4**: Implement searchReferences with pagination
   - File: `src/features/operations/search.ts`
   - Change: After search, apply sorting → pagination → formatting
   - Default sort: `updated` (desc)
   - `relevance` sort uses existing `sortResults` function
-  - TDD: Add tests for sort, limit, offset combinations
   - Acceptance: Pagination works, relevance sort preserved
 
 #### 16.4 CLI Layer

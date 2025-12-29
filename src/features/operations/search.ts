@@ -1,8 +1,16 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ILibrary } from "../../core/library-interface.js";
 import { formatBibtex, formatPretty } from "../format/index.js";
+import {
+  type PaginationOptions,
+  type SearchSortField,
+  type SortField,
+  type SortOrder,
+  paginate,
+  sortReferences,
+} from "../pagination/index.js";
 import { search } from "../search/matcher.js";
-import { sortResults } from "../search/sorter.js";
+import { sortResults as sortByRelevance } from "../search/sorter.js";
 import { tokenize } from "../search/tokenizer.js";
 
 /**
@@ -11,9 +19,17 @@ import { tokenize } from "../search/tokenizer.js";
 export type SearchFormat = "pretty" | "json" | "bibtex" | "ids-only" | "uuid";
 
 /**
+ * Sort options for search (includes relevance)
+ */
+export interface SearchSortOptions {
+  sort?: SearchSortField;
+  order?: SortOrder;
+}
+
+/**
  * Options for searchReferences operation
  */
-export interface SearchOperationOptions {
+export interface SearchOperationOptions extends PaginationOptions, SearchSortOptions {
   /** Search query string */
   query: string;
   /** Output format (default: "pretty") */
@@ -26,14 +42,48 @@ export interface SearchOperationOptions {
 export interface SearchResult {
   /** Formatted strings for each matching reference */
   items: string[];
+  /** Total count before pagination */
+  total: number;
+  /** Applied limit (0 if unlimited) */
+  limit: number;
+  /** Applied offset */
+  offset: number;
+  /** Next page offset, null if no more results */
+  nextOffset: number | null;
+}
+
+/**
+ * Format items according to the specified format
+ */
+function formatItems(items: CslItem[], format: SearchFormat): string[] {
+  switch (format) {
+    case "json":
+      return items.map((item) => JSON.stringify(item));
+
+    case "bibtex":
+      return items.map((item) => formatBibtex([item]));
+
+    case "ids-only":
+      return items.map((item) => item.id);
+
+    case "uuid":
+      return items
+        .filter((item): item is CslItem & { custom: { uuid: string } } =>
+          Boolean(item.custom?.uuid)
+        )
+        .map((item) => item.custom.uuid);
+
+    default:
+      return items.map((item) => formatPretty([item]));
+  }
 }
 
 /**
  * Search references in the library and return formatted results.
  *
  * @param library - The library to search in
- * @param options - Search query and formatting options
- * @returns Formatted strings for each matching reference
+ * @param options - Search query, formatting, and pagination options
+ * @returns Formatted strings for each matching reference with pagination metadata
  */
 export async function searchReferences(
   library: ILibrary,
@@ -41,11 +91,15 @@ export async function searchReferences(
 ): Promise<SearchResult> {
   const format = options.format ?? "pretty";
   const query = options.query;
+  const sort: SearchSortField = options.sort ?? "updated";
+  const order: SortOrder = options.order ?? "desc";
+  const limit = options.limit ?? 0;
+  const offset = options.offset ?? 0;
 
   // Get all references
   const allItems = await library.getAll();
 
-  // If query is empty, return all items
+  // Search and get matched items
   let matchedItems: CslItem[];
   if (!query.trim()) {
     matchedItems = allItems;
@@ -53,31 +107,40 @@ export async function searchReferences(
     // Tokenize and search
     const tokens = tokenize(query).tokens;
     const results = search(allItems, tokens);
-    const sorted = sortResults(results);
-    matchedItems = sorted.map((result) => result.reference);
+
+    // If sorting by relevance, use the search sorter
+    if (sort === "relevance") {
+      const sorted = sortByRelevance(results);
+      matchedItems =
+        order === "desc"
+          ? sorted.map((r) => r.reference)
+          : sorted.map((r) => r.reference).reverse();
+    } else {
+      matchedItems = results.map((r) => r.reference);
+    }
   }
 
-  // Format results based on format option
-  switch (format) {
-    case "json":
-      return { items: matchedItems.map((item) => JSON.stringify(item)) };
+  const total = matchedItems.length;
 
-    case "bibtex":
-      return { items: matchedItems.map((item) => formatBibtex([item])) };
-
-    case "ids-only":
-      return { items: matchedItems.map((item) => item.id) };
-
-    case "uuid":
-      return {
-        items: matchedItems
-          .filter((item): item is CslItem & { custom: { uuid: string } } =>
-            Boolean(item.custom?.uuid)
-          )
-          .map((item) => item.custom.uuid),
-      };
-
-    default:
-      return { items: matchedItems.map((item) => formatPretty([item])) };
+  // Sort (unless already sorted by relevance)
+  let sorted: CslItem[];
+  if (sort === "relevance") {
+    sorted = matchedItems;
+  } else {
+    sorted = sortReferences(matchedItems, sort as SortField, order);
   }
+
+  // Paginate
+  const { items: paginatedItems, nextOffset } = paginate(sorted, { limit, offset });
+
+  // Format
+  const formattedItems = formatItems(paginatedItems, format);
+
+  return {
+    items: formattedItems,
+    total,
+    limit,
+    offset,
+    nextOffset,
+  };
 }
