@@ -8,3 +8,4 @@ export {
   listBackups,
   type BackupOptions,
 } from "./backup";
+export { pickDefined } from "./object";

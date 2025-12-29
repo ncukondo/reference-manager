@@ -1,7 +1,7 @@
 import type { SearchFormat, SearchResult } from "../../features/operations/search.js";
 import type { SearchSortField, SortOrder } from "../../features/pagination/index.js";
+import { pickDefined } from "../../utils/object.js";
 import type { ExecutionContext } from "../execution-context.js";
-import { pickDefined } from "../helpers.js";
 
 /**
  * Options for the search command.

@@ -166,17 +166,17 @@ Add command-line options for pagination.
 
 #### 16.5 HTTP API Layer
 
-Add query parameters for pagination.
+Add request body parameters for pagination.
 
-- [ ] **16.5.1**: Update references endpoint
-  - File: `src/server/routes/references.ts`
-  - Parse: Query params `sort`, `order`, `limit`, `offset`
+- [x] **16.5.1**: Update list and search endpoints
+  - Files: `src/server/routes/list.ts`, `src/server/routes/search.ts`
+  - Parse: Body params `sort`, `order`, `limit`, `offset`
   - Pass: To `listReferences` or `searchReferences`
-  - TDD: `src/server/routes/references.test.ts`
-  - Acceptance: Pagination via query params works
+  - TDD: `src/server/routes/list.test.ts`, `src/server/routes/search.test.ts`
+  - Acceptance: Pagination via request body works
 
-- [ ] **16.5.2**: Update response format
-  - File: `src/server/routes/references.ts`
+- [x] **16.5.2**: Update response format
+  - Files: `src/server/routes/list.ts`, `src/server/routes/search.ts`
   - Change: Return `{ items, total, limit, offset, nextOffset }`
   - TDD: Verify JSON response structure
   - Acceptance: Response includes pagination metadata

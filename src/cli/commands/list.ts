@@ -1,7 +1,7 @@
 import type { ListFormat, ListResult } from "../../features/operations/list.js";
 import type { SortField, SortOrder } from "../../features/pagination/index.js";
+import { pickDefined } from "../../utils/object.js";
 import type { ExecutionContext } from "../execution-context.js";
-import { pickDefined } from "../helpers.js";
 
 /**
  * Options for the list command.
