@@ -51,19 +51,18 @@ Add sorting, limit, and offset options to `list` and `search` commands across CL
 
 Core types and sorting utilities that other layers depend on.
 
-- [ ] **16.1.1**: Create pagination types
+- [x] **16.1.1**: Create pagination types
   - File: `src/features/pagination/types.ts` (new)
   - Types: `SortField`, `SearchSortField`, `SortOrder`, `PaginationOptions`, `SortOptions`, `PaginatedResult`
-  - TDD: `src/features/pagination/types.test.ts`
   - Acceptance: Types exported, Zod schemas for validation
 
-- [ ] **16.1.2**: Create sort field alias resolver
+- [x] **16.1.2**: Create sort field alias resolver
   - File: `src/features/pagination/aliases.ts` (new)
   - Function: `resolveSortAlias(alias: string): SortField` - resolves `pub`→`published`, `mod`→`updated`, `add`→`created`, `rel`→`relevance`
   - TDD: `src/features/pagination/aliases.test.ts`
   - Acceptance: All aliases resolve correctly, unknown throws error
 
-- [ ] **16.1.3**: Create reference sorter
+- [x] **16.1.3**: Create reference sorter
   - File: `src/features/pagination/sorter.ts` (new)
   - Function: `sortReferences(items: CslItem[], sort: SortField, order: SortOrder): CslItem[]`
   - Handles: `created`, `updated`, `published`, `author`, `title`
@@ -71,13 +70,13 @@ Core types and sorting utilities that other layers depend on.
   - TDD: `src/features/pagination/sorter.test.ts`
   - Acceptance: All sort fields work, missing values handled correctly
 
-- [ ] **16.1.4**: Create pagination applier
+- [x] **16.1.4**: Create pagination applier
   - File: `src/features/pagination/paginate.ts` (new)
   - Function: `paginate<T>(items: T[], options: { limit?: number; offset?: number }): { items: T[]; nextOffset: number | null }`
   - TDD: `src/features/pagination/paginate.test.ts`
   - Acceptance: limit=0 returns all, offset works, nextOffset calculated correctly
 
-- [ ] **16.1.5**: Create pagination module index
+- [x] **16.1.5**: Create pagination module index
   - File: `src/features/pagination/index.ts` (new)
   - Re-exports all types and functions
   - Acceptance: Clean public API
