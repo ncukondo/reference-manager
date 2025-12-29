@@ -2,10 +2,15 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type SearchToolParams, registerSearchTool } from "./search.js";
+
+// Mock config with MCP settings
+const mockConfig = { mcp: { defaultLimit: 20 } } as Config;
+const getConfig = () => mockConfig;
 
 describe("MCP search tool", () => {
   let tempDir: string;
@@ -62,7 +67,7 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => libraryOperations);
+      registerSearchTool(mockServer as never, () => libraryOperations, getConfig);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("search");
@@ -82,14 +87,18 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => libraryOperations);
+      registerSearchTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ query: "machine learning" });
 
+      // Single content block with metadata and items
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe("text");
-      expect(result.content[0].text).toContain("smith2024");
-      expect(result.content[0].text).toContain("Machine Learning Applications");
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(1);
+      expect(response.items).toHaveLength(1);
+      expect(response.items[0]).toContain("smith2024");
+      expect(response.items[0]).toContain("Machine Learning Applications");
     });
 
     it("should return all references when query is empty", async () => {
@@ -103,11 +112,15 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => libraryOperations);
+      registerSearchTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ query: "" });
 
-      expect(result.content).toHaveLength(3);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(3);
+      expect(response.items).toHaveLength(3);
     });
 
     it("should return empty array when no matches found", async () => {
@@ -121,11 +134,15 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => libraryOperations);
+      registerSearchTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ query: "nonexistent" });
 
-      expect(result.content).toHaveLength(0);
+      // Single content block with metadata and empty items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(0);
+      expect(response.items).toHaveLength(0);
     });
 
     it("should support author search", async () => {
@@ -139,12 +156,15 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => libraryOperations);
+      registerSearchTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ query: "author:jones" });
 
+      // Single content block with metadata and items
       expect(result.content).toHaveLength(1);
-      expect(result.content[0].text).toContain("jones2023");
+      const response = JSON.parse(result.content[0].text);
+      expect(response.items).toHaveLength(1);
+      expect(response.items[0]).toContain("jones2023");
     });
 
     it("should support year search", async () => {
@@ -158,12 +178,15 @@ describe("MCP search tool", () => {
         },
       };
 
-      registerSearchTool(mockServer as never, () => libraryOperations);
+      registerSearchTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ query: "year:2022" });
 
+      // Single content block with metadata and items
       expect(result.content).toHaveLength(1);
-      expect(result.content[0].text).toContain("brown2022");
+      const response = JSON.parse(result.content[0].text);
+      expect(response.items).toHaveLength(1);
+      expect(response.items[0]).toContain("brown2022");
     });
   });
 });

@@ -24,8 +24,8 @@ export function registerAllTools(
   getLibraryOperations: () => ILibraryOperations,
   getConfig: () => Config
 ): void {
-  registerSearchTool(server, getLibraryOperations);
-  registerListTool(server, getLibraryOperations);
+  registerSearchTool(server, getLibraryOperations, getConfig);
+  registerListTool(server, getLibraryOperations, getConfig);
   registerCiteTool(server, getLibraryOperations);
   registerAddTool(server, getLibraryOperations);
   registerRemoveTool(server, getLibraryOperations);

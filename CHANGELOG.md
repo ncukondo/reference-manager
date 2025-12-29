@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Pagination and Sorting (Phase 16)**: Add sorting and pagination to list/search commands
+  - Sort fields: `created`, `updated`, `published`, `author`, `title` (+ `relevance` for search)
+  - Sort aliases: `pub`→`published`, `mod`→`updated`, `add`→`created`, `rel`→`relevance`
+  - Pagination: `--limit/-n`, `--offset` options
+  - Secondary sort for stability: `created` (desc), then `id` (asc)
+  - CLI: `ref list --sort pub --order desc -n 10 --offset 20`
+  - HTTP API: Body params `sort`, `order`, `limit`, `offset`
+  - MCP: Default limit=20 (configurable via `mcp.default_limit`)
+  - JSON output includes pagination metadata: `{ items, total, limit, offset, nextOffset }`
+  - Non-JSON output shows header when paginated: `# Showing 1-10 of 150 references`
+  - Input validation: negative limit/offset rejected, invalid sort field/order rejected
+  - See `spec/features/pagination.md` for full specification
+
+- **MCP ILibraryOperations Pattern (Phase 15)**: Unified MCP tool implementation
+  - All MCP tools use `ILibraryOperations` interface
+  - Consistent with CLI and HTTP server patterns
+
 - **ISBN Support (Phase 14)**: Add ISBN support to the add command
   - ISBN-10 and ISBN-13 format detection and normalization
   - Metadata fetching via `@citation-js/plugin-isbn` (Google Books API, Open Library)

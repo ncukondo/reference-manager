@@ -108,9 +108,16 @@ A reference is included in search results if:
 - **All tokens** match (AND logic)
 - For each token, **at least one field** matches
 
-## Sorting (Default)
+## Sorting and Pagination
 
-1. Match strength
+See `spec/features/pagination.md` for complete sorting and pagination options.
+
+**Defaults for search:**
+- Sort: `updated` (descending) - most recently modified first
+- Limit: unlimited (CLI/HTTP), 20 (MCP)
+
+**`relevance` sort** uses weighted scoring:
+1. Match strength (exact > partial)
 2. Year (descending)
 3. Author (alphabetical)
 4. Title (alphabetical)

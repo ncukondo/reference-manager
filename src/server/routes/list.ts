@@ -2,12 +2,18 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { Library } from "../../core/library.js";
 import { type ListOptions, listReferences } from "../../features/operations/list.js";
+import { sortFieldSchema, sortOrderSchema } from "../../features/pagination/index.js";
+import { pickDefined } from "../../utils/object.js";
 
 /**
  * Request body schema for list endpoint
  */
 const listRequestBodySchema = z.object({
   format: z.enum(["pretty", "json", "bibtex", "ids-only", "uuid"]).optional(),
+  sort: sortFieldSchema.optional(),
+  order: sortOrderSchema.optional(),
+  limit: z.number().int().min(0).optional(),
+  offset: z.number().int().min(0).optional(),
 });
 
 /**
@@ -34,16 +40,20 @@ export function createListRoute(library: Library) {
     // Validate body with zod
     const parseResult = listRequestBodySchema.safeParse(body);
     if (!parseResult.success) {
-      return c.json({ error: "Request body must be an object" }, 400);
+      const errorMessage = parseResult.error.issues[0]?.message ?? "Invalid request body";
+      return c.json({ error: errorMessage }, 400);
     }
 
     const requestBody = parseResult.data;
 
     // Build options for listReferences
-    const options: ListOptions = {};
-    if (requestBody.format !== undefined) {
-      options.format = requestBody.format;
-    }
+    const options: ListOptions = pickDefined(requestBody, [
+      "format",
+      "sort",
+      "order",
+      "limit",
+      "offset",
+    ] as const);
 
     // Call listReferences operation
     const result = await listReferences(library, options);

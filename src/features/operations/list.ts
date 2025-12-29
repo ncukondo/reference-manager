@@ -1,6 +1,14 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ILibrary } from "../../core/library-interface.js";
 import { formatBibtex, formatPretty } from "../format/index.js";
+import {
+  type PaginationOptions,
+  type SortField,
+  type SortOptions,
+  type SortOrder,
+  paginate,
+  sortReferences,
+} from "../pagination/index.js";
 
 /**
  * Output format options for list operation
@@ -10,7 +18,7 @@ export type ListFormat = "pretty" | "json" | "bibtex" | "ids-only" | "uuid";
 /**
  * Options for listReferences operation
  */
-export interface ListOptions {
+export interface ListOptions extends PaginationOptions, SortOptions {
   /** Output format (default: "pretty") */
   format?: ListFormat;
 }
@@ -21,41 +29,74 @@ export interface ListOptions {
 export interface ListResult {
   /** Formatted strings for each reference */
   items: string[];
+  /** Total count before pagination */
+  total: number;
+  /** Applied limit (0 if unlimited) */
+  limit: number;
+  /** Applied offset */
+  offset: number;
+  /** Next page offset, null if no more results */
+  nextOffset: number | null;
+}
+
+/**
+ * Format items according to the specified format
+ */
+function formatItems(items: CslItem[], format: ListFormat): string[] {
+  switch (format) {
+    case "json":
+      return items.map((item) => JSON.stringify(item));
+
+    case "bibtex":
+      return items.map((item) => formatBibtex([item]));
+
+    case "ids-only":
+      return items.map((item) => item.id);
+
+    case "uuid":
+      return items
+        .filter((item): item is CslItem & { custom: { uuid: string } } =>
+          Boolean(item.custom?.uuid)
+        )
+        .map((item) => item.custom.uuid);
+
+    default:
+      return items.map((item) => formatPretty([item]));
+  }
 }
 
 /**
  * List all references from the library with specified format.
  *
  * @param library - The library to list references from
- * @param options - Formatting options
- * @returns Formatted strings for each reference
+ * @param options - Formatting and pagination options
+ * @returns Formatted strings for each reference with pagination metadata
  */
 export async function listReferences(library: ILibrary, options: ListOptions): Promise<ListResult> {
   const format = options.format ?? "pretty";
-  const items = await library.getAll();
+  const sort: SortField = options.sort ?? "updated";
+  const order: SortOrder = options.order ?? "desc";
+  const limit = options.limit ?? 0;
+  const offset = options.offset ?? 0;
 
-  switch (format) {
-    case "json":
-      return { items: items.map((item) => JSON.stringify(item)) };
+  // Get all items
+  const allItems = await library.getAll();
+  const total = allItems.length;
 
-    case "bibtex":
-      // Format each item individually using existing formatter
-      return { items: items.map((item) => formatBibtex([item])) };
+  // Sort
+  const sorted = sortReferences(allItems, sort, order);
 
-    case "ids-only":
-      return { items: items.map((item) => item.id) };
+  // Paginate
+  const { items: paginatedItems, nextOffset } = paginate(sorted, { limit, offset });
 
-    case "uuid":
-      return {
-        items: items
-          .filter((item): item is CslItem & { custom: { uuid: string } } =>
-            Boolean(item.custom?.uuid)
-          )
-          .map((item) => item.custom.uuid),
-      };
+  // Format
+  const formattedItems = formatItems(paginatedItems, format);
 
-    default:
-      // Format each item individually using existing formatter (pretty)
-      return { items: items.map((item) => formatPretty([item])) };
-  }
+  return {
+    items: formattedItems,
+    total,
+    limit,
+    offset,
+    nextOffset,
+  };
 }

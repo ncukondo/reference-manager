@@ -99,7 +99,7 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
 
     const context = await createExecutionContext(config, Library.load);
     const result = await executeList(options, context);
-    const output = formatListOutput(result);
+    const output = formatListOutput(result, options.json ?? false);
 
     if (output) {
       process.stdout.write(`${output}\n`);
@@ -123,6 +123,10 @@ function registerListCommand(program: Command): void {
     .option("--ids-only", "Output only citation keys")
     .option("--uuid", "Output only UUIDs")
     .option("--bibtex", "Output in BibTeX format")
+    .option("--sort <field>", "Sort by field: created|updated|published|author|title")
+    .option("--order <order>", "Sort order: asc|desc")
+    .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
+    .option("--offset <n>", "Number of results to skip", Number.parseInt)
     .action(async (options) => {
       await handleListAction(options, program);
     });
@@ -142,7 +146,7 @@ async function handleSearchAction(
 
     const context = await createExecutionContext(config, Library.load);
     const result = await executeSearch({ ...options, query }, context);
-    const output = formatSearchOutput(result);
+    const output = formatSearchOutput(result, options.json ?? false);
 
     if (output) {
       process.stdout.write(`${output}\n`);
@@ -167,6 +171,10 @@ function registerSearchCommand(program: Command): void {
     .option("--ids-only", "Output only citation keys")
     .option("--uuid", "Output only UUIDs")
     .option("--bibtex", "Output in BibTeX format")
+    .option("--sort <field>", "Sort by field: created|updated|published|author|title|relevance")
+    .option("--order <order>", "Sort order: asc|desc")
+    .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
+    .option("--offset <n>", "Number of results to skip", Number.parseInt)
     .action(async (query: string, options) => {
       await handleSearchAction(query, options, program);
     });

@@ -31,10 +31,27 @@ Available for `list` and `search` commands:
 | Flag | Description |
 |------|-------------|
 | (default) | Pretty-printed format |
-| `--json` | Compact JSON |
+| `--json` | Compact JSON (includes pagination metadata) |
 | `--ids-only` | Citation keys only |
 | `--uuid` | Internal UUIDs only |
 | `--bibtex` | BibTeX format |
+
+## Pagination and Sorting
+
+Available for `list` and `search` commands.
+
+See `spec/features/pagination.md` for complete specification.
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--sort <field>` | | Sort field: `created`, `updated`, `published`, `author`, `title`, `relevance` (search only) |
+| `--order <order>` | | Sort order: `asc`, `desc` |
+| `--limit <n>` | `-n` | Maximum results (0 = unlimited) |
+| `--offset <n>` | | Skip count (default: 0) |
+
+**Defaults:**
+- Sort: `updated` (descending)
+- Limit: unlimited
 
 ## Exit Codes
 
@@ -87,6 +104,11 @@ default_format = "text"
 
 [fulltext]
 directory = "~/.reference-manager/fulltext"
+
+[cli]
+default_limit = 0          # 0 = unlimited
+default_sort = "updated"
+default_order = "desc"
 ```
 
 ## Server Integration

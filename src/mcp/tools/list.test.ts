@@ -2,10 +2,15 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 import { OperationsLibrary } from "../../features/operations/operations-library.js";
 import { type ListToolParams, registerListTool } from "./list.js";
+
+// Mock config with MCP settings
+const mockConfig = { mcp: { defaultLimit: 20 } } as Config;
+const getConfig = () => mockConfig;
 
 describe("MCP list tool", () => {
   let tempDir: string;
@@ -55,7 +60,7 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       expect(registeredTools).toHaveLength(1);
       expect(registeredTools[0].name).toBe("list");
@@ -75,13 +80,22 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({});
 
-      expect(result.content).toHaveLength(2);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe("text");
-      expect(result.content[0].text).toContain("smith2024");
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(2);
+      expect(response.limit).toBe(20); // from mockConfig
+      expect(response.offset).toBe(0);
+      expect(response.items).toHaveLength(2);
+      // Check that both references are present (order depends on default sorting)
+      const allText = response.items.join("\n");
+      expect(allText).toContain("smith2024");
+      expect(allText).toContain("jones2023");
     });
 
     it("should return references in json format", async () => {
@@ -95,14 +109,18 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ format: "json" });
 
-      expect(result.content).toHaveLength(2);
-      // Verify JSON is valid
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.id).toBe("smith2024");
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.items).toHaveLength(2);
+      // Verify JSON items are valid and contain expected references
+      const ids = response.items.map((item: string) => JSON.parse(item).id);
+      expect(ids).toContain("smith2024");
+      expect(ids).toContain("jones2023");
     });
 
     it("should return references in bibtex format", async () => {
@@ -116,12 +134,15 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => libraryOperations);
+      registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
       const result = await capturedCallback?.({ format: "bibtex" });
 
-      expect(result.content).toHaveLength(2);
-      expect(result.content[0].text).toContain("@");
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.items).toHaveLength(2);
+      expect(response.items[0]).toContain("@");
     });
 
     it("should return empty array for empty library", async () => {
@@ -140,11 +161,15 @@ describe("MCP list tool", () => {
         },
       };
 
-      registerListTool(mockServer as never, () => emptyLibraryOps);
+      registerListTool(mockServer as never, () => emptyLibraryOps, getConfig);
 
       const result = await capturedCallback?.({});
 
-      expect(result.content).toHaveLength(0);
+      // Single content block with metadata and empty items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(0);
+      expect(response.items).toHaveLength(0);
     });
   });
 });
