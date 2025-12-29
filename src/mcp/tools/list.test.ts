@@ -84,10 +84,16 @@ describe("MCP list tool", () => {
 
       const result = await capturedCallback?.({});
 
-      expect(result.content).toHaveLength(2);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe("text");
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(2);
+      expect(response.limit).toBe(20); // from mockConfig
+      expect(response.offset).toBe(0);
+      expect(response.items).toHaveLength(2);
       // Check that both references are present (order depends on default sorting)
-      const allText = result.content.map((c) => c.text).join("\n");
+      const allText = response.items.join("\n");
       expect(allText).toContain("smith2024");
       expect(allText).toContain("jones2023");
     });
@@ -107,9 +113,12 @@ describe("MCP list tool", () => {
 
       const result = await capturedCallback?.({ format: "json" });
 
-      expect(result.content).toHaveLength(2);
-      // Verify JSON is valid and contains expected references
-      const ids = result.content.map((c) => JSON.parse(c.text).id);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.items).toHaveLength(2);
+      // Verify JSON items are valid and contain expected references
+      const ids = response.items.map((item: string) => JSON.parse(item).id);
       expect(ids).toContain("smith2024");
       expect(ids).toContain("jones2023");
     });
@@ -129,8 +138,11 @@ describe("MCP list tool", () => {
 
       const result = await capturedCallback?.({ format: "bibtex" });
 
-      expect(result.content).toHaveLength(2);
-      expect(result.content[0].text).toContain("@");
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.items).toHaveLength(2);
+      expect(response.items[0]).toContain("@");
     });
 
     it("should return empty array for empty library", async () => {
@@ -153,7 +165,11 @@ describe("MCP list tool", () => {
 
       const result = await capturedCallback?.({});
 
-      expect(result.content).toHaveLength(0);
+      // Single content block with metadata and empty items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse(result.content[0].text);
+      expect(response.total).toBe(0);
+      expect(response.items).toHaveLength(0);
     });
   });
 });

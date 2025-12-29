@@ -158,11 +158,14 @@ describe("MCP Server E2E", () => {
         arguments: { query: "machine learning" },
       });
 
+      // Single content block with metadata and items
       expect(result.content).toHaveLength(1);
       expect(result.content[0]).toHaveProperty("type", "text");
-      const text = (result.content[0] as { type: string; text: string }).text;
-      expect(text).toContain("smith2024");
-      expect(text).toContain("Machine Learning Applications");
+      const response = JSON.parse((result.content[0] as { text: string }).text);
+      expect(response.total).toBe(1);
+      expect(response.items).toHaveLength(1);
+      expect(response.items[0]).toContain("smith2024");
+      expect(response.items[0]).toContain("Machine Learning Applications");
     });
 
     it("should list all references", async () => {
@@ -173,11 +176,14 @@ describe("MCP Server E2E", () => {
         arguments: {},
       });
 
-      expect(result.content).toHaveLength(3);
-      const texts = result.content.map((c) => (c as { text: string }).text);
-      expect(texts.some((t) => t.includes("smith2024"))).toBe(true);
-      expect(texts.some((t) => t.includes("jones2023"))).toBe(true);
-      expect(texts.some((t) => t.includes("brown2022"))).toBe(true);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
+      expect(response.total).toBe(3);
+      expect(response.items).toHaveLength(3);
+      expect(response.items.some((t: string) => t.includes("smith2024"))).toBe(true);
+      expect(response.items.some((t: string) => t.includes("jones2023"))).toBe(true);
+      expect(response.items.some((t: string) => t.includes("brown2022"))).toBe(true);
     });
 
     it("should cite references", async () => {
@@ -262,7 +268,11 @@ describe("MCP Server E2E", () => {
         arguments: { query: "smith2024" },
       });
 
-      expect(searchResult.content).toHaveLength(0);
+      // Single content block with metadata and empty items
+      expect(searchResult.content).toHaveLength(1);
+      const response = JSON.parse((searchResult.content[0] as { text: string }).text);
+      expect(response.total).toBe(0);
+      expect(response.items).toHaveLength(0);
     });
   });
 
@@ -363,8 +373,12 @@ describe("MCP Server E2E", () => {
         arguments: { limit: 2 },
       });
 
-      // Should return exactly 2 references
-      expect(result.content).toHaveLength(2);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
+      expect(response.total).toBe(3);
+      expect(response.limit).toBe(2);
+      expect(response.items).toHaveLength(2);
     });
 
     it("should list with limit and offset", async () => {
@@ -375,19 +389,22 @@ describe("MCP Server E2E", () => {
         name: "list",
         arguments: { limit: 2, offset: 0 },
       });
-      expect(firstPage.content).toHaveLength(2);
+      expect(firstPage.content).toHaveLength(1);
+      const firstResponse = JSON.parse((firstPage.content[0] as { text: string }).text);
+      expect(firstResponse.items).toHaveLength(2);
 
       // Second page
       const secondPage = await mcpClient.callTool({
         name: "list",
         arguments: { limit: 2, offset: 2 },
       });
-      expect(secondPage.content).toHaveLength(1); // Only 3 references total
+      expect(secondPage.content).toHaveLength(1);
+      const secondResponse = JSON.parse((secondPage.content[0] as { text: string }).text);
+      // Only 1 reference left (3 total - 2 offset)
+      expect(secondResponse.items).toHaveLength(1);
 
       // Verify different results on each page
-      const firstIds = firstPage.content.map((c) => (c as { text: string }).text);
-      const secondIds = secondPage.content.map((c) => (c as { text: string }).text);
-      expect(firstIds).not.toEqual(secondIds);
+      expect(firstResponse.items).not.toEqual(secondResponse.items);
     });
 
     it("should list with sorting by author", async () => {
@@ -398,12 +415,13 @@ describe("MCP Server E2E", () => {
         arguments: { sort: "author", order: "asc" },
       });
 
-      expect(result.content).toHaveLength(3);
-      const texts = result.content.map((c) => (c as { text: string }).text);
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
+      expect(response.items).toHaveLength(3);
       // Brown, Jones, Smith alphabetically
-      expect(texts[0]).toContain("Brown");
-      expect(texts[1]).toContain("Jones");
-      expect(texts[2]).toContain("Smith");
+      expect(response.items[0]).toContain("Brown");
+      expect(response.items[1]).toContain("Jones");
+      expect(response.items[2]).toContain("Smith");
     });
 
     it("should list with sorting by published date descending", async () => {
@@ -414,12 +432,13 @@ describe("MCP Server E2E", () => {
         arguments: { sort: "published", order: "desc" },
       });
 
-      expect(result.content).toHaveLength(3);
-      const texts = result.content.map((c) => (c as { text: string }).text);
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
+      expect(response.items).toHaveLength(3);
       // 2024, 2023, 2022 - Smith, Jones, Brown
-      expect(texts[0]).toContain("Smith");
-      expect(texts[1]).toContain("Jones");
-      expect(texts[2]).toContain("Brown");
+      expect(response.items[0]).toContain("Smith");
+      expect(response.items[1]).toContain("Jones");
+      expect(response.items[2]).toContain("Brown");
     });
 
     it("should search with limit", async () => {
@@ -430,8 +449,11 @@ describe("MCP Server E2E", () => {
         arguments: { query: "learning", limit: 1 },
       });
 
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
       // Should return at most 1 result (there are 2 matching: "Machine Learning" and "Deep Learning")
-      expect(result.content.length).toBeLessThanOrEqual(1);
+      expect(response.items.length).toBeLessThanOrEqual(1);
     });
 
     it("should search with sorting by updated date", async () => {
@@ -442,9 +464,12 @@ describe("MCP Server E2E", () => {
         arguments: { query: "learning", sort: "updated", order: "desc" },
       });
 
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
       // Both "Machine Learning" and "Deep Learning" match
       // Should be sorted by updated (timestamp) descending
-      expect(result.content.length).toBeGreaterThanOrEqual(1);
+      expect(response.items.length).toBeGreaterThanOrEqual(1);
     });
 
     it("should return JSON format with limit applied", async () => {
@@ -455,12 +480,13 @@ describe("MCP Server E2E", () => {
         arguments: { format: "json", limit: 2 },
       });
 
-      // JSON format returns each item as a separate content block
-      expect(result.content).toHaveLength(2);
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
+      expect(response.items).toHaveLength(2);
       // Each item should be parseable JSON
-      for (const content of result.content) {
-        const text = (content as { text: string }).text;
-        const parsed = JSON.parse(text);
+      for (const item of response.items) {
+        const parsed = JSON.parse(item);
         expect(parsed).toHaveProperty("id");
         expect(parsed).toHaveProperty("type");
       }
@@ -474,8 +500,11 @@ describe("MCP Server E2E", () => {
         arguments: { format: "json", limit: 10 },
       });
 
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
       // We have 3 references, limit=10, so should return all 3
-      expect(result.content).toHaveLength(3);
+      expect(response.items).toHaveLength(3);
     });
 
     it("should apply default limit from MCP config", async () => {
@@ -488,8 +517,11 @@ describe("MCP Server E2E", () => {
         arguments: { format: "json" },
       });
 
+      // Single content block with metadata and items
+      expect(result.content).toHaveLength(1);
+      const response = JSON.parse((result.content[0] as { text: string }).text);
       // Should return all 3 references (default limit 20 > 3)
-      expect(result.content).toHaveLength(3);
+      expect(response.items).toHaveLength(3);
     });
   });
 });

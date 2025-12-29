@@ -40,7 +40,8 @@ export function createListRoute(library: Library) {
     // Validate body with zod
     const parseResult = listRequestBodySchema.safeParse(body);
     if (!parseResult.success) {
-      return c.json({ error: "Request body must be an object" }, 400);
+      const errorMessage = parseResult.error.issues[0]?.message ?? "Invalid request body";
+      return c.json({ error: errorMessage }, 400);
     }
 
     const requestBody = parseResult.data;

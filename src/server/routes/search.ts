@@ -41,7 +41,8 @@ export function createSearchRoute(library: Library) {
     // Validate body with zod
     const parseResult = searchRequestBodySchema.safeParse(body);
     if (!parseResult.success) {
-      return c.json({ error: "Invalid request body" }, 400);
+      const errorMessage = parseResult.error.issues[0]?.message ?? "Invalid request body";
+      return c.json({ error: errorMessage }, 400);
     }
 
     const requestBody = parseResult.data;

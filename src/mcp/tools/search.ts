@@ -72,10 +72,18 @@ export function registerSearchTool(
       });
 
       return {
-        content: result.items.map((item) => ({
-          type: "text" as const,
-          text: item,
-        })),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              total: result.total,
+              limit: result.limit,
+              offset: result.offset,
+              nextOffset: result.nextOffset,
+              items: result.items,
+            }),
+          },
+        ],
       };
     }
   );
