@@ -42,6 +42,7 @@ import {
 import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
+import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
 import {
@@ -85,6 +86,7 @@ export function createProgram(): Command {
   registerServerCommand(program);
   registerFulltextCommand(program);
   registerMcpCommand(program);
+  registerCompletionCommand(program);
 
   return program;
 }
@@ -875,6 +877,12 @@ function registerFulltextCommand(program: Command): void {
  */
 export async function main(argv: string[]): Promise<void> {
   const program = createProgram();
+
+  // Handle shell completion if COMP_LINE is set
+  if (process.env.COMP_LINE) {
+    await handleCompletion(program);
+    return;
+  }
 
   // Setup signal handlers
   process.on("SIGINT", () => {

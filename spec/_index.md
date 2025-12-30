@@ -45,6 +45,7 @@ spec/
 │   ├── fulltext.md              # Full-text PDF/Markdown management
 │   ├── search.md                # Search query syntax
 │   ├── pagination.md            # Sorting, limit, offset for list/search
+│   ├── shell-completion.md      # Bash/Zsh/Fish auto-completion
 │   ├── duplicate-detection.md   # Duplicate detection rules
 │   ├── file-monitoring.md       # File watching, reload
 │   ├── write-safety.md          # Atomic write, backup, merge
@@ -88,6 +89,7 @@ spec/
 | `search` / `list` | `features/search.md`, `features/pagination.md` |
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |
+| `completion` | `features/shell-completion.md` |
 
 ### Core Concepts
 

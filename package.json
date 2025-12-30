@@ -54,6 +54,7 @@
     "chokidar": "^5.0.0",
     "commander": "^12.1.0",
     "hono": "^4.11.1",
+    "tabtab": "^3.0.2",
     "write-file-atomic": "^7.0.0",
     "zod": "^4.1.13"
   },
@@ -62,6 +63,7 @@
     "@hono/node-server": "^1.19.7",
     "@types/chokidar": "^1.7.5",
     "@types/node": "^22.19.2",
+    "@types/tabtab": "^3.0.4",
     "@types/write-file-atomic": "^4.0.3",
     "@vitest/coverage-v8": "^2.1.9",
     "typescript": "^5.6.0",

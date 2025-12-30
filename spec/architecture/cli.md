@@ -23,6 +23,7 @@
 | `fulltext <subcommand>` | Manage full-text files (attach/get/detach) |
 | `server start\|stop\|status` | Manage HTTP server |
 | `mcp` | Start MCP stdio server |
+| `completion [action]` | Manage shell completion (install/uninstall) |
 
 ## Output Formats
 

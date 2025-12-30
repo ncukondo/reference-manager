@@ -203,6 +203,36 @@ With a custom library:
 | `library://reference/{id}` | Single reference by ID |
 | `library://styles` | Available citation styles |
 
+## Shell Completion
+
+Enable intelligent tab completion for Bash, Zsh, or Fish:
+
+```bash
+# Install completion (interactive shell selection)
+ref completion
+
+# Or explicitly
+ref completion install
+
+# Remove completion
+ref completion uninstall
+```
+
+After installation, restart your shell or source the config file. Then:
+
+```bash
+ref <TAB>                    # Shows: list search add remove ...
+ref list --<TAB>             # Shows: --json --sort --limit ...
+ref list --sort <TAB>        # Shows: created updated published ...
+ref cite <TAB>               # Shows: smith2023 jones2024 ...
+ref cite smith<TAB>          # Shows: smith2023 smith2024-review
+```
+
+Completion includes:
+- Subcommands and options
+- Option values (sort fields, citation styles, etc.)
+- Dynamic reference IDs from your library
+
 ## CLI Reference
 
 ### Basic Commands
