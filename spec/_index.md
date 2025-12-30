@@ -44,6 +44,7 @@ spec/
 │   ├── citation.md              # Citation generation
 │   ├── fulltext.md              # Full-text PDF/Markdown management
 │   ├── search.md                # Search query syntax
+│   ├── interactive-search.md    # Interactive incremental search mode
 │   ├── pagination.md            # Sorting, limit, offset for list/search
 │   ├── shell-completion.md      # Bash/Zsh/Fish auto-completion
 │   ├── duplicate-detection.md   # Duplicate detection rules
@@ -87,6 +88,7 @@ spec/
 | `cite` | `features/citation.md` |
 | `fulltext` | `features/fulltext.md` |
 | `search` / `list` | `features/search.md`, `features/pagination.md` |
+| `search -i` | `features/interactive-search.md` |
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |
 | `completion` | `features/shell-completion.md` |
