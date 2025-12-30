@@ -27,6 +27,7 @@
 # 複数のソースから文献をインポート
 ref add pmid:12345678 pmid:23456789
 ref add "10.1234/example.doi"
+ref add "ISBN:978-4-00-000000-0"
 ref add exported-from-pubmed.nbib
 
 # AIによるスクリーニング支援（Claude Codeと連携）
@@ -102,6 +103,9 @@ ref add "10.1038/nature12373"
 # PubMedから追加
 ref add pmid:25056061
 
+# ISBNで書籍を追加
+ref add "ISBN:978-4-00-000000-0"
+
 # ライブラリを検索
 ref search "author:smith machine learning"
 
@@ -131,6 +135,23 @@ claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-m
 ```
 
 ### Claude Desktop セットアップ
+
+#### オプション1: MCPBバンドル（推奨）
+
+[最新リリース](https://github.com/ncukondo/reference-manager/releases/latest)から`.mcpb`ファイルをダウンロードして、Claude Desktopでインストール：
+
+1. リリースページから`reference-manager.mcpb`をダウンロード
+2. Claude Desktopを開き、**設定** → **拡張機能**に移動
+3. **ファイルからインストール**をクリックして、ダウンロードした`.mcpb`ファイルを選択
+4. プロンプトが表示されたら**Config File Path**を設定（例: `~/.reference-manager/config.toml`）
+
+設定ファイルには最低限以下を含めてください：
+
+```toml
+library = "~/.reference-manager/csl.library.json"
+```
+
+#### オプション2: 手動設定
 
 設定ファイルに追加：
 
@@ -167,7 +188,7 @@ claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-m
 |--------|------|------------|
 | `search` | 文献を検索 | `query`: 検索文字列（例: `"author:smith 2024"`） |
 | `list` | すべての文献を一覧表示 | `format?`: `"json"` \| `"bibtex"` \| `"pretty"` |
-| `add` | 新しい文献を追加 | `input`: DOI、PMID、BibTeX、RIS、またはCSL-JSON |
+| `add` | 新しい文献を追加 | `input`: DOI、PMID、ISBN、BibTeX、RIS、またはCSL-JSON |
 | `remove` | 文献を削除 | `id`: 文献ID、`force`: `true`が必須 |
 | `cite` | フォーマット済み引用を生成 | `ids`: 文献IDの配列、`style?`: 引用スタイル、`format?`: `"text"` \| `"html"` |
 | `fulltext_attach` | PDF/Markdownを添付 | `id`: 文献ID、`path`: ファイルパス |
@@ -182,6 +203,36 @@ claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-m
 | `library://reference/{id}` | IDで指定した単一の文献 |
 | `library://styles` | 利用可能な引用スタイル |
 
+## シェル補完
+
+Bash、Zsh、Fishでインテリジェントなタブ補完を有効化：
+
+```bash
+# 補完をインストール（対話形式でシェルを選択）
+ref completion
+
+# または明示的に
+ref completion install
+
+# 補完を削除
+ref completion uninstall
+```
+
+インストール後、シェルを再起動するか設定ファイルをsourceしてください：
+
+```bash
+ref <TAB>                    # 表示: list search add remove ...
+ref list --<TAB>             # 表示: --json --sort --limit ...
+ref list --sort <TAB>        # 表示: created updated published ...
+ref cite <TAB>               # 表示: smith2023 jones2024 ...
+ref cite smith<TAB>          # 表示: smith2023 smith2024-review
+```
+
+補完機能の内容：
+- サブコマンドとオプション
+- オプション値（ソートフィールド、引用スタイルなど）
+- ライブラリからの動的な文献ID
+
 ## CLIリファレンス
 
 ### 基本コマンド
@@ -191,6 +242,11 @@ claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-m
 ref list
 ref list --format json
 ref list --format bibtex
+
+# ソートとページネーション
+ref list --sort published --order desc          # 新しい順
+ref list --sort author --limit 10               # 著者名順で最初の10件
+ref list --sort created -n 20 --offset 20       # ページ2（21-40件目）
 
 # 文献を検索
 ref search "machine learning"
@@ -204,6 +260,7 @@ ref add references.bib                # BibTeXから
 ref add export.ris                    # RISから
 ref add "10.1038/nature12373"         # DOIから
 ref add pmid:25056061                 # PubMed IDから
+ref add "ISBN:978-4-00-000000-0"      # ISBNから
 cat references.json | ref add         # 標準入力から
 
 # 文献を削除
@@ -256,6 +313,28 @@ ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 - **組み合わせ**: `author:smith "deep learning" 2024`
 
 対応フィールドプレフィックス: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+
+### ソートとページネーション
+
+```bash
+# ソートオプション
+ref list --sort published              # 出版日順
+ref list --sort created                # 追加日順
+ref list --sort updated                # 更新日順
+ref list --sort author                 # 第一著者名順
+ref list --sort title                  # タイトルのアルファベット順
+ref search "AI" --sort relevance       # 検索関連度順（検索のみ）
+
+# ソート順序
+ref list --sort published --order asc  # 古い順
+ref list --sort published --order desc # 新しい順（デフォルト）
+
+# ページネーション
+ref list --limit 20                    # 最初の20件を表示
+ref list -n 20 --offset 40             # 41-60件目を表示
+```
+
+ソートフィールドのエイリアス: `pub`→`published`, `mod`→`updated`, `add`→`created`, `rel`→`relevance`
 
 ## 設定
 

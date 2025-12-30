@@ -243,6 +243,11 @@ ref list
 ref list --format json
 ref list --format bibtex
 
+# List with sorting and pagination
+ref list --sort published --order desc          # Latest first
+ref list --sort author --limit 10               # First 10 by author
+ref list --sort created -n 20 --offset 20       # Page 2 (items 21-40)
+
 # Search references
 ref search "machine learning"
 ref search "author:smith"
@@ -308,6 +313,28 @@ ref fulltext detach smith2024 --pdf --delete      # Also delete the file
 - **Combined**: `author:smith "deep learning" 2024`
 
 Supported field prefixes: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+
+### Sorting and Pagination
+
+```bash
+# Sort options
+ref list --sort published              # Sort by publication date
+ref list --sort created                # Sort by added date
+ref list --sort updated                # Sort by modification date
+ref list --sort author                 # Sort by first author name
+ref list --sort title                  # Sort alphabetically by title
+ref search "AI" --sort relevance       # Sort by search relevance (search only)
+
+# Sort order
+ref list --sort published --order asc  # Oldest first
+ref list --sort published --order desc # Newest first (default)
+
+# Pagination
+ref list --limit 20                    # Show first 20 results
+ref list -n 20 --offset 40             # Show items 41-60
+```
+
+Sort field aliases: `pub`→`published`, `mod`→`updated`, `add`→`created`, `rel`→`relevance`
 
 ## Configuration
 
