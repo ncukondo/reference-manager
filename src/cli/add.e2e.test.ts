@@ -142,16 +142,10 @@ ER  - `;
     });
   });
 
-
   describe("identifier input via CLI", () => {
     it("should recognize ISBN identifier with prefix", async () => {
       // Use a well-known ISBN that should resolve
-      const result = await runCli([
-        "add",
-        "--library",
-        libraryPath,
-        "ISBN:9780596517748",
-      ]);
+      const result = await runCli(["add", "--library", libraryPath, "ISBN:9780596517748"]);
 
       // Should attempt to fetch (may succeed or fail depending on network/API)
       // The key is that it should NOT show "not a valid PMID or DOI" error
@@ -160,24 +154,14 @@ ER  - `;
     });
 
     it("should recognize ISBN-13 without prefix", async () => {
-      const result = await runCli([
-        "add",
-        "--library",
-        libraryPath,
-        "9780596517748",
-      ]);
+      const result = await runCli(["add", "--library", libraryPath, "9780596517748"]);
 
       expect(result.stderr).not.toContain("not a valid PMID or DOI");
       expect(result.stderr).not.toContain("not a valid PMID, DOI, or ISBN");
     });
 
     it("should show updated error message for invalid identifier", async () => {
-      const result = await runCli([
-        "add",
-        "--library",
-        libraryPath,
-        "invalid-identifier-12345",
-      ]);
+      const result = await runCli(["add", "--library", libraryPath, "invalid-identifier-12345"]);
 
       // Should show the updated error message that includes ISBN (truncated in non-verbose mode)
       // Old message was "not a valid PMID or DOI", new message starts with "not a valid PMID,"
