@@ -19,17 +19,26 @@ describe("addReferences", () => {
   const createItem = (
     id: string,
     options?: { doi?: string; title?: string; uuid?: string }
-  ): CslItem => ({
-    id,
-    type: "article",
-    title: options?.title ?? "Test Article",
-    DOI: options?.doi,
-    custom: {
-      uuid: options?.uuid ?? `${id}-uuid`,
-      created_at: "2024-01-01T00:00:00.000Z",
-      timestamp: "2024-01-01T00:00:00.000Z",
-    },
-  });
+  ): CslItem => {
+    // Extract author and year from id (e.g., "Smith-2020" -> author: Smith, year: 2020)
+    const match = id.match(/^([A-Za-z]+)-(\d{4})/);
+    const authorName = match?.[1] ?? undefined;
+    const year = match?.[2] ? Number.parseInt(match[2], 10) : undefined;
+
+    return {
+      id,
+      type: "article",
+      title: options?.title ?? "Test Article",
+      DOI: options?.doi,
+      ...(authorName && { author: [{ family: authorName }] }),
+      ...(year && { issued: { "date-parts": [[year]] } }),
+      custom: {
+        uuid: options?.uuid ?? `${id}-uuid`,
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    };
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,7 +66,7 @@ describe("addReferences", () => {
 
       expect(result.added).toHaveLength(1);
       expect(result.added[0]).toEqual({
-        id: "Smith-2020",
+        id: "smith-2020", // generateId normalizes to lowercase
         title: "Test Article",
       });
       expect(result.failed).toHaveLength(0);
@@ -173,10 +182,12 @@ describe("addReferences", () => {
 
   describe("ID collision resolution", () => {
     it("should resolve ID collision by appending suffix", async () => {
-      existingItems = [createItem("Smith-2020", { doi: "10.1234/a" })];
+      // Use lowercase IDs to match generateId output
+      // Use different titles to avoid title+author+year duplicate detection
+      existingItems = [createItem("smith-2020", { doi: "10.1234/a", title: "Article A" })];
 
-      // New item with same ID but different DOI
-      const newItem = createItem("Smith-2020", { doi: "10.1234/b" });
+      // New item with same generated ID but different DOI and title
+      const newItem = createItem("Smith-2020", { doi: "10.1234/b", title: "Article B" });
 
       mockedImportFromInputs.mockResolvedValue({
         results: [{ success: true, item: newItem, source: "10.1234/b" }],
@@ -185,19 +196,21 @@ describe("addReferences", () => {
       const result = await addReferences(["10.1234/b"], mockLibrary, {});
 
       expect(result.added).toHaveLength(1);
-      expect(result.added[0].id).toBe("Smith-2020a");
+      expect(result.added[0].id).toBe("smith-2020a");
       expect(result.added[0].idChanged).toBe(true);
-      expect(result.added[0].originalId).toBe("Smith-2020");
+      expect(result.added[0].originalId).toBe("smith-2020");
     });
 
     it("should handle multiple ID collisions", async () => {
+      // Use lowercase IDs to match generateId output
+      // Use different titles to avoid title+author+year duplicate detection
       existingItems = [
-        createItem("Smith-2020", { doi: "10.1234/a" }),
-        createItem("Smith-2020a", { doi: "10.1234/b" }),
-        createItem("Smith-2020b", { doi: "10.1234/c" }),
+        createItem("smith-2020", { doi: "10.1234/a", title: "Article A" }),
+        createItem("smith-2020a", { doi: "10.1234/b", title: "Article B" }),
+        createItem("smith-2020b", { doi: "10.1234/c", title: "Article C" }),
       ];
 
-      const newItem = createItem("Smith-2020", { doi: "10.1234/d" });
+      const newItem = createItem("Smith-2020", { doi: "10.1234/d", title: "Article D" });
 
       mockedImportFromInputs.mockResolvedValue({
         results: [{ success: true, item: newItem, source: "10.1234/d" }],
@@ -206,11 +219,11 @@ describe("addReferences", () => {
       const result = await addReferences(["10.1234/d"], mockLibrary, {});
 
       expect(result.added).toHaveLength(1);
-      expect(result.added[0].id).toBe("Smith-2020c");
+      expect(result.added[0].id).toBe("smith-2020c");
     });
 
     it("should not change ID when no collision", async () => {
-      const newItem = createItem("UniqueId-2020", { doi: "10.1234/unique" });
+      const newItem = createItem("Unique-2020", { doi: "10.1234/unique" });
 
       mockedImportFromInputs.mockResolvedValue({
         results: [{ success: true, item: newItem, source: "10.1234/unique" }],
@@ -219,7 +232,7 @@ describe("addReferences", () => {
       const result = await addReferences(["10.1234/unique"], mockLibrary, {});
 
       expect(result.added).toHaveLength(1);
-      expect(result.added[0].id).toBe("UniqueId-2020");
+      expect(result.added[0].id).toBe("unique-2020"); // generateId normalizes to lowercase
       expect(result.added[0].idChanged).toBeUndefined();
       expect(result.added[0].originalId).toBeUndefined();
     });
