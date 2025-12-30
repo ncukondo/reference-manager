@@ -26,58 +26,9 @@ This document defines the workflow including TDD process, quality checks, and co
 - ✅ **Phase 14**: ISBN Support (detection, fetching, caching, duplicate detection, idType API)
 - ✅ **Phase 15**: MCP ILibraryOperations Pattern (unified MCP tool implementation)
 - ✅ **Phase 16**: Pagination and Sorting (sort/limit/offset for list and search commands)
+- ✅ **Phase 17**: Shell Completion (Bash/Zsh/Fish auto-completion using tabtab)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
-
----
-
-## Current Work
-
-### Phase 17: Shell Completion
-
-Bash/Zsh/Fish auto-completion using tabtab.
-
-**Spec**: `spec/features/shell-completion.md`
-**ADR**: `spec/decisions/ADR-011-use-tabtab-for-shell-completion.md`
-
-#### 17.1: Foundation Setup
-- [x] Install tabtab package (`npm install tabtab`)
-- [x] Create `src/cli/completion.ts` module skeleton
-- [x] Add type definitions if needed
-
-#### 17.2: Completion Command (TDD)
-- [x] Write tests for `completion` command (`src/cli/completion.test.ts`)
-- [x] Implement `registerCompletionCommand` function
-- [x] Implement `installCompletion` action
-- [x] Implement `uninstallCompletion` action
-- [x] Register command in `src/cli/index.ts`
-
-#### 17.3: Static Completion (TDD)
-- [x] Write tests for static completion logic
-- [x] Implement subcommand completion (`list`, `search`, `add`, etc.)
-- [x] Implement global option completion (`--config`, `--library`, etc.)
-- [x] Implement command-specific option completion
-- [x] Implement option value completion (`--sort`, `--format`, etc.)
-
-#### 17.4: Dynamic ID Completion (TDD)
-- [x] Write tests for dynamic ID completion
-- [x] Implement library loading for completion context
-- [x] Implement ID filtering based on partial input
-- [x] Add context detection (cite, remove, update, fulltext commands)
-- [x] Add description suffix for Zsh/Fish (e.g., `smith2023:RNA interference...`)
-- [x] Handle errors gracefully (empty completions on failure)
-
-#### 17.5: Integration and Polish
-- [x] Integrate completion handler in CLI entry point
-- [x] Handle `COMP_LINE` environment variable detection
-- [x] Test with actual shells (Bash, Zsh)
-- [x] Performance optimization (limit candidates to 100)
-
-#### 17.6: Documentation and Quality
-- [x] Run full test suite (`npm test`)
-- [x] Run quality checks (`npm run typecheck && npm run lint && npm run format`)
-- [x] Update README with completion setup instructions
-- [x] Update CHANGELOG.md
 
 ---
 
