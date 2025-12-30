@@ -68,16 +68,16 @@ Bash/Zsh/Fish auto-completion using tabtab.
 - [x] Handle errors gracefully (empty completions on failure)
 
 #### 17.5: Integration and Polish
-- [ ] Integrate completion handler in CLI entry point
-- [ ] Handle `COMP_LINE` environment variable detection
-- [ ] Test with actual shells (Bash, Zsh)
-- [ ] Performance optimization (limit candidates to 100)
+- [x] Integrate completion handler in CLI entry point
+- [x] Handle `COMP_LINE` environment variable detection
+- [x] Test with actual shells (Bash, Zsh)
+- [x] Performance optimization (limit candidates to 100)
 
 #### 17.6: Documentation and Quality
-- [ ] Run full test suite (`npm test`)
-- [ ] Run quality checks (`npm run typecheck && npm run lint && npm run format`)
-- [ ] Update README with completion setup instructions
-- [ ] Update CHANGELOG.md
+- [x] Run full test suite (`npm test`)
+- [x] Run quality checks (`npm run typecheck && npm run lint && npm run format`)
+- [x] Update README with completion setup instructions
+- [x] Update CHANGELOG.md
 
 ---
 

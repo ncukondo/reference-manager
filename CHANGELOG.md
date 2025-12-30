@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Shell Completion (Phase 17)**: Bash/Zsh/Fish auto-completion using tabtab
+  - New `completion` command: `ref completion [install|uninstall]`
+  - Static completion: subcommands, global options, command-specific options
+  - Option value completion: `--sort`, `--format`, `--style`, `--log-level`, etc.
+  - Dynamic ID completion: reference IDs from library for cite, remove, update, fulltext commands
+  - ID completions include brief description (Zsh/Fish): `smith2023:RNA interference...`
+  - Performance optimized: limit candidates to 100, use server if running
+  - Silent error handling: returns empty completions on failure
+  - See `spec/features/shell-completion.md` for full specification
+
 - **Pagination and Sorting (Phase 16)**: Add sorting and pagination to list/search commands
   - Sort fields: `created`, `updated`, `published`, `author`, `title` (+ `relevance` for search)
   - Sort aliases: `pub`→`published`, `mod`→`updated`, `add`→`created`, `rel`→`relevance`
