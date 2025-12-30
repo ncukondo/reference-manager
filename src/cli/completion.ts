@@ -2,138 +2,33 @@
  * Shell completion support using tabtab
  *
  * Provides intelligent auto-completion for Bash, Zsh, and Fish shells.
+ * Completion candidates are dynamically extracted from Commander program
+ * and existing type definitions to avoid duplication.
  */
 
-import type { Command } from "commander";
+import type { Command, Option } from "commander";
 import type { CompletionItem, TabtabEnv } from "tabtab";
+import { BUILTIN_STYLES } from "../config/csl-styles.js";
+import { searchSortFieldSchema, sortOrderSchema } from "../features/pagination/types.js";
 
-// Subcommands available in the CLI
-const SUBCOMMANDS: CompletionItem[] = [
-  { name: "list", description: "List all references" },
-  { name: "search", description: "Search references" },
-  { name: "add", description: "Add a new reference" },
-  { name: "remove", description: "Remove a reference" },
-  { name: "update", description: "Update a reference" },
-  { name: "cite", description: "Generate citation" },
-  { name: "fulltext", description: "Manage full-text files" },
-  { name: "server", description: "HTTP server commands" },
-  { name: "mcp", description: "MCP stdio server" },
-  { name: "completion", description: "Shell completion" },
-];
+// Extract option values from existing schemas
+const SEARCH_SORT_FIELDS = searchSortFieldSchema.options;
+const SORT_ORDERS = sortOrderSchema.options;
 
-// Global options available for all commands
-const GLOBAL_OPTIONS: CompletionItem[] = [
-  { name: "--help", description: "Display help" },
-  { name: "--version", description: "Display version" },
-  { name: "--config", description: "Config file path" },
-  { name: "--library", description: "Library file path" },
-  { name: "--quiet", description: "Suppress output" },
-  { name: "--verbose", description: "Enable verbose output" },
-  { name: "--log-level", description: "Log level" },
-  { name: "--no-backup", description: "Disable backup" },
-  { name: "--backup-dir", description: "Backup directory" },
-];
+// Output format options (from CitationFormatOptions type)
+const CITATION_FORMATS = ["text", "html", "rtf"] as const;
 
-// Command-specific options
-const COMMAND_OPTIONS: Record<string, CompletionItem[]> = {
-  list: [
-    { name: "--json", description: "Output JSON" },
-    { name: "--ids-only", description: "Output IDs only" },
-    { name: "--uuid", description: "Show UUID" },
-    { name: "--bibtex", description: "Output BibTeX" },
-    { name: "--sort", description: "Sort field" },
-    { name: "--order", description: "Sort order" },
-    { name: "--limit", description: "Max results" },
-    { name: "-n", description: "Max results (short)" },
-    { name: "--offset", description: "Skip results" },
-  ],
-  search: [
-    { name: "--json", description: "Output JSON" },
-    { name: "--ids-only", description: "Output IDs only" },
-    { name: "--uuid", description: "Show UUID" },
-    { name: "--bibtex", description: "Output BibTeX" },
-    { name: "--sort", description: "Sort field" },
-    { name: "--order", description: "Sort order" },
-    { name: "--limit", description: "Max results" },
-    { name: "-n", description: "Max results (short)" },
-    { name: "--offset", description: "Skip results" },
-  ],
-  add: [
-    { name: "--stdin", description: "Read from stdin" },
-    { name: "--link", description: "Link file instead of copy" },
-  ],
-  remove: [
-    { name: "--force", description: "Skip confirmation" },
-    { name: "--uuid", description: "Use UUID" },
-  ],
-  update: [
-    { name: "--field", description: "Field to update" },
-    { name: "--uuid", description: "Use UUID" },
-  ],
-  cite: [
-    { name: "--style", description: "Citation style" },
-    { name: "--csl-file", description: "Custom CSL file" },
-    { name: "--locale", description: "Locale" },
-    { name: "--format", description: "Output format" },
-    { name: "--in-text", description: "In-text citation" },
-    { name: "--uuid", description: "Use UUID" },
-  ],
-  fulltext: [],
-  server: [],
-  mcp: [{ name: "--config", description: "Config file" }],
-  completion: [],
-};
+// Log level options (from LogLevel type)
+const LOG_LEVELS = ["silent", "info", "debug"] as const;
 
 // Option values for specific options
-const OPTION_VALUES: Record<string, CompletionItem[]> = {
-  "--sort": [
-    { name: "created", description: "Creation date" },
-    { name: "updated", description: "Last updated" },
-    { name: "published", description: "Publication date" },
-    { name: "author", description: "Author name" },
-    { name: "title", description: "Title" },
-    { name: "relevance", description: "Search relevance" },
-  ],
-  "--order": [
-    { name: "asc", description: "Ascending" },
-    { name: "desc", description: "Descending" },
-  ],
-  "--format": [
-    { name: "text", description: "Plain text" },
-    { name: "html", description: "HTML" },
-    { name: "rtf", description: "RTF" },
-  ],
-  "--style": [
-    { name: "apa", description: "APA style" },
-    { name: "vancouver", description: "Vancouver style" },
-    { name: "chicago-author-date", description: "Chicago style" },
-    { name: "harvard1", description: "Harvard style" },
-    { name: "ieee", description: "IEEE style" },
-    { name: "mla", description: "MLA style" },
-  ],
-  "--log-level": [
-    { name: "silent", description: "No output" },
-    { name: "info", description: "Info level" },
-    { name: "debug", description: "Debug level" },
-  ],
-};
-
-// Subcommand completions for nested commands
-const SUBCOMMAND_VALUES: Record<string, CompletionItem[]> = {
-  fulltext: [
-    { name: "attach", description: "Attach file" },
-    { name: "get", description: "Get file" },
-    { name: "detach", description: "Detach file" },
-  ],
-  server: [
-    { name: "start", description: "Start server" },
-    { name: "stop", description: "Stop server" },
-    { name: "status", description: "Server status" },
-  ],
-  completion: [
-    { name: "install", description: "Install completion" },
-    { name: "uninstall", description: "Remove completion" },
-  ],
+// These map option flags to their possible values
+export const OPTION_VALUES: Record<string, readonly string[]> = {
+  "--sort": SEARCH_SORT_FIELDS, // search includes 'relevance'
+  "--order": SORT_ORDERS,
+  "--format": CITATION_FORMATS,
+  "--style": BUILTIN_STYLES,
+  "--log-level": LOG_LEVELS,
 };
 
 // Commands that support ID completion
@@ -141,39 +36,78 @@ const ID_COMPLETION_COMMANDS = new Set(["cite", "remove", "update"]);
 const ID_COMPLETION_FULLTEXT_SUBCOMMANDS = new Set(["attach", "get", "detach"]);
 
 /**
- * Install shell completion for the CLI
+ * Convert option values to CompletionItem array
  */
-export async function installCompletion(): Promise<void> {
-  const tabtab = await import("tabtab");
-  await tabtab.install({
-    name: "ref",
-    completer: "ref",
-  });
+function toCompletionItems(values: readonly string[]): CompletionItem[] {
+  return values.map((name) => ({ name }));
 }
 
 /**
- * Uninstall shell completion
+ * Extract subcommands from Commander program
  */
-export async function uninstallCompletion(): Promise<void> {
-  const tabtab = await import("tabtab");
-  await tabtab.uninstall({
-    name: "ref",
-  });
+export function extractSubcommands(program: Command): CompletionItem[] {
+  return program.commands.map((cmd) => ({
+    name: cmd.name(),
+    description: cmd.description(),
+  }));
+}
+
+/**
+ * Extract options from a command
+ */
+function extractOptions(cmd: Command): CompletionItem[] {
+  const options: CompletionItem[] = [];
+
+  for (const opt of cmd.options as Option[]) {
+    const longFlag = opt.long;
+    const shortFlag = opt.short;
+    const description = opt.description;
+
+    if (longFlag) {
+      options.push({ name: longFlag, description });
+    }
+    if (shortFlag) {
+      options.push({ name: shortFlag, description });
+    }
+  }
+
+  return options;
+}
+
+/**
+ * Extract global options from program
+ */
+export function extractGlobalOptions(program: Command): CompletionItem[] {
+  const options = extractOptions(program);
+  // Add --help and --version which are auto-added by Commander
+  options.push({ name: "--help", description: "display help for command" });
+  options.push({ name: "--version", description: "output the version number" });
+  return options;
+}
+
+/**
+ * Find a subcommand by name
+ */
+function findSubcommand(program: Command, name: string): Command | undefined {
+  return program.commands.find((cmd) => cmd.name() === name);
 }
 
 /**
  * Get completions based on the current completion environment
  */
-export function getCompletions(env: TabtabEnv): CompletionItem[] {
+export function getCompletions(env: TabtabEnv, program: Command): CompletionItem[] {
   const { line, prev, last } = env;
   const words = line.trim().split(/\s+/);
 
   // Skip the program name
   const args = words.slice(1);
 
+  const subcommands = extractSubcommands(program);
+  const globalOptions = extractGlobalOptions(program);
+
   // No arguments yet - complete subcommands
   if (args.length === 0) {
-    return SUBCOMMANDS;
+    return subcommands;
   }
 
   const firstArg = args[0] ?? "";
@@ -182,32 +116,34 @@ export function getCompletions(env: TabtabEnv): CompletionItem[] {
   if (prev && prev.startsWith("-")) {
     const optionValues = OPTION_VALUES[prev];
     if (optionValues) {
-      return optionValues;
+      return toCompletionItems(optionValues);
     }
   }
 
   // Check if current word is starting an option
   if (last.startsWith("-")) {
-    const commandOptions = COMMAND_OPTIONS[firstArg] ?? [];
-    return [...commandOptions, ...GLOBAL_OPTIONS];
+    const subCmd = findSubcommand(program, firstArg);
+    const commandOptions = subCmd ? extractOptions(subCmd) : [];
+    return [...commandOptions, ...globalOptions];
   }
 
-  // Check for subcommand completion (fulltext, server, completion)
-  const subcommandValues = SUBCOMMAND_VALUES[firstArg];
-  if (subcommandValues) {
+  // Check for subcommand completion (nested commands like fulltext, server, completion)
+  const parentCmd = findSubcommand(program, firstArg);
+  if (parentCmd && parentCmd.commands.length > 0) {
+    const nestedSubcommands = extractSubcommands(parentCmd);
     // If we only have the command, complete its subcommands
     if (args.length === 1 || (args.length === 2 && !last.startsWith("-"))) {
-      return subcommandValues;
+      return nestedSubcommands;
     }
   }
 
   // If we're at the first arg position, complete subcommands
   if (args.length === 1) {
-    return SUBCOMMANDS.filter((cmd) => cmd.name.startsWith(last));
+    return subcommands.filter((cmd) => cmd.name.startsWith(last));
   }
 
   // Default: return subcommands
-  return SUBCOMMANDS;
+  return subcommands;
 }
 
 /**
@@ -251,10 +187,31 @@ export function needsIdCompletion(env: TabtabEnv): {
 }
 
 /**
+ * Install shell completion for the CLI
+ */
+export async function installCompletion(): Promise<void> {
+  const tabtab = await import("tabtab");
+  await tabtab.install({
+    name: "ref",
+    completer: "ref",
+  });
+}
+
+/**
+ * Uninstall shell completion
+ */
+export async function uninstallCompletion(): Promise<void> {
+  const tabtab = await import("tabtab");
+  await tabtab.uninstall({
+    name: "ref",
+  });
+}
+
+/**
  * Handle completion request
  * Called when COMP_LINE environment variable is set
  */
-export async function handleCompletion(): Promise<void> {
+export async function handleCompletion(program: Command): Promise<void> {
   const tabtab = await import("tabtab");
   const env = tabtab.parseEnv(process.env);
 
@@ -263,7 +220,7 @@ export async function handleCompletion(): Promise<void> {
   }
 
   // Get static completions
-  const completions = getCompletions(env);
+  const completions = getCompletions(env, program);
 
   // TODO: Add dynamic ID completion in Phase 17.4
 

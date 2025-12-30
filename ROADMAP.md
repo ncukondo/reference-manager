@@ -46,11 +46,11 @@ Bash/Zsh/Fish auto-completion using tabtab.
 - [x] Add type definitions if needed
 
 #### 17.2: Completion Command (TDD)
-- [ ] Write tests for `completion` command (`src/cli/commands/completion.test.ts`)
-- [ ] Implement `registerCompletionCommand` function
-- [ ] Implement `installCompletion` action
-- [ ] Implement `uninstallCompletion` action
-- [ ] Register command in `src/cli/index.ts`
+- [x] Write tests for `completion` command (`src/cli/completion.test.ts`)
+- [x] Implement `registerCompletionCommand` function
+- [x] Implement `installCompletion` action
+- [x] Implement `uninstallCompletion` action
+- [x] Register command in `src/cli/index.ts`
 
 #### 17.3: Static Completion (TDD)
 - [ ] Write tests for static completion logic

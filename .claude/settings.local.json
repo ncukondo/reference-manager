@@ -50,7 +50,8 @@
       "WebFetch(domain:docs.npmjs.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__serena__list_memories",
-      "WebFetch(domain:www.anthropic.com)"
+      "WebFetch(domain:www.anthropic.com)",
+      "WebFetch(domain:carapace.sh)"
     ]
   },
   "enableAllProjectMcpServers": true,
