@@ -8,13 +8,13 @@
 
 import type { Command, Option } from "commander";
 import type { CompletionItem, TabtabEnv } from "tabtab";
-import { loadConfig } from "../config/loader.js";
 import { BUILTIN_STYLES } from "../config/csl-styles.js";
+import { loadConfig } from "../config/loader.js";
 import type { ILibrary } from "../core/library-interface.js";
 import { Library } from "../core/library.js";
+import { searchSortFieldSchema, sortOrderSchema } from "../features/pagination/types.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
-import { searchSortFieldSchema, sortOrderSchema } from "../features/pagination/types.js";
 
 // Extract option values from existing schemas
 const SEARCH_SORT_FIELDS = searchSortFieldSchema.options;
@@ -118,7 +118,7 @@ export function getCompletions(env: TabtabEnv, program: Command): CompletionItem
   const firstArg = args[0] ?? "";
 
   // Check if we're completing an option value
-  if (prev && prev.startsWith("-")) {
+  if (prev?.startsWith("-")) {
     const optionValues = OPTION_VALUES[prev];
     if (optionValues) {
       return toCompletionItems(optionValues);
@@ -170,7 +170,7 @@ export function needsIdCompletion(env: TabtabEnv): {
   const command = args[0] ?? "";
 
   // Don't complete IDs if we're completing an option value
-  if (prev && prev.startsWith("-")) {
+  if (prev?.startsWith("-")) {
     return { needs: false };
   }
 
@@ -298,6 +298,13 @@ export async function handleCompletion(program: Command): Promise<void> {
   const env = tabtab.parseEnv(process.env);
 
   if (!env.complete) {
+    return;
+  }
+
+  // If typing an option (starts with -), use static completions
+  if (env.last.startsWith("-")) {
+    const completions = getCompletions(env, program);
+    tabtab.log(completions);
     return;
   }
 

@@ -1,21 +1,22 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { TabtabEnv } from "tabtab";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Library } from "../core/library.js";
 import {
-  getCompletions,
-  needsIdCompletion,
-  installCompletion,
-  uninstallCompletion,
-  extractSubcommands,
-  extractGlobalOptions,
-  getIdCompletions,
   MAX_ID_COMPLETIONS,
   OPTION_VALUES,
+  extractGlobalOptions,
+  extractSubcommands,
+  getCompletions,
+  getIdCompletions,
+  handleCompletion,
+  installCompletion,
+  needsIdCompletion,
+  uninstallCompletion,
 } from "./completion.js";
 import { createProgram } from "./index.js";
-import { Library } from "../core/library.js";
 
 // Mock tabtab module
 vi.mock("tabtab", () => ({
@@ -419,6 +420,53 @@ describe("completion", () => {
       expect(completions).toHaveLength(3);
       const noTitleItem = completions.find((c) => c.name === "notitle2024");
       expect(noTitleItem?.description).toBe("");
+    });
+  });
+
+  describe("handleCompletion", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("returns early when not in completion mode", async () => {
+      const tabtab = await import("tabtab");
+      vi.mocked(tabtab.parseEnv).mockReturnValue({
+        complete: false,
+        words: 0,
+        point: 0,
+        line: "",
+        partial: "",
+        last: "",
+        lastPartial: "",
+        prev: "",
+      });
+
+      await handleCompletion(program);
+
+      expect(tabtab.log).not.toHaveBeenCalled();
+    });
+
+    it("logs subcommands when in completion mode with no args", async () => {
+      const tabtab = await import("tabtab");
+      vi.mocked(tabtab.parseEnv).mockReturnValue({
+        complete: true,
+        words: 1,
+        point: 4,
+        line: "ref ",
+        partial: "ref ",
+        last: "",
+        lastPartial: "",
+        prev: "ref",
+      });
+
+      await handleCompletion(program);
+
+      expect(tabtab.log).toHaveBeenCalled();
+      const loggedItems = vi.mocked(tabtab.log).mock.calls[0]?.[0];
+      expect(loggedItems).toBeDefined();
+      const names = loggedItems?.map((item) => (typeof item === "string" ? item : item.name));
+      expect(names).toContain("list");
+      expect(names).toContain("completion");
     });
   });
 });

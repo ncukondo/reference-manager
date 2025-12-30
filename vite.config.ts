@@ -37,6 +37,7 @@ export default defineConfig({
         "chokidar",
         "commander",
         "hono",
+        "tabtab",
         "write-file-atomic",
         "zod",
       ],
