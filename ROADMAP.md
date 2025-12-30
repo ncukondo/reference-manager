@@ -60,12 +60,12 @@ Bash/Zsh/Fish auto-completion using tabtab.
 - [x] Implement option value completion (`--sort`, `--format`, etc.)
 
 #### 17.4: Dynamic ID Completion (TDD)
-- [ ] Write tests for dynamic ID completion
-- [ ] Implement library loading for completion context
-- [ ] Implement ID filtering based on partial input
-- [ ] Add context detection (cite, remove, update, fulltext commands)
-- [ ] Add description suffix for Zsh/Fish (e.g., `smith2023:RNA interference...`)
-- [ ] Handle errors gracefully (empty completions on failure)
+- [x] Write tests for dynamic ID completion
+- [x] Implement library loading for completion context
+- [x] Implement ID filtering based on partial input
+- [x] Add context detection (cite, remove, update, fulltext commands)
+- [x] Add description suffix for Zsh/Fish (e.g., `smith2023:RNA interference...`)
+- [x] Handle errors gracefully (empty completions on failure)
 
 #### 17.5: Integration and Polish
 - [ ] Integrate completion handler in CLI entry point

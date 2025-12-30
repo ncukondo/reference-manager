@@ -8,7 +8,12 @@
 
 import type { Command, Option } from "commander";
 import type { CompletionItem, TabtabEnv } from "tabtab";
+import { loadConfig } from "../config/loader.js";
 import { BUILTIN_STYLES } from "../config/csl-styles.js";
+import type { ILibrary } from "../core/library-interface.js";
+import { Library } from "../core/library.js";
+import { ServerClient } from "./server-client.js";
+import { getServerConnection } from "./server-detection.js";
 import { searchSortFieldSchema, sortOrderSchema } from "../features/pagination/types.js";
 
 // Extract option values from existing schemas
@@ -186,6 +191,83 @@ export function needsIdCompletion(env: TabtabEnv): {
   return { needs: false };
 }
 
+/** Maximum number of ID completion candidates */
+export const MAX_ID_COMPLETIONS = 100;
+
+/**
+ * Get a library instance for completion context.
+ * Uses server if available, otherwise loads library directly.
+ * Silently returns undefined on any error.
+ */
+export async function getLibraryForCompletion(): Promise<ILibrary | undefined> {
+  try {
+    const config = loadConfig();
+    const server = await getServerConnection(config.library, config);
+
+    if (server) {
+      return new ServerClient(server.baseUrl);
+    }
+
+    return await Library.load(config.library);
+  } catch {
+    // Silently fail - completion should not break user workflow
+    return undefined;
+  }
+}
+
+/**
+ * Truncate title for completion description.
+ * Zsh/Fish show descriptions alongside completions.
+ */
+function truncateTitle(title: string | undefined, maxLength = 40): string {
+  if (!title) return "";
+  if (title.length <= maxLength) return title;
+  return `${title.slice(0, maxLength - 3)}...`;
+}
+
+/**
+ * Get ID completions from the library.
+ *
+ * @param library - Library to get IDs from
+ * @param prefix - Prefix to filter IDs by
+ * @returns Array of completion items with ID and title description
+ */
+export async function getIdCompletions(
+  library: ILibrary,
+  prefix: string
+): Promise<CompletionItem[]> {
+  try {
+    const items = await library.getAll();
+
+    const completions: CompletionItem[] = [];
+
+    for (const item of items) {
+      const id = item.id;
+      if (!id) continue;
+
+      // Filter by prefix if provided
+      if (prefix && !id.toLowerCase().startsWith(prefix.toLowerCase())) {
+        continue;
+      }
+
+      completions.push({
+        name: id,
+        description: truncateTitle(item.title),
+      });
+
+      // Limit number of completions for performance
+      if (completions.length >= MAX_ID_COMPLETIONS) {
+        break;
+      }
+    }
+
+    return completions;
+  } catch {
+    // Silently fail - return empty completions
+    return [];
+  }
+}
+
 /**
  * Install shell completion for the CLI
  */
@@ -219,11 +301,19 @@ export async function handleCompletion(program: Command): Promise<void> {
     return;
   }
 
+  // Check if we need ID completion
+  const idContext = needsIdCompletion(env);
+  if (idContext.needs) {
+    const library = await getLibraryForCompletion();
+    if (library) {
+      const idCompletions = await getIdCompletions(library, env.last);
+      tabtab.log(idCompletions);
+      return;
+    }
+  }
+
   // Get static completions
   const completions = getCompletions(env, program);
-
-  // TODO: Add dynamic ID completion in Phase 17.4
-
   tabtab.log(completions);
 }
 
