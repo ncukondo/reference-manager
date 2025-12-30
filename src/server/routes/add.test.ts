@@ -70,6 +70,7 @@ describe("Add Route", () => {
               type: "article-journal",
               title: "Test Article",
               author: [{ family: "Author", given: "Test" }],
+              issued: { "date-parts": [[2024]] },
               DOI: "10.1000/test",
             },
           },
@@ -89,7 +90,8 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(1);
-      expect(data.added[0].id).toBe("author2024");
+      // generateId creates author-year format in lowercase
+      expect(data.added[0].id).toBe("author-2024");
       expect(data.added[0].title).toBe("Test Article");
       expect(data.failed).toHaveLength(0);
       expect(data.skipped).toHaveLength(0);
@@ -331,7 +333,8 @@ describe("Add Route", () => {
               id: "success2024",
               type: "article-journal",
               title: "Success Article",
-              author: [{ family: "Author", given: "Test" }],
+              author: [{ family: "Success" }],
+              issued: { "date-parts": [[2024]] },
             },
           },
           {
@@ -346,7 +349,8 @@ describe("Add Route", () => {
               id: "another2024",
               type: "article-journal",
               title: "Another Article",
-              author: [{ family: "Another", given: "Author" }],
+              author: [{ family: "Another" }],
+              issued: { "date-parts": [[2024]] },
             },
           },
         ],
@@ -365,8 +369,9 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(2);
-      expect(data.added[0].id).toBe("success2024");
-      expect(data.added[1].id).toBe("another2024");
+      // generateId creates author-year format in lowercase
+      expect(data.added[0].id).toBe("success-2024");
+      expect(data.added[1].id).toBe("another-2024");
       expect(data.failed).toHaveLength(1);
       expect(data.failed[0].source).toBe("99999999");
       expect(data.failed[0].error).toBe("Not found");
@@ -376,10 +381,11 @@ describe("Add Route", () => {
     it("should handle partial success with some skipped (duplicates)", async () => {
       // Add existing reference
       library.add({
-        id: "existing2024",
+        id: "existing-2024",
         type: "article-journal",
         title: "Existing Article",
-        author: [{ family: "Existing", given: "Author" }],
+        author: [{ family: "Existing" }],
+        issued: { "date-parts": [[2024]] },
         DOI: "10.1000/existing",
       });
 
@@ -392,7 +398,8 @@ describe("Add Route", () => {
               id: "new2024",
               type: "article-journal",
               title: "New Article",
-              author: [{ family: "New", given: "Author" }],
+              author: [{ family: "New" }],
+              issued: { "date-parts": [[2024]] },
             },
           },
           {
@@ -402,7 +409,8 @@ describe("Add Route", () => {
               id: "existing2024",
               type: "article-journal",
               title: "Existing Article",
-              author: [{ family: "Existing", given: "Author" }],
+              author: [{ family: "Existing" }],
+              issued: { "date-parts": [[2024]] },
               DOI: "10.1000/existing",
             },
           },
@@ -422,20 +430,22 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(1);
-      expect(data.added[0].id).toBe("new2024");
+      // generateId creates author-year format in lowercase
+      expect(data.added[0].id).toBe("new-2024");
       expect(data.failed).toHaveLength(0);
       expect(data.skipped).toHaveLength(1);
       expect(data.skipped[0].source).toBe("10.1000/existing");
-      expect(data.skipped[0].existingId).toBe("existing2024");
+      expect(data.skipped[0].existingId).toBe("existing-2024");
     });
 
     it("should handle mixed results: added, failed, and skipped", async () => {
       // Add existing reference
       library.add({
-        id: "existing2024",
+        id: "existing-2024",
         type: "article-journal",
         title: "Existing Article",
-        author: [{ family: "Existing", given: "Author" }],
+        author: [{ family: "Existing" }],
+        issued: { "date-parts": [[2024]] },
         DOI: "10.1000/existing",
       });
 
@@ -448,7 +458,8 @@ describe("Add Route", () => {
               id: "new2024",
               type: "article-journal",
               title: "New Article",
-              author: [{ family: "New", given: "Author" }],
+              author: [{ family: "New" }],
+              issued: { "date-parts": [[2024]] },
             },
           },
           {
@@ -463,7 +474,8 @@ describe("Add Route", () => {
               id: "existing2024",
               type: "article-journal",
               title: "Existing Article",
-              author: [{ family: "Existing", given: "Author" }],
+              author: [{ family: "Existing" }],
+              issued: { "date-parts": [[2024]] },
               DOI: "10.1000/existing",
             },
           },
@@ -483,7 +495,8 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(1);
-      expect(data.added[0].id).toBe("new2024");
+      // generateId creates author-year format in lowercase
+      expect(data.added[0].id).toBe("new-2024");
       expect(data.failed).toHaveLength(1);
       expect(data.failed[0].source).toBe("99999999");
       expect(data.skipped).toHaveLength(1);

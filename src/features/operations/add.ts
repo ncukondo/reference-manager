@@ -1,4 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import { generateId } from "../../core/identifier/generator.js";
 import type { ILibrary } from "../../core/library-interface.js";
 import { detectDuplicate } from "../duplicate/detector.js";
 import type { InputFormat } from "../import/detector.js";
@@ -172,7 +173,8 @@ async function processImportResult(
 
   // Resolve ID collision
   const allExistingIds = new Set([...existingItems.map((i) => i.id), ...addedIds]);
-  const { id, changed } = resolveIdCollision(item.id, allExistingIds);
+  const generatedId = generateId(item);
+  const { id, changed } = resolveIdCollision(generatedId, allExistingIds);
 
   const finalItem: CslItem = { ...item, id };
 
@@ -188,7 +190,7 @@ async function processImportResult(
 
   if (changed) {
     addedItem.idChanged = true;
-    addedItem.originalId = item.id;
+    addedItem.originalId = generatedId;
   }
 
   return { type: "added", item: addedItem };
