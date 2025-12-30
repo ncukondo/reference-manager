@@ -41,9 +41,9 @@ Bash/Zsh/Fish auto-completion using tabtab.
 **ADR**: `spec/decisions/ADR-011-use-tabtab-for-shell-completion.md`
 
 #### 17.1: Foundation Setup
-- [ ] Install tabtab package (`npm install tabtab`)
-- [ ] Create `src/cli/completion.ts` module skeleton
-- [ ] Add type definitions if needed
+- [x] Install tabtab package (`npm install tabtab`)
+- [x] Create `src/cli/completion.ts` module skeleton
+- [x] Add type definitions if needed
 
 #### 17.2: Completion Command (TDD)
 - [ ] Write tests for `completion` command (`src/cli/commands/completion.test.ts`)

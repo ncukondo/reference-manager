@@ -53,6 +53,7 @@ import {
   readStdinBuffer,
   readStdinContent,
 } from "./helpers.js";
+import { registerCompletionCommand } from "./completion.js";
 
 /**
  * Create Commander program instance
@@ -85,6 +86,7 @@ export function createProgram(): Command {
   registerServerCommand(program);
   registerFulltextCommand(program);
   registerMcpCommand(program);
+  registerCompletionCommand(program);
 
   return program;
 }
