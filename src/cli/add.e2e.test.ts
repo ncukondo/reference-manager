@@ -201,14 +201,21 @@ ER  - `;
       await fs.writeFile(
         jsonPath,
         JSON.stringify([
-          { id: "smith2024", type: "article-journal", title: "Machine Learning Paper" },
+          {
+            id: "smith2024",
+            type: "article-journal",
+            title: "Machine Learning Paper",
+            author: [{ family: "Smith" }],
+            issued: { "date-parts": [[2024]] },
+          },
         ]),
         "utf-8"
       );
 
       const result = await runCli(["add", "--library", libraryPath, jsonPath]);
 
-      expect(result.stderr).toContain("smith2024");
+      // generateId creates author-year format in lowercase
+      expect(result.stderr).toContain("smith-2024");
       expect(result.stderr).toContain("Machine Learning Paper");
     });
 
