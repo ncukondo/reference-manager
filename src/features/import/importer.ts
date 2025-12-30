@@ -448,8 +448,9 @@ async function processIdentifiers(
     // Check if it's a valid identifier
     const isValidPmid = isPmid(input);
     const isValidDoi = isDoi(input);
+    const isValidIsbn = isIsbn(input);
 
-    if (isValidPmid || isValidDoi) {
+    if (isValidPmid || isValidDoi || isValidIsbn) {
       validIdentifiers.push(input);
     } else {
       // Not a valid identifier
@@ -458,7 +459,7 @@ async function processIdentifiers(
         : "";
       results.push({
         success: false,
-        error: `Cannot interpret '${input}' as identifier (not a valid PMID or DOI).${hint}`,
+        error: `Cannot interpret '${input}' as identifier (not a valid PMID, DOI, or ISBN).${hint}`,
         source: input,
       });
     }
