@@ -53,11 +53,11 @@ Bash/Zsh/Fish auto-completion using tabtab.
 - [x] Register command in `src/cli/index.ts`
 
 #### 17.3: Static Completion (TDD)
-- [ ] Write tests for static completion logic
-- [ ] Implement subcommand completion (`list`, `search`, `add`, etc.)
-- [ ] Implement global option completion (`--config`, `--library`, etc.)
-- [ ] Implement command-specific option completion
-- [ ] Implement option value completion (`--sort`, `--format`, etc.)
+- [x] Write tests for static completion logic
+- [x] Implement subcommand completion (`list`, `search`, `add`, etc.)
+- [x] Implement global option completion (`--config`, `--library`, etc.)
+- [x] Implement command-specific option completion
+- [x] Implement option value completion (`--sort`, `--format`, etc.)
 
 #### 17.4: Dynamic ID Completion (TDD)
 - [ ] Write tests for dynamic ID completion
