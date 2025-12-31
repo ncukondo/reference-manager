@@ -56,8 +56,8 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] Unit tests for all format functions
 
 **Step 3: Debounce Utility** (deps: none)
-- [ ] Implement debounce function
-- [ ] Unit tests with timer mocks
+- [x] Implement debounce function
+- [x] Unit tests with timer mocks
 
 **Step 4: TTY Detection** (deps: none)
 - [ ] `requireTTY()`: Exit with error (code 1) for non-TTY
