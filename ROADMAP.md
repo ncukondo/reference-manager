@@ -92,7 +92,7 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] E2E tests (limited scope)
 
 **Step 9: Completion**
-- [ ] Update CHANGELOG.md
+- [x] Update CHANGELOG.md
 
 ---
 
