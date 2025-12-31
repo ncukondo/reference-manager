@@ -64,8 +64,10 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] Unit tests for TTY detection
 
 **Step 5: Library Cache** (deps: Library interface)
-- [ ] Implement session cache for `library.getAll()`
-- [ ] Unit tests for cache behavior
+- [x] ~~Implement session cache for `library.getAll()`~~ **SKIPPED**
+- [x] ~~Unit tests for cache behavior~~ **SKIPPED**
+- Note: `Library.getAll()` already operates on in-memory data (no file I/O).
+  CLI mode does not use file watching, so no additional caching is needed.
 
 **Step 6: Enquirer Integration** (deps: Enquirer)
 - [ ] Add Enquirer dependency
