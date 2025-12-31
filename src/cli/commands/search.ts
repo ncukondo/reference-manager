@@ -1,3 +1,4 @@
+import type { Config } from "../../config/schema.js";
 import type { SearchFormat, SearchResult } from "../../features/operations/search.js";
 import {
   type SearchSortField,
@@ -36,6 +37,7 @@ export interface SearchCommandOptions {
   order?: SortOrder;
   limit?: number;
   offset?: number;
+  interactive?: boolean;
 }
 
 /**
@@ -157,4 +159,90 @@ export function formatSearchOutput(result: SearchCommandResult, isJson = false):
 
   lines.push(...result.items);
   return lines.join("\n");
+}
+
+/**
+ * Result from interactive search command execution.
+ */
+export interface InteractiveSearchResult {
+  output: string;
+  cancelled: boolean;
+}
+
+/**
+ * Validate interactive mode options.
+ * @throws Error if interactive mode is combined with incompatible options
+ */
+function validateInteractiveOptions(options: SearchCommandOptions): void {
+  const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
+    Boolean
+  );
+
+  if (outputOptions.length > 0) {
+    throw new Error(
+      "Interactive mode cannot be combined with output format options (--json, --ids-only, --uuid, --bibtex)"
+    );
+  }
+}
+
+/**
+ * Execute interactive search command.
+ * Uses runSearchPrompt and runActionMenu from the interactive module.
+ *
+ * @param options - Search command options with interactive flag
+ * @param context - Execution context
+ * @param config - Application configuration
+ * @returns Interactive search result containing output and cancelled flag
+ */
+export async function executeInteractiveSearch(
+  options: SearchCommandOptions,
+  context: ExecutionContext,
+  config: Config
+): Promise<InteractiveSearchResult> {
+  validateInteractiveOptions(options);
+
+  // Import interactive modules dynamically to avoid loading Enquirer in non-interactive mode
+  const { checkTTY } = await import("../../features/interactive/tty.js");
+  const { runSearchPrompt } = await import("../../features/interactive/search-prompt.js");
+  const { runActionMenu } = await import("../../features/interactive/action-menu.js");
+  const { search } = await import("../../features/search/matcher.js");
+  const { tokenize } = await import("../../features/search/tokenizer.js");
+
+  // Check TTY requirement
+  checkTTY();
+
+  // Get all references for interactive search
+  const allReferences = await context.library.getAll();
+
+  // Create search function for runSearchPrompt
+  const searchFn = (query: string) => {
+    const { tokens } = tokenize(query);
+    return search(allReferences, tokens);
+  };
+
+  // Get interactive config from config
+  const interactiveConfig = config.cli.interactive;
+
+  // Run search prompt
+  const searchResult = await runSearchPrompt(
+    allReferences,
+    searchFn,
+    {
+      limit: interactiveConfig.limit,
+      debounceMs: interactiveConfig.debounceMs,
+    },
+    options.query || ""
+  );
+
+  if (searchResult.cancelled || searchResult.selected.length === 0) {
+    return { output: "", cancelled: true };
+  }
+
+  // Run action menu with selected references
+  const actionResult = await runActionMenu(searchResult.selected);
+
+  return {
+    output: actionResult.output,
+    cancelled: actionResult.cancelled,
+  };
 }

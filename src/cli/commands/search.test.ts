@@ -4,6 +4,7 @@ import type { ExecutionContext } from "../execution-context.js";
 import {
   type SearchCommandOptions,
   type SearchCommandResult,
+  executeInteractiveSearch,
   executeSearch,
   formatSearchOutput,
 } from "./search.js";
@@ -119,6 +120,66 @@ describe("search command", () => {
       const output = formatSearchOutput(result);
 
       expect(output).toBe("");
+    });
+  });
+
+  describe("executeInteractiveSearch", () => {
+    const mockGetAll = vi.fn();
+    const mockSearch = vi.fn();
+
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        type: "local",
+        library: {
+          getAll: mockGetAll,
+          search: mockSearch,
+        },
+      }) as unknown as ExecutionContext;
+
+    const mockConfig = {
+      cli: {
+        interactive: {
+          limit: 20,
+          debounceMs: 200,
+        },
+      },
+    } as Parameters<typeof executeInteractiveSearch>[2];
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should throw error when interactive option conflicts with output format options", async () => {
+      const context = createContext();
+
+      // Test with --json
+      await expect(
+        executeInteractiveSearch({ query: "", interactive: true, json: true }, context, mockConfig)
+      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+
+      // Test with --bibtex
+      await expect(
+        executeInteractiveSearch(
+          { query: "", interactive: true, bibtex: true },
+          context,
+          mockConfig
+        )
+      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+
+      // Test with --ids-only
+      await expect(
+        executeInteractiveSearch(
+          { query: "", interactive: true, idsOnly: true },
+          context,
+          mockConfig
+        )
+      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+
+      // Test with --uuid
+      await expect(
+        executeInteractiveSearch({ query: "", interactive: true, uuid: true }, context, mockConfig)
+      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
     });
   });
 });

@@ -87,9 +87,9 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] Unit tests for action menu
 
 **Step 8: CLI Command Integration** (deps: all above)
-- [ ] Add `-i, --interactive` flag to search command
-- [ ] Support initial query argument
-- [ ] E2E tests (limited scope)
+- [x] Add `-i, --interactive` flag to search command
+- [x] Support initial query argument
+- [x] E2E tests (limited scope)
 
 **Step 9: Completion**
 - [ ] Update CHANGELOG.md
