@@ -11,12 +11,21 @@ import { sortFieldSchema, sortOrderSchema } from "../features/pagination/types.j
 export const logLevelSchema = z.enum(["silent", "info", "debug"]);
 
 /**
+ * Interactive search configuration schema
+ */
+export const interactiveConfigSchema = z.object({
+  limit: z.number().int().nonnegative(),
+  debounceMs: z.number().int().nonnegative(),
+});
+
+/**
  * CLI configuration schema
  */
 export const cliConfigSchema = z.object({
   defaultLimit: z.number().int().nonnegative(),
   defaultSort: sortFieldSchema,
   defaultOrder: sortOrderSchema,
+  interactive: interactiveConfigSchema,
 });
 
 /**
@@ -171,6 +180,13 @@ export const partialConfigSchema = z
         default_sort: sortFieldSchema.optional(),
         defaultOrder: sortOrderSchema.optional(),
         default_order: sortOrderSchema.optional(),
+        interactive: z
+          .object({
+            limit: z.number().int().nonnegative().optional(),
+            debounceMs: z.number().int().nonnegative().optional(),
+            debounce_ms: z.number().int().nonnegative().optional(),
+          })
+          .optional(),
       })
       .optional(),
     mcp: z
@@ -193,6 +209,7 @@ export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
+export type InteractiveConfig = z.infer<typeof interactiveConfigSchema>;
 export type CliConfig = z.infer<typeof cliConfigSchema>;
 export type McpConfig = z.infer<typeof mcpConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
@@ -210,7 +227,9 @@ export type DeepPartialConfig = {
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
   fulltext?: Partial<FulltextConfig>;
-  cli?: Partial<CliConfig>;
+  cli?: Partial<Omit<CliConfig, "interactive">> & {
+    interactive?: Partial<InteractiveConfig>;
+  };
   mcp?: Partial<McpConfig>;
 };
 
@@ -459,6 +478,11 @@ function normalizeCliConfig(
     default_sort?: CliConfig["defaultSort"];
     defaultOrder?: CliConfig["defaultOrder"];
     default_order?: CliConfig["defaultOrder"];
+    interactive?: Partial<{
+      limit?: number;
+      debounceMs?: number;
+      debounce_ms?: number;
+    }>;
   }>
 ): Partial<CliConfig> | undefined {
   const normalized: Partial<CliConfig> = {};
@@ -476,6 +500,20 @@ function normalizeCliConfig(
   const defaultOrder = cli.defaultOrder ?? cli.default_order;
   if (defaultOrder !== undefined) {
     normalized.defaultOrder = defaultOrder;
+  }
+
+  if (cli.interactive !== undefined) {
+    const interactive: Partial<InteractiveConfig> = {};
+    if (cli.interactive.limit !== undefined) {
+      interactive.limit = cli.interactive.limit;
+    }
+    const debounceMs = cli.interactive.debounceMs ?? cli.interactive.debounce_ms;
+    if (debounceMs !== undefined) {
+      interactive.debounceMs = debounceMs;
+    }
+    if (Object.keys(interactive).length > 0) {
+      normalized.interactive = interactive as InteractiveConfig;
+    }
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

@@ -51,7 +51,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__serena__list_memories",
       "WebFetch(domain:www.anthropic.com)",
-      "WebFetch(domain:carapace.sh)"
+      "WebFetch(domain:carapace.sh)",
+      "Bash(gh issue view:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

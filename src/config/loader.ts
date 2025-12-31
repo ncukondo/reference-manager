@@ -55,6 +55,26 @@ function loadTOMLFile(path: string): PartialConfig | null {
 }
 
 /**
+ * Merge CLI config with nested interactive section
+ */
+function mergeCliConfig(
+  base: DeepPartialConfig["cli"],
+  override: NonNullable<DeepPartialConfig["cli"]>
+): NonNullable<DeepPartialConfig["cli"]> {
+  const { interactive: overrideInteractive, ...overrideCliRest } = override;
+  const { interactive: baseInteractive, ...baseCliRest } = base ?? {};
+  const mergedInteractive =
+    overrideInteractive !== undefined
+      ? { ...baseInteractive, ...overrideInteractive }
+      : baseInteractive;
+  return {
+    ...baseCliRest,
+    ...overrideCliRest,
+    ...(mergedInteractive !== undefined ? { interactive: mergedInteractive } : {}),
+  };
+}
+
+/**
  * Merge partial configurations
  * Later configs override earlier ones
  */
@@ -64,7 +84,15 @@ function mergeConfigs(
 ): DeepPartialConfig {
   const result: DeepPartialConfig = { ...base };
 
-  const sectionKeys = ["backup", "watch", "server", "citation", "pubmed", "fulltext"] as const;
+  const sectionKeys = [
+    "backup",
+    "watch",
+    "server",
+    "citation",
+    "pubmed",
+    "fulltext",
+    "mcp",
+  ] as const;
 
   for (const override of overrides) {
     if (!override) continue;
@@ -85,6 +113,11 @@ function mergeConfigs(
           ...override[key],
         };
       }
+    }
+
+    // Merge cli config with nested interactive
+    if (override.cli !== undefined) {
+      result.cli = mergeCliConfig(result.cli, override.cli);
     }
   }
 
@@ -192,6 +225,10 @@ function fillCliDefaults(partial: DeepPartialConfig["cli"]): Config["cli"] {
     defaultLimit,
     defaultSort: partial?.defaultSort ?? defaultConfig.cli.defaultSort,
     defaultOrder: partial?.defaultOrder ?? defaultConfig.cli.defaultOrder,
+    interactive: {
+      limit: partial?.interactive?.limit ?? defaultConfig.cli.interactive.limit,
+      debounceMs: partial?.interactive?.debounceMs ?? defaultConfig.cli.interactive.debounceMs,
+    },
   };
 }
 

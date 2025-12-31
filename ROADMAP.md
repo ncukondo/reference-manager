@@ -44,9 +44,9 @@ Interactive incremental search mode for CLI with real-time filtering.
 #### Tasks (TDD order: minimal dependencies first)
 
 **Step 1: Config Schema** (deps: none)
-- [ ] Add `cli.interactive.limit` config option (default: 20)
-- [ ] Add `cli.interactive.debounce_ms` config option (default: 200)
-- [ ] Unit tests for config validation
+- [x] Add `cli.interactive.limit` config option (default: 20)
+- [x] Add `cli.interactive.debounce_ms` config option (default: 200)
+- [x] Unit tests for config validation
 
 **Step 2: Display Format Functions** (deps: none, pure functions)
 - [ ] `formatAuthors()`: Format author list (>3 authors → "et al.")

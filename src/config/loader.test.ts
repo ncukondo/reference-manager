@@ -691,4 +691,113 @@ directory = ""
       expect(() => loadConfig({ cwd: testDir })).toThrow();
     });
   });
+
+  describe("cli.interactive configuration", () => {
+    it("should use default interactive config when not specified", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.cli.interactive.limit).toBe(20);
+      expect(config.cli.interactive.debounceMs).toBe(200);
+    });
+
+    it("should load interactive config from TOML with camelCase", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+limit = 30
+debounceMs = 300
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.cli.interactive.limit).toBe(30);
+      expect(config.cli.interactive.debounceMs).toBe(300);
+    });
+
+    it("should load interactive config from TOML with snake_case", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+limit = 25
+debounce_ms = 250
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.cli.interactive.limit).toBe(25);
+      expect(config.cli.interactive.debounceMs).toBe(250);
+    });
+
+    it("should merge partial interactive config with defaults", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+limit = 50
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.cli.interactive.limit).toBe(50);
+      expect(config.cli.interactive.debounceMs).toBe(200); // default
+    });
+
+    it("should reject negative limit", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+limit = -1
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
+    });
+
+    it("should reject negative debounce_ms", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+debounce_ms = -1
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
+    });
+
+    it("should accept zero limit", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+limit = 0
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.cli.interactive.limit).toBe(0);
+    });
+
+    it("should accept zero debounce_ms", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[cli.interactive]
+debounce_ms = 0
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.cli.interactive.debounceMs).toBe(0);
+    });
+  });
 });
