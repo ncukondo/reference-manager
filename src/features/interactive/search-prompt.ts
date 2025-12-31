@@ -53,7 +53,7 @@ export function createChoices(
     const displayIndex = index + 1;
     const formattedText = formatSearchResult(result.reference, displayIndex, terminalWidth);
 
-    // Enquirer returns the 'name' property on selection, not 'value'
+    // Enquirer returns the 'name' property on selection when 'value' is not defined
     // So we store the JSON data in 'name' and use 'message' for display
     return {
       name: JSON.stringify({
@@ -61,7 +61,6 @@ export function createChoices(
         item: result.reference,
       } satisfies ChoiceData),
       message: formattedText,
-      value: result.reference.id,
     };
   });
 }
@@ -93,6 +92,40 @@ export function parseSelectedValues(values: string | string[]): CslItem[] {
  */
 export function getTerminalWidth(): number {
   return process.stdout.columns ?? 80;
+}
+
+/**
+ * Collects enabled (selected) item IDs from choices
+ */
+function collectEnabledIds(choices: AutoCompleteChoice[]): Set<string> {
+  const enabledIds = new Set<string>();
+  for (const choice of choices) {
+    if ((choice as { enabled?: boolean }).enabled) {
+      try {
+        const data = JSON.parse(choice.name) as ChoiceData;
+        enabledIds.add(data.item.id);
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }
+  return enabledIds;
+}
+
+/**
+ * Restores enabled state for choices matching the given IDs
+ */
+function restoreEnabledState(choices: AutoCompleteChoice[], enabledIds: Set<string>): void {
+  for (const choice of choices) {
+    try {
+      const data = JSON.parse(choice.name) as ChoiceData;
+      if (enabledIds.has(data.item.id)) {
+        (choice as { enabled?: boolean }).enabled = true;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
 }
 
 /**
@@ -145,20 +178,26 @@ export async function runSearchPrompt(
       }
       lastQuery = input;
 
-      // If input is empty, show all references (limited)
-      if (!input.trim()) {
-        const defaultResults: SearchResult[] = allReferences.slice(0, config.limit).map((ref) => ({
-          reference: ref,
-          overallStrength: "exact" as const,
-          tokenMatches: [],
-          score: 0,
-        }));
-        return createChoices(defaultResults, terminalWidth);
-      }
+      // Collect enabled (selected) item IDs from current choices
+      const enabledIds = collectEnabledIds(choices);
 
-      // Search and create new choices
-      const results = searchFn(input).slice(0, config.limit);
-      return createChoices(results, terminalWidth);
+      // Create new choices based on input
+      const newChoices = input.trim()
+        ? createChoices(searchFn(input).slice(0, config.limit), terminalWidth)
+        : createChoices(
+            allReferences.slice(0, config.limit).map((ref) => ({
+              reference: ref,
+              overallStrength: "exact" as const,
+              tokenMatches: [],
+              score: 0,
+            })),
+            terminalWidth
+          );
+
+      // Restore enabled state for matching items
+      restoreEnabledState(newChoices, enabledIds);
+
+      return newChoices;
     },
   };
 
@@ -166,8 +205,26 @@ export async function runSearchPrompt(
     const prompt = new AutoComplete(promptOptions);
     const result = await prompt.run();
 
+    // Workaround for Enquirer bug: focused item with enabled=true may not be in result
+    const promptAny = prompt as unknown as {
+      focused?: { name: string; enabled?: boolean };
+      selected?: Array<{ name: string }>;
+    };
+
+    let valuesToParse: string | string[] = result;
+
+    // If result is empty but focused item is enabled, use focused item
+    if (
+      Array.isArray(result) &&
+      result.length === 0 &&
+      promptAny.focused?.enabled &&
+      promptAny.focused?.name
+    ) {
+      valuesToParse = [promptAny.focused.name];
+    }
+
     // Handle result
-    const selected = parseSelectedValues(result);
+    const selected = parseSelectedValues(valuesToParse);
 
     return {
       selected,
