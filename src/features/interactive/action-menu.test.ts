@@ -8,7 +8,9 @@ const MockSelect = vi.fn().mockImplementation(() => ({
 }));
 
 vi.mock("enquirer", () => ({
-  Select: MockSelect,
+  default: {
+    Select: MockSelect,
+  },
 }));
 
 // Mock format functions

@@ -142,7 +142,11 @@ async function processAction(action: ActionType, items: CslItem[]): Promise<Acti
 
 export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
   // Dynamic import to allow mocking in tests
-  const { Select } = await import("enquirer");
+  // enquirer is a CommonJS module, so we must use default import
+  const enquirer = await import("enquirer");
+  const Select = (enquirer.default as unknown as Record<string, unknown>).Select as new (
+    options: Record<string, unknown>
+  ) => { run(): Promise<string> };
 
   const promptOptions = {
     name: "style",
@@ -177,7 +181,11 @@ export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
  */
 export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult> {
   // Dynamic import to allow mocking in tests
-  const { Select } = await import("enquirer");
+  // enquirer is a CommonJS module, so we must use default import
+  const enquirer = await import("enquirer");
+  const Select = (enquirer.default as unknown as Record<string, unknown>).Select as new (
+    options: Record<string, unknown>
+  ) => { run(): Promise<string> };
 
   const count = items.length;
   const refWord = count === 1 ? "reference" : "references";

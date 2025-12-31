@@ -53,13 +53,15 @@ export function createChoices(
     const displayIndex = index + 1;
     const formattedText = formatSearchResult(result.reference, displayIndex, terminalWidth);
 
+    // Enquirer returns the 'name' property on selection, not 'value'
+    // So we store the JSON data in 'name' and use 'message' for display
     return {
-      name: result.reference.id,
-      message: formattedText,
-      value: JSON.stringify({
+      name: JSON.stringify({
         index,
         item: result.reference,
       } satisfies ChoiceData),
+      message: formattedText,
+      value: result.reference.id,
     };
   });
 }
@@ -103,7 +105,12 @@ export async function runSearchPrompt(
   initialQuery = ""
 ): Promise<SearchPromptResult> {
   // Dynamic import to allow mocking in tests
-  const { AutoComplete } = await import("enquirer");
+  // enquirer is a CommonJS module, so we must use default import
+  const enquirer = await import("enquirer");
+  const AutoComplete = (enquirer.default as unknown as Record<string, unknown>)
+    .AutoComplete as new (options: Record<string, unknown>) => {
+    run(): Promise<string | string[]>;
+  };
 
   const terminalWidth = getTerminalWidth();
 

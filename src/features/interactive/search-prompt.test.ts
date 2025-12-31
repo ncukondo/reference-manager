@@ -9,7 +9,9 @@ const MockAutoComplete = vi.fn().mockImplementation(() => ({
 }));
 
 vi.mock("enquirer", () => ({
-  AutoComplete: MockAutoComplete,
+  default: {
+    AutoComplete: MockAutoComplete,
+  },
 }));
 
 import {
@@ -51,7 +53,10 @@ describe("createChoices", () => {
     const choices = createChoices(results, 80);
 
     expect(choices).toHaveLength(1);
-    expect(choices[0].name).toBe("ref-001");
+    // name contains JSON (Enquirer returns name on selection)
+    expect(JSON.parse(choices[0].name).item.id).toBe("ref-001");
+    // value contains the reference id for debugging
+    expect(choices[0].value).toBe("ref-001");
   });
 
   it("includes formatted message with index starting at 1", () => {
@@ -69,15 +74,17 @@ describe("createChoices", () => {
     expect(choices[0].message).toContain("Doe");
   });
 
-  it("stores item data in value as JSON", () => {
+  it("stores item data in name as JSON (Enquirer returns name on selection)", () => {
     const item = createMockItem({ id: "ref-001" });
     const results = [createSearchResult(item)];
 
     const choices = createChoices(results, 80);
 
-    const parsed = JSON.parse(choices[0].value as string);
+    const parsed = JSON.parse(choices[0].name as string);
     expect(parsed.index).toBe(0);
     expect(parsed.item.id).toBe("ref-001");
+    // value stores the reference id for debugging
+    expect(choices[0].value).toBe("ref-001");
   });
 
   it("handles multiple results with correct indices", () => {
