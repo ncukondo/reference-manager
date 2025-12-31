@@ -32,6 +32,67 @@ See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Current Phase
+
+### Phase 18: Interactive Search (Issue #16)
+
+Interactive incremental search mode for CLI with real-time filtering.
+
+**Spec**: `spec/features/interactive-search.md`
+**ADR**: `spec/decisions/ADR-012-use-enquirer-for-interactive-prompts.md`
+
+#### Tasks (TDD order: minimal dependencies first)
+
+**Step 1: Config Schema** (deps: none)
+- [ ] Add `cli.interactive.limit` config option (default: 20)
+- [ ] Add `cli.interactive.debounce_ms` config option (default: 200)
+- [ ] Unit tests for config validation
+
+**Step 2: Display Format Functions** (deps: none, pure functions)
+- [ ] `formatAuthors()`: Format author list (>3 authors → "et al.")
+- [ ] `formatTitle()`: Truncate title to terminal width
+- [ ] `formatIdentifiers()`: Display DOI/PMID/PMCID/ISBN
+- [ ] `formatSearchResult()`: Compose result line
+- [ ] Unit tests for all format functions
+
+**Step 3: Debounce Utility** (deps: none)
+- [ ] Implement debounce function
+- [ ] Unit tests with timer mocks
+
+**Step 4: TTY Detection** (deps: none)
+- [ ] `requireTTY()`: Exit with error (code 1) for non-TTY
+- [ ] Unit tests for TTY detection
+
+**Step 5: Library Cache** (deps: Library interface)
+- [ ] Implement session cache for `library.getAll()`
+- [ ] Unit tests for cache behavior
+
+**Step 6: Enquirer Integration** (deps: Enquirer)
+- [ ] Add Enquirer dependency
+- [ ] Add TypeScript type augmentation if needed
+- [ ] Implement custom AutoComplete prompt with multiple selection
+- [ ] Integrate debounce and search logic
+- [ ] Integration tests (limited due to TTY)
+
+**Step 7: Action Menu** (deps: Enquirer, existing commands)
+- [ ] Implement action menu (Select prompt)
+  - Output IDs
+  - Output as CSL-JSON
+  - Output as BibTeX
+  - Generate citation (APA/choose style)
+  - Cancel
+- [ ] Integration tests
+
+**Step 8: CLI Command Integration** (deps: all above)
+- [ ] Add `-i, --interactive` flag to search command
+- [ ] Support initial query argument
+- [ ] E2E tests (limited scope)
+
+**Step 9: Completion**
+- [ ] Update CHANGELOG.md
+
+---
+
 ## Future Phases
 
 ### MCPB Registry Submission
