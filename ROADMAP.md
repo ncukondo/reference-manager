@@ -49,11 +49,11 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] Unit tests for config validation
 
 **Step 2: Display Format Functions** (deps: none, pure functions)
-- [ ] `formatAuthors()`: Format author list (>3 authors → "et al.")
-- [ ] `formatTitle()`: Truncate title to terminal width
-- [ ] `formatIdentifiers()`: Display DOI/PMID/PMCID/ISBN
-- [ ] `formatSearchResult()`: Compose result line
-- [ ] Unit tests for all format functions
+- [x] `formatAuthors()`: Format author list (>3 authors → "et al.")
+- [x] `formatTitle()`: Truncate title to terminal width
+- [x] `formatIdentifiers()`: Display DOI/PMID/PMCID/ISBN
+- [x] `formatSearchResult()`: Compose result line
+- [x] Unit tests for all format functions
 
 **Step 3: Debounce Utility** (deps: none)
 - [ ] Implement debounce function
