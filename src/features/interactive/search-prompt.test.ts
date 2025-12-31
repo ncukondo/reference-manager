@@ -53,10 +53,8 @@ describe("createChoices", () => {
     const choices = createChoices(results, 80);
 
     expect(choices).toHaveLength(1);
-    // name contains JSON (Enquirer returns name on selection)
+    // name contains JSON (Enquirer returns name on selection when value is not defined)
     expect(JSON.parse(choices[0].name).item.id).toBe("ref-001");
-    // value contains the reference id for debugging
-    expect(choices[0].value).toBe("ref-001");
   });
 
   it("includes formatted message with index starting at 1", () => {
@@ -83,8 +81,6 @@ describe("createChoices", () => {
     const parsed = JSON.parse(choices[0].name as string);
     expect(parsed.index).toBe(0);
     expect(parsed.item.id).toBe("ref-001");
-    // value stores the reference id for debugging
-    expect(choices[0].value).toBe("ref-001");
   });
 
   it("handles multiple results with correct indices", () => {
