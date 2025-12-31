@@ -15,10 +15,16 @@ describe("detectFormat", () => {
       expect(detectFormat("citations.ris")).toBe("ris");
     });
 
+
+    it("should detect .nbib as ris format", () => {
+      expect(detectFormat("pubmed.nbib")).toBe("ris");
+    });
+
     it("should handle uppercase extensions", () => {
       expect(detectFormat("paper.BIB")).toBe("bibtex");
       expect(detectFormat("refs.JSON")).toBe("json");
       expect(detectFormat("data.RIS")).toBe("ris");
+      expect(detectFormat("pubmed.NBIB")).toBe("ris");
     });
 
     it("should handle mixed case extensions", () => {
@@ -74,6 +80,16 @@ describe("detectFormat", () => {
 
     it("should detect RIS with leading whitespace", () => {
       const content = "  \n  TY  - JOUR";
+      expect(detectFormat("data.txt", content)).toBe("ris");
+    });
+
+    it("should detect NBIB content by PMID- prefix", () => {
+      const content = "PMID- 12345678\nOWN - NLM\nSTAT- MEDLINE";
+      expect(detectFormat("data.txt", content)).toBe("ris");
+    });
+
+    it("should detect NBIB with leading whitespace", () => {
+      const content = "  \n  PMID- 12345678";
       expect(detectFormat("data.txt", content)).toBe("ris");
     });
 

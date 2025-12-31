@@ -30,9 +30,20 @@ Where `input` can be:
 | CSL-JSON | `.json` | Starts with `[` or `{` |
 | BibTeX | `.bib` | Starts with `@` |
 | RIS | `.ris` | Starts with `TY  -` |
+| NBIB (MEDLINE) | `.nbib` | Starts with `PMID-` |
 | PMID | - | Numeric only, or `PMID:` prefix |
 | DOI | - | Starts with `10.` or DOI URL |
 | ISBN | - | `ISBN:` prefix required (see below) |
+
+### NBIB (PubMed MEDLINE) Format
+
+NBIB is the tagged MEDLINE format exported from PubMed's "Send to: Citation manager" feature.
+
+- Extension: `.nbib`
+- Parsed using RIS parser (citation-js) with MEDLINE tag compatibility
+- Auto-detected by `PMID-` prefix in content
+
+**Note**: NBIB and RIS share similar tagged structure. Some MEDLINE-specific fields may not be fully preserved during conversion to CSL-JSON.
 
 ### DOI Input Patterns
 
