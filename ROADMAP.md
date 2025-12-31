@@ -70,11 +70,12 @@ Interactive incremental search mode for CLI with real-time filtering.
   CLI mode does not use file watching, so no additional caching is needed.
 
 **Step 6: Enquirer Integration** (deps: Enquirer)
-- [ ] Add Enquirer dependency
-- [ ] Add TypeScript type augmentation if needed
-- [ ] Implement custom AutoComplete prompt with multiple selection
-- [ ] Integrate debounce and search logic
-- [ ] Integration tests (limited due to TTY)
+- [x] Add Enquirer dependency
+- [x] Add TypeScript type augmentation (`enquirer.d.ts`)
+- [x] Implement `search-prompt.ts` with AutoComplete prompt
+  - `createChoices()`, `parseSelectedValues()`, `runSearchPrompt()`
+- [x] Integrate search logic (uses existing search/matcher.ts)
+- [x] Unit tests with Enquirer mock
 
 **Step 7: Action Menu** (deps: Enquirer, existing commands)
 - [ ] Implement action menu (Select prompt)
