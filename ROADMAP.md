@@ -78,13 +78,13 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] Unit tests with Enquirer mock
 
 **Step 7: Action Menu** (deps: Enquirer, existing commands)
-- [ ] Implement action menu (Select prompt)
+- [x] Implement action menu (Select prompt)
   - Output IDs
   - Output as CSL-JSON
   - Output as BibTeX
   - Generate citation (APA/choose style)
   - Cancel
-- [ ] Integration tests
+- [x] Unit tests for action menu
 
 **Step 8: CLI Command Integration** (deps: all above)
 - [ ] Add `-i, --interactive` flag to search command
