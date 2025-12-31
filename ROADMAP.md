@@ -27,6 +27,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - ✅ **Phase 15**: MCP ILibraryOperations Pattern (unified MCP tool implementation)
 - ✅ **Phase 16**: Pagination and Sorting (sort/limit/offset for list and search commands)
 - ✅ **Phase 17**: Shell Completion (Bash/Zsh/Fish auto-completion using tabtab)
+- ✅ **Phase 18**: Interactive Search (Issue #16, real-time filtering with Enquirer)
 
 See [CHANGELOG.md](./CHANGELOG.md) for details on implemented features.
 
@@ -46,7 +47,7 @@ References:
 - [MCPB Specification](https://github.com/anthropics/dxt/blob/main/MANIFEST.md)
 - [Desktop Extensions Guide](https://www.anthropic.com/engineering/desktop-extensions)
 
-### Phase 18: Citation Enhancements
+### Phase 19: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -55,7 +56,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 19: Advanced Features
+### Phase 20: Advanced Features
 
 Additional features beyond core functionality:
 

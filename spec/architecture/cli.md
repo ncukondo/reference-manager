@@ -17,6 +17,7 @@
 | `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI, ISBN) |
 | `list` | List all references |
 | `search <query>` | Search references |
+| `search -i [query]` | Interactive search mode |
 | `remove <id>` | Remove a reference |
 | `update <id>` | Update a reference |
 | `cite <id>...` | Generate formatted citations |
@@ -110,6 +111,10 @@ directory = "~/.reference-manager/fulltext"
 default_limit = 0          # 0 = unlimited
 default_sort = "updated"
 default_order = "desc"
+
+[cli.interactive]
+limit = 20                 # Max results in interactive mode
+debounce_ms = 200          # Search debounce delay
 ```
 
 ## Server Integration
@@ -150,3 +155,14 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 - TTY detection for interactive prompts
 - `remove` command shows confirmation unless `--force`
 - Non-TTY: Prompts skipped, uses default behavior
+
+### Interactive Search
+
+`ref search -i` provides an interactive search mode with:
+- Real-time incremental search with debounce
+- Multiple selection support
+- Action menu for selected references
+
+**Requires TTY**: Exits with error in non-TTY environment.
+
+See `spec/features/interactive-search.md` for complete specification.

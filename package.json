@@ -53,6 +53,7 @@
     "@modelcontextprotocol/sdk": "^1.25.1",
     "chokidar": "^5.0.0",
     "commander": "^12.1.0",
+    "enquirer": "^2.4.1",
     "hono": "^4.11.1",
     "tabtab": "^3.0.2",
     "write-file-atomic": "^7.0.0",

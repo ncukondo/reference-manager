@@ -36,6 +36,7 @@ export default defineConfig({
         "@modelcontextprotocol/sdk",
         "chokidar",
         "commander",
+        "enquirer",
         "hono",
         "tabtab",
         "write-file-atomic",

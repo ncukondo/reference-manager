@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Interactive Search (Phase 18)**: Real-time interactive reference search mode
+  - New `-i, --interactive` flag for search command: `ref search -i [query]`
+  - Real-time filtering: results update as you type (200ms debounce)
+  - Multi-select support: choose multiple references with Space key
+  - Action menu for selected references:
+    - Output IDs (citation keys)
+    - Output as CSL-JSON
+    - Output as BibTeX
+    - Generate citation (APA or choose style)
+  - TTY requirement: exits gracefully in non-interactive environments
+  - Configurable: `cli.interactive.limit` (default: 20), `cli.interactive.debounce_ms` (default: 200)
+  - Supports existing search query syntax (field prefixes, phrases, etc.)
+  - See `spec/features/interactive-search.md` for full specification
+
 - **Shell Completion (Phase 17)**: Bash/Zsh/Fish auto-completion using tabtab
   - New `completion` command: `ref completion [install|uninstall]`
   - Static completion: subcommands, global options, command-specific options

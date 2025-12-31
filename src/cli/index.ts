@@ -39,7 +39,12 @@ import {
   formatRemoveOutput,
   getFulltextAttachmentTypes,
 } from "./commands/remove.js";
-import { type SearchCommandOptions, executeSearch, formatSearchOutput } from "./commands/search.js";
+import {
+  type SearchCommandOptions,
+  executeInteractiveSearch,
+  executeSearch,
+  formatSearchOutput,
+} from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
@@ -147,6 +152,17 @@ async function handleSearchAction(
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
     const context = await createExecutionContext(config, Library.load);
+
+    // Handle interactive mode
+    if (options.interactive) {
+      const result = await executeInteractiveSearch({ ...options, query }, context, config);
+      if (result.output) {
+        process.stdout.write(`${result.output}\n`);
+      }
+      process.exit(result.cancelled ? 0 : 0);
+    }
+
+    // Regular search mode
     const result = await executeSearch({ ...options, query }, context);
     const output = formatSearchOutput(result, options.json ?? false);
 
@@ -168,7 +184,8 @@ function registerSearchCommand(program: Command): void {
   program
     .command("search")
     .description("Search references")
-    .argument("<query>", "Search query")
+    .argument("[query]", "Search query (required unless using --interactive)")
+    .option("-i, --interactive", "Enable interactive search mode")
     .option("--json", "Output in JSON format")
     .option("--ids-only", "Output only citation keys")
     .option("--uuid", "Output only UUIDs")
@@ -177,8 +194,13 @@ function registerSearchCommand(program: Command): void {
     .option("--order <order>", "Sort order: asc|desc")
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
     .option("--offset <n>", "Number of results to skip", Number.parseInt)
-    .action(async (query: string, options) => {
-      await handleSearchAction(query, options, program);
+    .action(async (query: string | undefined, options) => {
+      // Validate: query is required unless interactive mode
+      if (!options.interactive && !query) {
+        process.stderr.write("Error: Search query is required unless using --interactive\n");
+        process.exit(1);
+      }
+      await handleSearchAction(query ?? "", options, program);
     });
 }
 

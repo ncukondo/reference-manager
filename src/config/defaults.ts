@@ -93,6 +93,10 @@ export const defaultConfig: Config = {
     defaultLimit: 0,
     defaultSort: "updated",
     defaultOrder: "desc",
+    interactive: {
+      limit: 20,
+      debounceMs: 200,
+    },
   },
   mcp: {
     defaultLimit: 20,
