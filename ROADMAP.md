@@ -60,8 +60,8 @@ Interactive incremental search mode for CLI with real-time filtering.
 - [x] Unit tests with timer mocks
 
 **Step 4: TTY Detection** (deps: none)
-- [ ] `requireTTY()`: Exit with error (code 1) for non-TTY
-- [ ] Unit tests for TTY detection
+- [x] `checkTTY()`: Exit with error (code 1) for non-TTY
+- [x] Unit tests for TTY detection
 
 **Step 5: Library Cache** (deps: Library interface)
 - [ ] Implement session cache for `library.getAll()`
