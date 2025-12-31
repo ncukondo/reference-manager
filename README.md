@@ -42,6 +42,10 @@ ref list --format json > references.json
 Streamline your writing workflow:
 
 ```bash
+# Find and select references interactively
+ref search -i "machine learning"
+# → Select references with Space, then export as BibTeX or generate citations
+
 # Generate citations
 ref cite smith2024 jones2023 --style apa
 # Output: (Smith, 2024; Jones, 2023)
@@ -254,6 +258,10 @@ ref search "author:smith"
 ref search "author:jones year:2024"
 ref search "title:\"deep learning\""
 
+# Interactive search (with real-time filtering)
+ref search -i                         # Start interactive mode
+ref search -i "machine learning"      # Pre-fill query
+
 # Add references
 ref add paper.json                    # From CSL-JSON file
 ref add references.bib                # From BibTeX
@@ -313,6 +321,34 @@ ref fulltext detach smith2024 --pdf --delete      # Also delete the file
 - **Combined**: `author:smith "deep learning" 2024`
 
 Supported field prefixes: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+
+### Interactive Search
+
+Start an interactive search session with real-time filtering:
+
+```bash
+ref search -i                    # Start with empty query
+ref search -i "machine learning" # Pre-fill the search query
+```
+
+**Features:**
+- Real-time filtering as you type (200ms debounce)
+- Multi-select with Space key
+- Action menu for selected references:
+  - Output IDs (citation keys)
+  - Output as CSL-JSON
+  - Output as BibTeX
+  - Generate citation (APA or choose style)
+
+**Navigation:**
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move cursor |
+| `Space` | Toggle selection |
+| `Enter` | Open action menu |
+| `Esc` / `Ctrl+C` | Cancel |
+
+> **Note**: Interactive mode requires a TTY (terminal). It won't work in pipes or scripts.
 
 ### Sorting and Pagination
 

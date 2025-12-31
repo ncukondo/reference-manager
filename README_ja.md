@@ -42,6 +42,10 @@ ref list --format json > references.json
 執筆ワークフローを効率化：
 
 ```bash
+# インタラクティブに文献を検索・選択
+ref search -i "machine learning"
+# → Spaceキーで文献を選択し、BibTeX出力や引用生成
+
 # 引用を生成
 ref cite smith2024 jones2023 --style apa
 # 出力: (Smith, 2024; Jones, 2023)
@@ -254,6 +258,10 @@ ref search "author:smith"
 ref search "author:jones year:2024"
 ref search "title:\"deep learning\""
 
+# インタラクティブ検索（リアルタイムフィルタリング）
+ref search -i                         # インタラクティブモード開始
+ref search -i "machine learning"      # クエリをプリフィル
+
 # 文献を追加
 ref add paper.json                    # CSL-JSONファイルから
 ref add references.bib                # BibTeXから
@@ -313,6 +321,34 @@ ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 - **組み合わせ**: `author:smith "deep learning" 2024`
 
 対応フィールドプレフィックス: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+
+### インタラクティブ検索
+
+リアルタイムフィルタリングでインタラクティブな検索セッションを開始：
+
+```bash
+ref search -i                    # 空のクエリで開始
+ref search -i "machine learning" # 検索クエリをプリフィル
+```
+
+**機能：**
+- 入力に応じたリアルタイムフィルタリング（200msのdebounce）
+- Spaceキーで複数選択
+- 選択した文献に対するアクションメニュー：
+  - ID（引用キー）を出力
+  - CSL-JSONとして出力
+  - BibTeXとして出力
+  - 引用を生成（APAまたはスタイル選択）
+
+**ナビゲーション：**
+| キー | アクション |
+|------|------------|
+| `↑` / `↓` | カーソル移動 |
+| `Space` | 選択の切り替え |
+| `Enter` | アクションメニューを開く |
+| `Esc` / `Ctrl+C` | キャンセル |
+
+> **注意**: インタラクティブモードにはTTY（ターミナル）が必要です。パイプやスクリプト内では動作しません。
 
 ### ソートとページネーション
 
