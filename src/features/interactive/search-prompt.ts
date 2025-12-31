@@ -108,7 +108,9 @@ export async function runSearchPrompt(
   // enquirer is a CommonJS module, so we must use default import
   const enquirer = await import("enquirer");
   const AutoComplete = (enquirer.default as unknown as Record<string, unknown>)
-    .AutoComplete as new (options: Record<string, unknown>) => {
+    .AutoComplete as new (
+    options: Record<string, unknown>
+  ) => {
     run(): Promise<string | string[]>;
   };
 
