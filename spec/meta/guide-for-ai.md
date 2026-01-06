@@ -119,7 +119,7 @@ When importing from existing modules:
 - Import from upper layers (violate module dependencies)
 - Use `any` type (use `unknown` instead)
 - Skip quality checks
-- Forget to update `ROADMAP.md`
+- Forget to update `spec/tasks/ROADMAP.md`
 
 ### Do
 - Read all relevant specs first
@@ -127,12 +127,12 @@ When importing from existing modules:
 - Respect module dependency rules
 - Use proper TypeScript types
 - Run all quality checks
-- Update `ROADMAP.md` and specs
+- Update `spec/tasks/ROADMAP.md` and specs
 
 ## Documentation Updates
 
 After implementation:
-- Mark tasks complete in `ROADMAP.md`
+- Mark tasks complete in `spec/tasks/ROADMAP.md`
 - Update specs if behavior changed
 - Create ADR in `spec/decisions/` if architectural decision was made
 

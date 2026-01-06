@@ -61,9 +61,13 @@ spec/
 │   └── future.md                # Future extensions (non-normative)
 ├── patterns/                    # Implementation patterns
 │   └── error-handling.md        # Error classes, exit codes
-└── decisions/                   # Architecture Decision Records
-    ├── README.md                # ADR template and guidelines
-    └── ADR-*.md                 # Individual decisions
+├── decisions/                   # Architecture Decision Records
+│   ├── README.md                # ADR template and guidelines
+│   └── ADR-*.md                 # Individual decisions
+└── tasks/                       # Task management
+    ├── ROADMAP.md               # Progress tracking
+    ├── _template.md             # Task template
+    └── completed/               # Completed tasks
 ```
 
 ## Reading Guidelines
@@ -77,6 +81,7 @@ spec/
 | `guidelines/` | When writing code, tests, or checking compatibility |
 | `patterns/` | When implementing error handling or common patterns |
 | `decisions/` | When understanding technical choices (ADRs) |
+| `tasks/` | When tracking progress or creating new tasks |
 
 ## Quick Reference
 
@@ -117,6 +122,6 @@ spec/
 
 1. **Read** `spec/meta/development-process.md` - Understand the complete workflow
 2. **Read** necessary specs (always check `spec/core/`)
-3. **Check** `ROADMAP.md` - Verify current phase and next steps
+3. **Check** `spec/tasks/ROADMAP.md` - Verify current phase and next steps
 4. **Follow** TDD process (see `spec/guidelines/testing.md`)
 5. **Quality checks** after each implementation

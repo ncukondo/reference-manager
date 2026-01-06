@@ -10,7 +10,7 @@
    npm test           # All tests pass
    ```
 
-2. **Update ROADMAP.md**
+2. **Update spec/tasks/ROADMAP.md**
    - Mark completed task with `[x]`
 
 3. **Commit changes**

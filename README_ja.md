@@ -442,7 +442,7 @@ reference-managerは追加メタデータ用に`custom`オブジェクトでCSL-
 
 **Alpha** — このプロジェクトは活発に開発中です。APIやコマンドはバージョン間で変更される可能性があります。
 
-開発の進捗と予定機能については[ROADMAP.md](./ROADMAP.md)を参照してください。
+開発の進捗と予定機能については[spec/tasks/ROADMAP.md](./spec/tasks/ROADMAP.md)を参照してください。
 
 ## 開発
 

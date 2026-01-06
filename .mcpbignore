@@ -27,7 +27,6 @@ vite.config.ts
 
 # Documentation (not needed for runtime)
 CHANGELOG.md
-ROADMAP.md
 CLAUDE.md
 
 # Other

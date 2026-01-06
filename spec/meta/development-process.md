@@ -41,7 +41,7 @@ See `spec/decisions/README.md` for ADR template.
 
 ## 3. Roadmap Phase
 
-### Update ROADMAP.md
+### Update spec/tasks/ROADMAP.md
 
 After spec and technical decisions are clear:
 
@@ -86,7 +86,7 @@ npm test           # All tests pass
 
 After each task:
 
-1. Update `ROADMAP.md` - Mark task complete
+1. Update `spec/tasks/ROADMAP.md` - Mark task complete
 2. Update specs if behavior changed
 3. Commit with descriptive message
 4. Push to remote
@@ -99,7 +99,7 @@ Every implementation must pass:
 - No TypeScript errors
 - No lint errors
 - Code formatted
-- ROADMAP.md updated
+- spec/tasks/ROADMAP.md updated
 - Specs updated (if needed)
 
 ## Common Patterns
@@ -109,7 +109,7 @@ Every implementation must pass:
 1. Read `spec/_index.md` → identify relevant specs
 2. Create `spec/features/new-feature.md`
 3. If new tech needed → create ADR
-4. Update `ROADMAP.md` with tasks
+4. Update `spec/tasks/ROADMAP.md` with tasks
 5. Follow TDD process
 6. Run quality checks
 7. Update docs and commit

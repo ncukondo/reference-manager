@@ -39,5 +39,12 @@ COPY --from=ghcr.io/astral-sh/uv:0.8.3 /uv /uvx /bin/
 # Switch to non-root user and set up uv for them
 USER $USERNAME
 
+# Configure npm global install directory for non-root user
+RUN mkdir -p /home/$USERNAME/.npm-global
+ENV NPM_CONFIG_PREFIX=/home/$USERNAME/.npm-global
+
+# Add npm global bin to PATH
+ENV PATH=/home/$USERNAME/.npm-global/bin:$PATH
+
 # Set working directory
 WORKDIR /workspace

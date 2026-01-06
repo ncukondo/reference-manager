@@ -442,7 +442,7 @@ reference-manager extends CSL-JSON with a `custom` object for additional metadat
 
 **Alpha** — This project is under active development. APIs and commands may change between versions.
 
-See [ROADMAP.md](./ROADMAP.md) for development progress and planned features.
+See [spec/tasks/ROADMAP.md](./spec/tasks/ROADMAP.md) for development progress and planned features.
 
 ## Development
 
