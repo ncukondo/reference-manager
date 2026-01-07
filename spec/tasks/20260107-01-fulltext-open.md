@@ -91,11 +91,11 @@ Add end-to-end tests for the complete workflow.
 
 Add completion for `fulltext open` subcommand.
 
-- [ ] Update: `src/cli/completion.ts` (if needed)
+- [x] Update: `src/cli/completion.ts` (if needed)
   - Add `open` to fulltext subcommands
   - Add `--pdf` and `--markdown` options
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Completion Checklist
 
