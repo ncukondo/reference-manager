@@ -11,12 +11,16 @@ import {
   type FulltextDetachResult,
   type FulltextGetOptions,
   type FulltextGetResult,
+  type FulltextOpenOptions,
+  type FulltextOpenResult,
   executeFulltextAttach,
   executeFulltextDetach,
   executeFulltextGet,
+  executeFulltextOpen,
   formatFulltextAttachOutput,
   formatFulltextDetachOutput,
   formatFulltextGetOutput,
+  formatFulltextOpenOutput,
   getFulltextExitCode,
 } from "./fulltext.js";
 
@@ -69,6 +73,22 @@ const mockRm = vi.fn().mockResolvedValue(undefined);
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => mockReadFile(...args),
   rm: (...args: unknown[]) => mockRm(...args),
+}));
+
+// Mock node:fs for existsSync (partial mock to preserve other functions)
+const mockExistsSync = vi.fn();
+vi.mock("node:fs", async (importOriginal) => {
+  const original = await importOriginal<typeof import("node:fs")>();
+  return {
+    ...original,
+    existsSync: (...args: unknown[]) => mockExistsSync(...args),
+  };
+});
+
+// Mock opener for fulltext open
+const mockOpenWithSystemApp = vi.fn();
+vi.mock("../../utils/opener.js", () => ({
+  openWithSystemApp: (...args: unknown[]) => mockOpenWithSystemApp(...args),
 }));
 
 describe("fulltext command", () => {
@@ -632,6 +652,99 @@ describe("fulltext command", () => {
       const output = formatFulltextDetachOutput(result);
 
       expect(output).toContain("deleted");
+    });
+  });
+
+  describe("executeFulltextOpen", () => {
+    const itemWithFulltext: CslItem = {
+      ...mockItem,
+      custom: {
+        uuid: "123e4567-e89b-12d3-a456-426614174000",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        fulltext: {
+          pdf: "Smith-2024-uuid.pdf",
+          markdown: "Smith-2024-uuid.md",
+        },
+      },
+    };
+
+    describe("via local context", () => {
+      it("should open PDF by default when both exist", async () => {
+        vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
+        mockExistsSync.mockReturnValue(true);
+        mockOpenWithSystemApp.mockResolvedValue(undefined);
+
+        const options: FulltextOpenOptions = {
+          identifier: "Smith-2024",
+          fulltextDirectory,
+        };
+
+        const result = await executeFulltextOpen(options, localContext);
+
+        expect(result.success).toBe(true);
+        expect(result.openedType).toBe("pdf");
+        expect(mockOpenWithSystemApp).toHaveBeenCalled();
+      });
+
+      it("should open Markdown when specified", async () => {
+        vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
+        mockExistsSync.mockReturnValue(true);
+        mockOpenWithSystemApp.mockResolvedValue(undefined);
+
+        const options: FulltextOpenOptions = {
+          identifier: "Smith-2024",
+          type: "markdown",
+          fulltextDirectory,
+        };
+
+        const result = await executeFulltextOpen(options, localContext);
+
+        expect(result.success).toBe(true);
+        expect(result.openedType).toBe("markdown");
+      });
+
+      it("should return error when reference not found", async () => {
+        vi.mocked(mockLibrary.find).mockResolvedValue(undefined);
+
+        const options: FulltextOpenOptions = {
+          identifier: "NonExistent",
+          fulltextDirectory,
+        };
+
+        const result = await executeFulltextOpen(options, localContext);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain("not found");
+      });
+    });
+  });
+
+  describe("formatFulltextOpenOutput", () => {
+    it("should format successful open", () => {
+      const result: FulltextOpenResult = {
+        success: true,
+        openedType: "pdf",
+        openedPath: "/path/to/file.pdf",
+      };
+
+      const output = formatFulltextOpenOutput(result);
+
+      expect(output).toContain("Opened");
+      expect(output).toContain("pdf");
+      expect(output).toContain("/path/to/file.pdf");
+    });
+
+    it("should format error message", () => {
+      const result: FulltextOpenResult = {
+        success: false,
+        error: "Reference not found",
+      };
+
+      const output = formatFulltextOpenOutput(result);
+
+      expect(output).toContain("Error");
+      expect(output).toContain("Reference not found");
     });
   });
 

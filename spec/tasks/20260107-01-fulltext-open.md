@@ -36,16 +36,16 @@ Create utility function to open files with system default application.
 
 Add basic `open` subcommand to fulltext command.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts`
+- [x] Write test: `src/cli/commands/fulltext.test.ts`
   - Test with `--pdf` option
   - Test with `--markdown` option
   - Test priority (PDF over Markdown when both exist)
-- [ ] Implement: `src/cli/commands/fulltext.ts`
+- [x] Implement: `src/cli/commands/fulltext.ts`
   - Add `open` subcommand with `--pdf` and `--markdown` options
   - Resolve file path from reference metadata
   - Call opener utility
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Stdin Support for Pipeline Usage
 
