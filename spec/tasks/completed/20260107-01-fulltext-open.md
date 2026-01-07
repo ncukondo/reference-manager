@@ -99,14 +99,14 @@ Add completion for `fulltext open` subcommand.
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification
-  - [ ] `reference-manager fulltext open <ref-id>` opens PDF
-  - [ ] `reference-manager fulltext open <ref-id> --markdown` opens Markdown
-  - [ ] `echo <ref-id> | reference-manager fulltext open` works
-  - [ ] Error messages are descriptive
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification (covered by E2E tests)
+  - [x] `reference-manager fulltext open <ref-id>` opens PDF
+  - [x] `reference-manager fulltext open <ref-id> --markdown` opens Markdown
+  - [x] `echo <ref-id> | reference-manager fulltext open` works
+  - [x] Error messages are descriptive
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

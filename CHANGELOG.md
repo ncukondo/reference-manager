@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Fulltext Open Command**: Open PDF/Markdown files with system default application
+  - New `fulltext open` subcommand: `ref fulltext open <ref-id>`
+  - Automatic file type selection: PDF prioritized when both exist
+  - Explicit type options: `--pdf`, `--markdown`
+  - Pipeline support: `ref search "query" --limit 1 --format id | ref fulltext open`
+  - Stdin support: reads identifier from stdin when not provided as argument
+  - Cross-platform: macOS (`open`), Linux (`xdg-open`), Windows (`start`)
+  - Descriptive error messages for missing files and references
+  - See `spec/features/fulltext.md` for full specification
+
 - **Interactive Search (Phase 18)**: Real-time interactive reference search mode
   - New `-i, --interactive` flag for search command: `ref search -i [query]`
   - Real-time filtering: results update as you type (200ms debounce)
