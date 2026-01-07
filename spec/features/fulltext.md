@@ -149,6 +149,63 @@ markdown: /path/to/fulltext/Smith-2024-PMID12345678-uuid.md
 
 With `--stdout`: Raw file content.
 
+### `fulltext open`
+
+Open full-text file with the system's default application.
+
+```bash
+# From argument
+reference-manager fulltext open <ref-id>
+reference-manager fulltext open <ref-id> --pdf
+reference-manager fulltext open <ref-id> --markdown
+
+# From stdin (non-tty)
+echo "Smith-2024" | reference-manager fulltext open
+reference-manager search "cancer" --limit 1 --format id | reference-manager fulltext open
+```
+
+#### Options
+
+```
+--pdf        Open PDF file
+--markdown   Open Markdown file
+```
+
+#### ID Resolution
+
+| Condition | Behavior |
+|-----------|----------|
+| Argument provided | Use argument |
+| No argument + non-tty | Read one line from stdin |
+| No argument + tty | Error (ID not specified) |
+
+#### File Priority (when format not specified)
+
+| State | Behavior |
+|-------|----------|
+| PDF only | Open PDF |
+| Markdown only | Open Markdown |
+| Both exist | Open PDF |
+| Neither exists | Error |
+
+#### Platform Support
+
+| OS | Command |
+|----|---------|
+| macOS | `open` |
+| Linux | `xdg-open` |
+| Windows | `start ""` |
+
+#### Error Messages
+
+| Situation | Message |
+|-----------|---------|
+| Reference not found | `Reference not found: Smith-2024` |
+| No fulltext attached | `No fulltext attached to reference: Smith-2024` |
+| Specified format not attached | `No PDF attached to reference: Smith-2024` |
+| File missing on disk | `Fulltext file not found: /path/to/file.pdf (metadata exists but file is missing)` |
+| Opener failed | `Failed to open file: /path/to/file.pdf` |
+
 ### `fulltext detach`
 
 Remove full-text association from a reference.
@@ -230,6 +287,18 @@ reference-manager fulltext get Smith-2024 --pdf
 
 # Output PDF content to stdout (e.g., for piping to another tool)
 reference-manager fulltext get Smith-2024 --pdf --stdout | less
+
+# Open PDF with default application
+reference-manager fulltext open Smith-2024
+
+# Open Markdown with default application
+reference-manager fulltext open Smith-2024 --markdown
+
+# Open from search result (pipeline)
+reference-manager search "cancer" --limit 1 --format id | reference-manager fulltext open
+
+# Open multiple files (with xargs)
+reference-manager search "cancer" --format id | xargs -I{} reference-manager fulltext open {}
 
 # Detach Markdown but keep file
 reference-manager fulltext detach Smith-2024 --markdown

@@ -9,3 +9,4 @@ export {
   type BackupOptions,
 } from "./backup";
 export { pickDefined } from "./object";
+export { getOpenerCommand, openWithSystemApp } from "./opener";

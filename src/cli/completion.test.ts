@@ -188,10 +188,11 @@ describe("completion", () => {
       const completions = getCompletions(env, program);
       const names = completions.map((c) => c.name);
 
-      // fulltext has subcommands: attach, get, detach
+      // fulltext has subcommands: attach, get, detach, open
       expect(names).toContain("attach");
       expect(names).toContain("get");
       expect(names).toContain("detach");
+      expect(names).toContain("open");
     });
 
     it("returns nested subcommands for server command", () => {
@@ -279,6 +280,15 @@ describe("completion", () => {
       expect(result.needs).toBe(true);
       expect(result.command).toBe("fulltext");
       expect(result.subcommand).toBe("detach");
+    });
+
+    it("returns true for fulltext open subcommand", () => {
+      const env = createEnv({ line: "ref fulltext open ", prev: "open", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("fulltext");
+      expect(result.subcommand).toBe("open");
     });
 
     it("returns false when completing option value", () => {

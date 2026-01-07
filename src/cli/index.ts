@@ -21,12 +21,15 @@ import {
   type FulltextAttachOptions,
   type FulltextDetachOptions,
   type FulltextGetOptions,
+  type FulltextOpenOptions,
   executeFulltextAttach,
   executeFulltextDetach,
   executeFulltextGet,
+  executeFulltextOpen,
   formatFulltextAttachOutput,
   formatFulltextDetachOutput,
   formatFulltextGetOutput,
+  formatFulltextOpenOutput,
   getFulltextExitCode,
 } from "./commands/fulltext.js";
 import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
@@ -847,6 +850,62 @@ async function handleFulltextDetachAction(
 }
 
 /**
+ * Handle 'fulltext open' command action
+ */
+async function handleFulltextOpenAction(
+  identifierArg: string | undefined,
+  options: {
+    pdf?: boolean;
+    markdown?: boolean;
+    uuid?: boolean;
+  },
+  program: Command
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides(program.opts());
+
+    // Resolve identifier: from argument or stdin (non-tty only)
+    let identifier: string;
+    if (identifierArg) {
+      identifier = identifierArg;
+    } else {
+      if (isTTY()) {
+        process.stderr.write("Error: Identifier is required when running interactively.\n");
+        process.exit(1);
+      }
+      const stdinId = (await readStdinContent()).split("\n")[0]?.trim() ?? "";
+      if (!stdinId) {
+        process.stderr.write("Error: No identifier provided from stdin.\n");
+        process.exit(1);
+      }
+      identifier = stdinId;
+    }
+
+    const context = await createExecutionContext(config, Library.load);
+
+    const openOptions: FulltextOpenOptions = {
+      identifier,
+      fulltextDirectory: config.fulltext.directory,
+      ...(options.pdf && { type: "pdf" as const }),
+      ...(options.markdown && { type: "markdown" as const }),
+      ...(options.uuid && { idType: "uuid" as const }),
+    };
+
+    const result = await executeFulltextOpen(openOptions, context);
+    const output = formatFulltextOpenOutput(result);
+    if (result.success) {
+      process.stderr.write(`${output}\n`);
+    } else {
+      process.stderr.write(`${output}\n`);
+    }
+    process.exit(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
  * Register 'fulltext' command with subcommands
  */
 function registerFulltextCommand(program: Command): void {
@@ -891,6 +950,17 @@ function registerFulltextCommand(program: Command): void {
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string, options) => {
       await handleFulltextDetachAction(identifier, options, program);
+    });
+
+  fulltextCmd
+    .command("open")
+    .description("Open full-text file with system default application")
+    .argument("[identifier]", "Citation key or UUID (reads from stdin if not provided)")
+    .option("--pdf", "Open PDF file")
+    .option("--markdown", "Open Markdown file")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleFulltextOpenAction(identifier, options, program);
     });
 }
 

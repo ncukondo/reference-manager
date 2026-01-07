@@ -558,6 +558,95 @@ describe("Fulltext Command E2E", () => {
     });
   });
 
+  describe("fulltext open", () => {
+    beforeEach(async () => {
+      // Attach a PDF file first
+      const pdfPath = path.join(testDir, "paper.pdf");
+      await fs.writeFile(pdfPath, "PDF content here", "utf-8");
+
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
+    });
+
+    it("should return error for non-existent reference", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "open",
+        "NonExistent",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("not found");
+    });
+
+    it("should return error for reference without fulltext", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "open",
+        "Jones-2023",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("No fulltext attached");
+    });
+
+    it("should return error for non-attached type", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "open",
+        "Smith-2024",
+        "--markdown",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("No markdown attached");
+    });
+
+    it("should read identifier from stdin in pipeline mode", async () => {
+      // Test error case with stdin - reference not found
+      const result = await runWithFulltext(
+        ["fulltext", "open", "--library", libraryPath],
+        "NonExistent\n"
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("not found");
+    });
+
+    it("should read valid identifier from stdin and process", async () => {
+      // Test with valid reference - opener may fail but path resolution should work
+      const result = await runWithFulltext(
+        ["fulltext", "open", "--library", libraryPath],
+        "Smith-2024\n"
+      );
+
+      // The opener might fail in CI environment (no xdg-open), but the path resolution
+      // should work. If opener fails, exit code might be 1 but with "Failed to open" message.
+      // If opener succeeds, exit code is 0 with "Opened pdf:" message.
+      // In some CI environments, we may get Node.js warnings about unsettled promises.
+      if (result.exitCode === 0) {
+        expect(result.stderr).toContain("Opened pdf:");
+      } else {
+        // Opener failed but path was resolved correctly - should NOT contain "not found" errors
+        // which would indicate path resolution failed
+        expect(result.stderr).not.toContain("Reference not found");
+        expect(result.stderr).not.toContain("No fulltext attached");
+      }
+    });
+  });
+
   describe("remove command integration", () => {
     it("should warn when removing reference with fulltext attached", async () => {
       // First attach a PDF

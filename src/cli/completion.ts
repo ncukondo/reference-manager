@@ -38,7 +38,7 @@ export const OPTION_VALUES: Record<string, readonly string[]> = {
 
 // Commands that support ID completion
 const ID_COMPLETION_COMMANDS = new Set(["cite", "remove", "update"]);
-const ID_COMPLETION_FULLTEXT_SUBCOMMANDS = new Set(["attach", "get", "detach"]);
+const ID_COMPLETION_FULLTEXT_SUBCOMMANDS = new Set(["attach", "get", "detach", "open"]);
 
 /**
  * Convert option values to CompletionItem array

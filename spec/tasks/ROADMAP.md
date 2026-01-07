@@ -64,26 +64,28 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 16**: Pagination and Sorting (sort/limit/offset for list and search commands)
 - **Phase 17**: Shell Completion (Bash/Zsh/Fish auto-completion using tabtab)
 - **Phase 18**: Interactive Search (Issue #16, real-time filtering with Enquirer)
+- **Phase 19**: Fulltext Open Command (open PDF/Markdown with system default app)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
-## Future Phases
+## Next Steps
 
 ### MCPB Registry Submission
 
-Submit to Anthropic's official extension registry when ready:
+Submit to Anthropic's official extension registry when ready.
 
-- Prepare icon.png (256x256)
-- Submit via [Anthropic extension form](https://docs.google.com/forms/d/14_Dmcig4z8NeRMB_e7TOyrKzuZ88-BLYdLvS6LPhiZU/edit)
-- Address review feedback if any
+- **Scope**:
+  - Prepare icon.png (256x256)
+  - Submit via Anthropic extension form
+  - Address review feedback if any
 
-References:
-- [MCPB Specification](https://github.com/anthropics/dxt/blob/main/MANIFEST.md)
-- [Desktop Extensions Guide](https://www.anthropic.com/engineering/desktop-extensions)
+---
 
-### Phase 19: Citation Enhancements
+## Future Phases
+
+### Phase 20: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -92,7 +94,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 20: Advanced Features
+### Phase 21: Advanced Features
 
 Additional features beyond core functionality:
 

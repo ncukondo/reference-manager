@@ -10,12 +10,15 @@ import {
   type FulltextAttachResult,
   type FulltextDetachResult,
   type FulltextGetResult,
+  type FulltextOpenResult,
   type FulltextAttachOptions as OperationAttachOptions,
   type FulltextDetachOptions as OperationDetachOptions,
   type FulltextGetOptions as OperationGetOptions,
+  type FulltextOpenOptions as OperationOpenOptions,
   fulltextAttach,
   fulltextDetach,
   fulltextGet,
+  fulltextOpen,
 } from "../../features/operations/fulltext/index.js";
 import type { ExecutionContext } from "../execution-context.js";
 
@@ -56,8 +59,18 @@ export interface FulltextDetachOptions {
   fulltextDirectory: string;
 }
 
+/**
+ * Options for fulltext open command
+ */
+export interface FulltextOpenOptions {
+  identifier: string;
+  type?: FulltextType;
+  idType?: IdentifierType;
+  fulltextDirectory: string;
+}
+
 // Re-export result types
-export type { FulltextAttachResult, FulltextGetResult, FulltextDetachResult };
+export type { FulltextAttachResult, FulltextGetResult, FulltextDetachResult, FulltextOpenResult };
 
 /**
  * Execute fulltext attach command
@@ -114,6 +127,23 @@ export async function executeFulltextDetach(
   };
 
   return fulltextDetach(context.library, operationOptions);
+}
+
+/**
+ * Execute fulltext open command
+ */
+export async function executeFulltextOpen(
+  options: FulltextOpenOptions,
+  context: ExecutionContext
+): Promise<FulltextOpenResult> {
+  const operationOptions: OperationOpenOptions = {
+    identifier: options.identifier,
+    type: options.type,
+    idType: options.idType,
+    fulltextDirectory: options.fulltextDirectory,
+  };
+
+  return fulltextOpen(context.library, operationOptions);
 }
 
 // ============================================================================
@@ -186,10 +216,21 @@ export function formatFulltextDetachOutput(result: FulltextDetachResult): string
 }
 
 /**
+ * Format fulltext open output
+ */
+export function formatFulltextOpenOutput(result: FulltextOpenResult): string {
+  if (!result.success) {
+    return `Error: ${result.error}`;
+  }
+
+  return `Opened ${result.openedType}: ${result.openedPath}`;
+}
+
+/**
  * Get exit code for fulltext command result
  */
 export function getFulltextExitCode(
-  result: FulltextAttachResult | FulltextGetResult | FulltextDetachResult
+  result: FulltextAttachResult | FulltextGetResult | FulltextDetachResult | FulltextOpenResult
 ): number {
   return result.success ? 0 : 1;
 }
