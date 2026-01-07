@@ -51,29 +51,29 @@ Add basic `open` subcommand to fulltext command.
 
 Add stdin support for non-tty environments.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts`
+- [x] Write test: `src/cli/commands/fulltext.test.ts`
   - Test reading ref-id from stdin when no argument and non-tty
   - Test error when no argument and tty
-- [ ] Implement: `src/cli/commands/fulltext.ts`
+- [x] Implement: `src/cli/commands/fulltext.ts`
   - Check `process.stdin.isTTY`
   - Read from stdin if non-tty and no argument
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Error Handling
 
 Implement descriptive error messages for various failure scenarios.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts`
+- [x] Write test: `src/cli/commands/fulltext.test.ts`
   - Reference not found
   - No fulltext attached
   - Specified format not attached
   - File missing on disk (metadata exists but file gone)
-- [ ] Implement: `src/cli/commands/fulltext.ts`
+- [x] Implement: `src/cli/commands/fulltext.ts`
   - Add specific error messages for each scenario
   - Check file existence before opening
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: E2E Tests
 
