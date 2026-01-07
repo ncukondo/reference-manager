@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary } from "../../../core/library-interface.js";
@@ -93,7 +94,9 @@ describe("fulltextOpen", () => {
 
       expect(result.success).toBe(true);
       expect(result.openedType).toBe("pdf");
-      expect(openWithSystemApp).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.pdf`);
+      expect(openWithSystemApp).toHaveBeenCalledWith(
+        join(fulltextDirectory, "Smith-2024-uuid.pdf")
+      );
     });
 
     it("should open PDF when only PDF exists", async () => {
@@ -133,7 +136,9 @@ describe("fulltextOpen", () => {
 
       expect(result.success).toBe(true);
       expect(result.openedType).toBe("pdf");
-      expect(openWithSystemApp).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.pdf`);
+      expect(openWithSystemApp).toHaveBeenCalledWith(
+        join(fulltextDirectory, "Smith-2024-uuid.pdf")
+      );
     });
 
     it("should open Markdown when --markdown option specified", async () => {
@@ -147,7 +152,7 @@ describe("fulltextOpen", () => {
 
       expect(result.success).toBe(true);
       expect(result.openedType).toBe("markdown");
-      expect(openWithSystemApp).toHaveBeenCalledWith(`${fulltextDirectory}/Smith-2024-uuid.md`);
+      expect(openWithSystemApp).toHaveBeenCalledWith(join(fulltextDirectory, "Smith-2024-uuid.md"));
     });
   });
 
