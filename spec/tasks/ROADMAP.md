@@ -69,6 +69,21 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Next Steps
+
+### Fulltext Open Command
+
+Add `fulltext open` subcommand to open PDF/Markdown files with system default application.
+
+- **Spec**: [`spec/features/fulltext.md`](../features/fulltext.md)
+- **Scope**:
+  - Open PDF/Markdown with system opener (`open`/`xdg-open`/`start`)
+  - PDF priority when both exist
+  - Stdin support for pipeline usage (non-tty)
+  - Descriptive error messages for missing files
+
+---
+
 ## Future Phases
 
 ### MCPB Registry Submission
