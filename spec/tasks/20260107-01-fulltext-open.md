@@ -79,13 +79,13 @@ Implement descriptive error messages for various failure scenarios.
 
 Add end-to-end tests for the complete workflow.
 
-- [ ] Write test: `src/cli/fulltext.e2e.test.ts`
+- [x] Write test: `src/cli/fulltext.e2e.test.ts`
   - Test open command with attached PDF
   - Test open command with attached Markdown
   - Test pipeline usage (echo id | fulltext open)
   - Test error scenarios
-- [ ] Verify: `npm run test:e2e`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:e2e`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Shell Completion Support
 
