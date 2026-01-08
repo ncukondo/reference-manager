@@ -198,12 +198,12 @@ Changes made:
 Location: `src/cli/index.ts`
 
 - [x] Implement: Add options and output logic (done in Step 4.0)
-- [ ] Write test: `src/cli/commands/remove.test.ts`
+- [x] Write test: `src/cli/commands/remove.test.ts`
   - Test --output json
   - Test --full
   - Test error case JSON output
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ---
 
