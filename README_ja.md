@@ -276,8 +276,29 @@ ref remove smith2024
 ref remove smith2024 --force          # 確認をスキップ
 
 # 文献を更新
-ref update smith2024 updates.json
-ref update smith2024 --set "title=New Title"
+ref update smith2024 updates.json              # JSONファイルから
+ref update smith2024 --set "title=New Title"   # インライン更新
+
+# --setオプション（繰り返し可能）
+ref update smith2024 --set "title=New Title" --set "DOI=10.1234/example"
+
+# 配列操作（タグ、キーワード）
+ref update smith2024 --set "custom.tags+=urgent"       # 配列に追加
+ref update smith2024 --set "custom.tags-=done"         # 配列から削除
+ref update smith2024 --set "custom.tags=a,b,c"         # 配列を置換
+
+# 著者を設定
+ref update smith2024 --set "author=Smith, John"                    # 単一著者
+ref update smith2024 --set "author=Smith, John; Doe, Jane"         # 複数著者
+
+# 日付を設定
+ref update smith2024 --set "issued.raw=2024-03-15"
+
+# 引用キーを変更
+ref update smith2024 --set "id=smith2024-revised"
+
+# フィールドをクリア
+ref update smith2024 --set "abstract="
 
 # 引用を生成
 ref cite smith2024
@@ -298,6 +319,15 @@ ref fulltext attach smith2024 paper.pdf --force   # 既存を上書き
 ref fulltext get smith2024 --pdf                  # PDFパスを取得
 ref fulltext get smith2024 --md                   # Markdownパスを取得
 ref fulltext get smith2024 --pdf --stdout         # 内容を標準出力に
+
+# デフォルトアプリでファイルを開く
+ref fulltext open smith2024                       # PDFを開く（PDFがなければMarkdown）
+ref fulltext open smith2024 --pdf                 # PDFを明示的に開く
+ref fulltext open smith2024 --md                  # Markdownを明示的に開く
+
+# 検索結果から開く（パイプライン）
+ref search "cancer" --limit 1 --format ids-only | ref fulltext open
+ref search "review" --format ids-only | xargs -I{} ref fulltext open {}
 
 # ファイルを切り離す
 ref fulltext detach smith2024 --pdf
@@ -320,7 +350,7 @@ ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 - **フレーズ検索**: `"machine learning"`（完全一致）
 - **組み合わせ**: `author:smith "deep learning" 2024`
 
-対応フィールドプレフィックス: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+対応フィールドプレフィックス: `author:`, `title:`, `year:`, `doi:`, `pmid:`, `pmcid:`, `isbn:`, `url:`, `keyword:`, `tag:`
 
 ### インタラクティブ検索
 

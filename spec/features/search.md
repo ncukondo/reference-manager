@@ -17,6 +17,7 @@
 - Supported field prefixes:
   - `author:` - Search in author names
   - `title:` - Search in title
+  - `year:` - Search in publication year (extracted from `issued` field)
   - `doi:` - Search in DOI field
   - `pmid:` - Search in PMID field
   - `pmcid:` - Search in PMCID field

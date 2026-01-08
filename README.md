@@ -320,6 +320,15 @@ ref fulltext get smith2024 --pdf                  # Get PDF path
 ref fulltext get smith2024 --md                   # Get Markdown path
 ref fulltext get smith2024 --pdf --stdout         # Output content to stdout
 
+# Open files with default application
+ref fulltext open smith2024                       # Open PDF (or Markdown if no PDF)
+ref fulltext open smith2024 --pdf                 # Open PDF explicitly
+ref fulltext open smith2024 --md                  # Open Markdown explicitly
+
+# Open from search results (pipeline)
+ref search "cancer" --limit 1 --format ids-only | ref fulltext open
+ref search "review" --format ids-only | xargs -I{} ref fulltext open {}
+
 # Detach files
 ref fulltext detach smith2024 --pdf
 ref fulltext detach smith2024 --pdf --delete      # Also delete the file
@@ -341,7 +350,7 @@ ref fulltext detach smith2024 --pdf --delete      # Also delete the file
 - **Phrase search**: `"machine learning"` (exact phrase)
 - **Combined**: `author:smith "deep learning" 2024`
 
-Supported field prefixes: `author:`, `title:`, `doi:`, `pmid:`, `pmcid:`, `url:`, `keyword:`, `tag:`
+Supported field prefixes: `author:`, `title:`, `year:`, `doi:`, `pmid:`, `pmcid:`, `isbn:`, `url:`, `keyword:`, `tag:`
 
 ### Interactive Search
 
