@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Update Command --set Option (Phase 20)**: Inline field updates for the `update` command
+  - New `--set <field=value>` option (repeatable)
+  - String fields: `title`, `abstract`, `DOI`, `PMID`, `ISBN`, `URL`, etc.
+  - Array operations: `+=` to add, `-=` to remove (for `custom.tags`, `keyword`)
+  - Author parsing: `--set "author=Smith, John; Doe, Jane"`
+  - Date setting: `--set "issued.raw=2024-03-15"`
+  - ID change: `--set "id=new-key"`
+  - Clear fields: `--set "abstract="`
+  - Protected fields validation: `custom.uuid`, `custom.timestamp`, etc. cannot be set
+  - Mutually exclusive with file argument
+  - See `spec/architecture/cli.md` (Update Command section) for full specification
+
 - **Fulltext Open Command**: Open PDF/Markdown files with system default application
   - New `fulltext open` subcommand: `ref fulltext open <ref-id>`
   - Automatic file type selection: PDF prioritized when both exist
