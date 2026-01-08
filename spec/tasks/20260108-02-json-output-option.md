@@ -61,10 +61,10 @@ For each step:
 
 Location: `src/features/operations/add.ts`
 
-- [ ] Implement: Add `reason: FailureReason` to FailedItem interface
-- [ ] Update processImportResult to use reason from ImportItemResult
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: Add `reason: FailureReason` to FailedItem interface
+- [x] Update processImportResult to use reason from ImportItemResult
+- [x] Update tests to verify reason is included
+- [x] Verify: `npm run test:unit` / Lint/Type check pass
 
 ### Step 1.3: Extend SkippedItem with duplicateType
 

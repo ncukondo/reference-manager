@@ -105,9 +105,9 @@ describe("addReferences", () => {
   });
 
   describe("import failures", () => {
-    it("should report failed imports", async () => {
+    it("should report failed imports with reason", async () => {
       mockedImportFromInputs.mockResolvedValue({
-        results: [{ success: false, error: "Not found", source: "99999999" }],
+        results: [{ success: false, error: "Not found", source: "99999999", reason: "not_found" }],
       });
 
       const result = await addReferences(["99999999"], mockLibrary, {});
@@ -117,6 +117,7 @@ describe("addReferences", () => {
       expect(result.failed[0]).toEqual({
         source: "99999999",
         error: "Not found",
+        reason: "not_found",
       });
       expect(result.skipped).toHaveLength(0);
     });
@@ -127,7 +128,7 @@ describe("addReferences", () => {
       mockedImportFromInputs.mockResolvedValue({
         results: [
           { success: true, item: successItem, source: "10.1234/good" },
-          { success: false, error: "Not found", source: "99999999" },
+          { success: false, error: "Not found", source: "99999999", reason: "not_found" },
         ],
       });
 
@@ -135,6 +136,7 @@ describe("addReferences", () => {
 
       expect(result.added).toHaveLength(1);
       expect(result.failed).toHaveLength(1);
+      expect(result.failed[0].reason).toBe("not_found");
     });
   });
 

@@ -45,6 +45,7 @@ export interface AddedItem {
 export interface FailedItem {
   source: string;
   error: string;
+  reason: import("../import/importer.js").FailureReason;
 }
 
 /**
@@ -157,7 +158,10 @@ async function processImportResult(
   library: ILibrary
 ): Promise<ProcessResult> {
   if (!result.success) {
-    return { type: "failed", item: { source: result.source, error: result.error } };
+    return {
+      type: "failed",
+      item: { source: result.source, error: result.error, reason: result.reason },
+    };
   }
 
   const item = result.item;
