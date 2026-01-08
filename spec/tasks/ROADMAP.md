@@ -70,6 +70,24 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Current Phase
+
+### Phase 20: Update Command --set Option
+
+**Task**: `spec/tasks/20260108-01-update-set-option.md`
+
+Implement `--set` option for the `ref update` command to allow inline field updates.
+
+- **Status**: In Progress
+- **Scope**:
+  - `--set "field=value"` syntax for simple fields
+  - `+=` / `-=` operators for array fields (tags, additional_urls)
+  - Author parsing: `--set "author=Family, Given"`
+  - ID (citation key) change support
+  - Date raw format: `--set "issued.raw=2024-03-15"`
+
+---
+
 ## Next Steps
 
 ### MCPB Registry Submission

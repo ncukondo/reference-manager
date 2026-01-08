@@ -166,3 +166,46 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 **Requires TTY**: Exits with error in non-TTY environment.
 
 See `spec/features/interactive-search.md` for complete specification.
+
+### Update Command
+
+`ref update <identifier> [file] [options]`
+
+Update fields of an existing reference.
+
+**Arguments:**
+- `<identifier>` - Citation key or UUID
+- `[file]` - JSON file with updates (or use stdin)
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--uuid` | Interpret identifier as UUID |
+| `--set <field=value>` | Set field value (repeatable) |
+
+**--set Syntax:**
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| `field=value` | Set simple field | `--set "title=New Title"` |
+| `field=` | Clear field | `--set "abstract="` |
+| `field=a,b,c` | Replace array | `--set "custom.tags=a,b,c"` |
+| `field+=value` | Add to array | `--set "custom.tags+=urgent"` |
+| `field-=value` | Remove from array | `--set "custom.tags-=done"` |
+| `author=Family, Given` | Set author | `--set "author=Smith, John"` |
+| `author=A; B` | Multiple authors | `--set "author=Smith, John; Doe, Jane"` |
+| `issued.raw=date` | Set date (raw) | `--set "issued.raw=2024-03-15"` |
+| `id=key` | Change citation key | `--set "id=new-key"` |
+
+**Settable Fields:**
+- String: `title`, `abstract`, `type`, `DOI`, `PMID`, `PMCID`, `ISBN`, `ISSN`, `URL`, `publisher`, `publisher-place`, `page`, `volume`, `issue`, `container-title`, `note`, `id`
+- Array (+=/−=): `custom.tags`, `custom.additional_urls`, `keyword`
+- Name: `author`, `editor` (simple format only)
+- Date: `issued.raw`, `accessed.raw`
+
+**Not settable via --set:**
+- `custom.uuid`, `custom.created_at`, `custom.timestamp`, `custom.fulltext`
+- Complex date with `date-parts` (use JSON file)
+
+**Note:** `--set` and `[file]` are mutually exclusive.
