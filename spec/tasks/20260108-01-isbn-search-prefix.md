@@ -38,9 +38,10 @@ For each step:
 
 ### Step 3: Add tokenizer test for isbn prefix
 
-- [ ] Write test: `src/features/search/tokenizer.test.ts`
+- [x] Write test: `src/features/search/tokenizer.test.ts`
   - Test `isbn:978-4-00-000000-0` tokenization
-- [ ] Verify: `npm run test:unit`
+- [x] Add isbn to VALID_FIELDS in tokenizer.ts
+- [x] Verify: `npm run test:unit`
 
 ## Completion Checklist
 

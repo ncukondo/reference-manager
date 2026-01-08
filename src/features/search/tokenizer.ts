@@ -7,6 +7,7 @@ const VALID_FIELDS: Set<FieldSpecifier> = new Set([
   "doi",
   "pmid",
   "pmcid",
+  "isbn",
   "url",
   "keyword",
   "tag",
