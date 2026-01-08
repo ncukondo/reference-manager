@@ -360,6 +360,24 @@ AID - 10.1000/xyz123 [doi]`;
       expect(ris).toContain("DO  - 10.1000/xyz123");
     });
 
+    it("should convert AID [pii] tag to C1 tag", () => {
+      const nbib = `PMID- 12345678
+AID - S0123-4567(24)00001-2 [pii]`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("C1  - S0123-4567(24)00001-2");
+    });
+
+    it("should handle both DOI and PII in same entry", () => {
+      const nbib = `PMID- 12345678
+AID - 10.1000/xyz123 [doi]
+AID - S0123-4567(24)00001-2 [pii]`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("DO  - 10.1000/xyz123");
+      expect(ris).toContain("C1  - S0123-4567(24)00001-2");
+    });
+
     it("should convert PT tag to TY tag", () => {
       const nbib = `PMID- 12345678
 PT  - Journal Article`;

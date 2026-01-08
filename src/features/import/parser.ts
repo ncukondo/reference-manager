@@ -89,8 +89,8 @@ function parseNbibEntry(entry: string): Array<{ tag: string; value: string }> {
   let currentValue = "";
 
   for (const line of lines) {
-    // Check if line starts with a tag (uppercase letters followed by space(s) and dash)
-    const tagMatch = line.match(/^([A-Z]+)\s*-\s*(.*)$/);
+    // Check if line starts with a tag (2-4 uppercase letters followed by space(s) and dash)
+    const tagMatch = line.match(/^([A-Z]{2,4})\s*-\s*(.*)$/);
 
     if (tagMatch) {
       // Save previous tag-value pair
@@ -125,6 +125,12 @@ function convertNbibTagToRisLine(
   if (tag === "AID" && value.includes("[doi]")) {
     const doi = value.replace(/\s*\[doi\].*$/, "").trim();
     return { line: `DO  - ${doi}` };
+  }
+
+  // Handle PII specially (AID tag with [pii] suffix)
+  if (tag === "AID" && value.includes("[pii]")) {
+    const pii = value.replace(/\s*\[pii\].*$/, "").trim();
+    return { line: `C1  - ${pii}` }; // C1 = Custom Field 1
   }
 
   // Get mapped RIS tag
