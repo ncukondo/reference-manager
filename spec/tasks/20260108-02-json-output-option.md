@@ -102,26 +102,26 @@ Location: `src/features/operations/add.ts`
 
 Location: `src/features/operations/json-output.ts` (NEW)
 
-- [ ] Write test: `src/features/operations/json-output.test.ts`
+- [x] Write test: `src/features/operations/json-output.test.ts`
   - Test AddJsonOutput type structure
   - Test RemoveJsonOutput type structure
   - Test UpdateJsonOutput type structure
-- [ ] Implement: Create types as defined in spec
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: Create types as defined in spec
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ### Step 2.2: Implement formatAddJsonOutput
 
 Location: `src/features/operations/json-output.ts`
 
-- [ ] Write test:
+- [x] Write test:
   - Basic output without --full
   - Output with --full (includes item)
   - Summary counts
   - Empty results
-- [ ] Implement: `formatAddJsonOutput(result: AddReferencesResult, full: boolean): AddJsonOutput`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: `formatAddJsonOutput(result: AddReferencesResult, full: boolean): AddJsonOutput`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ### Step 2.3: Implement formatRemoveJsonOutput
 
