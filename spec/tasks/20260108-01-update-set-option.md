@@ -52,14 +52,14 @@ For each step:
 - [x] Verify: `npm run test:unit`
 - [x] Lint/Type check: `npm run lint && npm run typecheck`
 
-### Step 3: CLI Integration
+### Step 3: CLI Integration ✅
 
-- [ ] Update: `src/cli/index.ts`
+- [x] Update: `src/cli/index.ts`
   - Add `.option("--set <field=value>", "...", collect)` to update command
   - Modify `handleUpdateAction()` to process --set options
   - Add validation: --set and [file] are mutually exclusive
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: E2E Tests
 
