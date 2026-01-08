@@ -74,7 +74,16 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-No active development phase.
+### Phase 21: Search & Show Enhancements
+
+- **Task 1**: Search ID field support (`20260108-01-search-id-field.md`)
+  - Add `id` field to search targets
+  - Support `id:` prefix for citation key search
+- **Task 2**: Fix JSON output escaping (`20260108-02-fix-json-output-escaping.md`)
+  - Fix double-escaped JSON in `--json` output for search/list
+- **Task 3**: Show command (`20260108-03-show-command.md`)
+  - New `show` command to display single reference by ID
+  - Multiple output formats: JSON, YAML, BibTeX, text
 
 ---
 
