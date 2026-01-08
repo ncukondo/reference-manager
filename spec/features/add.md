@@ -123,6 +123,7 @@ cat refs.json | reference-manager add
 echo "10.1038/nature12373" | reference-manager add           # DOI (auto-detect)
 echo "12345678" | reference-manager add --format pmid        # PMID
 echo "12345678 23456789" | reference-manager add --format pmid  # Multiple PMIDs
+echo "ISBN:978-4-00-000000-0" | reference-manager add --format isbn  # ISBN
 
 # Force add despite duplicates
 reference-manager add --force paper.json

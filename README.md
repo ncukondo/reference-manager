@@ -272,6 +272,7 @@ ref add "ISBN:978-4-00-000000-0"      # From ISBN
 cat references.json | ref add         # From stdin (file content)
 echo "10.1038/nature12373" | ref add  # From stdin (DOI auto-detect)
 echo "12345678" | ref add --format pmid  # From stdin (PMID)
+echo "ISBN:978-4-00-000000-0" | ref add --format isbn  # From stdin (ISBN)
 
 # Remove a reference
 ref remove smith2024

@@ -604,7 +604,7 @@ async function processStdinContent(
   }
 
   // If explicit identifier format, split and process
-  if (format === "pmid" || format === "doi") {
+  if (format === "pmid" || format === "doi" || format === "isbn") {
     const identifiers = content.split(/\s+/).filter((s) => s.length > 0);
     return processIdentifiers(identifiers, options);
   }

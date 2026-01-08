@@ -14,34 +14,40 @@ vi.mock("node:fs", () => ({
 vi.mock("./fetcher.js", () => ({
   fetchPmids: vi.fn(),
   fetchDoi: vi.fn(),
+  fetchIsbn: vi.fn(),
 }));
 
 // Mock the cache module
 vi.mock("./cache.js", () => ({
   getPmidFromCache: vi.fn(),
   getDoiFromCache: vi.fn(),
+  getIsbnFromCache: vi.fn(),
   cachePmidResult: vi.fn(),
   cacheDoiResult: vi.fn(),
+  cacheIsbnResult: vi.fn(),
   resetCache: vi.fn(),
 }));
 
 import { existsSync, readFileSync } from "node:fs";
-import { getDoiFromCache, getPmidFromCache } from "./cache.js";
-import { fetchDoi, fetchPmids } from "./fetcher.js";
+import { getDoiFromCache, getIsbnFromCache, getPmidFromCache } from "./cache.js";
+import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import { importFromInputs } from "./importer.js";
 
 const mockExistsSync = vi.mocked(existsSync);
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockFetchPmids = vi.mocked(fetchPmids);
 const mockFetchDoi = vi.mocked(fetchDoi);
+const mockFetchIsbn = vi.mocked(fetchIsbn);
 const mockGetPmidFromCache = vi.mocked(getPmidFromCache);
 const mockGetDoiFromCache = vi.mocked(getDoiFromCache);
+const mockGetIsbnFromCache = vi.mocked(getIsbnFromCache);
 
 describe("importFromInputs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetPmidFromCache.mockReturnValue(null);
     mockGetDoiFromCache.mockReturnValue(null);
+    mockGetIsbnFromCache.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -460,6 +466,113 @@ ER  - `;
 
       expect(result.results).toHaveLength(1);
       expect(result.results[0].success).toBe(true);
+    });
+
+    it("should use isbn format for identifier-only input", async () => {
+      const mockItem: CslItem = {
+        id: "i1",
+        type: "book",
+        title: "ISBN Format",
+        ISBN: "9784000000000",
+      };
+
+      mockExistsSync.mockReturnValue(false);
+      mockFetchIsbn.mockResolvedValue({ success: true, item: mockItem });
+
+      const result = await importFromInputs(["ISBN:978-4-00-000000-0"], { format: "isbn" });
+
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].success).toBe(true);
+    });
+  });
+
+  describe("stdinContent with identifier format", () => {
+    it("should process stdin content as PMID with format option", async () => {
+      const mockItem: CslItem = {
+        id: "p1",
+        type: "article-journal",
+        title: "PMID from stdin",
+        PMID: "12345678",
+      };
+
+      mockFetchPmids.mockResolvedValue([{ pmid: "12345678", success: true, item: mockItem }]);
+
+      const result = await importFromInputs([], {
+        format: "pmid",
+        stdinContent: "12345678",
+        pubmedConfig: {},
+      });
+
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].success).toBe(true);
+    });
+
+    it("should process stdin content as DOI with format option", async () => {
+      const mockItem: CslItem = {
+        id: "d1",
+        type: "article-journal",
+        title: "DOI from stdin",
+        DOI: "10.1000/xyz",
+      };
+
+      mockFetchDoi.mockResolvedValue({ success: true, item: mockItem });
+
+      const result = await importFromInputs([], {
+        format: "doi",
+        stdinContent: "10.1000/xyz",
+      });
+
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].success).toBe(true);
+    });
+
+    it("should process stdin content as ISBN with format option", async () => {
+      const mockItem: CslItem = {
+        id: "i1",
+        type: "book",
+        title: "ISBN from stdin",
+        ISBN: "9784000000000",
+      };
+
+      mockFetchIsbn.mockResolvedValue({ success: true, item: mockItem });
+
+      const result = await importFromInputs([], {
+        format: "isbn",
+        stdinContent: "ISBN:978-4-00-000000-0",
+      });
+
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].success).toBe(true);
+    });
+
+    it("should process multiple identifiers from stdin", async () => {
+      const mockItem1: CslItem = {
+        id: "p1",
+        type: "article-journal",
+        title: "First",
+        PMID: "11111111",
+      };
+      const mockItem2: CslItem = {
+        id: "p2",
+        type: "article-journal",
+        title: "Second",
+        PMID: "22222222",
+      };
+
+      mockFetchPmids.mockResolvedValue([
+        { pmid: "11111111", success: true, item: mockItem1 },
+        { pmid: "22222222", success: true, item: mockItem2 },
+      ]);
+
+      const result = await importFromInputs([], {
+        format: "pmid",
+        stdinContent: "11111111 22222222",
+        pubmedConfig: {},
+      });
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0].success).toBe(true);
+      expect(result.results[1].success).toBe(true);
     });
   });
 });
