@@ -20,8 +20,15 @@ Where `input` can be:
 ```
 -f, --force          Skip duplicate detection
 --format <format>    Explicit format: json|bibtex|ris|pmid|doi|isbn|auto (default: auto)
---verbose            Show detailed error information
+--output <format>    Output format: json|text (default: text)
+-o <format>          Short for --output
+--full               Include full CSL-JSON data in JSON output
+--verbose            Show detailed error information (text mode only)
 ```
+
+### JSON Output
+
+See `spec/features/json-output.md` for JSON output schema and examples.
 
 ## Supported Formats
 

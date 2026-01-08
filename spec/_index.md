@@ -50,7 +50,8 @@ spec/
 │   ├── duplicate-detection.md   # Duplicate detection rules
 │   ├── file-monitoring.md       # File watching, reload
 │   ├── write-safety.md          # Atomic write, backup, merge
-│   └── metadata.md              # Standard and custom fields
+│   ├── metadata.md              # Standard and custom fields
+│   └── json-output.md           # JSON output for add/remove/update
 ├── guidelines/                  # Development guidelines
 │   ├── testing.md               # TDD workflow
 │   ├── code-style.md            # Naming, formatting (ref: biome.json)
@@ -108,6 +109,7 @@ spec/
 | Duplicate detection | `features/duplicate-detection.md` |
 | Conflict resolution | `features/write-safety.md` |
 | File watching | `features/file-monitoring.md` |
+| JSON output (add/remove/update) | `features/json-output.md` |
 
 ### Development
 

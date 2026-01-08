@@ -28,7 +28,7 @@
 
 ## Output Formats
 
-Available for `list` and `search` commands:
+### list / search Commands
 
 | Flag | Description |
 |------|-------------|
@@ -37,6 +37,16 @@ Available for `list` and `search` commands:
 | `--ids-only` | Citation keys only |
 | `--uuid` | Internal UUIDs only |
 | `--bibtex` | BibTeX format |
+
+### add / remove / update Commands
+
+| Flag | Description |
+|------|-------------|
+| `--output text` | Human-readable format (default) |
+| `--output json` / `-o json` | Machine-readable JSON |
+| `--full` | Include full CSL-JSON data (with `--output json`) |
+
+See `spec/features/json-output.md` for JSON output schema.
 
 ## Pagination and Sorting
 
