@@ -65,8 +65,15 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 17**: Shell Completion (Bash/Zsh/Fish auto-completion using tabtab)
 - **Phase 18**: Interactive Search (Issue #16, real-time filtering with Enquirer)
 - **Phase 19**: Fulltext Open Command (open PDF/Markdown with system default app)
+- **Phase 20**: Update Command --set Option (inline field updates for update command)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
+
+---
+
+## Current Phase
+
+No active development phase.
 
 ---
 

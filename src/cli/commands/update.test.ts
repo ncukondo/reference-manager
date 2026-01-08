@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
-import { formatUpdateOutput } from "./update.js";
+import {
+  type SetOperation,
+  applySetOperations,
+  formatUpdateOutput,
+  parseSetOption,
+  resolveArrayOperations,
+} from "./update.js";
 
 describe("update command", () => {
   describe("formatUpdateOutput", () => {
@@ -82,6 +88,357 @@ describe("update command", () => {
       const output = formatUpdateOutput(result, "test-uuid");
 
       expect(output).toBe("Updated reference: test-uuid");
+    });
+  });
+
+  describe("parseSetOption", () => {
+    it("should parse simple field=value", () => {
+      const result = parseSetOption("title=New Title");
+
+      expect(result).toEqual({
+        field: "title",
+        operator: "=",
+        value: "New Title",
+      } satisfies SetOperation);
+    });
+
+    it("should parse field with empty value (clear)", () => {
+      const result = parseSetOption("abstract=");
+
+      expect(result).toEqual({
+        field: "abstract",
+        operator: "=",
+        value: "",
+      } satisfies SetOperation);
+    });
+
+    it("should parse field+=value (add to array)", () => {
+      const result = parseSetOption("custom.tags+=urgent");
+
+      expect(result).toEqual({
+        field: "custom.tags",
+        operator: "+=",
+        value: "urgent",
+      } satisfies SetOperation);
+    });
+
+    it("should parse field-=value (remove from array)", () => {
+      const result = parseSetOption("custom.tags-=done");
+
+      expect(result).toEqual({
+        field: "custom.tags",
+        operator: "-=",
+        value: "done",
+      } satisfies SetOperation);
+    });
+
+    it("should parse nested field (issued.raw)", () => {
+      const result = parseSetOption("issued.raw=2024-03-15");
+
+      expect(result).toEqual({
+        field: "issued.raw",
+        operator: "=",
+        value: "2024-03-15",
+      } satisfies SetOperation);
+    });
+
+    it("should parse value with equals sign", () => {
+      const result = parseSetOption("note=a=b=c");
+
+      expect(result).toEqual({
+        field: "note",
+        operator: "=",
+        value: "a=b=c",
+      } satisfies SetOperation);
+    });
+
+    it("should throw on invalid syntax (no operator)", () => {
+      expect(() => parseSetOption("invalid")).toThrow("Invalid --set syntax");
+    });
+
+    it("should throw on empty field name", () => {
+      expect(() => parseSetOption("=value")).toThrow("Invalid --set syntax");
+    });
+  });
+
+  describe("applySetOperations", () => {
+    it("should set simple string field (title)", () => {
+      const operations: SetOperation[] = [{ field: "title", operator: "=", value: "New Title" }];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({ title: "New Title" });
+    });
+
+    it("should set multiple simple fields", () => {
+      const operations: SetOperation[] = [
+        { field: "title", operator: "=", value: "New Title" },
+        { field: "abstract", operator: "=", value: "New Abstract" },
+        { field: "DOI", operator: "=", value: "10.1234/test" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        title: "New Title",
+        abstract: "New Abstract",
+        DOI: "10.1234/test",
+      });
+    });
+
+    it("should clear field with empty value", () => {
+      const operations: SetOperation[] = [{ field: "abstract", operator: "=", value: "" }];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({ abstract: undefined });
+    });
+
+    it("should replace array field with comma-separated values", () => {
+      const operations: SetOperation[] = [
+        { field: "custom.tags", operator: "=", value: "tag1,tag2,tag3" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        custom: { tags: ["tag1", "tag2", "tag3"] },
+      });
+    });
+
+    it("should add to array field with +=", () => {
+      const operations: SetOperation[] = [
+        { field: "custom.tags", operator: "+=", value: "urgent" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        custom: { tags: { $add: "urgent" } },
+      });
+    });
+
+    it("should remove from array field with -=", () => {
+      const operations: SetOperation[] = [{ field: "custom.tags", operator: "-=", value: "done" }];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        custom: { tags: { $remove: "done" } },
+      });
+    });
+
+    it("should parse single author", () => {
+      const operations: SetOperation[] = [{ field: "author", operator: "=", value: "Smith, John" }];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        author: [{ family: "Smith", given: "John" }],
+      });
+    });
+
+    it("should parse multiple authors separated by semicolon", () => {
+      const operations: SetOperation[] = [
+        { field: "author", operator: "=", value: "Smith, John; Doe, Jane" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        author: [
+          { family: "Smith", given: "John" },
+          { family: "Doe", given: "Jane" },
+        ],
+      });
+    });
+
+    it("should parse author with family name only", () => {
+      const operations: SetOperation[] = [
+        { field: "author", operator: "=", value: "Organization Name" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        author: [{ family: "Organization Name" }],
+      });
+    });
+
+    it("should set date with issued.raw", () => {
+      const operations: SetOperation[] = [
+        { field: "issued.raw", operator: "=", value: "2024-03-15" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        issued: { raw: "2024-03-15" },
+      });
+    });
+
+    it("should set accessed.raw", () => {
+      const operations: SetOperation[] = [
+        { field: "accessed.raw", operator: "=", value: "2024-12-01" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({
+        accessed: { raw: "2024-12-01" },
+      });
+    });
+
+    it("should set id (citation key)", () => {
+      const operations: SetOperation[] = [{ field: "id", operator: "=", value: "new-key" }];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({ id: "new-key" });
+    });
+
+    it("should set keyword array", () => {
+      const operations: SetOperation[] = [
+        { field: "keyword", operator: "=", value: "keyword1,keyword2" },
+      ];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({ keyword: ["keyword1", "keyword2"] });
+    });
+
+    it("should add to keyword array", () => {
+      const operations: SetOperation[] = [{ field: "keyword", operator: "+=", value: "newkw" }];
+
+      const result = applySetOperations(operations);
+
+      expect(result).toEqual({ keyword: { $add: "newkw" } });
+    });
+
+    it("should throw on protected field (custom.uuid)", () => {
+      const operations: SetOperation[] = [
+        { field: "custom.uuid", operator: "=", value: "new-uuid" },
+      ];
+
+      expect(() => applySetOperations(operations)).toThrow("Cannot set protected field");
+    });
+
+    it("should throw on protected field (custom.created_at)", () => {
+      const operations: SetOperation[] = [
+        { field: "custom.created_at", operator: "=", value: "2024-01-01" },
+      ];
+
+      expect(() => applySetOperations(operations)).toThrow("Cannot set protected field");
+    });
+
+    it("should throw on protected field (custom.timestamp)", () => {
+      const operations: SetOperation[] = [
+        { field: "custom.timestamp", operator: "=", value: "2024-01-01" },
+      ];
+
+      expect(() => applySetOperations(operations)).toThrow("Cannot set protected field");
+    });
+
+    it("should throw on unsupported field", () => {
+      const operations: SetOperation[] = [
+        { field: "unsupported_field", operator: "=", value: "value" },
+      ];
+
+      expect(() => applySetOperations(operations)).toThrow("Unsupported field");
+    });
+  });
+
+  describe("resolveArrayOperations", () => {
+    const createExistingItem = (): CslItem => ({
+      id: "test-id",
+      type: "article",
+      custom: {
+        uuid: "test-uuid",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        tags: ["existing1", "existing2"],
+      },
+      keyword: ["kw1", "kw2"],
+    });
+
+    it("should add to custom.tags array with $add", () => {
+      const updates = { custom: { tags: { $add: "new-tag" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing1", "existing2", "new-tag"] });
+    });
+
+    it("should not add duplicate to custom.tags array", () => {
+      const updates = { custom: { tags: { $add: "existing1" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing1", "existing2"] });
+    });
+
+    it("should remove from custom.tags array with $remove", () => {
+      const updates = { custom: { tags: { $remove: "existing1" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing2"] });
+    });
+
+    it("should handle $remove when item not in array", () => {
+      const updates = { custom: { tags: { $remove: "nonexistent" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing1", "existing2"] });
+    });
+
+    it("should add to top-level keyword array with $add", () => {
+      const updates = { keyword: { $add: "kw3" } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.keyword).toEqual(["kw1", "kw2", "kw3"]);
+    });
+
+    it("should remove from top-level keyword array with $remove", () => {
+      const updates = { keyword: { $remove: "kw1" } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.keyword).toEqual(["kw2"]);
+    });
+
+    it("should pass through non-array operations unchanged", () => {
+      const updates = { title: "New Title", abstract: "New Abstract" };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result).toEqual({ title: "New Title", abstract: "New Abstract" });
+    });
+
+    it("should handle empty existing array for $add", () => {
+      const updates = { custom: { tags: { $add: "first-tag" } } };
+      const existing: CslItem = {
+        id: "test",
+        type: "article",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["first-tag"] });
     });
   });
 });

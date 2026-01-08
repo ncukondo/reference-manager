@@ -49,7 +49,13 @@ import {
   formatSearchOutput,
 } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
-import { type UpdateCommandOptions, executeUpdate, formatUpdateOutput } from "./commands/update.js";
+import {
+  type UpdateCommandOptions,
+  applySetOperations,
+  executeUpdate,
+  formatUpdateOutput,
+  parseSetOption,
+} from "./commands/update.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
@@ -454,25 +460,39 @@ function handleUpdateError(error: unknown): never {
 async function handleUpdateAction(
   identifier: string,
   file: string | undefined,
-  options: { uuid?: boolean },
+  options: { uuid?: boolean; set?: string[] },
   program: Command
 ): Promise<void> {
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    const inputStr = await readJsonInput(file);
-    const updates = parseJsonInput(inputStr);
+    // Validate: --set and [file] are mutually exclusive
+    if (options.set && options.set.length > 0 && file) {
+      throw new Error("Cannot use --set with a file argument. Use one or the other.");
+    }
 
-    // Validate that updates is a non-null object using zod
-    const updatesSchema = z.record(z.string(), z.unknown());
-    const validatedUpdates = updatesSchema.parse(updates);
+    let validatedUpdates: Partial<CslItem>;
+
+    if (options.set && options.set.length > 0) {
+      // Parse and apply --set options
+      const operations = options.set.map((s) => parseSetOption(s));
+      validatedUpdates = applySetOperations(operations) as Partial<CslItem>;
+    } else {
+      // Read from file or stdin
+      const inputStr = await readJsonInput(file);
+      const updates = parseJsonInput(inputStr);
+
+      // Validate that updates is a non-null object using zod
+      const updatesSchema = z.record(z.string(), z.unknown());
+      validatedUpdates = updatesSchema.parse(updates) as Partial<CslItem>;
+    }
 
     const context = await createExecutionContext(config, Library.load);
 
     const updateOptions: UpdateCommandOptions = {
       identifier,
-      updates: validatedUpdates as Partial<CslItem>,
+      updates: validatedUpdates,
     };
     if (options.uuid) {
       updateOptions.idType = "uuid";
@@ -493,6 +513,13 @@ async function handleUpdateAction(
   }
 }
 
+/**
+ * Collect multiple --set options into an array.
+ */
+function collectSetOption(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
 function registerUpdateCommand(program: Command): void {
   program
     .command("update")
@@ -500,6 +527,7 @@ function registerUpdateCommand(program: Command): void {
     .argument("<identifier>", "Citation key or UUID")
     .argument("[file]", "JSON file with updates (or use stdin)")
     .option("--uuid", "Interpret identifier as UUID")
+    .option("--set <field=value>", "Set field value (repeatable)", collectSetOption, [])
     .action(async (identifier: string, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program);
     });
