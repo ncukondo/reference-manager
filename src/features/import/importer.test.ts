@@ -173,6 +173,63 @@ ER  - `;
       });
     });
 
+    describe("NBIB format", () => {
+      it("should parse valid NBIB", async () => {
+        const content = `PMID- 12345678
+TI  - Test Article
+FAU - Smith, John
+JT  - Test Journal
+DP  - 2024`;
+
+        const result = await importFromContent(content, "nbib", {});
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        if (result.results[0].success) {
+          expect(result.results[0].item.title).toBe("Test Article");
+          expect(result.results[0].source).toBe("nbib");
+        }
+      });
+
+      it("should parse multiple NBIB entries", async () => {
+        const content = `PMID- 11111111
+TI  - First Article
+DP  - 2024
+
+PMID- 22222222
+TI  - Second Article
+DP  - 2023`;
+
+        const result = await importFromContent(content, "nbib", {});
+
+        expect(result.results).toHaveLength(2);
+        expect(result.results[0].success).toBe(true);
+        expect(result.results[1].success).toBe(true);
+      });
+
+      it("should handle empty NBIB", async () => {
+        const content = "";
+
+        const result = await importFromContent(content, "nbib", {});
+
+        expect(result.results).toHaveLength(0);
+      });
+
+      it("should auto-detect NBIB format by PMID- prefix", async () => {
+        const content = `PMID- 12345678
+TI  - Auto Detected Article
+DP  - 2024`;
+
+        const result = await importFromContent(content, "auto", {});
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        if (result.results[0].success) {
+          expect(result.results[0].item.title).toBe("Auto Detected Article");
+        }
+      });
+    });
+
     describe("auto detection", () => {
       it("should auto-detect JSON format", async () => {
         const content = JSON.stringify([

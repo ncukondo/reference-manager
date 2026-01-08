@@ -17,6 +17,7 @@ export type InputFormat =
   | "json"
   | "bibtex"
   | "ris"
+  | "nbib"
   | "pmid"
   | "doi"
   | "isbn"
@@ -30,6 +31,7 @@ const EXTENSION_MAP: Record<string, InputFormat> = {
   ".json": "json",
   ".bib": "bibtex",
   ".ris": "ris",
+  ".nbib": "nbib",
 };
 
 /**
@@ -111,6 +113,11 @@ export function detectByContent(content: string): InputFormat {
   // RIS: starts with TY  - (tag format)
   if (trimmed.startsWith("TY  -")) {
     return "ris";
+  }
+
+  // NBIB (PubMed MEDLINE): starts with PMID-
+  if (trimmed.startsWith("PMID-")) {
+    return "nbib";
   }
 
   // Check if content is multiple identifiers

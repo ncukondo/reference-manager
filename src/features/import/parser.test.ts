@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type ParseResult, parseBibtex, parseRis } from "./parser.js";
+import { type ParseResult, convertNbibToRis, parseBibtex, parseNbib, parseRis } from "./parser.js";
 
 describe("parseBibtex", () => {
   describe("valid BibTeX parsing", () => {
@@ -276,5 +276,309 @@ describe("ParseResult type", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
+  });
+});
+
+describe("convertNbibToRis", () => {
+  describe("tag conversion", () => {
+    it("should convert PMID- tag to AN tag", () => {
+      const nbib = "PMID- 12345678";
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("AN  - 12345678");
+    });
+
+    it("should convert TI tag to TI tag (same, but with RIS spacing)", () => {
+      const nbib = `PMID- 12345678
+TI  - Test Title`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("TI  - Test Title");
+    });
+
+    it("should convert FAU tag to AU tag", () => {
+      const nbib = `PMID- 12345678
+FAU - Smith, John`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("AU  - Smith, John");
+    });
+
+    it("should convert DP tag to PY tag (year only)", () => {
+      const nbib = `PMID- 12345678
+DP  - 2024 Mar 15`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("PY  - 2024");
+    });
+
+    it("should convert JT tag to JO tag", () => {
+      const nbib = `PMID- 12345678
+JT  - Nature`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("JO  - Nature");
+    });
+
+    it("should convert AB tag to AB tag", () => {
+      const nbib = `PMID- 12345678
+AB  - This is the abstract text.`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("AB  - This is the abstract text.");
+    });
+
+    it("should convert VI tag to VL tag", () => {
+      const nbib = `PMID- 12345678
+VI  - 15`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("VL  - 15");
+    });
+
+    it("should convert IP tag to IS tag", () => {
+      const nbib = `PMID- 12345678
+IP  - 3`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("IS  - 3");
+    });
+
+    it("should convert PG tag to SP tag", () => {
+      const nbib = `PMID- 12345678
+PG  - 123-456`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("SP  - 123-456");
+    });
+
+    it("should convert AID [doi] tag to DO tag", () => {
+      const nbib = `PMID- 12345678
+AID - 10.1000/xyz123 [doi]`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("DO  - 10.1000/xyz123");
+    });
+
+    it("should convert AID [pii] tag to C1 tag", () => {
+      const nbib = `PMID- 12345678
+AID - S0123-4567(24)00001-2 [pii]`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("C1  - S0123-4567(24)00001-2");
+    });
+
+    it("should handle both DOI and PII in same entry", () => {
+      const nbib = `PMID- 12345678
+AID - 10.1000/xyz123 [doi]
+AID - S0123-4567(24)00001-2 [pii]`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("DO  - 10.1000/xyz123");
+      expect(ris).toContain("C1  - S0123-4567(24)00001-2");
+    });
+
+    it("should convert PT tag to TY tag", () => {
+      const nbib = `PMID- 12345678
+PT  - Journal Article`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("TY  - JOUR");
+    });
+
+    it("should convert MH tag to KW tag", () => {
+      const nbib = `PMID- 12345678
+MH  - Keyword One`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("KW  - Keyword One");
+    });
+
+    it("should convert LA tag to LA tag", () => {
+      const nbib = `PMID- 12345678
+LA  - eng`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("LA  - eng");
+    });
+  });
+
+  describe("structure conversion", () => {
+    it("should add TY tag at the beginning if PT is not provided", () => {
+      const nbib = `PMID- 12345678
+TI  - Test`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toMatch(/^TY {2}- JOUR/);
+    });
+
+    it("should add ER tag at the end", () => {
+      const nbib = "PMID- 12345678";
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toMatch(/ER {2}-\s*$/);
+    });
+
+    it("should handle multiple entries separated by blank lines", () => {
+      const nbib = `PMID- 11111111
+TI  - First Article
+
+PMID- 22222222
+TI  - Second Article`;
+      const ris = convertNbibToRis(nbib);
+
+      // Should contain two TY tags and two ER tags
+      const tyMatches = ris.match(/TY {2}- JOUR/g);
+      const erMatches = ris.match(/ER {2}-/g);
+      expect(tyMatches).toHaveLength(2);
+      expect(erMatches).toHaveLength(2);
+    });
+
+    it("should handle multi-line values (continuation lines)", () => {
+      const nbib = `PMID- 12345678
+AB  - This is a long abstract that spans
+      multiple lines in the NBIB format.`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain(
+        "AB  - This is a long abstract that spans multiple lines in the NBIB format."
+      );
+    });
+
+    it("should handle multiple authors", () => {
+      const nbib = `PMID- 12345678
+FAU - Smith, John
+FAU - Jones, Alice
+FAU - Williams, Bob`;
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("AU  - Smith, John");
+      expect(ris).toContain("AU  - Jones, Alice");
+      expect(ris).toContain("AU  - Williams, Bob");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should return empty string for empty input", () => {
+      expect(convertNbibToRis("")).toBe("");
+    });
+
+    it("should return empty string for whitespace-only input", () => {
+      expect(convertNbibToRis("   \n\t   ")).toBe("");
+    });
+
+    it("should handle NBIB with only PMID", () => {
+      const nbib = "PMID- 12345678";
+      const ris = convertNbibToRis(nbib);
+
+      expect(ris).toContain("TY  - JOUR");
+      expect(ris).toContain("AN  - 12345678");
+      expect(ris).toContain("ER  -");
+    });
+  });
+});
+
+describe("parseNbib", () => {
+  describe("valid NBIB parsing", () => {
+    it("should parse a single journal article", () => {
+      const nbib = `PMID- 12345678
+TI  - A Great Paper
+FAU - Smith, John
+JT  - Nature
+DP  - 2024 Mar`;
+      const result = parseNbib(nbib);
+
+      expect(result.success).toBe(true);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].type).toBe("article-journal");
+      expect(result.items[0].title).toBe("A Great Paper");
+    });
+
+    it("should parse multiple entries", () => {
+      const nbib = `PMID- 11111111
+TI  - First Paper
+DP  - 2024
+
+PMID- 22222222
+TI  - Second Paper
+DP  - 2023`;
+      const result = parseNbib(nbib);
+
+      expect(result.success).toBe(true);
+      expect(result.items).toHaveLength(2);
+    });
+
+    it("should handle DOI field", () => {
+      const nbib = `PMID- 12345678
+TI  - Paper with DOI
+AID - 10.1000/xyz [doi]
+DP  - 2024`;
+      const result = parseNbib(nbib);
+
+      expect(result.success).toBe(true);
+      expect(result.items[0].DOI).toBe("10.1000/xyz");
+    });
+
+    it("should handle multiple authors", () => {
+      const nbib = `PMID- 12345678
+TI  - Multi-author Paper
+FAU - Smith, John
+FAU - Jones, Alice
+FAU - Williams, Bob
+DP  - 2024`;
+      const result = parseNbib(nbib);
+
+      expect(result.success).toBe(true);
+      expect(result.items[0].author).toHaveLength(3);
+    });
+
+    it("should parse volume and issue", () => {
+      const nbib = `PMID- 12345678
+TI  - Test
+VI  - 15
+IP  - 3
+DP  - 2024`;
+      const result = parseNbib(nbib);
+
+      expect(result.success).toBe(true);
+      expect(result.items[0].volume).toBe("15");
+      expect(result.items[0].issue).toBe("3");
+    });
+
+    it("should parse abstract", () => {
+      const nbib = `PMID- 12345678
+TI  - Test
+AB  - This is the abstract.
+DP  - 2024`;
+      const result = parseNbib(nbib);
+
+      expect(result.success).toBe(true);
+      expect(result.items[0].abstract).toBe("This is the abstract.");
+    });
+  });
+
+  describe("empty input handling", () => {
+    it("should return empty array for empty string", () => {
+      const result = parseNbib("");
+
+      expect(result.success).toBe(true);
+      expect(result.items).toHaveLength(0);
+    });
+
+    it("should return empty array for whitespace-only input", () => {
+      const result = parseNbib("   \n\t   ");
+
+      expect(result.success).toBe(true);
+      expect(result.items).toHaveLength(0);
+    });
+  });
+
+  describe("malformed input handling", () => {
+    it("should return error for completely invalid input", () => {
+      const result = parseNbib("not valid nbib at all");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
   });
 });

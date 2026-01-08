@@ -21,7 +21,7 @@ import type { InputFormat } from "./detector.js";
 import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import type { PubmedConfig } from "./fetcher.js";
 import { normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
-import { parseBibtex, parseRis } from "./parser.js";
+import { parseBibtex, parseNbib, parseRis } from "./parser.js";
 
 /**
  * Result of importing a single item
@@ -272,6 +272,33 @@ function parseRisContent(content: string): ImportResult {
 }
 
 /**
+ * Parse NBIB content and return import result
+ */
+function parseNbibContent(content: string): ImportResult {
+  const parseResult = parseNbib(content);
+
+  if (!parseResult.success) {
+    return {
+      results: [
+        { success: false, error: parseResult.error ?? "Failed to parse NBIB", source: "nbib" },
+      ],
+    };
+  }
+
+  if (parseResult.items.length === 0) {
+    return { results: [] };
+  }
+
+  return {
+    results: parseResult.items.map((item) => ({
+      success: true as const,
+      item,
+      source: "nbib",
+    })),
+  };
+}
+
+/**
  * Import references from content string
  *
  * @param content - The content to parse
@@ -311,6 +338,8 @@ export async function importFromContent(
       return parseBibtexContent(content);
     case "ris":
       return parseRisContent(content);
+    case "nbib":
+      return parseNbibContent(content);
     default:
       return {
         results: [
@@ -524,7 +553,7 @@ async function processStdinContent(
   const format = options.format || "auto";
 
   // If explicit file format specified, parse as content
-  if (format === "json" || format === "bibtex" || format === "ris") {
+  if (format === "json" || format === "bibtex" || format === "ris" || format === "nbib") {
     const result = await importFromContent(content, format, options);
     return result.results.map((r) => ({
       ...r,
@@ -541,7 +570,12 @@ async function processStdinContent(
   // Auto-detect format from content
   const detectedFormat = detectByContent(content);
 
-  if (detectedFormat === "json" || detectedFormat === "bibtex" || detectedFormat === "ris") {
+  if (
+    detectedFormat === "json" ||
+    detectedFormat === "bibtex" ||
+    detectedFormat === "ris" ||
+    detectedFormat === "nbib"
+  ) {
     // File format detected - parse as content
     const result = await importFromContent(content, detectedFormat, options);
     return result.results.map((r) => ({
