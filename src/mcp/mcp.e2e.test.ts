@@ -484,11 +484,10 @@ describe("MCP Server E2E", () => {
       expect(result.content).toHaveLength(1);
       const response = JSON.parse((result.content[0] as { text: string }).text);
       expect(response.items).toHaveLength(2);
-      // Each item should be parseable JSON
+      // JSON format returns CslItem objects directly (not stringified)
       for (const item of response.items) {
-        const parsed = JSON.parse(item);
-        expect(parsed).toHaveProperty("id");
-        expect(parsed).toHaveProperty("type");
+        expect(item).toHaveProperty("id");
+        expect(item).toHaveProperty("type");
       }
     });
 
