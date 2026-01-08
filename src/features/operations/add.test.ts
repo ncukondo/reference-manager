@@ -49,6 +49,7 @@ describe("addReferences", () => {
       getAll: vi.fn(() => existingItems),
       add: vi.fn((item: CslItem) => {
         existingItems.push(item);
+        return Promise.resolve(item); // Return the added item
       }),
       save: vi.fn(),
     } as unknown as Library;
@@ -67,6 +68,7 @@ describe("addReferences", () => {
       expect(result.added).toHaveLength(1);
       expect(result.added[0]).toEqual({
         id: "smith-2020", // generateId normalizes to lowercase
+        uuid: "Smith-2020-uuid", // UUID from the added item
         title: "Test Article",
       });
       expect(result.failed).toHaveLength(0);
@@ -105,9 +107,9 @@ describe("addReferences", () => {
   });
 
   describe("import failures", () => {
-    it("should report failed imports", async () => {
+    it("should report failed imports with reason", async () => {
       mockedImportFromInputs.mockResolvedValue({
-        results: [{ success: false, error: "Not found", source: "99999999" }],
+        results: [{ success: false, error: "Not found", source: "99999999", reason: "not_found" }],
       });
 
       const result = await addReferences(["99999999"], mockLibrary, {});
@@ -117,6 +119,7 @@ describe("addReferences", () => {
       expect(result.failed[0]).toEqual({
         source: "99999999",
         error: "Not found",
+        reason: "not_found",
       });
       expect(result.skipped).toHaveLength(0);
     });
@@ -127,7 +130,7 @@ describe("addReferences", () => {
       mockedImportFromInputs.mockResolvedValue({
         results: [
           { success: true, item: successItem, source: "10.1234/good" },
-          { success: false, error: "Not found", source: "99999999" },
+          { success: false, error: "Not found", source: "99999999", reason: "not_found" },
         ],
       });
 
@@ -135,6 +138,7 @@ describe("addReferences", () => {
 
       expect(result.added).toHaveLength(1);
       expect(result.failed).toHaveLength(1);
+      expect(result.failed[0].reason).toBe("not_found");
     });
   });
 
@@ -159,6 +163,7 @@ describe("addReferences", () => {
       expect(result.skipped[0]).toEqual({
         source: "10.1234/existing",
         existingId: "Existing-2020",
+        duplicateType: "doi",
       });
     });
 

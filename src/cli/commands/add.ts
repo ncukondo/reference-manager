@@ -25,6 +25,10 @@ export interface AddCommandOptions {
   verbose?: boolean;
   /** Content from stdin */
   stdinContent?: string;
+  /** Output format: json|text */
+  output?: "json" | "text";
+  /** Include full CSL-JSON data in JSON output */
+  full?: boolean;
 }
 
 /**

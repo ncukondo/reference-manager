@@ -250,7 +250,7 @@ describe("detectDuplicate", () => {
 
       expect(result.isDuplicate).toBe(true);
       expect(result.matches).toHaveLength(1);
-      expect(result.matches[0].type).toBe("isbn");
+      expect(result.matches[0].type).toBe("isbn-title");
     });
 
     it("should NOT detect duplicate for chapter with same ISBN but different title", () => {

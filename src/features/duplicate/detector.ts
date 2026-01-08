@@ -149,7 +149,7 @@ function checkIsbnMatch(item: CslItem, existing: CslItem): DuplicateMatch | null
 
     if (itemTitle && existingTitle && itemTitle === existingTitle) {
       return {
-        type: "isbn",
+        type: "isbn-title",
         existing,
         details: {
           isbn: normalizedExistingIsbn,

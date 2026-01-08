@@ -1,32 +1,8 @@
-import path from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
+import { formatRemoveJsonOutput } from "../../features/operations/json-output.js";
 import type { RemoveResult } from "../../features/operations/remove.js";
-import {
-  deleteFulltextFiles,
-  formatFulltextWarning,
-  formatRemoveOutput,
-  getFulltextAttachmentTypes,
-} from "./remove.js";
-
-// Mock FulltextManager
-const mockDetachFile = vi.fn();
-const mockHasAttachment = vi.fn();
-const mockGetAttachedTypes = vi.fn();
-
-vi.mock("../../features/fulltext/index.js", () => ({
-  FulltextManager: vi.fn().mockImplementation(() => ({
-    detachFile: mockDetachFile,
-    hasAttachment: mockHasAttachment,
-    getAttachedTypes: mockGetAttachedTypes,
-  })),
-}));
-
-// Mock fs/promises for deleteFulltextFiles test
-const mockUnlink = vi.fn().mockResolvedValue(undefined);
-vi.mock("node:fs/promises", () => ({
-  unlink: (...args: unknown[]) => mockUnlink(...args),
-}));
+import { formatFulltextWarning, formatRemoveOutput, getFulltextAttachmentTypes } from "./remove.js";
 
 describe("remove command", () => {
   describe("formatRemoveOutput", () => {
@@ -189,109 +165,94 @@ describe("remove command", () => {
     });
   });
 
-  describe("deleteFulltextFiles", () => {
-    const fulltextDirectory = "/home/user/.reference-manager/fulltext";
-
-    beforeEach(() => {
-      mockUnlink.mockClear();
+  describe("formatRemoveJsonOutput (--output json)", () => {
+    const createItem = (id: string, title: string, uuid: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid,
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
     });
 
-    it("should delete pdf file when pdf attached", async () => {
-      const item: CslItem = {
-        id: "Smith-2024",
-        type: "article",
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            pdf: "Smith-2024-uuid.pdf",
-          },
-        },
-      };
+    describe("success cases", () => {
+      it("should format successful removal as JSON", () => {
+        const item = createItem("Smith-2020", "Test Article", "uuid-123");
+        const result: RemoveResult = {
+          removed: true,
+          removedItem: item,
+        };
 
-      await deleteFulltextFiles(item, fulltextDirectory);
+        const output = formatRemoveJsonOutput(result, "Smith-2020", {});
 
-      expect(mockUnlink).toHaveBeenCalledTimes(1);
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.pdf"));
+        expect(output).toEqual({
+          success: true,
+          id: "Smith-2020",
+          uuid: "uuid-123",
+          title: "Test Article",
+        });
+      });
+
+      it("should include full item when --full is set", () => {
+        const item = createItem("Smith-2020", "Test Article", "uuid-123");
+        const result: RemoveResult = {
+          removed: true,
+          removedItem: item,
+        };
+
+        const output = formatRemoveJsonOutput(result, "Smith-2020", { full: true });
+
+        expect(output.success).toBe(true);
+        expect(output.id).toBe("Smith-2020");
+        expect(output.uuid).toBe("uuid-123");
+        expect(output.title).toBe("Test Article");
+        expect(output.item).toEqual(item);
+      });
+
+      it("should handle item without title", () => {
+        const item = createItem("Smith-2020", "", "uuid-123");
+        item.title = undefined;
+        const result: RemoveResult = {
+          removed: true,
+          removedItem: item,
+        };
+
+        const output = formatRemoveJsonOutput(result, "Smith-2020", {});
+
+        expect(output.success).toBe(true);
+        expect(output.title).toBe("");
+      });
     });
 
-    it("should delete markdown file when markdown attached", async () => {
-      const item: CslItem = {
-        id: "Smith-2024",
-        type: "article",
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            markdown: "Smith-2024-uuid.md",
-          },
-        },
-      };
+    describe("error cases", () => {
+      it("should format not found as JSON error", () => {
+        const result: RemoveResult = {
+          removed: false,
+        };
 
-      await deleteFulltextFiles(item, fulltextDirectory);
+        const output = formatRemoveJsonOutput(result, "NonExistent", {});
 
-      expect(mockUnlink).toHaveBeenCalledTimes(1);
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.md"));
-    });
+        expect(output).toEqual({
+          success: false,
+          id: "NonExistent",
+          error: "Reference not found: NonExistent",
+        });
+      });
 
-    it("should delete both files when both attached", async () => {
-      const item: CslItem = {
-        id: "Smith-2024",
-        type: "article",
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            pdf: "Smith-2024-uuid.pdf",
-            markdown: "Smith-2024-uuid.md",
-          },
-        },
-      };
+      it("should not include uuid or title in error case", () => {
+        const result: RemoveResult = {
+          removed: false,
+        };
 
-      await deleteFulltextFiles(item, fulltextDirectory);
+        const output = formatRemoveJsonOutput(result, "NonExistent", { full: true });
 
-      expect(mockUnlink).toHaveBeenCalledTimes(2);
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.pdf"));
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDirectory, "Smith-2024-uuid.md"));
-    });
-
-    it("should not call unlink when no fulltext attached", async () => {
-      const item: CslItem = {
-        id: "Smith-2024",
-        type: "article",
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      };
-
-      await deleteFulltextFiles(item, fulltextDirectory);
-
-      expect(mockUnlink).not.toHaveBeenCalled();
-    });
-
-    it("should ignore errors when file doesn't exist", async () => {
-      mockUnlink.mockRejectedValueOnce(new Error("ENOENT: no such file"));
-
-      const item: CslItem = {
-        id: "Smith-2024",
-        type: "article",
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            pdf: "Smith-2024-uuid.pdf",
-          },
-        },
-      };
-
-      // Should not throw
-      await expect(deleteFulltextFiles(item, fulltextDirectory)).resolves.toBeUndefined();
+        expect(output.success).toBe(false);
+        expect(output.uuid).toBeUndefined();
+        expect(output.title).toBeUndefined();
+        expect(output.item).toBeUndefined();
+      });
     });
   });
 });

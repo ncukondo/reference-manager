@@ -343,6 +343,43 @@ ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 | BibTeX | `--format bibtex` | BibTeX形式 |
 | IDのみ | `--format ids-only` | 1行に1つのID |
 
+### スクリプト用JSON出力
+
+`add`、`remove`、`update`コマンドはスクリプトや自動化のための構造化JSON出力をサポートしています：
+
+```bash
+# JSON出力で追加（標準出力に出力）
+ref add pmid:12345678 -o json
+ref add paper.bib -o json --full    # 完全なCSL-JSONデータを含む
+
+# JSON出力で削除
+ref remove smith2024 -o json
+ref remove smith2024 -o json --full  # 削除されたアイテムのデータを含む
+
+# JSON出力で更新
+ref update smith2024 --set "title=New Title" -o json
+ref update smith2024 --set "title=New" -o json --full  # 更新前後のデータを含む
+
+# パイプラインの例
+ref add pmid:12345678 -o json | jq '.added[].id' | xargs ref cite
+ref add paper.bib -o json | jq -e '.summary.failed == 0'  # 失敗をチェック
+```
+
+**出力構造：**
+
+- `add`: `{ summary, added[], skipped[], failed[] }` — 件数と詳細を含む
+- `remove`: `{ success, id, uuid?, title?, item?, error? }`
+- `update`: `{ success, id, uuid?, title?, idChanged?, previousId?, before?, after?, error? }`
+
+**オプション：**
+
+| オプション | 説明 |
+|------------|------|
+| `-o json` / `--output json` | JSONを標準出力に出力（デフォルト: テキストを標準エラーに） |
+| `--full` | 出力に完全なCSL-JSONデータを含む |
+
+完全なスキーマのドキュメントは`spec/features/json-output.md`を参照してください。
+
 ### 検索クエリ構文
 
 - **シンプル検索**: `machine learning`（任意のフィールドにマッチ）

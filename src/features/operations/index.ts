@@ -22,3 +22,15 @@ export type { SearchOperationOptions, SearchResult } from "./search.js";
 export type { ListOptions, ListResult } from "./list.js";
 export type { CiteOperationOptions, CiteResult, CiteItemResult } from "./cite.js";
 export type { AddReferencesOptions, AddReferencesResult } from "./add.js";
+
+// JSON output types and formatters
+export type {
+  AddJsonOutput,
+  RemoveJsonOutput,
+  UpdateJsonOutput,
+} from "./json-output.js";
+export {
+  formatAddJsonOutput,
+  formatRemoveJsonOutput,
+  formatUpdateJsonOutput,
+} from "./json-output.js";

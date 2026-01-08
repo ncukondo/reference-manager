@@ -10,6 +10,9 @@ import {
   importFromInputs,
 } from "../import/importer.js";
 
+// Re-export FailureReason for external use
+export type { FailureReason } from "../import/importer.js";
+
 /**
  * Options for adding references
  */
@@ -29,6 +32,7 @@ export interface AddReferencesOptions {
  */
 export interface AddedItem {
   id: string;
+  uuid: string;
   title: string;
   /** True if the ID was changed due to collision */
   idChanged?: boolean;
@@ -42,6 +46,7 @@ export interface AddedItem {
 export interface FailedItem {
   source: string;
   error: string;
+  reason: import("../import/importer.js").FailureReason;
 }
 
 /**
@@ -50,6 +55,7 @@ export interface FailedItem {
 export interface SkippedItem {
   source: string;
   existingId: string;
+  duplicateType: import("../duplicate/types.js").DuplicateType;
 }
 
 /**
@@ -154,7 +160,10 @@ async function processImportResult(
   library: ILibrary
 ): Promise<ProcessResult> {
   if (!result.success) {
-    return { type: "failed", item: { source: result.source, error: result.error } };
+    return {
+      type: "failed",
+      item: { source: result.source, error: result.error, reason: result.reason },
+    };
   }
 
   const item = result.item;
@@ -166,7 +175,11 @@ async function processImportResult(
     if (existingMatch) {
       return {
         type: "skipped",
-        item: { source: result.source, existingId: existingMatch.existing.id ?? "" },
+        item: {
+          source: result.source,
+          existingId: existingMatch.existing.id ?? "",
+          duplicateType: existingMatch.type,
+        },
       };
     }
   }
@@ -179,12 +192,14 @@ async function processImportResult(
   const finalItem: CslItem = { ...item, id };
 
   // Add to library
-  await library.add(finalItem);
+  const addedToLibrary = await library.add(finalItem);
   addedIds.add(id);
 
-  // Build result
+  // Build result (uuid comes from the library-added item which has ensured UUID)
+  const uuid = addedToLibrary.custom?.uuid ?? "";
   const addedItem: AddedItem = {
     id,
+    uuid,
     title: typeof finalItem.title === "string" ? finalItem.title : "",
   };
 

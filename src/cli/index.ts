@@ -8,6 +8,12 @@ import { z } from "zod";
 import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
+import {
+  type FormatAddJsonOptions,
+  formatAddJsonOutput,
+  formatRemoveJsonOutput,
+  formatUpdateJsonOutput,
+} from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
 import {
@@ -36,7 +42,6 @@ import { type ListCommandOptions, executeList, formatListOutput } from "./comman
 import { mcpStart } from "./commands/mcp.js";
 import {
   type RemoveCommandOptions,
-  deleteFulltextFiles,
   executeRemove,
   formatFulltextWarning,
   formatRemoveOutput,
@@ -220,6 +225,68 @@ interface AddCommandOptions extends CliOptions {
   force?: boolean;
   format?: string;
   verbose?: boolean;
+  output?: "json" | "text";
+  full?: boolean;
+}
+
+function buildAddOptions(
+  inputs: string[],
+  options: AddCommandOptions,
+  config: Awaited<ReturnType<typeof loadConfigWithOverrides>>,
+  stdinContent?: string
+): Parameters<typeof executeAdd>[0] {
+  const addOptions: Parameters<typeof executeAdd>[0] = {
+    inputs,
+    force: options.force ?? false,
+  };
+  if (options.format !== undefined) {
+    addOptions.format = options.format;
+  }
+  if (options.verbose !== undefined) {
+    addOptions.verbose = options.verbose;
+  }
+  if (stdinContent?.trim()) {
+    addOptions.stdinContent = stdinContent;
+  }
+  // Build pubmedConfig only if values exist
+  const pubmedConfig: { email?: string; apiKey?: string } = {};
+  if (config.pubmed.email !== undefined) {
+    pubmedConfig.email = config.pubmed.email;
+  }
+  if (config.pubmed.apiKey !== undefined) {
+    pubmedConfig.apiKey = config.pubmed.apiKey;
+  }
+  if (Object.keys(pubmedConfig).length > 0) {
+    addOptions.pubmedConfig = pubmedConfig;
+  }
+  return addOptions;
+}
+
+async function outputAddResultJson(
+  result: Awaited<ReturnType<typeof executeAdd>>,
+  context: ExecutionContext,
+  full: boolean
+): Promise<void> {
+  // Build sources map (placeholder - would need explicit tracking for full support)
+  const sources = new Map<string, string>();
+  for (const item of result.added) {
+    sources.set(item.id, "");
+  }
+
+  // Build items map for --full option
+  const items = new Map<string, CslItem>();
+  if (full) {
+    for (const added of result.added) {
+      const item = await context.library.find(added.id, { idType: "id" });
+      if (item) {
+        items.set(added.id, item);
+      }
+    }
+  }
+
+  const options: FormatAddJsonOptions = { full, sources, items };
+  const jsonOutput = formatAddJsonOutput(result, options);
+  process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
 }
 
 async function handleAddAction(
@@ -227,6 +294,8 @@ async function handleAddAction(
   options: AddCommandOptions,
   program: Command
 ): Promise<void> {
+  const outputFormat = options.output ?? "text";
+
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
@@ -240,44 +309,27 @@ async function handleAddAction(
     // Create execution context
     const context = await createExecutionContext(config, Library.load);
 
-    // Build add options - avoid undefined values for exactOptionalPropertyTypes
-    const addOptions: Parameters<typeof executeAdd>[0] = {
-      inputs,
-      force: options.force ?? false,
-    };
-    if (options.format !== undefined) {
-      addOptions.format = options.format;
-    }
-    if (options.verbose !== undefined) {
-      addOptions.verbose = options.verbose;
-    }
-    if (stdinContent?.trim()) {
-      addOptions.stdinContent = stdinContent;
-    }
-    // Build pubmedConfig only if values exist
-    const pubmedConfig: { email?: string; apiKey?: string } = {};
-    if (config.pubmed.email !== undefined) {
-      pubmedConfig.email = config.pubmed.email;
-    }
-    if (config.pubmed.apiKey !== undefined) {
-      pubmedConfig.apiKey = config.pubmed.apiKey;
-    }
-    if (Object.keys(pubmedConfig).length > 0) {
-      addOptions.pubmedConfig = pubmedConfig;
-    }
-
-    // Execute add command
+    // Build and execute add options
+    const addOptions = buildAddOptions(inputs, options, config, stdinContent);
     const result = await executeAdd(addOptions, context);
 
-    // Format and output result
-    const output = formatAddOutput(result, options.verbose ?? false);
-    process.stderr.write(`${output}\n`);
+    // Output result
+    if (outputFormat === "json") {
+      await outputAddResultJson(result, context, options.full ?? false);
+    } else {
+      const output = formatAddOutput(result, options.verbose ?? false);
+      process.stderr.write(`${output}\n`);
+    }
 
-    // Exit with appropriate code
     process.exit(getExitCode(result));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`Error: ${message}\n`);
+
+    if (outputFormat === "json") {
+      process.stdout.write(`${JSON.stringify({ success: false, error: message })}\n`);
+    } else {
+      process.stderr.write(`Error: ${message}\n`);
+    }
     process.exit(1);
   }
 }
@@ -294,6 +346,8 @@ function registerAddCommand(program: Command): void {
       "auto"
     )
     .option("--verbose", "Show detailed error information")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (inputs: string[], options: AddCommandOptions) => {
       await handleAddAction(inputs, options, program);
     });
@@ -302,132 +356,120 @@ function registerAddCommand(program: Command): void {
 /**
  * Register 'remove' command
  */
-async function findReferenceToRemove(
-  identifier: string,
-  useUuid: boolean,
-  context: ExecutionContext
-): Promise<CslItem | undefined> {
-  return context.library.find(identifier, { idType: useUuid ? "uuid" : "id" });
+interface RemoveActionOptions {
+  uuid?: boolean;
+  force?: boolean;
+  output?: "json" | "text";
+  full?: boolean;
 }
 
-async function confirmRemoval(
-  refToRemove: CslItem,
-  force: boolean,
-  fulltextWarning?: string
+function outputRemoveNotFoundAndExit(identifier: string, outputFormat: "json" | "text"): never {
+  if (outputFormat === "json") {
+    const jsonOutput = formatRemoveJsonOutput({ removed: false }, identifier, {});
+    process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+  } else {
+    process.stderr.write(`Error: Reference not found: ${identifier}\n`);
+  }
+  process.exit(1);
+}
+
+function outputRemoveResult(
+  result: Awaited<ReturnType<typeof executeRemove>>,
+  identifier: string,
+  outputFormat: "json" | "text",
+  full: boolean
+): void {
+  if (outputFormat === "json") {
+    const jsonOutput = formatRemoveJsonOutput(result, identifier, { full });
+    process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+  } else {
+    const output = formatRemoveOutput(result, identifier);
+    process.stderr.write(`${output}\n`);
+  }
+}
+
+async function confirmRemoveIfNeeded(
+  item: CslItem,
+  hasFulltext: boolean,
+  force: boolean
 ): Promise<boolean> {
   if (force || !isTTY()) {
     return true;
   }
 
-  const authors = Array.isArray(refToRemove.author)
-    ? refToRemove.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
+  const authors = Array.isArray(item.author)
+    ? item.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
     : "(no authors)";
-  let confirmMsg = `Remove reference [${refToRemove.id}]?\nTitle: ${refToRemove.title || "(no title)"}\nAuthors: ${authors}`;
 
-  if (fulltextWarning) {
-    confirmMsg += `\n\n${fulltextWarning}`;
-  }
+  const fulltextTypes = hasFulltext ? getFulltextAttachmentTypes(item) : [];
+  const warning = hasFulltext ? formatFulltextWarning(fulltextTypes) : "";
+  const warningPart = warning ? `\n\n${warning}` : "";
 
-  confirmMsg += "\nContinue?";
-
-  return await readConfirmation(confirmMsg);
+  const confirmMsg = `Remove reference [${item.id}]?\nTitle: ${item.title || "(no title)"}\nAuthors: ${authors}${warningPart}\nContinue?`;
+  return readConfirmation(confirmMsg);
 }
 
-function handleRemoveError(error: unknown): never {
+function handleRemoveError(
+  error: unknown,
+  identifier: string,
+  outputFormat: "json" | "text"
+): never {
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("not found")) {
+  if (outputFormat === "json") {
+    process.stdout.write(`${JSON.stringify({ success: false, id: identifier, error: message })}\n`);
+  } else {
     process.stderr.write(`Error: ${message}\n`);
-    process.exit(1);
   }
-  process.stderr.write(`Error: ${message}\n`);
-  process.exit(4);
-}
-
-/**
- * Format type labels for fulltext files.
- */
-function formatTypeLabels(types: ("pdf" | "markdown")[]): string {
-  return types.map((t) => (t === "pdf" ? "PDF" : "Markdown")).join(" and ");
-}
-
-/**
- * Handle fulltext deletion and output.
- */
-async function handleFulltextDeletion(
-  item: CslItem,
-  fulltextDirectory: string,
-  types: ("pdf" | "markdown")[],
-  output: string
-): Promise<void> {
-  await deleteFulltextFiles(item, fulltextDirectory);
-  const typeLabels = formatTypeLabels(types);
-  process.stderr.write(`${output}\n`);
-  process.stderr.write(`Deleted fulltext files: ${typeLabels}\n`);
+  process.exit(message.includes("not found") ? 1 : 4);
 }
 
 async function handleRemoveAction(
   identifier: string,
-  options: { uuid?: boolean; force?: boolean },
+  options: RemoveActionOptions,
   program: Command
 ): Promise<void> {
+  const outputFormat = options.output ?? "text";
+  const useUuid = options.uuid ?? false;
+  const force = options.force ?? false;
+
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
 
-    // Find reference for confirmation display
-    const refToRemove = await findReferenceToRemove(identifier, options.uuid ?? false, context);
-
+    const refToRemove = await context.library.find(identifier, { idType: useUuid ? "uuid" : "id" });
     if (!refToRemove) {
-      process.stderr.write(`Error: Reference not found: ${identifier}\n`);
-      process.exit(1);
+      outputRemoveNotFoundAndExit(identifier, outputFormat);
     }
 
-    // Check for fulltext attachments
     const fulltextTypes = getFulltextAttachmentTypes(refToRemove);
     const hasFulltext = fulltextTypes.length > 0;
 
-    // If fulltext attached and not TTY without --force, require --force
-    if (hasFulltext && !isTTY() && !options.force) {
-      const warning = formatFulltextWarning(fulltextTypes);
-      process.stderr.write(`Error: ${warning}\n`);
+    // Non-TTY with fulltext requires --force
+    const requiresForce = hasFulltext && !isTTY() && !force;
+    if (requiresForce) {
+      process.stderr.write(`Error: ${formatFulltextWarning(fulltextTypes)}\n`);
       process.exit(1);
     }
 
-    // Interactive confirmation (with fulltext warning if applicable)
-    const fulltextWarning =
-      hasFulltext && !options.force ? formatFulltextWarning(fulltextTypes) : undefined;
-    const confirmed = await confirmRemoval(refToRemove, options.force ?? false, fulltextWarning);
+    const confirmed = await confirmRemoveIfNeeded(refToRemove, hasFulltext, force);
     if (!confirmed) {
       process.stderr.write("Cancelled.\n");
       process.exit(2);
     }
 
-    // Execute removal using unified pattern
     const removeOptions: RemoveCommandOptions = {
       identifier,
+      idType: useUuid ? "uuid" : "id",
+      fulltextDirectory: config.fulltext.directory,
+      deleteFulltext: force && hasFulltext,
     };
-    if (options.uuid) {
-      removeOptions.idType = "uuid";
-    }
 
     const result = await executeRemove(removeOptions, context);
-    const output = formatRemoveOutput(result, identifier);
-
-    if (!result.removed) {
-      process.stderr.write(`${output}\n`);
-      process.exit(1);
-    }
-
-    // Delete fulltext files if --force and fulltext was attached
-    if (hasFulltext && options.force) {
-      await handleFulltextDeletion(refToRemove, config.fulltext.directory, fulltextTypes, output);
-    } else {
-      process.stderr.write(`${output}\n`);
-    }
-    process.exit(0);
+    outputRemoveResult(result, identifier, outputFormat, options.full ?? false);
+    process.exit(result.removed ? 0 : 1);
   } catch (error) {
-    handleRemoveError(error);
+    handleRemoveError(error, identifier, outputFormat);
   }
 }
 
@@ -438,6 +480,8 @@ function registerRemoveCommand(program: Command): void {
     .argument("<identifier>", "Citation key or UUID")
     .option("--uuid", "Interpret identifier as UUID")
     .option("-f, --force", "Skip confirmation prompt")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string, options) => {
       await handleRemoveAction(identifier, options, program);
     });
@@ -457,59 +501,98 @@ function handleUpdateError(error: unknown): never {
   process.exit(4);
 }
 
+interface UpdateActionOptions {
+  uuid?: boolean;
+  set?: string[];
+  output?: "json" | "text";
+  full?: boolean;
+}
+
+function parseUpdateInput(
+  setOptions: string[] | undefined,
+  file: string | undefined
+): Promise<Partial<CslItem>> | Partial<CslItem> {
+  if (setOptions && setOptions.length > 0 && file) {
+    throw new Error("Cannot use --set with a file argument. Use one or the other.");
+  }
+
+  if (setOptions && setOptions.length > 0) {
+    const operations = setOptions.map((s) => parseSetOption(s));
+    return applySetOperations(operations) as Partial<CslItem>;
+  }
+
+  return readJsonInput(file).then((inputStr) => {
+    const updates = parseJsonInput(inputStr);
+    const updatesSchema = z.record(z.string(), z.unknown());
+    return updatesSchema.parse(updates) as Partial<CslItem>;
+  });
+}
+
+function outputUpdateResult(
+  result: Awaited<ReturnType<typeof executeUpdate>>,
+  identifier: string,
+  outputFormat: "json" | "text",
+  full: boolean,
+  beforeItem: CslItem | undefined
+): void {
+  if (outputFormat === "json") {
+    const jsonOptions = {
+      full,
+      ...(beforeItem && { before: beforeItem }),
+    };
+    const jsonOutput = formatUpdateJsonOutput(result, identifier, jsonOptions);
+    process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+  } else {
+    const output = formatUpdateOutput(result, identifier);
+    process.stderr.write(`${output}\n`);
+  }
+}
+
+function handleUpdateErrorWithFormat(
+  error: unknown,
+  identifier: string,
+  outputFormat: "json" | "text"
+): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (outputFormat === "json") {
+    process.stdout.write(`${JSON.stringify({ success: false, id: identifier, error: message })}\n`);
+    process.exit(message.includes("not found") || message.includes("validation") ? 1 : 4);
+  }
+  handleUpdateError(error);
+}
+
 async function handleUpdateAction(
   identifier: string,
   file: string | undefined,
-  options: { uuid?: boolean; set?: string[] },
+  options: UpdateActionOptions,
   program: Command
 ): Promise<void> {
+  const outputFormat = options.output ?? "text";
+
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    // Validate: --set and [file] are mutually exclusive
-    if (options.set && options.set.length > 0 && file) {
-      throw new Error("Cannot use --set with a file argument. Use one or the other.");
-    }
-
-    let validatedUpdates: Partial<CslItem>;
-
-    if (options.set && options.set.length > 0) {
-      // Parse and apply --set options
-      const operations = options.set.map((s) => parseSetOption(s));
-      validatedUpdates = applySetOperations(operations) as Partial<CslItem>;
-    } else {
-      // Read from file or stdin
-      const inputStr = await readJsonInput(file);
-      const updates = parseJsonInput(inputStr);
-
-      // Validate that updates is a non-null object using zod
-      const updatesSchema = z.record(z.string(), z.unknown());
-      validatedUpdates = updatesSchema.parse(updates) as Partial<CslItem>;
-    }
+    const validatedUpdates = await parseUpdateInput(options.set, file);
 
     const context = await createExecutionContext(config, Library.load);
+
+    const idType = options.uuid ? "uuid" : "id";
+    const beforeItem = options.full
+      ? await context.library.find(identifier, { idType })
+      : undefined;
 
     const updateOptions: UpdateCommandOptions = {
       identifier,
       updates: validatedUpdates,
+      ...(options.uuid && { idType: "uuid" }),
     };
-    if (options.uuid) {
-      updateOptions.idType = "uuid";
-    }
 
     const result = await executeUpdate(updateOptions, context);
-    const output = formatUpdateOutput(result, identifier);
-
-    if (result.updated) {
-      process.stderr.write(`${output}\n`);
-      process.exit(0);
-    } else {
-      process.stderr.write(`${output}\n`);
-      process.exit(1);
-    }
+    outputUpdateResult(result, identifier, outputFormat, options.full ?? false, beforeItem);
+    process.exit(result.updated ? 0 : 1);
   } catch (error) {
-    handleUpdateError(error);
+    handleUpdateErrorWithFormat(error, identifier, outputFormat);
   }
 }
 
@@ -528,6 +611,8 @@ function registerUpdateCommand(program: Command): void {
     .argument("[file]", "JSON file with updates (or use stdin)")
     .option("--uuid", "Interpret identifier as UUID")
     .option("--set <field=value>", "Set field value (repeatable)", collectSetOption, [])
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program);
     });
