@@ -31,7 +31,7 @@ Double JSON encoding occurs:
 
 Modify `formatItems()` to return raw `CslItem[]` for JSON format, and only stringify at the CLI output layer.
 
-### Option A: Return CslItem[] for JSON format
+### Option A: Return CslItem[] for JSON format ✓ (Implemented)
 
 Change `SearchResult` and `ListResult` to support either `string[]` or `CslItem[]`:
 
@@ -59,34 +59,37 @@ For each step:
 
 ### Step 1: Fix search JSON output
 
-- [ ] Write test: `src/features/operations/search.test.ts` (or existing test file)
+- [x] Write test: `src/features/operations/search.test.ts` (or existing test file)
   - Test that JSON format returns properly structured JSON
-- [ ] Write E2E test: `src/cli/json-output.e2e.test.ts`
+- [x] Write E2E test: `src/cli/json-output.e2e.test.ts`
   - Test `ref search --json` produces valid, non-escaped JSON items
-- [ ] Implement fix in `src/features/operations/search.ts` and `src/cli/commands/search.ts`
-- [ ] Verify: `npm run test`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement fix in `src/features/operations/search.ts` and `src/cli/commands/search.ts`
+- [x] Verify: `npm run test`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Fix list JSON output
 
-- [ ] Write test for list JSON output
-- [ ] Implement fix in `src/features/operations/list.ts` and `src/cli/commands/list.ts`
-- [ ] Verify: `npm run test`
+- [x] Write test for list JSON output
+- [x] Implement fix in `src/features/operations/list.ts` and `src/cli/commands/list.ts`
+- [x] Verify: `npm run test`
 
 ### Step 3: Verify existing tests still pass
 
-- [ ] Review and update any tests that depend on the old behavior
-- [ ] Run full test suite
+- [x] Review and update any tests that depend on the old behavior
+  - Updated: `src/features/operations/search.test.ts`
+  - Updated: `src/features/operations/list.test.ts`
+  - Updated: `src/mcp/tools/list.test.ts`
+- [x] Run full test suite
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification:
-  - [ ] `ref search --json "query"` outputs properly formatted JSON
-  - [ ] `ref list --json` outputs properly formatted JSON
-  - [ ] JSON can be parsed by `jq` without issues
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification:
+  - [x] `ref search --json "query"` outputs properly formatted JSON
+  - [x] `ref list --json` outputs properly formatted JSON
+  - [x] JSON can be parsed by `jq` without issues
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

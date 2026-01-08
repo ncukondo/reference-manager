@@ -67,13 +67,14 @@ describe("searchReferences", () => {
   });
 
   describe("format: json", () => {
-    it("should return JSON strings for matching references", async () => {
+    it("should return CslItem objects for matching references", async () => {
       const options: SearchOperationOptions = { query: "Smith", format: "json" };
       const result = await searchReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(1);
-      const parsed = JSON.parse(result.items[0] as string);
-      expect(parsed.id).toBe("smith-2023");
+      // JSON format returns raw CslItem[], not stringified JSON
+      const item = result.items[0] as { id: string };
+      expect(item.id).toBe("smith-2023");
     });
   });
 

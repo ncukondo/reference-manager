@@ -40,8 +40,8 @@ export interface SearchOperationOptions extends PaginationOptions, SearchSortOpt
  * Result of searchReferences operation
  */
 export interface SearchResult {
-  /** Formatted strings for each matching reference */
-  items: string[];
+  /** Formatted items (strings for most formats, CslItem[] for JSON format) */
+  items: string[] | CslItem[];
   /** Total count before pagination */
   total: number;
   /** Applied limit (0 if unlimited) */
@@ -55,10 +55,11 @@ export interface SearchResult {
 /**
  * Format items according to the specified format
  */
-function formatItems(items: CslItem[], format: SearchFormat): string[] {
+function formatItems(items: CslItem[], format: SearchFormat): string[] | CslItem[] {
   switch (format) {
     case "json":
-      return items.map((item) => JSON.stringify(item));
+      // Return raw CslItem[] for JSON format - CLI will handle JSON.stringify
+      return items;
 
     case "bibtex":
       return items.map((item) => formatBibtex([item]));

@@ -135,6 +135,7 @@ export async function executeSearch(
 export function formatSearchOutput(result: SearchCommandResult, isJson = false): string {
   if (isJson) {
     // JSON output includes pagination metadata
+    // items are CslItem[] for JSON format
     return JSON.stringify({
       items: result.items,
       total: result.total,
@@ -144,7 +145,10 @@ export function formatSearchOutput(result: SearchCommandResult, isJson = false):
     });
   }
 
-  if (result.items.length === 0) {
+  // For non-JSON formats, items are string[]
+  const items = result.items as string[];
+
+  if (items.length === 0) {
     return "";
   }
 
@@ -153,11 +157,11 @@ export function formatSearchOutput(result: SearchCommandResult, isJson = false):
   // Add header line when limit is applied and not showing all
   if (result.limit > 0 && result.total > 0) {
     const start = result.offset + 1;
-    const end = result.offset + result.items.length;
+    const end = result.offset + items.length;
     lines.push(`# Showing ${start}-${end} of ${result.total} references`);
   }
 
-  lines.push(...result.items);
+  lines.push(...items);
   return lines.join("\n");
 }
 

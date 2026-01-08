@@ -117,8 +117,8 @@ describe("MCP list tool", () => {
       expect(result.content).toHaveLength(1);
       const response = JSON.parse(result.content[0].text);
       expect(response.items).toHaveLength(2);
-      // Verify JSON items are valid and contain expected references
-      const ids = response.items.map((item: string) => JSON.parse(item).id);
+      // JSON format returns raw CslItem objects, not stringified JSON
+      const ids = response.items.map((item: { id: string }) => item.id);
       expect(ids).toContain("smith2024");
       expect(ids).toContain("jones2023");
     });

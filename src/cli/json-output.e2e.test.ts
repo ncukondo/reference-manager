@@ -457,4 +457,136 @@ describe("JSON Output E2E", () => {
       expect(jsonResult.stderr).toBe("");
     });
   });
+
+  describe("search command", () => {
+    beforeEach(async () => {
+      // Setup library with test references
+      const library = [
+        {
+          id: "search-test-1",
+          type: "article-journal",
+          title: "Machine Learning in Healthcare",
+          author: [{ family: "Smith", given: "John" }],
+          custom: {
+            uuid: "search-uuid-1",
+            created_at: "2024-01-01T00:00:00.000Z",
+            timestamp: "2024-01-01T00:00:00.000Z",
+          },
+        },
+        {
+          id: "search-test-2",
+          type: "article-journal",
+          title: "Deep Learning Applications",
+          author: [{ family: "Doe", given: "Jane" }],
+          custom: {
+            uuid: "search-uuid-2",
+            created_at: "2024-01-02T00:00:00.000Z",
+            timestamp: "2024-01-02T00:00:00.000Z",
+          },
+        },
+      ];
+      await fs.writeFile(libraryPath, JSON.stringify(library, null, 2), "utf-8");
+    });
+
+    it("should produce properly structured JSON (not double-escaped)", async () => {
+      const result = await runCli(["search", "--json", "Learning"]);
+
+      expect(result.exitCode).toBe(0);
+
+      const output = JSON.parse(result.stdout);
+      expect(output.items).toBeDefined();
+      expect(Array.isArray(output.items)).toBe(true);
+
+      // items should be objects, not escaped strings
+      for (const item of output.items) {
+        expect(typeof item).toBe("object");
+        expect(item.id).toBeDefined();
+        expect(item.type).toBeDefined();
+      }
+
+      expect(output.total).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should return CslItem objects in items array", async () => {
+      const result = await runCli(["search", "--json", "Smith"]);
+
+      expect(result.exitCode).toBe(0);
+
+      const output = JSON.parse(result.stdout);
+      expect(output.items).toHaveLength(1);
+      expect(output.items[0].id).toBe("search-test-1");
+      expect(output.items[0].title).toBe("Machine Learning in Healthcare");
+      expect(output.items[0].author[0].family).toBe("Smith");
+    });
+
+    it("should be parseable by jq (valid JSON structure)", async () => {
+      const result = await runCli(["search", "--json", "Learning"]);
+
+      expect(result.exitCode).toBe(0);
+
+      // Verify the output is valid JSON that can be parsed
+      const output = JSON.parse(result.stdout);
+
+      // Accessing nested properties should work without additional parsing
+      expect(output.items[0].type).toBe("article-journal");
+    });
+  });
+
+  describe("list command", () => {
+    beforeEach(async () => {
+      const library = [
+        {
+          id: "list-test-1",
+          type: "book",
+          title: "Introduction to Programming",
+          custom: {
+            uuid: "list-uuid-1",
+            created_at: "2024-01-01T00:00:00.000Z",
+            timestamp: "2024-01-01T00:00:00.000Z",
+          },
+        },
+        {
+          id: "list-test-2",
+          type: "article-journal",
+          title: "Advanced Topics",
+          custom: {
+            uuid: "list-uuid-2",
+            created_at: "2024-01-02T00:00:00.000Z",
+            timestamp: "2024-01-02T00:00:00.000Z",
+          },
+        },
+      ];
+      await fs.writeFile(libraryPath, JSON.stringify(library, null, 2), "utf-8");
+    });
+
+    it("should produce properly structured JSON (not double-escaped)", async () => {
+      const result = await runCli(["list", "--json"]);
+
+      expect(result.exitCode).toBe(0);
+
+      const output = JSON.parse(result.stdout);
+      expect(output.items).toBeDefined();
+      expect(Array.isArray(output.items)).toBe(true);
+
+      // items should be objects, not escaped strings
+      for (const item of output.items) {
+        expect(typeof item).toBe("object");
+        expect(item.id).toBeDefined();
+        expect(item.type).toBeDefined();
+      }
+    });
+
+    it("should return CslItem objects in items array", async () => {
+      const result = await runCli(["list", "--json"]);
+
+      expect(result.exitCode).toBe(0);
+
+      const output = JSON.parse(result.stdout);
+      expect(output.items).toHaveLength(2);
+
+      const ids = output.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain("list-test-1");
+      expect(ids).toContain("list-test-2");
+    });
+  });
 });
