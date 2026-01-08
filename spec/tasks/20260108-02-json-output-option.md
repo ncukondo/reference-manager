@@ -70,11 +70,10 @@ Location: `src/features/operations/add.ts`
 
 Location: `src/features/operations/add.ts`
 
-- [ ] Write test: Verify SkippedItem has `duplicateType` property
-- [ ] Implement: Add `duplicateType: DuplicateType` to SkippedItem interface
-- [ ] Update processImportResult to include duplicate type from detection result
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: Add `duplicateType: DuplicateType` to SkippedItem interface
+- [x] Update processImportResult to include duplicate type from detection result
+- [x] Update tests to verify duplicateType is included
+- [x] Verify: `npm run test:unit` / Lint/Type check pass
 
 ### Step 1.4: Add isbn-title to DuplicateType
 

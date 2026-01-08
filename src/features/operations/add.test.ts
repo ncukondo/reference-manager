@@ -161,6 +161,7 @@ describe("addReferences", () => {
       expect(result.skipped[0]).toEqual({
         source: "10.1234/existing",
         existingId: "Existing-2020",
+        duplicateType: "doi",
       });
     });
 

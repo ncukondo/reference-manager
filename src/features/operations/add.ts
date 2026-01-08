@@ -54,6 +54,7 @@ export interface FailedItem {
 export interface SkippedItem {
   source: string;
   existingId: string;
+  duplicateType: import("../duplicate/types.js").DuplicateType;
 }
 
 /**
@@ -173,7 +174,11 @@ async function processImportResult(
     if (existingMatch) {
       return {
         type: "skipped",
-        item: { source: result.source, existingId: existingMatch.existing.id ?? "" },
+        item: {
+          source: result.source,
+          existingId: existingMatch.existing.id ?? "",
+          duplicateType: existingMatch.type,
+        },
       };
     }
   }
