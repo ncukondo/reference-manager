@@ -343,6 +343,43 @@ ref fulltext detach smith2024 --pdf --delete      # Also delete the file
 | BibTeX | `--format bibtex` | BibTeX format |
 | IDs only | `--format ids-only` | One ID per line |
 
+### JSON Output for Scripting
+
+The `add`, `remove`, and `update` commands support structured JSON output for scripting and automation:
+
+```bash
+# Add with JSON output (outputs to stdout)
+ref add pmid:12345678 -o json
+ref add paper.bib -o json --full    # Include full CSL-JSON data
+
+# Remove with JSON output
+ref remove smith2024 -o json
+ref remove smith2024 -o json --full  # Include removed item data
+
+# Update with JSON output
+ref update smith2024 --set "title=New Title" -o json
+ref update smith2024 --set "title=New" -o json --full  # Include before/after
+
+# Pipeline examples
+ref add pmid:12345678 -o json | jq '.added[].id' | xargs ref cite
+ref add paper.bib -o json | jq -e '.summary.failed == 0'  # Check for failures
+```
+
+**Output structure:**
+
+- `add`: Returns `{ summary, added[], skipped[], failed[] }` with counts and details
+- `remove`: Returns `{ success, id, uuid?, title?, item?, error? }`
+- `update`: Returns `{ success, id, uuid?, title?, idChanged?, previousId?, before?, after?, error? }`
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-o json` / `--output json` | Output JSON to stdout (default: text to stderr) |
+| `--full` | Include full CSL-JSON data in output |
+
+See `spec/features/json-output.md` for complete schema documentation.
+
 ### Search Query Syntax
 
 - **Simple search**: `machine learning` (matches any field)
