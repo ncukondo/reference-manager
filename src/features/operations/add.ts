@@ -37,6 +37,16 @@ export interface AddedItem {
 }
 
 /**
+ * Categorized failure reasons for JSON output
+ */
+export type FailureReason =
+  | "not_found"
+  | "fetch_error"
+  | "parse_error"
+  | "validation_error"
+  | "unknown";
+
+/**
  * Information about a failed import
  */
 export interface FailedItem {

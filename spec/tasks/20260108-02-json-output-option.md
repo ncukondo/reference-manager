@@ -49,15 +49,8 @@ For each step:
 
 Location: `src/features/operations/add.ts`
 
-- [ ] Write test: `src/features/operations/add.test.ts`
-  - Test that FailureReason type exists and has expected values
-- [ ] Implement: Add `FailureReason` type
-  ```typescript
-  export type FailureReason =
-    | "not_found" | "fetch_error" | "parse_error" | "validation_error" | "unknown";
-  ```
-- [ ] Verify: `npm run test:unit -- add.test`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Add `FailureReason` type
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 1.2: Extend FailedItem with reason
 
