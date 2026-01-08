@@ -55,7 +55,8 @@
       "Bash(gh issue view:*)",
       "Skill(code-with-roadmap)",
       "WebFetch(domain:serptools.github.io)",
-      "WebFetch(domain:www.nlm.nih.gov)"
+      "WebFetch(domain:www.nlm.nih.gov)",
+      "Bash(node bin/reference-manager.js:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

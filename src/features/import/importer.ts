@@ -553,7 +553,7 @@ async function processStdinContent(
   const format = options.format || "auto";
 
   // If explicit file format specified, parse as content
-  if (format === "json" || format === "bibtex" || format === "ris") {
+  if (format === "json" || format === "bibtex" || format === "ris" || format === "nbib") {
     const result = await importFromContent(content, format, options);
     return result.results.map((r) => ({
       ...r,
@@ -570,7 +570,12 @@ async function processStdinContent(
   // Auto-detect format from content
   const detectedFormat = detectByContent(content);
 
-  if (detectedFormat === "json" || detectedFormat === "bibtex" || detectedFormat === "ris") {
+  if (
+    detectedFormat === "json" ||
+    detectedFormat === "bibtex" ||
+    detectedFormat === "ris" ||
+    detectedFormat === "nbib"
+  ) {
     // File format detected - parse as content
     const result = await importFromContent(content, detectedFormat, options);
     return result.results.map((r) => ({
