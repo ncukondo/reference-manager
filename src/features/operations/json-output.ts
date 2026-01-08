@@ -10,6 +10,7 @@ import type { DuplicateType } from "../duplicate/types.js";
 import type { FailureReason } from "../import/importer.js";
 import type { AddReferencesResult } from "./add.js";
 import type { RemoveResult } from "./remove.js";
+import type { UpdateOperationResult } from "./update.js";
 
 // ============================================================================
 // Add command types
@@ -183,6 +184,65 @@ export function formatRemoveJsonOutput(
 
   if (full) {
     output.item = result.removedItem;
+  }
+
+  return output;
+}
+
+export interface FormatUpdateJsonOptions {
+  /** Include full CSL-JSON data (before/after) */
+  full?: boolean;
+  /** The item before update (for --full) */
+  before?: CslItem;
+}
+
+/**
+ * Format update command result as JSON output
+ */
+export function formatUpdateJsonOutput(
+  result: UpdateOperationResult,
+  originalId: string,
+  options: FormatUpdateJsonOptions
+): UpdateJsonOutput {
+  const { full = false, before } = options;
+
+  // Handle failure cases
+  if (!result.updated || !result.item) {
+    if (result.idCollision) {
+      return {
+        success: false,
+        id: originalId,
+        error: "ID collision: target ID already exists",
+      };
+    }
+    return {
+      success: false,
+      id: originalId,
+      error: `Reference not found: ${originalId}`,
+    };
+  }
+
+  const item = result.item;
+  const uuid = item.custom?.uuid;
+  const finalId = result.idChanged && result.newId ? result.newId : (item.id ?? originalId);
+
+  const output: UpdateJsonOutput = {
+    success: true,
+    id: finalId,
+    ...(uuid && { uuid }),
+    title: typeof item.title === "string" ? item.title : "",
+  };
+
+  if (result.idChanged && result.newId) {
+    output.idChanged = true;
+    output.previousId = originalId;
+  }
+
+  if (full) {
+    if (before) {
+      output.before = before;
+    }
+    output.after = item;
   }
 
   return output;

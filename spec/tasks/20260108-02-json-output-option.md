@@ -139,14 +139,14 @@ Location: `src/features/operations/json-output.ts`
 
 Location: `src/features/operations/json-output.ts`
 
-- [ ] Write test:
+- [x] Write test:
   - Success case
   - ID change case
   - Failure case
   - With --full (before/after)
-- [ ] Implement: `formatUpdateJsonOutput(result: UpdateOperationResult, id: string, full: boolean, before?: CslItem): UpdateJsonOutput`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: `formatUpdateJsonOutput(result: UpdateOperationResult, id: string, full: boolean, before?: CslItem): UpdateJsonOutput`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ---
 

@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { AddReferencesResult, AddedItem, FailedItem, SkippedItem } from "./add.js";
-import { formatAddJsonOutput, formatRemoveJsonOutput } from "./json-output.js";
+import {
+  formatAddJsonOutput,
+  formatRemoveJsonOutput,
+  formatUpdateJsonOutput,
+} from "./json-output.js";
 import type { RemoveResult } from "./remove.js";
+import type { UpdateOperationResult } from "./update.js";
 
 describe("JSON output formatters", () => {
   describe("formatAddJsonOutput", () => {
@@ -255,6 +260,118 @@ describe("JSON output formatters", () => {
           success: false,
           id: "nonexistent",
           error: "Reference not found: nonexistent",
+        });
+      });
+    });
+  });
+
+  describe("formatUpdateJsonOutput", () => {
+    const createCslItem = (id: string, uuid: string, title: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid,
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    });
+
+    describe("success case", () => {
+      it("should format successful update", () => {
+        const updatedItem = createCslItem("smith-2024", "uuid-1", "Updated Article");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: updatedItem,
+        };
+
+        const output = formatUpdateJsonOutput(result, "smith-2024", {});
+
+        expect(output).toEqual({
+          success: true,
+          id: "smith-2024",
+          uuid: "uuid-1",
+          title: "Updated Article",
+        });
+      });
+
+      it("should include ID change info", () => {
+        const updatedItem = createCslItem("jones-2024", "uuid-1", "Article");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: updatedItem,
+          idChanged: true,
+          newId: "jones-2024",
+        };
+
+        const output = formatUpdateJsonOutput(result, "smith-2024", {});
+
+        expect(output).toMatchObject({
+          success: true,
+          id: "jones-2024",
+          idChanged: true,
+          previousId: "smith-2024",
+        });
+      });
+
+      it("should include before/after when full=true", () => {
+        const beforeItem = createCslItem("smith-2024", "uuid-1", "Original Title");
+        const afterItem = createCslItem("smith-2024", "uuid-1", "Updated Title");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: afterItem,
+        };
+
+        const output = formatUpdateJsonOutput(result, "smith-2024", {
+          full: true,
+          before: beforeItem,
+        });
+
+        expect(output.before).toEqual(beforeItem);
+        expect(output.after).toEqual(afterItem);
+      });
+
+      it("should not include before/after when full=false", () => {
+        const afterItem = createCslItem("smith-2024", "uuid-1", "Updated Title");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: afterItem,
+        };
+
+        const output = formatUpdateJsonOutput(result, "smith-2024", { full: false });
+
+        expect(output.before).toBeUndefined();
+        expect(output.after).toBeUndefined();
+      });
+    });
+
+    describe("failure case", () => {
+      it("should format not found error", () => {
+        const result: UpdateOperationResult = {
+          updated: false,
+        };
+
+        const output = formatUpdateJsonOutput(result, "nonexistent", {});
+
+        expect(output).toEqual({
+          success: false,
+          id: "nonexistent",
+          error: "Reference not found: nonexistent",
+        });
+      });
+
+      it("should format ID collision error", () => {
+        const result: UpdateOperationResult = {
+          updated: false,
+          idCollision: true,
+        };
+
+        const output = formatUpdateJsonOutput(result, "smith-2024", {});
+
+        expect(output).toEqual({
+          success: false,
+          id: "smith-2024",
+          error: "ID collision: target ID already exists",
         });
       });
     });
