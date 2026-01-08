@@ -189,9 +189,9 @@ Changes made:
 - [x] Simplify `cli/index.ts` handleRemoveAction (from 12+ functions to 5)
 - [x] Update `formatRemoveOutput` to include fulltext deletion info
 - [x] Remove redundant tests from cli/commands/remove.test.ts
-- [ ] Add fulltext deletion tests to features/operations/remove.test.ts
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Add fulltext deletion tests to features/operations/remove.test.ts
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ### Step 4.1: Add --output and --full options to remove
 

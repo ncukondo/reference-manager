@@ -163,5 +163,4 @@ describe("remove command", () => {
       expect(warning).toContain("--force");
     });
   });
-
 });
