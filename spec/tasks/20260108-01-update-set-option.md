@@ -34,9 +34,9 @@ For each step:
 - [x] Verify: `npm run test:unit`
 - [x] Lint/Type check: `npm run lint && npm run typecheck`
 
-### Step 2: applySetOperations Function
+### Step 2: applySetOperations Function ✅
 
-- [ ] Write test: `src/cli/commands/update.test.ts`
+- [x] Write test: `src/cli/commands/update.test.ts`
   - Test simple field updates (title, abstract, DOI, etc.)
   - Test array field replace (custom.tags=a,b,c)
   - Test array field add (custom.tags+=x)
@@ -46,11 +46,11 @@ For each step:
   - Test date raw format (issued.raw=2024-03-15)
   - Test ID change (id=new-key)
   - Test field clear (abstract=)
-- [ ] Implement: `src/cli/commands/update.ts`
+- [x] Implement: `src/cli/commands/update.ts`
   - Add `applySetOperations()` function
   - Add `parseAuthorValue()` helper
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: CLI Integration
 

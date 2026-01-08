@@ -44,6 +44,151 @@ export function parseSetOption(input: string): SetOperation {
 }
 
 /**
+ * Protected fields that cannot be set via --set option.
+ */
+const PROTECTED_FIELDS = new Set([
+  "custom.uuid",
+  "custom.created_at",
+  "custom.timestamp",
+  "custom.fulltext",
+]);
+
+/**
+ * Simple string fields that can be set directly.
+ */
+const STRING_FIELDS = new Set([
+  "title",
+  "abstract",
+  "type",
+  "DOI",
+  "PMID",
+  "PMCID",
+  "ISBN",
+  "ISSN",
+  "URL",
+  "publisher",
+  "publisher-place",
+  "page",
+  "volume",
+  "issue",
+  "container-title",
+  "note",
+  "id",
+]);
+
+/**
+ * Array fields that support +=/-= operators.
+ */
+const ARRAY_FIELDS = new Set(["custom.tags", "custom.additional_urls", "keyword"]);
+
+/**
+ * Name fields (author, editor).
+ */
+const NAME_FIELDS = new Set(["author", "editor"]);
+
+/**
+ * Date raw fields (issued.raw, accessed.raw).
+ */
+const DATE_RAW_FIELDS = new Set(["issued.raw", "accessed.raw"]);
+
+/**
+ * Parse author value into CSL name objects.
+ *
+ * @param value - Author string in format "Family, Given" or "Family, Given; Family2, Given2"
+ * @returns Array of CSL name objects
+ */
+function parseAuthorValue(value: string): Array<{ family: string; given?: string }> {
+  return value.split(";").map((author) => {
+    const trimmed = author.trim();
+    const parts = trimmed.split(",").map((p) => p.trim());
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return { family: parts[0], given: parts[1] };
+    }
+    return { family: trimmed };
+  });
+}
+
+/**
+ * Apply array operator to get the value object.
+ */
+function applyArrayOperator(
+  operator: SetOperator,
+  value: string
+): unknown[] | { $add: string } | { $remove: string } {
+  if (operator === "+=") return { $add: value };
+  if (operator === "-=") return { $remove: value };
+  return value.split(",").map((v) => v.trim());
+}
+
+/**
+ * Handle custom.* array fields.
+ */
+function handleCustomArrayField(
+  result: Record<string, unknown>,
+  field: string,
+  operator: SetOperator,
+  value: string
+): void {
+  const child = field.split(".")[1];
+  if (!child) return;
+  if (!result.custom) result.custom = {};
+  (result.custom as Record<string, unknown>)[child] = applyArrayOperator(operator, value);
+}
+
+/**
+ * Apply a single set operation to the result object.
+ */
+function applySingleOperation(result: Record<string, unknown>, op: SetOperation): void {
+  const { field, operator, value } = op;
+
+  if (PROTECTED_FIELDS.has(field)) {
+    throw new Error(`Cannot set protected field: ${field}`);
+  }
+
+  if (STRING_FIELDS.has(field)) {
+    result[field] = value === "" ? undefined : value;
+    return;
+  }
+
+  if (ARRAY_FIELDS.has(field)) {
+    if (field.startsWith("custom.")) {
+      handleCustomArrayField(result, field, operator, value);
+    } else {
+      result[field] = applyArrayOperator(operator, value);
+    }
+    return;
+  }
+
+  if (NAME_FIELDS.has(field)) {
+    result[field] = parseAuthorValue(value);
+    return;
+  }
+
+  if (DATE_RAW_FIELDS.has(field)) {
+    const dateField = field.split(".")[0];
+    if (dateField) result[dateField] = { raw: value };
+    return;
+  }
+
+  throw new Error(`Unsupported field: ${field}`);
+}
+
+/**
+ * Apply set operations to create a partial CslItem updates object.
+ *
+ * @param operations - Array of set operations
+ * @returns Partial CslItem object with updates
+ * @throws Error if a protected or unsupported field is specified
+ */
+export function applySetOperations(operations: SetOperation[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const op of operations) {
+    applySingleOperation(result, op);
+  }
+  return result;
+}
+
+/**
  * Options for the update command.
  */
 export interface UpdateCommandOptions {
