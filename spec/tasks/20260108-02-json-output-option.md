@@ -79,12 +79,10 @@ Location: `src/features/operations/add.ts`
 
 Location: `src/features/duplicate/types.ts`
 
-- [ ] Write test: `src/features/duplicate/detector.test.ts`
-  - Test book-section duplicate detection returns `isbn-title` type
-- [ ] Implement: Add `"isbn-title"` to DuplicateType union
-- [ ] Update detector.ts if needed
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Add `"isbn-title"` to DuplicateType union
+- [x] Update detector.ts to return `"isbn-title"` for chapter type ISBN+title matches
+- [x] Update test to expect `"isbn-title"` type
+- [x] Verify: `npm run test:unit` / Lint/Type check pass
 
 ### Step 1.5: Extend AddedItem with uuid
 
