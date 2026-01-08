@@ -156,18 +156,18 @@ Location: `src/features/operations/json-output.ts`
 
 Location: `src/cli/index.ts`, `src/cli/commands/add.ts`
 
-- [ ] Write test: `src/cli/commands/add.test.ts`
+- [x] Write test: `src/cli/commands/add.test.ts`
   - Test option parsing
   - Test --output json produces valid JSON to stdout
   - Test --output text (default) produces text to stderr
   - Test --full includes item data
-- [ ] Implement:
+- [x] Implement:
   - Add `.option("--output <format>", "Output format: json|text", "text")`
   - Add `.option("-o <format>", "Short for --output")`
   - Add `.option("--full", "Include full CSL-JSON data in JSON output")`
-- [ ] Update handleAddAction to switch output based on format
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Update handleAddAction to switch output based on format
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ---
 

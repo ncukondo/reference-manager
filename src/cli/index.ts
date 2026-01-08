@@ -9,7 +9,12 @@ import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
 import { getPortfilePath } from "../server/portfile.js";
-import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
+import {
+  executeAdd,
+  formatAddJsonOutputFromResult,
+  formatAddOutput,
+  getExitCode,
+} from "./commands/add.js";
 import {
   type CiteCommandOptions,
   executeCite,
@@ -220,6 +225,67 @@ interface AddCommandOptions extends CliOptions {
   force?: boolean;
   format?: string;
   verbose?: boolean;
+  output?: "json" | "text";
+  full?: boolean;
+}
+
+function buildAddOptions(
+  inputs: string[],
+  options: AddCommandOptions,
+  config: Awaited<ReturnType<typeof loadConfigWithOverrides>>,
+  stdinContent?: string
+): Parameters<typeof executeAdd>[0] {
+  const addOptions: Parameters<typeof executeAdd>[0] = {
+    inputs,
+    force: options.force ?? false,
+  };
+  if (options.format !== undefined) {
+    addOptions.format = options.format;
+  }
+  if (options.verbose !== undefined) {
+    addOptions.verbose = options.verbose;
+  }
+  if (stdinContent?.trim()) {
+    addOptions.stdinContent = stdinContent;
+  }
+  // Build pubmedConfig only if values exist
+  const pubmedConfig: { email?: string; apiKey?: string } = {};
+  if (config.pubmed.email !== undefined) {
+    pubmedConfig.email = config.pubmed.email;
+  }
+  if (config.pubmed.apiKey !== undefined) {
+    pubmedConfig.apiKey = config.pubmed.apiKey;
+  }
+  if (Object.keys(pubmedConfig).length > 0) {
+    addOptions.pubmedConfig = pubmedConfig;
+  }
+  return addOptions;
+}
+
+async function outputAddResultJson(
+  result: Awaited<ReturnType<typeof executeAdd>>,
+  context: ExecutionContext,
+  full: boolean
+): Promise<void> {
+  // Build sources map (placeholder - would need explicit tracking for full support)
+  const sources = new Map<string, string>();
+  for (const item of result.added) {
+    sources.set(item.id, "");
+  }
+
+  // Build items map for --full option
+  const items = new Map<string, CslItem>();
+  if (full) {
+    for (const added of result.added) {
+      const item = await context.library.find(added.id, { idType: "id" });
+      if (item) {
+        items.set(added.id, item);
+      }
+    }
+  }
+
+  const jsonOutput = formatAddJsonOutputFromResult(result, { full, sources, items });
+  process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
 }
 
 async function handleAddAction(
@@ -227,6 +293,8 @@ async function handleAddAction(
   options: AddCommandOptions,
   program: Command
 ): Promise<void> {
+  const outputFormat = options.output ?? "text";
+
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
@@ -240,44 +308,27 @@ async function handleAddAction(
     // Create execution context
     const context = await createExecutionContext(config, Library.load);
 
-    // Build add options - avoid undefined values for exactOptionalPropertyTypes
-    const addOptions: Parameters<typeof executeAdd>[0] = {
-      inputs,
-      force: options.force ?? false,
-    };
-    if (options.format !== undefined) {
-      addOptions.format = options.format;
-    }
-    if (options.verbose !== undefined) {
-      addOptions.verbose = options.verbose;
-    }
-    if (stdinContent?.trim()) {
-      addOptions.stdinContent = stdinContent;
-    }
-    // Build pubmedConfig only if values exist
-    const pubmedConfig: { email?: string; apiKey?: string } = {};
-    if (config.pubmed.email !== undefined) {
-      pubmedConfig.email = config.pubmed.email;
-    }
-    if (config.pubmed.apiKey !== undefined) {
-      pubmedConfig.apiKey = config.pubmed.apiKey;
-    }
-    if (Object.keys(pubmedConfig).length > 0) {
-      addOptions.pubmedConfig = pubmedConfig;
-    }
-
-    // Execute add command
+    // Build and execute add options
+    const addOptions = buildAddOptions(inputs, options, config, stdinContent);
     const result = await executeAdd(addOptions, context);
 
-    // Format and output result
-    const output = formatAddOutput(result, options.verbose ?? false);
-    process.stderr.write(`${output}\n`);
+    // Output result
+    if (outputFormat === "json") {
+      await outputAddResultJson(result, context, options.full ?? false);
+    } else {
+      const output = formatAddOutput(result, options.verbose ?? false);
+      process.stderr.write(`${output}\n`);
+    }
 
-    // Exit with appropriate code
     process.exit(getExitCode(result));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`Error: ${message}\n`);
+
+    if (outputFormat === "json") {
+      process.stdout.write(`${JSON.stringify({ success: false, error: message })}\n`);
+    } else {
+      process.stderr.write(`Error: ${message}\n`);
+    }
     process.exit(1);
   }
 }
@@ -294,6 +345,8 @@ function registerAddCommand(program: Command): void {
       "auto"
     )
     .option("--verbose", "Show detailed error information")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (inputs: string[], options: AddCommandOptions) => {
       await handleAddAction(inputs, options, program);
     });

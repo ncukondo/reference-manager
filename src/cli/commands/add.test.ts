@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CslItem } from "../../core/csl-json/types.js";
 import type { AddReferencesResult } from "../../features/operations/add.js";
 import type { ExecutionContext } from "../execution-context.js";
 import {
   type AddCommandOptions,
   type AddCommandResult,
   executeAdd,
+  formatAddJsonOutputFromResult,
   formatAddOutput,
   getExitCode,
 } from "./add.js";
@@ -311,6 +313,74 @@ describe("add command", () => {
       };
 
       expect(getExitCode(result)).toBe(0);
+    });
+  });
+
+  describe("formatAddJsonOutputFromResult", () => {
+    const createItem = (id: string, uuid: string, title: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid,
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    });
+
+    it("should format result as JSON", () => {
+      const result: AddCommandResult = {
+        added: [{ id: "smith-2024", uuid: "uuid-1", title: "Test Article" }],
+        failed: [{ source: "99999999", error: "Not found", reason: "not_found" }],
+        skipped: [{ source: "10.1234/dup", existingId: "dup-2024", duplicateType: "doi" }],
+      };
+      const sources = new Map([["smith-2024", "10.1234/new"]]);
+
+      const output = formatAddJsonOutputFromResult(result, { sources });
+
+      expect(output.summary.total).toBe(3);
+      expect(output.summary.added).toBe(1);
+      expect(output.summary.failed).toBe(1);
+      expect(output.summary.skipped).toBe(1);
+      expect(output.added[0]).toMatchObject({
+        source: "10.1234/new",
+        id: "smith-2024",
+        uuid: "uuid-1",
+      });
+      expect(output.failed[0]).toMatchObject({
+        source: "99999999",
+        reason: "not_found",
+      });
+      expect(output.skipped[0]).toMatchObject({
+        source: "10.1234/dup",
+        duplicateType: "doi",
+      });
+    });
+
+    it("should include item when full=true", () => {
+      const item = createItem("smith-2024", "uuid-1", "Full Article");
+      const result: AddCommandResult = {
+        added: [{ id: "smith-2024", uuid: "uuid-1", title: "Full Article" }],
+        failed: [],
+        skipped: [],
+      };
+      const items = new Map([["smith-2024", item]]);
+
+      const output = formatAddJsonOutputFromResult(result, { full: true, items });
+
+      expect(output.added[0].item).toEqual(item);
+    });
+
+    it("should not include item when full=false", () => {
+      const result: AddCommandResult = {
+        added: [{ id: "smith-2024", uuid: "uuid-1", title: "Article" }],
+        failed: [],
+        skipped: [],
+      };
+
+      const output = formatAddJsonOutputFromResult(result, { full: false });
+
+      expect(output.added[0].item).toBeUndefined();
     });
   });
 });
