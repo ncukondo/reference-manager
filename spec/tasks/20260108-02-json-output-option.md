@@ -173,25 +173,35 @@ Location: `src/cli/index.ts`, `src/cli/commands/add.ts`
 
 ## Phase 4: CLI - remove Command (Depends on Phase 2)
 
-### Step 4.1: Extend RemoveResult for JSON output
+### Step 4.0: Refactor - Move fulltext deletion to features layer (Design Improvement)
 
-Location: `src/features/operations/remove.ts`
+**Background**: CLI remove handler had excessive complexity (12+ helper functions) due to fulltext deletion being handled separately in CLI layer.
 
-- [ ] Write test: `src/features/operations/remove.test.ts`
-  - Verify RemoveResult includes necessary fields
-- [ ] Implement: Ensure `removedItem` includes uuid and title
+**Solution**: Move fulltext deletion into `removeReference` function in features layer.
+
+Changes made:
+- [x] Add `fulltextDirectory` and `deleteFulltext` options to `RemoveOperationOptions`
+- [x] Add `deletedFulltextTypes` to `RemoveResult`
+- [x] Move `getFulltextAttachmentTypes` to features/operations/remove.ts
+- [x] Implement `deleteFulltextFiles` in features/operations/remove.ts (private)
+- [x] Update `removeReference` to handle fulltext deletion
+- [x] Update `cli/commands/remove.ts` to use new options
+- [x] Simplify `cli/index.ts` handleRemoveAction (from 12+ functions to 5)
+- [x] Update `formatRemoveOutput` to include fulltext deletion info
+- [x] Remove redundant tests from cli/commands/remove.test.ts
+- [ ] Add fulltext deletion tests to features/operations/remove.test.ts
 - [ ] Verify: `npm run test:unit`
 - [ ] Lint/Type check
 
-### Step 4.2: Add --output and --full options to remove
+### Step 4.1: Add --output and --full options to remove
 
 Location: `src/cli/index.ts`
 
-- [ ] Write test: `src/cli/commands/remove.test.ts` (create if needed)
+- [x] Implement: Add options and output logic (done in Step 4.0)
+- [ ] Write test: `src/cli/commands/remove.test.ts`
   - Test --output json
   - Test --full
   - Test error case JSON output
-- [ ] Implement: Add options and output logic
 - [ ] Verify: `npm run test:unit`
 - [ ] Lint/Type check
 

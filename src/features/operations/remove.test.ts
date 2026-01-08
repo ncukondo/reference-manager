@@ -1,10 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
-import { type RemoveOperationOptions, removeReference } from "./remove.js";
+import {
+  type RemoveOperationOptions,
+  getFulltextAttachmentTypes,
+  removeReference,
+} from "./remove.js";
 
 // Mock Library
 vi.mock("../../core/library.js");
+
+// Mock fs/promises
+const mockUnlink = vi.fn().mockResolvedValue(undefined);
+vi.mock("node:fs/promises", () => ({
+  unlink: (...args: unknown[]) => mockUnlink(...args),
+}));
 
 describe("removeReference", () => {
   let mockLibrary: Library;

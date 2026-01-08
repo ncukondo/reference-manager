@@ -8,13 +8,13 @@ import { z } from "zod";
 import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
-import { getPortfilePath } from "../server/portfile.js";
 import {
-  executeAdd,
-  formatAddJsonOutputFromResult,
-  formatAddOutput,
-  getExitCode,
-} from "./commands/add.js";
+  type FormatAddJsonOptions,
+  formatAddJsonOutput,
+  formatRemoveJsonOutput,
+} from "../features/operations/json-output.js";
+import { getPortfilePath } from "../server/portfile.js";
+import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
 import {
   type CiteCommandOptions,
   executeCite,
@@ -41,7 +41,6 @@ import { type ListCommandOptions, executeList, formatListOutput } from "./comman
 import { mcpStart } from "./commands/mcp.js";
 import {
   type RemoveCommandOptions,
-  deleteFulltextFiles,
   executeRemove,
   formatFulltextWarning,
   formatRemoveOutput,
@@ -284,7 +283,8 @@ async function outputAddResultJson(
     }
   }
 
-  const jsonOutput = formatAddJsonOutputFromResult(result, { full, sources, items });
+  const options: FormatAddJsonOptions = { full, sources, items };
+  const jsonOutput = formatAddJsonOutput(result, options);
   process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
 }
 
@@ -355,132 +355,120 @@ function registerAddCommand(program: Command): void {
 /**
  * Register 'remove' command
  */
-async function findReferenceToRemove(
-  identifier: string,
-  useUuid: boolean,
-  context: ExecutionContext
-): Promise<CslItem | undefined> {
-  return context.library.find(identifier, { idType: useUuid ? "uuid" : "id" });
+interface RemoveActionOptions {
+  uuid?: boolean;
+  force?: boolean;
+  output?: "json" | "text";
+  full?: boolean;
 }
 
-async function confirmRemoval(
-  refToRemove: CslItem,
-  force: boolean,
-  fulltextWarning?: string
+function outputRemoveNotFoundAndExit(identifier: string, outputFormat: "json" | "text"): never {
+  if (outputFormat === "json") {
+    const jsonOutput = formatRemoveJsonOutput({ removed: false }, identifier, {});
+    process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+  } else {
+    process.stderr.write(`Error: Reference not found: ${identifier}\n`);
+  }
+  process.exit(1);
+}
+
+function outputRemoveResult(
+  result: Awaited<ReturnType<typeof executeRemove>>,
+  identifier: string,
+  outputFormat: "json" | "text",
+  full: boolean
+): void {
+  if (outputFormat === "json") {
+    const jsonOutput = formatRemoveJsonOutput(result, identifier, { full });
+    process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+  } else {
+    const output = formatRemoveOutput(result, identifier);
+    process.stderr.write(`${output}\n`);
+  }
+}
+
+async function confirmRemoveIfNeeded(
+  item: CslItem,
+  hasFulltext: boolean,
+  force: boolean
 ): Promise<boolean> {
   if (force || !isTTY()) {
     return true;
   }
 
-  const authors = Array.isArray(refToRemove.author)
-    ? refToRemove.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
+  const authors = Array.isArray(item.author)
+    ? item.author.map((a) => `${a.family || ""}, ${a.given?.[0] || ""}.`).join("; ")
     : "(no authors)";
-  let confirmMsg = `Remove reference [${refToRemove.id}]?\nTitle: ${refToRemove.title || "(no title)"}\nAuthors: ${authors}`;
 
-  if (fulltextWarning) {
-    confirmMsg += `\n\n${fulltextWarning}`;
-  }
+  const fulltextTypes = hasFulltext ? getFulltextAttachmentTypes(item) : [];
+  const warning = hasFulltext ? formatFulltextWarning(fulltextTypes) : "";
+  const warningPart = warning ? `\n\n${warning}` : "";
 
-  confirmMsg += "\nContinue?";
-
-  return await readConfirmation(confirmMsg);
+  const confirmMsg = `Remove reference [${item.id}]?\nTitle: ${item.title || "(no title)"}\nAuthors: ${authors}${warningPart}\nContinue?`;
+  return readConfirmation(confirmMsg);
 }
 
-function handleRemoveError(error: unknown): never {
+function handleRemoveError(
+  error: unknown,
+  identifier: string,
+  outputFormat: "json" | "text"
+): never {
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("not found")) {
+  if (outputFormat === "json") {
+    process.stdout.write(`${JSON.stringify({ success: false, id: identifier, error: message })}\n`);
+  } else {
     process.stderr.write(`Error: ${message}\n`);
-    process.exit(1);
   }
-  process.stderr.write(`Error: ${message}\n`);
-  process.exit(4);
-}
-
-/**
- * Format type labels for fulltext files.
- */
-function formatTypeLabels(types: ("pdf" | "markdown")[]): string {
-  return types.map((t) => (t === "pdf" ? "PDF" : "Markdown")).join(" and ");
-}
-
-/**
- * Handle fulltext deletion and output.
- */
-async function handleFulltextDeletion(
-  item: CslItem,
-  fulltextDirectory: string,
-  types: ("pdf" | "markdown")[],
-  output: string
-): Promise<void> {
-  await deleteFulltextFiles(item, fulltextDirectory);
-  const typeLabels = formatTypeLabels(types);
-  process.stderr.write(`${output}\n`);
-  process.stderr.write(`Deleted fulltext files: ${typeLabels}\n`);
+  process.exit(message.includes("not found") ? 1 : 4);
 }
 
 async function handleRemoveAction(
   identifier: string,
-  options: { uuid?: boolean; force?: boolean },
+  options: RemoveActionOptions,
   program: Command
 ): Promise<void> {
+  const outputFormat = options.output ?? "text";
+  const useUuid = options.uuid ?? false;
+  const force = options.force ?? false;
+
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
 
-    // Find reference for confirmation display
-    const refToRemove = await findReferenceToRemove(identifier, options.uuid ?? false, context);
-
+    const refToRemove = await context.library.find(identifier, { idType: useUuid ? "uuid" : "id" });
     if (!refToRemove) {
-      process.stderr.write(`Error: Reference not found: ${identifier}\n`);
-      process.exit(1);
+      outputRemoveNotFoundAndExit(identifier, outputFormat);
     }
 
-    // Check for fulltext attachments
     const fulltextTypes = getFulltextAttachmentTypes(refToRemove);
     const hasFulltext = fulltextTypes.length > 0;
 
-    // If fulltext attached and not TTY without --force, require --force
-    if (hasFulltext && !isTTY() && !options.force) {
-      const warning = formatFulltextWarning(fulltextTypes);
-      process.stderr.write(`Error: ${warning}\n`);
+    // Non-TTY with fulltext requires --force
+    const requiresForce = hasFulltext && !isTTY() && !force;
+    if (requiresForce) {
+      process.stderr.write(`Error: ${formatFulltextWarning(fulltextTypes)}\n`);
       process.exit(1);
     }
 
-    // Interactive confirmation (with fulltext warning if applicable)
-    const fulltextWarning =
-      hasFulltext && !options.force ? formatFulltextWarning(fulltextTypes) : undefined;
-    const confirmed = await confirmRemoval(refToRemove, options.force ?? false, fulltextWarning);
+    const confirmed = await confirmRemoveIfNeeded(refToRemove, hasFulltext, force);
     if (!confirmed) {
       process.stderr.write("Cancelled.\n");
       process.exit(2);
     }
 
-    // Execute removal using unified pattern
     const removeOptions: RemoveCommandOptions = {
       identifier,
+      idType: useUuid ? "uuid" : "id",
+      fulltextDirectory: config.fulltext.directory,
+      deleteFulltext: force && hasFulltext,
     };
-    if (options.uuid) {
-      removeOptions.idType = "uuid";
-    }
 
     const result = await executeRemove(removeOptions, context);
-    const output = formatRemoveOutput(result, identifier);
-
-    if (!result.removed) {
-      process.stderr.write(`${output}\n`);
-      process.exit(1);
-    }
-
-    // Delete fulltext files if --force and fulltext was attached
-    if (hasFulltext && options.force) {
-      await handleFulltextDeletion(refToRemove, config.fulltext.directory, fulltextTypes, output);
-    } else {
-      process.stderr.write(`${output}\n`);
-    }
-    process.exit(0);
+    outputRemoveResult(result, identifier, outputFormat, options.full ?? false);
+    process.exit(result.removed ? 0 : 1);
   } catch (error) {
-    handleRemoveError(error);
+    handleRemoveError(error, identifier, outputFormat);
   }
 }
 
@@ -491,6 +479,8 @@ function registerRemoveCommand(program: Command): void {
     .argument("<identifier>", "Citation key or UUID")
     .option("--uuid", "Interpret identifier as UUID")
     .option("-f, --force", "Skip confirmation prompt")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string, options) => {
       await handleRemoveAction(identifier, options, program);
     });

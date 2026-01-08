@@ -1,4 +1,3 @@
-import type { CslItem } from "../../core/csl-json/types.js";
 import type { InputFormat } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
 import type {
@@ -7,7 +6,6 @@ import type {
   FailedItem,
   SkippedItem,
 } from "../../features/operations/add.js";
-import { type AddJsonOutput, formatAddJsonOutput } from "../../features/operations/json-output.js";
 import type { ImportOptions } from "../../features/operations/library-operations.js";
 import type { ExecutionContext } from "../execution-context.js";
 
@@ -164,30 +162,4 @@ export function getExitCode(result: AddCommandResult): number {
 
   // All skipped or empty input is considered success
   return 0;
-}
-
-/**
- * Options for JSON output formatting
- */
-export interface FormatAddJsonOptions {
-  /** Include full CSL-JSON data */
-  full?: boolean;
-  /** Map from added item ID to source string */
-  sources?: Map<string, string>;
-  /** Map from added item ID to CslItem (for --full) */
-  items?: Map<string, CslItem>;
-}
-
-/**
- * Format add result as JSON output.
- *
- * @param result - Add result
- * @param options - Formatting options
- * @returns JSON output structure
- */
-export function formatAddJsonOutputFromResult(
-  result: AddCommandResult,
-  options: FormatAddJsonOptions
-): AddJsonOutput {
-  return formatAddJsonOutput(result, options);
 }
