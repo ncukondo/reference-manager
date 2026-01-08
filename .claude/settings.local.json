@@ -52,7 +52,10 @@
       "mcp__serena__list_memories",
       "WebFetch(domain:www.anthropic.com)",
       "WebFetch(domain:carapace.sh)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Skill(code-with-roadmap)",
+      "WebFetch(domain:serptools.github.io)",
+      "WebFetch(domain:www.nlm.nih.gov)"
     ]
   },
   "enableAllProjectMcpServers": true,

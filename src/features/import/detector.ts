@@ -31,7 +31,7 @@ const EXTENSION_MAP: Record<string, InputFormat> = {
   ".bib": "bibtex",
   ".ris": "ris",
   ".nbib": "ris",
-};;
+};
 
 /**
  * DOI URL prefixes to strip

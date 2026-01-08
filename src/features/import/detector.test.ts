@@ -15,7 +15,6 @@ describe("detectFormat", () => {
       expect(detectFormat("citations.ris")).toBe("ris");
     });
 
-
     it("should detect .nbib as ris format", () => {
       expect(detectFormat("pubmed.nbib")).toBe("ris");
     });
