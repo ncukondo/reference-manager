@@ -127,13 +127,13 @@ Location: `src/features/operations/json-output.ts`
 
 Location: `src/features/operations/json-output.ts`
 
-- [ ] Write test:
+- [x] Write test:
   - Success case
   - Failure case (not found)
   - With --full
-- [ ] Implement: `formatRemoveJsonOutput(result: RemoveResult, id: string, full: boolean): RemoveJsonOutput`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: `formatRemoveJsonOutput(result: RemoveResult, id: string, full: boolean): RemoveJsonOutput`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ### Step 2.4: Implement formatUpdateJsonOutput
 

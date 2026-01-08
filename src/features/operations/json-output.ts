@@ -9,6 +9,7 @@ import type { CslItem } from "../../core/csl-json/types.js";
 import type { DuplicateType } from "../duplicate/types.js";
 import type { FailureReason } from "../import/importer.js";
 import type { AddReferencesResult } from "./add.js";
+import type { RemoveResult } from "./remove.js";
 
 // ============================================================================
 // Add command types
@@ -147,4 +148,42 @@ export function formatAddJsonOutput(
     skipped,
     failed,
   };
+}
+
+export interface FormatRemoveJsonOptions {
+  /** Include full CSL-JSON data */
+  full?: boolean;
+}
+
+/**
+ * Format remove command result as JSON output
+ */
+export function formatRemoveJsonOutput(
+  result: RemoveResult,
+  id: string,
+  options: FormatRemoveJsonOptions
+): RemoveJsonOutput {
+  const { full = false } = options;
+
+  if (!result.removed || !result.removedItem) {
+    return {
+      success: false,
+      id,
+      error: `Reference not found: ${id}`,
+    };
+  }
+
+  const uuid = result.removedItem.custom?.uuid;
+  const output: RemoveJsonOutput = {
+    success: true,
+    id,
+    ...(uuid && { uuid }),
+    title: typeof result.removedItem.title === "string" ? result.removedItem.title : "",
+  };
+
+  if (full) {
+    output.item = result.removedItem;
+  }
+
+  return output;
 }

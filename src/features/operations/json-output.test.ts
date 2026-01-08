@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { AddReferencesResult, AddedItem, FailedItem, SkippedItem } from "./add.js";
-import { formatAddJsonOutput } from "./json-output.js";
+import { formatAddJsonOutput, formatRemoveJsonOutput } from "./json-output.js";
+import type { RemoveResult } from "./remove.js";
 
 describe("JSON output formatters", () => {
   describe("formatAddJsonOutput", () => {
@@ -183,6 +184,78 @@ describe("JSON output formatters", () => {
         const output = formatAddJsonOutput(result, { full: false });
 
         expect(output.added[0].item).toBeUndefined();
+      });
+    });
+  });
+
+  describe("formatRemoveJsonOutput", () => {
+    const createCslItem = (id: string, uuid: string, title: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid,
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    });
+
+    describe("success case", () => {
+      it("should format successful removal", () => {
+        const removedItem = createCslItem("smith-2024", "uuid-1", "Removed Article");
+        const result: RemoveResult = {
+          removed: true,
+          removedItem,
+        };
+
+        const output = formatRemoveJsonOutput(result, "smith-2024", {});
+
+        expect(output).toEqual({
+          success: true,
+          id: "smith-2024",
+          uuid: "uuid-1",
+          title: "Removed Article",
+        });
+      });
+
+      it("should include item when full=true", () => {
+        const removedItem = createCslItem("smith-2024", "uuid-1", "Removed Article");
+        const result: RemoveResult = {
+          removed: true,
+          removedItem,
+        };
+
+        const output = formatRemoveJsonOutput(result, "smith-2024", { full: true });
+
+        expect(output.item).toEqual(removedItem);
+      });
+
+      it("should not include item when full=false", () => {
+        const removedItem = createCslItem("smith-2024", "uuid-1", "Removed Article");
+        const result: RemoveResult = {
+          removed: true,
+          removedItem,
+        };
+
+        const output = formatRemoveJsonOutput(result, "smith-2024", { full: false });
+
+        expect(output.item).toBeUndefined();
+      });
+    });
+
+    describe("failure case", () => {
+      it("should format not found error", () => {
+        const result: RemoveResult = {
+          removed: false,
+        };
+
+        const output = formatRemoveJsonOutput(result, "nonexistent", {});
+
+        expect(output).toEqual({
+          success: false,
+          id: "nonexistent",
+          error: "Reference not found: nonexistent",
+        });
       });
     });
   });
