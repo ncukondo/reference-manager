@@ -20,9 +20,9 @@ For each step:
 
 ### Step 1: Add `isbn` to FieldSpecifier type
 
-- [ ] Update type: `src/features/search/types.ts`
+- [x] Update type: `src/features/search/types.ts`
   - Add `"isbn"` to `FieldSpecifier` union type
-- [ ] Verify: `npm run typecheck`
+- [x] Verify: `npm run typecheck`
 
 ### Step 2: Add ISBN field matching logic
 
