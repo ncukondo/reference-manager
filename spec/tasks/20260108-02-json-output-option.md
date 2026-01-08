@@ -88,11 +88,11 @@ Location: `src/features/duplicate/types.ts`
 
 Location: `src/features/operations/add.ts`
 
-- [ ] Write test: Verify AddedItem has `uuid` property
-- [ ] Implement: Add `uuid: string` to AddedItem interface
-- [ ] Update processImportResult to include UUID from added item
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Write test: Verify AddedItem has `uuid` property
+- [x] Implement: Add `uuid: string` to AddedItem interface
+- [x] Update processImportResult to include UUID from added item
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ---
 

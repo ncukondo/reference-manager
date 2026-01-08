@@ -32,6 +32,7 @@ export interface AddReferencesOptions {
  */
 export interface AddedItem {
   id: string;
+  uuid: string;
   title: string;
   /** True if the ID was changed due to collision */
   idChanged?: boolean;
@@ -191,12 +192,14 @@ async function processImportResult(
   const finalItem: CslItem = { ...item, id };
 
   // Add to library
-  await library.add(finalItem);
+  const addedToLibrary = await library.add(finalItem);
   addedIds.add(id);
 
-  // Build result
+  // Build result (uuid comes from the library-added item which has ensured UUID)
+  const uuid = addedToLibrary.custom?.uuid ?? "";
   const addedItem: AddedItem = {
     id,
+    uuid,
     title: typeof finalItem.title === "string" ? finalItem.title : "",
   };
 

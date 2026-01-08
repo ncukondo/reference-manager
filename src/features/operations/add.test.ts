@@ -49,6 +49,7 @@ describe("addReferences", () => {
       getAll: vi.fn(() => existingItems),
       add: vi.fn((item: CslItem) => {
         existingItems.push(item);
+        return Promise.resolve(item); // Return the added item
       }),
       save: vi.fn(),
     } as unknown as Library;
@@ -67,6 +68,7 @@ describe("addReferences", () => {
       expect(result.added).toHaveLength(1);
       expect(result.added[0]).toEqual({
         id: "smith-2020", // generateId normalizes to lowercase
+        uuid: "Smith-2020-uuid", // UUID from the added item
         title: "Test Article",
       });
       expect(result.failed).toHaveLength(0);
