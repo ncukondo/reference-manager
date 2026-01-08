@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
+import { formatUpdateJsonOutput } from "../../features/operations/json-output.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import {
   type SetOperation,
@@ -439,6 +440,133 @@ describe("update command", () => {
       const result = resolveArrayOperations(updates, existing);
 
       expect(result.custom).toEqual({ tags: ["first-tag"] });
+    });
+  });
+
+  describe("formatUpdateJsonOutput (--output json)", () => {
+    const createItem = (id: string, title: string, uuid: string): CslItem => ({
+      id,
+      type: "article",
+      title,
+      custom: {
+        uuid,
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    });
+
+    describe("success cases", () => {
+      it("should format successful update as JSON", () => {
+        const item = createItem("Smith-2020", "Updated Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output).toEqual({
+          success: true,
+          id: "Smith-2020",
+          uuid: "uuid-123",
+          title: "Updated Title",
+        });
+      });
+
+      it("should include before and after when --full is set", () => {
+        const beforeItem = createItem("Smith-2020", "Original Title", "uuid-123");
+        const afterItem = createItem("Smith-2020", "Updated Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: afterItem,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {
+          full: true,
+          before: beforeItem,
+        });
+
+        expect(output.success).toBe(true);
+        expect(output.id).toBe("Smith-2020");
+        expect(output.before).toEqual(beforeItem);
+        expect(output.after).toEqual(afterItem);
+      });
+
+      it("should include idChanged and previousId when ID changed", () => {
+        const item = createItem("Smith-2020-1", "Test Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item,
+          idChanged: true,
+          newId: "Smith-2020-1",
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.success).toBe(true);
+        expect(output.id).toBe("Smith-2020-1");
+        expect(output.idChanged).toBe(true);
+        expect(output.previousId).toBe("Smith-2020");
+      });
+
+      it("should handle item without title", () => {
+        const item = createItem("Smith-2020", "", "uuid-123");
+        item.title = undefined;
+        const result: UpdateOperationResult = {
+          updated: true,
+          item,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.success).toBe(true);
+        expect(output.title).toBe("");
+      });
+    });
+
+    describe("error cases", () => {
+      it("should format not found as JSON error", () => {
+        const result: UpdateOperationResult = {
+          updated: false,
+        };
+
+        const output = formatUpdateJsonOutput(result, "NonExistent", {});
+
+        expect(output).toEqual({
+          success: false,
+          id: "NonExistent",
+          error: "Reference not found: NonExistent",
+        });
+      });
+
+      it("should format ID collision as JSON error", () => {
+        const result: UpdateOperationResult = {
+          updated: false,
+          idCollision: true,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output).toEqual({
+          success: false,
+          id: "Smith-2020",
+          error: "ID collision: target ID already exists",
+        });
+      });
+
+      it("should not include uuid, title, or item fields in error case", () => {
+        const result: UpdateOperationResult = {
+          updated: false,
+        };
+
+        const output = formatUpdateJsonOutput(result, "NonExistent", { full: true });
+
+        expect(output.success).toBe(false);
+        expect(output.uuid).toBeUndefined();
+        expect(output.title).toBeUndefined();
+        expect(output.before).toBeUndefined();
+        expect(output.after).toBeUndefined();
+      });
     });
   });
 });

@@ -12,6 +12,7 @@ import {
   type FormatAddJsonOptions,
   formatAddJsonOutput,
   formatRemoveJsonOutput,
+  formatUpdateJsonOutput,
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
@@ -500,59 +501,98 @@ function handleUpdateError(error: unknown): never {
   process.exit(4);
 }
 
+interface UpdateActionOptions {
+  uuid?: boolean;
+  set?: string[];
+  output?: "json" | "text";
+  full?: boolean;
+}
+
+function parseUpdateInput(
+  setOptions: string[] | undefined,
+  file: string | undefined
+): Promise<Partial<CslItem>> | Partial<CslItem> {
+  if (setOptions && setOptions.length > 0 && file) {
+    throw new Error("Cannot use --set with a file argument. Use one or the other.");
+  }
+
+  if (setOptions && setOptions.length > 0) {
+    const operations = setOptions.map((s) => parseSetOption(s));
+    return applySetOperations(operations) as Partial<CslItem>;
+  }
+
+  return readJsonInput(file).then((inputStr) => {
+    const updates = parseJsonInput(inputStr);
+    const updatesSchema = z.record(z.string(), z.unknown());
+    return updatesSchema.parse(updates) as Partial<CslItem>;
+  });
+}
+
+function outputUpdateResult(
+  result: Awaited<ReturnType<typeof executeUpdate>>,
+  identifier: string,
+  outputFormat: "json" | "text",
+  full: boolean,
+  beforeItem: CslItem | undefined
+): void {
+  if (outputFormat === "json") {
+    const jsonOptions = {
+      full,
+      ...(beforeItem && { before: beforeItem }),
+    };
+    const jsonOutput = formatUpdateJsonOutput(result, identifier, jsonOptions);
+    process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+  } else {
+    const output = formatUpdateOutput(result, identifier);
+    process.stderr.write(`${output}\n`);
+  }
+}
+
+function handleUpdateErrorWithFormat(
+  error: unknown,
+  identifier: string,
+  outputFormat: "json" | "text"
+): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (outputFormat === "json") {
+    process.stdout.write(`${JSON.stringify({ success: false, id: identifier, error: message })}\n`);
+    process.exit(message.includes("not found") || message.includes("validation") ? 1 : 4);
+  }
+  handleUpdateError(error);
+}
+
 async function handleUpdateAction(
   identifier: string,
   file: string | undefined,
-  options: { uuid?: boolean; set?: string[] },
+  options: UpdateActionOptions,
   program: Command
 ): Promise<void> {
+  const outputFormat = options.output ?? "text";
+
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
 
-    // Validate: --set and [file] are mutually exclusive
-    if (options.set && options.set.length > 0 && file) {
-      throw new Error("Cannot use --set with a file argument. Use one or the other.");
-    }
-
-    let validatedUpdates: Partial<CslItem>;
-
-    if (options.set && options.set.length > 0) {
-      // Parse and apply --set options
-      const operations = options.set.map((s) => parseSetOption(s));
-      validatedUpdates = applySetOperations(operations) as Partial<CslItem>;
-    } else {
-      // Read from file or stdin
-      const inputStr = await readJsonInput(file);
-      const updates = parseJsonInput(inputStr);
-
-      // Validate that updates is a non-null object using zod
-      const updatesSchema = z.record(z.string(), z.unknown());
-      validatedUpdates = updatesSchema.parse(updates) as Partial<CslItem>;
-    }
+    const validatedUpdates = await parseUpdateInput(options.set, file);
 
     const context = await createExecutionContext(config, Library.load);
+
+    const idType = options.uuid ? "uuid" : "id";
+    const beforeItem = options.full
+      ? await context.library.find(identifier, { idType })
+      : undefined;
 
     const updateOptions: UpdateCommandOptions = {
       identifier,
       updates: validatedUpdates,
+      ...(options.uuid && { idType: "uuid" }),
     };
-    if (options.uuid) {
-      updateOptions.idType = "uuid";
-    }
 
     const result = await executeUpdate(updateOptions, context);
-    const output = formatUpdateOutput(result, identifier);
-
-    if (result.updated) {
-      process.stderr.write(`${output}\n`);
-      process.exit(0);
-    } else {
-      process.stderr.write(`${output}\n`);
-      process.exit(1);
-    }
+    outputUpdateResult(result, identifier, outputFormat, options.full ?? false, beforeItem);
+    process.exit(result.updated ? 0 : 1);
   } catch (error) {
-    handleUpdateError(error);
+    handleUpdateErrorWithFormat(error, identifier, outputFormat);
   }
 }
 
@@ -571,6 +611,8 @@ function registerUpdateCommand(program: Command): void {
     .argument("[file]", "JSON file with updates (or use stdin)")
     .option("--uuid", "Interpret identifier as UUID")
     .option("--set <field=value>", "Set field value (repeatable)", collectSetOption, [])
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program);
     });

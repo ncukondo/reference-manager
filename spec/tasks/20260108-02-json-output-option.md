@@ -213,24 +213,24 @@ Location: `src/cli/index.ts`
 
 Location: `src/features/operations/update.ts`
 
-- [ ] Write test: `src/features/operations/update.test.ts`
+- [x] Write test: `src/features/operations/update.test.ts`
   - Verify result includes necessary fields for JSON output
-- [ ] Implement: Ensure result includes uuid, title, before state if needed
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: Ensure result includes uuid, title, before state if needed (already implemented)
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ### Step 5.2: Add --output and --full options to update
 
 Location: `src/cli/index.ts`
 
-- [ ] Write test: `src/cli/commands/update.test.ts` (create if needed)
+- [x] Write test: `src/cli/commands/update.test.ts` (create if needed)
   - Test --output json
   - Test --full (before/after)
   - Test ID change case
   - Test error case
-- [ ] Implement: Add options and output logic
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Implement: Add options and output logic
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ---
 
