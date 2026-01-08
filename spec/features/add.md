@@ -116,8 +116,13 @@ reference-manager add 10.1000/xyz
 # Multiple inputs
 reference-manager add paper.json 12345678 10.1000/abc
 
-# From stdin
+# From stdin (file content)
 cat refs.json | reference-manager add
+
+# From stdin (identifiers)
+echo "10.1038/nature12373" | reference-manager add           # DOI (auto-detect)
+echo "12345678" | reference-manager add --format pmid        # PMID
+echo "12345678 23456789" | reference-manager add --format pmid  # Multiple PMIDs
 
 # Force add despite duplicates
 reference-manager add --force paper.json

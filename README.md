@@ -269,7 +269,9 @@ ref add export.ris                    # From RIS
 ref add "10.1038/nature12373"         # From DOI
 ref add pmid:25056061                 # From PubMed ID
 ref add "ISBN:978-4-00-000000-0"      # From ISBN
-cat references.json | ref add         # From stdin
+cat references.json | ref add         # From stdin (file content)
+echo "10.1038/nature12373" | ref add  # From stdin (DOI auto-detect)
+echo "12345678" | ref add --format pmid  # From stdin (PMID)
 
 # Remove a reference
 ref remove smith2024
