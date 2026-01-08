@@ -26,14 +26,15 @@ For each step:
 
 ### Step 2: Add ISBN field matching logic
 
-- [ ] Write test: `src/features/search/matcher.test.ts`
+- [x] Write test: `src/features/search/matcher.test.ts`
   - Test `isbn:` prefix matches ISBN field exactly
-  - Test case-insensitive ISBN matching
-- [ ] Implement: `src/features/search/matcher.ts`
-  - Add ISBN to ID_FIELDS set (exact match, case-sensitive)
-  - Handle `isbn` field in `getFieldValue` function
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Test case-insensitive ISBN matching (for X check digit)
+- [x] Implement: `src/features/search/matcher.ts`
+  - Add ISBN to ID_FIELDS set
+  - Add isbn to FIELD_MAP
+  - ISBN matching is case-insensitive (for X check digit in ISBN-10)
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Add tokenizer test for isbn prefix
 

@@ -6,7 +6,7 @@ import { matchWithUppercaseSensitivity } from "./uppercase.js";
 /**
  * ID fields require exact match (case-sensitive)
  */
-const ID_FIELDS = new Set(["DOI", "PMID", "PMCID", "URL"]);
+const ID_FIELDS = new Set(["DOI", "PMID", "PMCID", "URL", "ISBN"]);
 
 /**
  * Extract year from CSL-JSON issued field
@@ -168,6 +168,7 @@ const FIELD_MAP: Record<string, string> = {
   doi: "DOI",
   pmid: "PMID",
   pmcid: "PMCID",
+  isbn: "ISBN",
 };
 
 /**
@@ -194,8 +195,20 @@ function matchFieldValue(field: string, tokenValue: string, reference: CslItem):
     return null;
   }
 
-  // Check if this is an ID field (exact match, case-sensitive)
+  // Check if this is an ID field (exact match)
   if (ID_FIELDS.has(field)) {
+    // ISBN uses case-insensitive matching (for X check digit in ISBN-10)
+    if (field === "ISBN") {
+      if (fieldValue.toUpperCase() === tokenValue.toUpperCase()) {
+        return {
+          field,
+          strength: "exact",
+          value: fieldValue,
+        };
+      }
+      return null;
+    }
+    // Other ID fields: case-sensitive exact match
     if (fieldValue === tokenValue) {
       return {
         field,
