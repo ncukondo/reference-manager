@@ -45,20 +45,24 @@ For each step:
 
 ## Phase 1: Type Extensions (No Dependencies)
 
-### Step 1.1: Add FailureReason type
+### Step 1.1: Add FailureReason to fetcher/importer layers
 
-Location: `src/features/operations/add.ts`
+`FailureReason` defined in `fetcher.ts` (lowest layer), re-exported through `importer.ts` and `add.ts`.
 
-- [x] Implement: Add `FailureReason` type
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Define `FailureReason` type in `fetcher.ts`
+- [x] Extend `FetchResult` and `PmidFetchResult` with `reason` field
+- [x] Update `fetchDoi`, `fetchIsbn`, `fetchPmids`, `buildPmidResult` to set appropriate reason
+- [x] Extend `ImportItemResult` in `importer.ts` with `reason` field
+- [x] Update all error returns in `importer.ts` with appropriate reason
+- [x] Re-export `FailureReason` from `importer.ts` and `add.ts`
+- [x] Lint/Type check/Tests pass
 
 ### Step 1.2: Extend FailedItem with reason
 
 Location: `src/features/operations/add.ts`
 
-- [ ] Write test: Verify FailedItem has `reason` property
 - [ ] Implement: Add `reason: FailureReason` to FailedItem interface
-- [ ] Update processImportResult to categorize errors
+- [ ] Update processImportResult to use reason from ImportItemResult
 - [ ] Verify: `npm run test:unit`
 - [ ] Lint/Type check
 

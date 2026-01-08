@@ -19,16 +19,19 @@ import {
 import { detectByContent, detectByExtension, isDoi, isIsbn, isPmid } from "./detector.js";
 import type { InputFormat } from "./detector.js";
 import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
-import type { PubmedConfig } from "./fetcher.js";
+import type { FailureReason, PubmedConfig } from "./fetcher.js";
 import { normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 import { parseBibtex, parseNbib, parseRis } from "./parser.js";
+
+// Re-export FailureReason for external use
+export type { FailureReason } from "./fetcher.js";
 
 /**
  * Result of importing a single item
  */
 export type ImportItemResult =
   | { success: true; item: CslItem; source: string }
-  | { success: false; error: string; source: string };
+  | { success: false; error: string; source: string; reason: FailureReason };
 
 /**
  * Result of an import operation
@@ -86,6 +89,7 @@ function buildUnknownResults(unknowns: string[]): ImportItemResult[] {
     success: false as const,
     error: `Cannot interpret '${unknown}' as identifier (not a valid PMID or DOI)`,
     source: unknown,
+    reason: "validation_error" as const,
   }));
 }
 
@@ -125,6 +129,7 @@ async function fetchPmidsWithCache(
           success: false,
           error: fetchResult.error,
           source: fetchResult.pmid,
+          reason: fetchResult.reason,
         });
       }
     }
@@ -151,7 +156,12 @@ async function fetchDoisWithCache(dois: string[]): Promise<ImportItemResult[]> {
       cacheDoiResult(doi, fetchResult.item);
       results.push({ success: true, item: fetchResult.item, source: doi });
     } else {
-      results.push({ success: false, error: fetchResult.error, source: doi });
+      results.push({
+        success: false,
+        error: fetchResult.error,
+        source: doi,
+        reason: fetchResult.reason,
+      });
     }
   }
 
@@ -176,7 +186,12 @@ async function fetchIsbnsWithCache(isbns: string[]): Promise<ImportItemResult[]>
       cacheIsbnResult(isbn, fetchResult.item);
       results.push({ success: true, item: fetchResult.item, source: isbn });
     } else {
-      results.push({ success: false, error: fetchResult.error, source: isbn });
+      results.push({
+        success: false,
+        error: fetchResult.error,
+        source: isbn,
+        reason: fetchResult.reason,
+      });
     }
   }
 
@@ -205,6 +220,7 @@ function parseJsonContent(content: string): ImportResult {
           success: false,
           error: `Invalid CSL-JSON: ${parseResult.error.message}`,
           source: "json",
+          reason: "validation_error",
         });
       }
     }
@@ -212,7 +228,14 @@ function parseJsonContent(content: string): ImportResult {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return {
-      results: [{ success: false, error: `Failed to parse JSON: ${message}`, source: "json" }],
+      results: [
+        {
+          success: false,
+          error: `Failed to parse JSON: ${message}`,
+          source: "json",
+          reason: "parse_error",
+        },
+      ],
     };
   }
 }
@@ -226,7 +249,12 @@ function parseBibtexContent(content: string): ImportResult {
   if (!parseResult.success) {
     return {
       results: [
-        { success: false, error: parseResult.error ?? "Failed to parse BibTeX", source: "bibtex" },
+        {
+          success: false,
+          error: parseResult.error ?? "Failed to parse BibTeX",
+          source: "bibtex",
+          reason: "parse_error",
+        },
       ],
     };
   }
@@ -253,7 +281,12 @@ function parseRisContent(content: string): ImportResult {
   if (!parseResult.success) {
     return {
       results: [
-        { success: false, error: parseResult.error ?? "Failed to parse RIS", source: "ris" },
+        {
+          success: false,
+          error: parseResult.error ?? "Failed to parse RIS",
+          source: "ris",
+          reason: "parse_error",
+        },
       ],
     };
   }
@@ -280,7 +313,12 @@ function parseNbibContent(content: string): ImportResult {
   if (!parseResult.success) {
     return {
       results: [
-        { success: false, error: parseResult.error ?? "Failed to parse NBIB", source: "nbib" },
+        {
+          success: false,
+          error: parseResult.error ?? "Failed to parse NBIB",
+          source: "nbib",
+          reason: "parse_error",
+        },
       ],
     };
   }
@@ -322,6 +360,7 @@ export async function importFromContent(
             success: false,
             error: "Cannot detect input format. Use --format to specify explicitly.",
             source: "content",
+            reason: "validation_error",
           },
         ],
       };
@@ -347,6 +386,7 @@ export async function importFromContent(
             success: false,
             error: `Unsupported format for content parsing: ${actualFormat}`,
             source: "content",
+            reason: "validation_error",
           },
         ],
       };
@@ -457,6 +497,7 @@ async function processFile(
         success: false,
         error: `Failed to read file: ${message}`,
         source: filePath,
+        reason: "fetch_error",
       },
     ];
   }
@@ -490,6 +531,7 @@ async function processIdentifiers(
         success: false,
         error: `Cannot interpret '${input}' as identifier (not a valid PMID, DOI, or ISBN).${hint}`,
         source: input,
+        reason: "validation_error",
       });
     }
   }

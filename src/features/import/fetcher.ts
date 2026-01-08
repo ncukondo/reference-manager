@@ -29,16 +29,28 @@ export interface PubmedConfig {
 }
 
 /**
+ * Categorized failure reasons for JSON output
+ */
+export type FailureReason =
+  | "not_found"
+  | "fetch_error"
+  | "parse_error"
+  | "validation_error"
+  | "unknown";
+
+/**
  * Result of fetching a single identifier
  */
-export type FetchResult = { success: true; item: CslItem } | { success: false; error: string };
+export type FetchResult =
+  | { success: true; item: CslItem }
+  | { success: false; error: string; reason: FailureReason };
 
 /**
  * Result of fetching a PMID (includes pmid for tracking)
  */
 export type PmidFetchResult =
   | { pmid: string; success: true; item: CslItem }
-  | { pmid: string; success: false; error: string };
+  | { pmid: string; success: false; error: string; reason: FailureReason };
 
 /**
  * Results of fetching multiple PMIDs
@@ -131,12 +143,14 @@ function buildPmidResult(
       pmid,
       success: false as const,
       error: `Invalid CSL-JSON data: ${validationError}`,
+      reason: "validation_error",
     };
   }
   return {
     pmid,
     success: false as const,
     error: `PMID ${pmid} not found`,
+    reason: "not_found",
   };
 }
 
@@ -166,6 +180,7 @@ export async function fetchPmids(pmids: string[], config: PubmedConfig): Promise
         pmid,
         success: false as const,
         error: errorMsg,
+        reason: "fetch_error",
       }));
     }
 
@@ -185,6 +200,7 @@ export async function fetchPmids(pmids: string[], config: PubmedConfig): Promise
       pmid,
       success: false as const,
       error: errorMsg,
+      reason: "fetch_error",
     }));
   }
 }
@@ -200,6 +216,7 @@ export async function fetchDoi(doi: string): Promise<FetchResult> {
     return {
       success: false,
       error: `Invalid DOI format: ${doi}`,
+      reason: "validation_error",
     };
   }
 
@@ -216,6 +233,7 @@ export async function fetchDoi(doi: string): Promise<FetchResult> {
       return {
         success: false,
         error: `No data returned for DOI ${doi}`,
+        reason: "not_found",
       };
     }
 
@@ -225,6 +243,7 @@ export async function fetchDoi(doi: string): Promise<FetchResult> {
       return {
         success: false,
         error: `Invalid CSL-JSON data for DOI ${doi}: ${parseResult.error.message}`,
+        reason: "validation_error",
       };
     }
 
@@ -234,6 +253,7 @@ export async function fetchDoi(doi: string): Promise<FetchResult> {
     return {
       success: false,
       error: errorMsg,
+      reason: "fetch_error",
     };
   }
 }
@@ -256,6 +276,7 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
     return {
       success: false,
       error: `Invalid ISBN format: ${isbn}`,
+      reason: "validation_error",
     };
   }
 
@@ -272,6 +293,7 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
       return {
         success: false,
         error: `No data returned for ISBN ${isbn}`,
+        reason: "not_found",
       };
     }
 
@@ -281,6 +303,7 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
       return {
         success: false,
         error: `Invalid CSL-JSON data for ISBN ${isbn}: ${parseResult.error.message}`,
+        reason: "validation_error",
       };
     }
 
@@ -290,6 +313,7 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
     return {
       success: false,
       error: errorMsg,
+      reason: "fetch_error",
     };
   }
 }

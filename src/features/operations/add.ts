@@ -10,6 +10,9 @@ import {
   importFromInputs,
 } from "../import/importer.js";
 
+// Re-export FailureReason for external use
+export type { FailureReason } from "../import/importer.js";
+
 /**
  * Options for adding references
  */
@@ -35,16 +38,6 @@ export interface AddedItem {
   /** Original ID before collision resolution */
   originalId?: string;
 }
-
-/**
- * Categorized failure reasons for JSON output
- */
-export type FailureReason =
-  | "not_found"
-  | "fetch_error"
-  | "parse_error"
-  | "validation_error"
-  | "unknown";
 
 /**
  * Information about a failed import
