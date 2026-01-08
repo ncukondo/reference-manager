@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Search/List JSON Output**: Fixed double-escaped JSON in `--json` output for `search` and `list` commands
+  - Previously: `{"items":["{\"id\":\"ref-1\",...}"],...}` (items were escaped strings)
+  - Now: `{"items":[{"id":"ref-1",...}],...}` (items are proper JSON objects)
+  - Output can now be directly piped to `jq` without additional parsing
+
 ### Added
 
 - **ISBN Search Field Prefix**: Search references by ISBN using `isbn:` prefix

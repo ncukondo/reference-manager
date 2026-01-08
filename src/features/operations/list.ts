@@ -27,8 +27,8 @@ export interface ListOptions extends PaginationOptions, SortOptions {
  * Result of listReferences operation
  */
 export interface ListResult {
-  /** Formatted strings for each reference */
-  items: string[];
+  /** Formatted items (strings for most formats, CslItem[] for JSON format) */
+  items: string[] | CslItem[];
   /** Total count before pagination */
   total: number;
   /** Applied limit (0 if unlimited) */
@@ -42,10 +42,11 @@ export interface ListResult {
 /**
  * Format items according to the specified format
  */
-function formatItems(items: CslItem[], format: ListFormat): string[] {
+function formatItems(items: CslItem[], format: ListFormat): string[] | CslItem[] {
   switch (format) {
     case "json":
-      return items.map((item) => JSON.stringify(item));
+      // Return raw CslItem[] for JSON format - CLI will handle JSON.stringify
+      return items;
 
     case "bibtex":
       return items.map((item) => formatBibtex([item]));

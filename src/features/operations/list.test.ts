@@ -48,16 +48,16 @@ describe("listReferences", () => {
   });
 
   describe("format: json", () => {
-    it("should return JSON string for each reference", async () => {
+    it("should return CslItem objects for each reference", async () => {
       const options: ListOptions = { format: "json" };
       const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
-      // Each item should be valid JSON
-      const parsed0 = JSON.parse(result.items[0] as string);
-      const parsed1 = JSON.parse(result.items[1] as string);
-      expect(parsed0.id).toBe("ref1");
-      expect(parsed1.id).toBe("ref2");
+      // JSON format returns raw CslItem[], not stringified JSON
+      const item0 = result.items[0] as { id: string };
+      const item1 = result.items[1] as { id: string };
+      expect(item0.id).toBe("ref1");
+      expect(item1.id).toBe("ref2");
     });
   });
 
