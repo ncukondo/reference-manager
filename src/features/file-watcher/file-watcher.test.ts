@@ -201,20 +201,21 @@ describe("FileWatcher", () => {
 
     it("should debounce rapid changes", async () => {
       const callback = vi.fn();
-      const watcher = new FileWatcher(tempDir, { debounceMs: 100 });
+      // Use longer debounce to ensure stability across different OS file systems
+      const watcher = new FileWatcher(tempDir, { debounceMs: 200 });
       watcher.on("change", callback);
 
       await watcher.start();
 
-      // Rapidly modify the file multiple times
+      // Rapidly modify the file multiple times within debounce window
       await fs.writeFile(testFilePath, '[{"id": "test1"}]');
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       await fs.writeFile(testFilePath, '[{"id": "test2"}]');
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       await fs.writeFile(testFilePath, '[{"id": "test3"}]');
 
-      // Wait for debounced callback
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Wait for debounced callback (debounce + buffer for OS variations)
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       // Should only be called once due to debouncing
       expect(callback).toHaveBeenCalledTimes(1);
