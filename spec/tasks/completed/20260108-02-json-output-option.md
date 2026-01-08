@@ -240,37 +240,37 @@ Location: `src/cli/index.ts`
 
 Location: `src/cli/json-output.e2e.test.ts` (NEW)
 
-- [ ] Write tests:
+- [x] Write tests:
   - `ref add <pmid> -o json` produces valid JSON
   - `ref add <doi> -o json --full` includes item data
   - Duplicate skip includes duplicateType
   - Failed import includes reason
   - Multiple inputs with mixed results
   - Exit code verification
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ### Step 6.2: remove command E2E tests
 
 Location: `src/cli/json-output.e2e.test.ts`
 
-- [ ] Write tests:
+- [x] Write tests:
   - `ref remove <id> -o json` produces valid JSON
   - `ref remove <id> -o json --full` includes removed item
   - Not found case
   - Exit code verification
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ### Step 6.3: update command E2E tests
 
 Location: `src/cli/json-output.e2e.test.ts`
 
-- [ ] Write tests:
+- [x] Write tests:
   - `ref update <id> --set "title=X" -o json` produces valid JSON
   - `ref update <id> --set "title=X" -o json --full` includes before/after
   - ID change case
   - Not found case
   - Exit code verification
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ---
 
@@ -278,29 +278,29 @@ Location: `src/cli/json-output.e2e.test.ts`
 
 ### Step 7.1: Update spec with implementation details
 
-- [ ] Update `spec/features/json-output.md` if naming changed (e.g., hyphen-case)
-- [ ] Verify spec matches implementation
+- [x] Update `spec/features/json-output.md` if naming changed (e.g., hyphen-case)
+- [x] Verify spec matches implementation
 
 ### Step 7.2: Export types from index
 
 Location: `src/features/operations/index.ts`
 
-- [ ] Export JSON output types and formatters
-- [ ] Verify: `npm run build`
+- [x] Export JSON output types and formatters
+- [x] Verify: `npm run build`
 
 ---
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] E2E tests pass (`npm run test:e2e`)
-- [ ] Manual verification:
-  - [ ] `ref add 12345678 -o json` works
-  - [ ] `ref add 12345678 -o json --full` works
-  - [ ] `ref remove <id> -o json` works
-  - [ ] `ref update <id> --set "title=X" -o json` works
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] E2E tests pass (`npm run test:e2e`)
+- [x] Manual verification:
+  - [x] `ref add 12345678 -o json` works
+  - [x] `ref add 12345678 -o json --full` works
+  - [x] `ref remove <id> -o json` works
+  - [x] `ref update <id> --set "title=X" -o json` works
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

@@ -363,7 +363,8 @@ export class Library implements ILibrary {
 
     const conflictingRef = this.idIndex.get(requestedId);
     if (!conflictingRef) {
-      return { newId: requestedId, idChanged: false, collision: false };
+      // ID changed without collision
+      return { newId: requestedId, idChanged: true, collision: false };
     }
 
     const onIdCollision = options.onIdCollision ?? "fail";

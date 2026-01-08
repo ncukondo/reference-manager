@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **JSON Output Option**: Machine-readable JSON output for add/remove/update commands
+  - New `--output json` (`-o json`) option for add, remove, update commands
+  - New `--full` option to include full CSL-JSON data in output
+  - Structured output with summary, added/skipped/failed items (add)
+  - Includes `duplicateType` for skipped duplicates (doi, pmid, isbn, isbn-title, title-author-year)
+  - Includes `reason` for failed imports (not_found, fetch_error, parse_error, validation_error, unknown)
+  - `idChanged` and `previousId` for ID changes (both collision resolution and explicit changes)
+  - JSON output to stdout, text output to stderr
+  - See `spec/features/json-output.md` for full specification
+
 - **Update Command --set Option (Phase 20)**: Inline field updates for the `update` command
   - New `--set <field=value>` option (repeatable)
   - String fields: `title`, `abstract`, `DOI`, `PMID`, `ISBN`, `URL`, etc.
