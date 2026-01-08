@@ -20,19 +20,19 @@ For each step:
 
 ## Steps
 
-### Step 1: SetOperation Interface and parseSetOption Function
+### Step 1: SetOperation Interface and parseSetOption Function ✅
 
-- [ ] Write test: `src/cli/commands/update.test.ts`
+- [x] Write test: `src/cli/commands/update.test.ts`
   - Test parsing `field=value` syntax
   - Test parsing `field+=value` (add to array)
   - Test parsing `field-=value` (remove from array)
   - Test parsing `field=` (clear field)
   - Test error cases (invalid syntax)
-- [ ] Implement: `src/cli/commands/update.ts`
+- [x] Implement: `src/cli/commands/update.ts`
   - Add `SetOperation` interface
   - Add `parseSetOption()` function
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: applySetOperations Function
 
