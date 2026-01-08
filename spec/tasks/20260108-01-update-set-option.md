@@ -61,17 +61,17 @@ For each step:
 - [x] Verify: `npm run test:unit`
 - [x] Lint/Type check: `npm run lint && npm run typecheck`
 
-### Step 4: E2E Tests
+### Step 4: E2E Tests ✅
 
-- [ ] Write test: `src/cli/update.e2e.test.ts` (or add to existing)
+- [x] Write test: `src/cli/update.e2e.test.ts` (or add to existing)
   - Test basic field update via --set
   - Test multiple --set options
-  - Test array operations
+  - Test array operations (+= and -=)
   - Test author setting
   - Test ID change
   - Test error: --set with file argument
-- [ ] Verify: `npm run test:e2e`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:e2e`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Completion Checklist
 

@@ -189,6 +189,100 @@ export function applySetOperations(operations: SetOperation[]): Record<string, u
 }
 
 /**
+ * Check if updates contain $add or $remove operations that need resolution.
+ */
+export function hasArrayOperations(updates: Record<string, unknown>): boolean {
+  for (const value of Object.values(updates)) {
+    if (typeof value !== "object" || value === null) continue;
+    const obj = value as Record<string, unknown>;
+    if ("$add" in obj || "$remove" in obj) return true;
+    if (hasArrayOperations(obj)) return true;
+  }
+  return false;
+}
+
+/**
+ * Resolve $add/$remove operations against existing item data.
+ *
+ * @param updates - Updates object potentially containing $add/$remove operations
+ * @param existingItem - The existing item to resolve against
+ * @returns Updates object with $add/$remove resolved to actual arrays
+ */
+export function resolveArrayOperations(
+  updates: Record<string, unknown>,
+  existingItem: CslItem
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (key === "custom" && typeof value === "object" && value !== null) {
+      result.custom = resolveCustomArrayOperations(
+        value as Record<string, unknown>,
+        existingItem.custom as Record<string, unknown> | undefined
+      );
+    } else if (isArrayOperation(value)) {
+      result[key] = resolveTopLevelArrayOperation(
+        value as { $add?: string; $remove?: string },
+        (existingItem as Record<string, unknown>)[key] as string[] | undefined
+      );
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+function isArrayOperation(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return "$add" in obj || "$remove" in obj;
+}
+
+function resolveCustomArrayOperations(
+  customUpdates: Record<string, unknown>,
+  existingCustom: Record<string, unknown> | undefined
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [customKey, customValue] of Object.entries(customUpdates)) {
+    if (isArrayOperation(customValue)) {
+      const op = customValue as { $add?: string; $remove?: string };
+      const existingArray = (existingCustom?.[customKey] as string[] | undefined) ?? [];
+      result[customKey] = applyArrayOperation(existingArray, op);
+    } else {
+      result[customKey] = customValue;
+    }
+  }
+
+  return result;
+}
+
+function resolveTopLevelArrayOperation(
+  op: { $add?: string; $remove?: string },
+  existingArray: string[] | undefined
+): string[] {
+  return applyArrayOperation(existingArray ?? [], op);
+}
+
+function applyArrayOperation(
+  existingArray: string[],
+  op: { $add?: string; $remove?: string }
+): string[] {
+  const newArray = [...existingArray];
+
+  if ("$add" in op && op.$add && !newArray.includes(op.$add)) {
+    newArray.push(op.$add);
+  }
+  if ("$remove" in op && op.$remove) {
+    const idx = newArray.indexOf(op.$remove);
+    if (idx >= 0) newArray.splice(idx, 1);
+  }
+
+  return newArray;
+}
+
+/**
  * Options for the update command.
  */
 export interface UpdateCommandOptions {
@@ -214,9 +308,29 @@ export async function executeUpdate(
   options: UpdateCommandOptions,
   context: ExecutionContext
 ): Promise<UpdateCommandResult> {
-  const { identifier, updates, idType = "id" } = options;
+  const { identifier, idType = "id" } = options;
+  let { updates } = options;
 
-  return context.library.update(identifier, updates, { idType });
+  // If updates contain $add/$remove operations, resolve them against existing item
+  if (hasArrayOperations(updates as Record<string, unknown>)) {
+    const existingItem = await context.library.find(identifier, { idType });
+    if (!existingItem) {
+      return { updated: false };
+    }
+    updates = resolveArrayOperations(
+      updates as Record<string, unknown>,
+      existingItem
+    ) as Partial<CslItem>;
+  }
+
+  const result = await context.library.update(identifier, updates, { idType });
+
+  // Save the library if update was successful
+  if (result.updated) {
+    await context.library.save();
+  }
+
+  return result;
 }
 
 /**

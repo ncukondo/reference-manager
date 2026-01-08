@@ -6,6 +6,7 @@ import {
   applySetOperations,
   formatUpdateOutput,
   parseSetOption,
+  resolveArrayOperations,
 } from "./update.js";
 
 describe("update command", () => {
@@ -344,6 +345,100 @@ describe("update command", () => {
       ];
 
       expect(() => applySetOperations(operations)).toThrow("Unsupported field");
+    });
+  });
+
+  describe("resolveArrayOperations", () => {
+    const createExistingItem = (): CslItem => ({
+      id: "test-id",
+      type: "article",
+      custom: {
+        uuid: "test-uuid",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        tags: ["existing1", "existing2"],
+      },
+      keyword: ["kw1", "kw2"],
+    });
+
+    it("should add to custom.tags array with $add", () => {
+      const updates = { custom: { tags: { $add: "new-tag" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing1", "existing2", "new-tag"] });
+    });
+
+    it("should not add duplicate to custom.tags array", () => {
+      const updates = { custom: { tags: { $add: "existing1" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing1", "existing2"] });
+    });
+
+    it("should remove from custom.tags array with $remove", () => {
+      const updates = { custom: { tags: { $remove: "existing1" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing2"] });
+    });
+
+    it("should handle $remove when item not in array", () => {
+      const updates = { custom: { tags: { $remove: "nonexistent" } } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["existing1", "existing2"] });
+    });
+
+    it("should add to top-level keyword array with $add", () => {
+      const updates = { keyword: { $add: "kw3" } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.keyword).toEqual(["kw1", "kw2", "kw3"]);
+    });
+
+    it("should remove from top-level keyword array with $remove", () => {
+      const updates = { keyword: { $remove: "kw1" } };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.keyword).toEqual(["kw2"]);
+    });
+
+    it("should pass through non-array operations unchanged", () => {
+      const updates = { title: "New Title", abstract: "New Abstract" };
+      const existing = createExistingItem();
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result).toEqual({ title: "New Title", abstract: "New Abstract" });
+    });
+
+    it("should handle empty existing array for $add", () => {
+      const updates = { custom: { tags: { $add: "first-tag" } } };
+      const existing: CslItem = {
+        id: "test",
+        type: "article",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = resolveArrayOperations(updates, existing);
+
+      expect(result.custom).toEqual({ tags: ["first-tag"] });
     });
   });
 });
