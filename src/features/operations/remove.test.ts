@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Library } from "../../core/library.js";
@@ -216,9 +217,10 @@ describe("removeReference", () => {
         removedItem: mockItemWithFulltext,
       });
 
+      const fulltextDir = path.join("/path", "to", "fulltext");
       const options: RemoveOperationOptions = {
         identifier: "smith-2023",
-        fulltextDirectory: "/path/to/fulltext",
+        fulltextDirectory: fulltextDir,
         deleteFulltext: true,
       };
       const result = await removeReference(mockLibrary, options);
@@ -226,8 +228,8 @@ describe("removeReference", () => {
       expect(result.removed).toBe(true);
       expect(result.deletedFulltextTypes).toEqual(["pdf", "markdown"]);
       expect(mockUnlink).toHaveBeenCalledTimes(2);
-      expect(mockUnlink).toHaveBeenCalledWith("/path/to/fulltext/uuid-1.pdf");
-      expect(mockUnlink).toHaveBeenCalledWith("/path/to/fulltext/uuid-1.md");
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1.pdf"));
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1.md"));
     });
 
     it("should return deletedFulltextTypes only when files exist", async () => {
@@ -245,9 +247,10 @@ describe("removeReference", () => {
         removedItem: mockItemWithPdfOnly,
       });
 
+      const fulltextDir = path.join("/path", "to", "fulltext");
       const options: RemoveOperationOptions = {
         identifier: "smith-2023",
-        fulltextDirectory: "/path/to/fulltext",
+        fulltextDirectory: fulltextDir,
         deleteFulltext: true,
       };
       const result = await removeReference(mockLibrary, options);
@@ -255,7 +258,7 @@ describe("removeReference", () => {
       expect(result.removed).toBe(true);
       expect(result.deletedFulltextTypes).toEqual(["pdf"]);
       expect(mockUnlink).toHaveBeenCalledTimes(1);
-      expect(mockUnlink).toHaveBeenCalledWith("/path/to/fulltext/uuid-1.pdf");
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1.pdf"));
     });
 
     it("should not include deletedFulltextTypes when item has no fulltext", async () => {
