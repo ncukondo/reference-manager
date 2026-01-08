@@ -24,8 +24,9 @@ Example: `20260106-01-citation-clipboard.md`
 
 1. Create task file from `_template.md`
 2. Place in `spec/tasks/` (active tasks)
-3. Follow TDD process for implementation
-4. On completion, move to `spec/tasks/completed/`
+3. Create git worktree for implementation (see `spec/meta/development-process.md`)
+4. Follow TDD process for implementation
+5. On completion, move to `spec/tasks/completed/`
 
 ### Directory Structure
 

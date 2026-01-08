@@ -59,6 +59,39 @@ After spec and technical decisions are clear:
   - Dependencies: What must be completed first
 ```
 
+## Git Worktree for Task Implementation
+
+When implementing tasks from `spec/tasks/`, use a dedicated git worktree to isolate work.
+
+### Why Use Worktree
+
+- Isolate task implementation from the main branch
+- Allow parallel work on multiple tasks
+- Keep main workspace clean for code review
+
+### Create Worktree
+
+```bash
+# Create worktree for a task (in /workspaces/ directory)
+git worktree add /workspaces/<task-name> -b <branch-name>
+
+# Example for task 20260108-01-new-feature.md
+git worktree add /workspaces/new-feature -b feature/new-feature
+```
+
+### Worktree Location
+
+- Place worktrees in `/workspaces/` (outside the main repository)
+- The devcontainer is configured to allow this (`postCreateCommand` sets ownership)
+- Use task name or feature name as directory name
+
+### After Completion
+
+```bash
+# After merging, remove worktree
+git worktree remove /workspaces/<task-name>
+```
+
 ## 4. TDD Implementation Phase
 
 **Must follow** `spec/guidelines/testing.md` strictly.

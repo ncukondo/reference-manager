@@ -15,5 +15,6 @@
       ]
     }
   },
+  "postCreateCommand": "sudo chown vscode:vscode /workspaces",
   "remoteUser": "vscode"
 }

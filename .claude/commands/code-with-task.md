@@ -1,1 +1,1 @@
-spec/_index.mdを起点として必要事項を確認後、spec/tasks/内のタスク $ARGUMENTSに取り組んで下さい。作業は $ARGUMENTS に結びつけられたブランチ内で行い、Todos一つが完了する毎にタスクファイルを更新し、commit。残りのcontextを確認し、次の作業の完了までにcompactが必要になってしまいそうならその時点で作業を中断して下さい
+spec/_index.mdを起点として必要事項を確認後、spec/tasks/内のタスク $ARGUMENTSに取り組んで下さい。作業は $ARGUMENTS に結びつけられたgit worktree内で行い、Todos一つが完了する毎にタスクファイルを更新し、commit。残りのcontextを確認し、次の作業の完了までにcompactが必要になってしまいそうならその時点で作業を中断して下さい

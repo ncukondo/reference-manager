@@ -57,7 +57,8 @@
       "WebFetch(domain:serptools.github.io)",
       "WebFetch(domain:www.nlm.nih.gov)",
       "Bash(node bin/reference-manager.js:*)",
-      "mcp__serena__replace_symbol_body"
+      "mcp__serena__replace_symbol_body",
+      "Bash(gh run list:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
