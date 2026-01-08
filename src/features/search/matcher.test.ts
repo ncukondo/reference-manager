@@ -132,6 +132,61 @@ describe("matchToken", () => {
       expect(matches[0].field).toBe("custom.additional_urls");
       expect(matches[0].strength).toBe("exact");
     });
+
+    it("should match exact ISBN", () => {
+      const refWithIsbn: CslItem = {
+        ...reference,
+        ISBN: "9784000000000",
+      };
+
+      const token: SearchToken = {
+        raw: "isbn:9784000000000",
+        value: "9784000000000",
+        field: "isbn",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithIsbn);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("ISBN");
+      expect(matches[0].strength).toBe("exact");
+    });
+
+    it("should not match partial ISBN", () => {
+      const refWithIsbn: CslItem = {
+        ...reference,
+        ISBN: "9784000000000",
+      };
+
+      const token: SearchToken = {
+        raw: "isbn:978400",
+        value: "978400",
+        field: "isbn",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithIsbn);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should match ISBN case-insensitively (for X check digit)", () => {
+      const refWithIsbn10: CslItem = {
+        ...reference,
+        ISBN: "400000000X",
+      };
+
+      const token: SearchToken = {
+        raw: "isbn:400000000x",
+        value: "400000000x",
+        field: "isbn",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithIsbn10);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("ISBN");
+      expect(matches[0].strength).toBe("exact");
+    });
   });
 
   describe("Content field matching (partial, case-insensitive)", () => {

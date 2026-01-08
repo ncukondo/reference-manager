@@ -145,6 +145,13 @@ describe("tokenizer", () => {
       expect(result.tokens[0].value).toBe("PMC1234567");
     });
 
+    it("should parse isbn field", () => {
+      const result = tokenize("isbn:978-4-00-000000-0");
+      expect(result.tokens).toHaveLength(1);
+      expect(result.tokens[0].field).toBe("isbn");
+      expect(result.tokens[0].value).toBe("978-4-00-000000-0");
+    });
+
     it("should parse url field", () => {
       const result = tokenize("url:https://example.com");
       expect(result.tokens).toHaveLength(1);

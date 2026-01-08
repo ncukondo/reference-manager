@@ -20,33 +20,35 @@ For each step:
 
 ### Step 1: Add `isbn` to FieldSpecifier type
 
-- [ ] Update type: `src/features/search/types.ts`
+- [x] Update type: `src/features/search/types.ts`
   - Add `"isbn"` to `FieldSpecifier` union type
-- [ ] Verify: `npm run typecheck`
+- [x] Verify: `npm run typecheck`
 
 ### Step 2: Add ISBN field matching logic
 
-- [ ] Write test: `src/features/search/matcher.test.ts`
+- [x] Write test: `src/features/search/matcher.test.ts`
   - Test `isbn:` prefix matches ISBN field exactly
-  - Test case-insensitive ISBN matching
-- [ ] Implement: `src/features/search/matcher.ts`
-  - Add ISBN to ID_FIELDS set (exact match, case-sensitive)
-  - Handle `isbn` field in `getFieldValue` function
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Test case-insensitive ISBN matching (for X check digit)
+- [x] Implement: `src/features/search/matcher.ts`
+  - Add ISBN to ID_FIELDS set
+  - Add isbn to FIELD_MAP
+  - ISBN matching is case-insensitive (for X check digit in ISBN-10)
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Add tokenizer test for isbn prefix
 
-- [ ] Write test: `src/features/search/tokenizer.test.ts`
+- [x] Write test: `src/features/search/tokenizer.test.ts`
   - Test `isbn:978-4-00-000000-0` tokenization
-- [ ] Verify: `npm run test:unit`
+- [x] Add isbn to VALID_FIELDS in tokenizer.ts
+- [x] Verify: `npm run test:unit`
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification: `ref search "isbn:978-..."` works
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification: `ref search "isbn:978-..."` works
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

@@ -14,6 +14,7 @@ export type FieldSpecifier =
   | "doi"
   | "pmid"
   | "pmcid"
+  | "isbn"
   | "url"
   | "keyword"
   | "tag";

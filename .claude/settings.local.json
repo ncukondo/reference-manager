@@ -56,7 +56,8 @@
       "Skill(code-with-roadmap)",
       "WebFetch(domain:serptools.github.io)",
       "WebFetch(domain:www.nlm.nih.gov)",
-      "Bash(node bin/reference-manager.js:*)"
+      "Bash(node bin/reference-manager.js:*)",
+      "mcp__serena__replace_symbol_body"
     ]
   },
   "enableAllProjectMcpServers": true,

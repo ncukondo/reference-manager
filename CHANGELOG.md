@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ISBN Search Field Prefix**: Search references by ISBN using `isbn:` prefix
+  - Example: `ref search "isbn:9784000000000"`
+  - Exact match (no partial matching)
+  - Case-insensitive for X check digit in ISBN-10 (e.g., `isbn:400000000x` matches `400000000X`)
+
 - **JSON Output Option**: Machine-readable JSON output for add/remove/update commands
   - New `--output json` (`-o json`) option for add, remove, update commands
   - New `--full` option to include full CSL-JSON data in output
