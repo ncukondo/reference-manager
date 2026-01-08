@@ -276,8 +276,29 @@ ref remove smith2024
 ref remove smith2024 --force          # Skip confirmation
 
 # Update a reference
-ref update smith2024 updates.json
-ref update smith2024 --set "title=New Title"
+ref update smith2024 updates.json              # From JSON file
+ref update smith2024 --set "title=New Title"   # Inline update
+
+# Update with --set option (repeatable)
+ref update smith2024 --set "title=New Title" --set "DOI=10.1234/example"
+
+# Array operations (tags, keywords)
+ref update smith2024 --set "custom.tags+=urgent"       # Add to array
+ref update smith2024 --set "custom.tags-=done"         # Remove from array
+ref update smith2024 --set "custom.tags=a,b,c"         # Replace array
+
+# Set authors
+ref update smith2024 --set "author=Smith, John"                    # Single author
+ref update smith2024 --set "author=Smith, John; Doe, Jane"         # Multiple authors
+
+# Set dates
+ref update smith2024 --set "issued.raw=2024-03-15"
+
+# Change citation key
+ref update smith2024 --set "id=smith2024-revised"
+
+# Clear a field
+ref update smith2024 --set "abstract="
 
 # Generate citations
 ref cite smith2024
