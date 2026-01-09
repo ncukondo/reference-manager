@@ -124,6 +124,59 @@ describe("export command", () => {
       expect(result.items).toEqual([mockItem]);
       expect(result.notFound).toEqual(["nonexistent"]);
     });
+
+    describe("--all option", () => {
+      const mockGetAll = vi.fn();
+
+      const createContextWithGetAll = (): ExecutionContext =>
+        ({
+          mode: "local",
+          library: {
+            find: mockFind,
+            getAll: mockGetAll,
+          },
+        }) as unknown as ExecutionContext;
+
+      beforeEach(() => {
+        mockGetAll.mockReset();
+      });
+
+      it("should export all references with --all", async () => {
+        const mockItem2: CslItem = {
+          id: "jones-2023",
+          type: "article-journal",
+          title: "Another Article",
+          custom: { uuid: "uuid-jones" },
+        };
+        mockGetAll.mockResolvedValue([mockItem, mockItem2]);
+
+        const options: ExportCommandOptions = {
+          all: true,
+        };
+        const context = createContextWithGetAll();
+
+        const result = await executeExport(options, context);
+
+        expect(mockGetAll).toHaveBeenCalled();
+        expect(mockFind).not.toHaveBeenCalled();
+        expect(result.items).toEqual([mockItem, mockItem2]);
+        expect(result.notFound).toEqual([]);
+      });
+
+      it("should return empty array for empty library with --all", async () => {
+        mockGetAll.mockResolvedValue([]);
+
+        const options: ExportCommandOptions = {
+          all: true,
+        };
+        const context = createContextWithGetAll();
+
+        const result = await executeExport(options, context);
+
+        expect(result.items).toEqual([]);
+        expect(result.notFound).toEqual([]);
+      });
+    });
   });
 
   describe("formatExportOutput", () => {
@@ -168,6 +221,23 @@ describe("export command", () => {
       expect(parsed).toHaveLength(2);
       expect(parsed[0].id).toBe("smith-2024");
       expect(parsed[1].id).toBe("jones-2023");
+    });
+
+    it("should always output as array for --all", () => {
+      const result: ExportCommandResult = {
+        items: [mockItem],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        all: true,
+        format: "json",
+      };
+
+      const output = formatExportOutput(result, options);
+      const parsed = JSON.parse(output);
+
+      // Even with single item, --all should output array
+      expect(Array.isArray(parsed)).toBe(true);
     });
   });
 

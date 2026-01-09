@@ -15,6 +15,8 @@ export interface ExportCommandOptions {
   ids?: string[];
   /** Interpret identifiers as UUIDs */
   uuid?: boolean;
+  /** Export all references */
+  all?: boolean;
   /** Output format */
   format?: "json" | "yaml" | "bibtex";
 }
@@ -36,6 +38,13 @@ export async function executeExport(
   options: ExportCommandOptions,
   context: ExecutionContext
 ): Promise<ExportCommandResult> {
+  // --all mode: export all references
+  if (options.all) {
+    const items = await context.library.getAll();
+    return { items, notFound: [] };
+  }
+
+  // ID mode: export specific references
   const items: CslItem[] = [];
   const notFound: string[] = [];
 
@@ -64,8 +73,10 @@ export function formatExportOutput(
   const format = options.format ?? "json";
 
   if (format === "json") {
-    // Single item: output as object, not array
-    if (result.items.length === 1 && (options.ids?.length ?? 0) === 1) {
+    // Single item with single ID request: output as object, not array
+    // --all and --search always output as array
+    const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all;
+    if (result.items.length === 1 && singleIdRequest) {
       return JSON.stringify(result.items[0], null, 2);
     }
     // Multiple items or --all/--search: output as array

@@ -115,11 +115,11 @@ For each step:
 
 ### Step 3: Add --all option
 
-- [ ] Write test for `--all` option
+- [x] Write test for `--all` option
   - Returns all references as array
   - Empty library returns `[]`
-- [ ] Implement `--all` option
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Implement `--all` option
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 4: Add --search option
 
