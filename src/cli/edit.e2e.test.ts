@@ -6,6 +6,8 @@
  * 2. Command option parsing
  * 3. Reference not found errors
  * 4. Basic edit flow with mock editor
+ *
+ * Note: Uses Node.js scripts as mock editors for cross-platform compatibility
  */
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
@@ -16,21 +18,39 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 const CLI_PATH = path.resolve("bin/reference-manager.js");
 
 /**
- * Create a mock editor script that replaces text using sed
+ * Create a cross-platform mock editor script using Node.js
+ * The script replaces text in the file passed as argument
  */
-async function createSedEditor(
+async function createMockEditor(
   testDir: string,
-  pattern: string,
-  replacement: string
+  replacements: Array<{ pattern: string; replacement: string }>
 ): Promise<string> {
-  const scriptPath = path.join(testDir, `mock-editor-${Date.now()}.sh`);
-  // Use sed to do simple text replacement
-  const script = `#!/bin/bash
-FILE="$1"
-sed -i 's/${pattern}/${replacement}/g' "$FILE"
+  const scriptPath = path.join(testDir, `mock-editor-${Date.now()}.js`);
+
+  // Create a Node.js script that performs text replacements
+  const script = `
+const fs = require('fs');
+const filePath = process.argv[2];
+let content = fs.readFileSync(filePath, 'utf8');
+const replacements = ${JSON.stringify(replacements)};
+for (const { pattern, replacement } of replacements) {
+  content = content.split(pattern).join(replacement);
+}
+fs.writeFileSync(filePath, content, 'utf8');
 `;
-  await fs.writeFile(scriptPath, script, { mode: 0o755 });
-  return scriptPath;
+  await fs.writeFile(scriptPath, script, "utf-8");
+  // Return command to run: "node /path/to/script.js"
+  return `node "${scriptPath}"`;
+}
+
+/**
+ * Create a mock editor that exits with a specific code
+ */
+async function createFailingEditor(testDir: string, exitCode: number): Promise<string> {
+  const scriptPath = path.join(testDir, `fail-editor-${Date.now()}.js`);
+  const script = `process.exit(${exitCode});`;
+  await fs.writeFile(scriptPath, script, "utf-8");
+  return `node "${scriptPath}"`;
 }
 
 describe("edit command E2E", () => {
@@ -124,8 +144,10 @@ describe("edit command E2E", () => {
 
   describe("basic edit flow with mock editor", () => {
     it("should edit reference and update library", async () => {
-      // Create mock editor that changes the title using sed
-      const mockEditor = await createSedEditor(testDir, "Test Article by Smith", "Updated Title");
+      // Create mock editor that changes the title
+      const mockEditor = await createMockEditor(testDir, [
+        { pattern: "Test Article by Smith", replacement: "Updated Title" },
+      ]);
 
       const result = await runCli(["edit", "smith-2024", "--editor", mockEditor], {
         REF_SKIP_TTY_CHECK: "1",
@@ -142,7 +164,9 @@ describe("edit command E2E", () => {
 
     it("should preserve protected fields after edit", async () => {
       // Create mock editor that modifies content
-      const mockEditor = await createSedEditor(testDir, "Test Article by Smith", "New Title");
+      const mockEditor = await createMockEditor(testDir, [
+        { pattern: "Test Article by Smith", replacement: "New Title" },
+      ]);
 
       const result = await runCli(["edit", "smith-2024", "--editor", mockEditor], {
         REF_SKIP_TTY_CHECK: "1",
@@ -158,12 +182,10 @@ describe("edit command E2E", () => {
     });
 
     it("should support JSON format with --format json", async () => {
-      // Create mock editor that modifies JSON content using sed
-      const mockEditor = await createSedEditor(
-        testDir,
-        "Test Article by Smith",
-        "JSON Edited Title"
-      );
+      // Create mock editor that modifies JSON content
+      const mockEditor = await createMockEditor(testDir, [
+        { pattern: "Test Article by Smith", replacement: "JSON Edited Title" },
+      ]);
 
       const result = await runCli(
         ["edit", "smith-2024", "--format", "json", "--editor", mockEditor],
@@ -183,7 +205,9 @@ describe("edit command E2E", () => {
 
     it("should edit by UUID with --uuid flag", async () => {
       // Create mock editor that changes title
-      const mockEditor = await createSedEditor(testDir, "Test Article by Smith", "UUID Edit");
+      const mockEditor = await createMockEditor(testDir, [
+        { pattern: "Test Article by Smith", replacement: "UUID Edit" },
+      ]);
 
       const result = await runCli(["edit", "--uuid", TEST_UUID, "--editor", mockEditor], {
         REF_SKIP_TTY_CHECK: "1",
@@ -202,10 +226,9 @@ describe("edit command E2E", () => {
   describe("editor exit code handling", () => {
     it("should fail if editor exits with non-zero code", async () => {
       // Create mock editor that exits with error
-      const scriptPath = path.join(testDir, "fail-editor.sh");
-      await fs.writeFile(scriptPath, "#!/bin/bash\nexit 1", { mode: 0o755 });
+      const mockEditor = await createFailingEditor(testDir, 1);
 
-      const result = await runCli(["edit", "smith-2024", "--editor", scriptPath], {
+      const result = await runCli(["edit", "smith-2024", "--editor", mockEditor], {
         REF_SKIP_TTY_CHECK: "1",
       });
 
@@ -235,16 +258,13 @@ describe("edit command E2E", () => {
     });
 
     it("should edit multiple references at once", async () => {
-      // Create mock editor that modifies both titles using a two-step sed
-      const scriptPath = path.join(testDir, `multi-editor-${Date.now()}.sh`);
-      const script = `#!/bin/bash
-FILE="$1"
-sed -i 's/Test Article by Smith/Smith Updated/g' "$FILE"
-sed -i 's/Another Article/Jones Updated/g' "$FILE"
-`;
-      await fs.writeFile(scriptPath, script, { mode: 0o755 });
+      // Create mock editor that modifies both titles
+      const mockEditor = await createMockEditor(testDir, [
+        { pattern: "Test Article by Smith", replacement: "Smith Updated" },
+        { pattern: "Another Article", replacement: "Jones Updated" },
+      ]);
 
-      const result = await runCli(["edit", "smith-2024", "jones-2023", "--editor", scriptPath], {
+      const result = await runCli(["edit", "smith-2024", "jones-2023", "--editor", mockEditor], {
         REF_SKIP_TTY_CHECK: "1",
       });
 
