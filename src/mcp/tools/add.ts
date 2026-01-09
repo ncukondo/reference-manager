@@ -60,11 +60,11 @@ export function registerAddTool(
     "add",
     {
       description:
-        "Add references to the library. Accepts PMID (e.g., 'PMID:12345678'), DOI (e.g., '10.1234/example'), BibTeX, RIS, or CSL-JSON format.",
+        "Add references to the library. Accepts PMID (e.g., 'PMID:12345678'), DOI (e.g., '10.1234/example'), ISBN (e.g., '978-0-123-45678-9'), BibTeX, RIS, or CSL-JSON format.",
       inputSchema: {
         input: z
           .union([z.string(), z.array(z.string())])
-          .describe("Input string or array of strings (PMID, DOI, BibTeX, RIS, or CSL-JSON)"),
+          .describe("Input string or array of strings (PMID, DOI, ISBN, BibTeX, RIS, or CSL-JSON)"),
       },
     },
     async (args: AddToolParams) => {

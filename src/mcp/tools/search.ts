@@ -34,7 +34,7 @@ export function registerSearchTool(
     "search",
     {
       description:
-        "Search references in the library. Supports query syntax: author:name, year:YYYY, title:text, type:article-journal, tag:name, or free text for full-text search. Supports sorting and pagination.",
+        "Search references in the library. Supports query syntax: author:name, year:YYYY, title:text, type:article-journal, tag:name, id:citation-key, doi:10.xxx, pmid:12345, pmcid:PMC123, isbn:978-xxx, url:https://..., keyword:term, or free text for full-text search. Supports sorting and pagination.",
       inputSchema: {
         query: z.string().describe("Search query string"),
         sort: searchSortFieldSchema
