@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING: Default Paths**: Default paths now follow platform conventions using XDG Base Directory Specification on Linux, standard paths on macOS/Windows
+  - **Linux**: Config in `~/.config/reference-manager/`, data in `~/.local/share/reference-manager/`, cache in `~/.cache/reference-manager/`
+  - **macOS**: Config in `~/Library/Preferences/reference-manager/`, data in `~/Library/Application Support/reference-manager/`, cache in `~/Library/Caches/reference-manager/`
+  - **Windows**: Config in `%APPDATA%\reference-manager\Config\`, data in `%LOCALAPPDATA%\reference-manager\Data\`, cache in `%LOCALAPPDATA%\reference-manager\Cache\`
+  - Library file renamed from `csl.library.json` to `library.json`
+  - Backups now stored in cache directory instead of system temp
+  - **Migration**: Move existing data from `~/.reference-manager/` to new locations or use config to specify custom paths
+
 - **MCP Tools**: `search` and `list` tools now always return raw `CslItem[]` data
   - Removed `format` parameter from MCP list tool
   - LLMs can process structured data directly and format if needed

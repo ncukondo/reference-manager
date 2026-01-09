@@ -122,9 +122,9 @@ Update path references in affected spec files:
 
 ### Step 5: Update documentation
 
-- [ ] Update `README.md` with new default paths
-- [ ] Update `README_ja.md` with new default paths
-- [ ] Add breaking change note to `CHANGELOG.md`
+- [x] Update `README.md` with new default paths
+- [x] Update `README_ja.md` with new default paths
+- [x] Add breaking change note to `CHANGELOG.md`
 
 ## Completion Checklist
 

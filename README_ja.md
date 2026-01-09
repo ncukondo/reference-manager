@@ -147,13 +147,9 @@ claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-m
 1. リリースページから`reference-manager.mcpb`をダウンロード
 2. Claude Desktopを開き、**設定** → **拡張機能**に移動
 3. **ファイルからインストール**をクリックして、ダウンロードした`.mcpb`ファイルを選択
-4. プロンプトが表示されたら**Config File Path**を設定（例: `~/.reference-manager/config.toml`）
+4. プロンプトが表示されたら**Config File Path**を設定
 
-設定ファイルには最低限以下を含めてください：
-
-```toml
-library = "~/.reference-manager/csl.library.json"
-```
+設定ファイルはプラットフォーム固有の設定ディレクトリに配置されます（例：Linuxでは`~/.config/reference-manager/config.toml`）。
 
 #### オプション2: 手動設定
 
@@ -449,10 +445,26 @@ ref list -n 20 --offset 40             # 41-60件目を表示
 
 ## 設定
 
-設定ファイル: `~/.reference-manager.config.toml`
+設定ファイルはプラットフォーム固有のディレクトリに配置されます：
+
+| プラットフォーム | 場所 |
+|------------------|------|
+| Linux | `~/.config/reference-manager/config.toml` |
+| macOS | `~/Library/Preferences/reference-manager/config.toml` |
+| Windows | `%APPDATA%\reference-manager\Config\config.toml` |
+
+データ（ライブラリ、フルテキスト、CSLスタイル）のデフォルトパス：
+
+| プラットフォーム | 場所 |
+|------------------|------|
+| Linux | `~/.local/share/reference-manager/` |
+| macOS | `~/Library/Application Support/reference-manager/` |
+| Windows | `%LOCALAPPDATA%\reference-manager\Data\` |
+
+任意のディレクトリに`.reference-manager.config.toml`を作成することで、プロジェクトローカルの設定も使用できます。
 
 ```toml
-# ライブラリファイルのパス
+# ライブラリパスを上書き（デフォルトは{data}/library.json）
 library = "~/references.json"
 
 # ログレベル: silent, info, debug
@@ -463,6 +475,7 @@ max_generations = 50
 max_age_days = 365
 
 [fulltext]
+# フルテキストディレクトリを上書き（デフォルトは{data}/fulltext）
 directory = "~/references/fulltext"
 
 [server]
