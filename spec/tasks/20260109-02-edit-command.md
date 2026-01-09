@@ -20,8 +20,8 @@ For each step:
 
 ### Step 1: Add js-yaml dependency
 
-- [ ] Install: `npm install js-yaml && npm install -D @types/js-yaml`
-- [ ] Verify types are available
+- [x] Install: `npm install js-yaml && npm install -D @types/js-yaml`
+- [x] Verify types are available
 
 ### Step 2: Editor resolution utility
 
