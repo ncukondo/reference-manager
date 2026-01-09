@@ -164,8 +164,8 @@ describe("MCP Server E2E", () => {
       const response = JSON.parse((result.content[0] as { text: string }).text);
       expect(response.total).toBe(1);
       expect(response.items).toHaveLength(1);
-      expect(response.items[0]).toContain("smith2024");
-      expect(response.items[0]).toContain("Machine Learning Applications");
+      expect(response.items[0].id).toBe("smith2024");
+      expect(response.items[0].title).toBe("Machine Learning Applications");
     });
 
     it("should list all references", async () => {
@@ -181,9 +181,9 @@ describe("MCP Server E2E", () => {
       const response = JSON.parse((result.content[0] as { text: string }).text);
       expect(response.total).toBe(3);
       expect(response.items).toHaveLength(3);
-      expect(response.items.some((t: string) => t.includes("smith2024"))).toBe(true);
-      expect(response.items.some((t: string) => t.includes("jones2023"))).toBe(true);
-      expect(response.items.some((t: string) => t.includes("brown2022"))).toBe(true);
+      expect(response.items.some((t: { id: string }) => t.id === "smith2024")).toBe(true);
+      expect(response.items.some((t: { id: string }) => t.id === "jones2023")).toBe(true);
+      expect(response.items.some((t: { id: string }) => t.id === "brown2022")).toBe(true);
     });
 
     it("should cite references", async () => {
@@ -419,9 +419,9 @@ describe("MCP Server E2E", () => {
       const response = JSON.parse((result.content[0] as { text: string }).text);
       expect(response.items).toHaveLength(3);
       // Brown, Jones, Smith alphabetically
-      expect(response.items[0]).toContain("Brown");
-      expect(response.items[1]).toContain("Jones");
-      expect(response.items[2]).toContain("Smith");
+      expect(response.items[0].author[0].family).toBe("Brown");
+      expect(response.items[1].author[0].family).toBe("Jones");
+      expect(response.items[2].author[0].family).toBe("Smith");
     });
 
     it("should list with sorting by published date descending", async () => {
@@ -436,9 +436,9 @@ describe("MCP Server E2E", () => {
       const response = JSON.parse((result.content[0] as { text: string }).text);
       expect(response.items).toHaveLength(3);
       // 2024, 2023, 2022 - Smith, Jones, Brown
-      expect(response.items[0]).toContain("Smith");
-      expect(response.items[1]).toContain("Jones");
-      expect(response.items[2]).toContain("Brown");
+      expect(response.items[0].author[0].family).toBe("Smith");
+      expect(response.items[1].author[0].family).toBe("Jones");
+      expect(response.items[2].author[0].family).toBe("Brown");
     });
 
     it("should search with limit", async () => {

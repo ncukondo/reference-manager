@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **MCP Tools**: `search` and `list` tools now always return raw `CslItem[]` data
+  - Removed `format` parameter from MCP list tool
+  - LLMs can process structured data directly and format if needed
+  - Simpler, more consistent API
+
+- **Architecture**: Separated data retrieval from formatting
+  - Operations layer (`searchReferences`, `listReferences`) now always return `CslItem[]`
+  - Formatting moved to CLI layer only (using `formatItems()`)
+  - Improved type safety with consistent return types
+
 ### Fixed
 
 - **Search/List JSON Output**: Fixed double-escaped JSON in `--json` output for `search` and `list` commands

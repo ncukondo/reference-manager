@@ -138,23 +138,23 @@ For each step:
 
 ### Step 8: E2E verification
 
-- [ ] Run full E2E tests: `npm run test:e2e`
-- [ ] Manual verification:
-  - [ ] `ref search --json "query"` outputs proper JSON (CslItem[])
-  - [ ] `ref search --format bibtex "query"` outputs bibtex
-  - [ ] `ref search --format pretty "query"` outputs pretty format
-  - [ ] `ref list --json` outputs proper JSON (CslItem[])
-  - [ ] `ref list --format pretty` outputs pretty format
-  - [ ] MCP search tool returns CslItem[] in JSON
-  - [ ] MCP list tool returns CslItem[] in JSON (no format param)
+- [x] Run full E2E tests: `npm run test:e2e`
+- [x] Manual verification:
+  - [x] `ref search --json "query"` outputs proper JSON (CslItem[])
+  - [x] `ref search --bibtex "query"` outputs bibtex
+  - [x] `ref search "query"` outputs pretty format (default)
+  - [x] `ref list --json` outputs proper JSON (CslItem[])
+  - [x] `ref list` outputs pretty format (default)
+  - [x] MCP search tool returns CslItem[] in JSON
+  - [x] MCP list tool returns CslItem[] in JSON (no format param)
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] E2E tests pass (`npm run test:e2e`)
-- [ ] Manual verification completed
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] E2E tests pass (`npm run test:e2e`)
+- [x] Manual verification completed
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
