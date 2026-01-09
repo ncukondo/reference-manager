@@ -151,8 +151,9 @@ For each step:
 
 ### Step 8: Update documentation
 
-- [ ] Update `spec/architecture/cli.md` with export command
-- [ ] Update `spec/features/json-output.md` if needed
+- [x] Update `spec/architecture/cli.md` with export command
+- [x] Update `README.md` with export command examples
+- [x] Update `README_ja.md` with export command examples
 
 ## Completion Checklist
 

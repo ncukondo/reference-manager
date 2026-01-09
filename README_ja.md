@@ -262,6 +262,14 @@ ref search "title:\"deep learning\""
 ref search -i                         # インタラクティブモード開始
 ref search -i "machine learning"      # クエリをプリフィル
 
+# 生のCSL-JSONをエクスポート（pandoc、jq等向け）
+ref export smith2024                          # 単一文献（オブジェクトとして）
+ref export smith2024 jones2023                # 複数文献（配列として）
+ref export --all                              # 全文献
+ref export --search "author:smith"            # 検索結果
+ref export smith2024 --format yaml            # YAML形式
+ref export --all --format bibtex              # BibTeX形式
+
 # 文献を追加
 ref add paper.json                    # CSL-JSONファイルから
 ref add references.bib                # BibTeXから
