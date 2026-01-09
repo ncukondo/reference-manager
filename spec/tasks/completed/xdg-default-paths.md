@@ -128,13 +128,13 @@ Update path references in affected spec files:
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification on current platform
-- [ ] Specs updated with new paths
-- [ ] README.md updated
-- [ ] README_ja.md updated
-- [ ] CHANGELOG.md updated with breaking change
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification on current platform
+- [x] Specs updated with new paths
+- [x] README.md updated
+- [x] README_ja.md updated
+- [x] CHANGELOG.md updated with breaking change
+- [x] Move this file to `spec/tasks/completed/`
