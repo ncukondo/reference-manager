@@ -123,11 +123,11 @@ For each step:
 
 ### Step 4: Add --search option
 
-- [ ] Write test for `--search` option
+- [x] Write test for `--search` option
   - Returns matching references
   - No matches returns `[]`
-- [ ] Implement `--search` option
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Implement `--search` option
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 5: Add YAML output format
 

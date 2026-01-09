@@ -17,6 +17,8 @@ export interface ExportCommandOptions {
   uuid?: boolean;
   /** Export all references */
   all?: boolean;
+  /** Export references matching search query */
+  search?: string;
   /** Output format */
   format?: "json" | "yaml" | "bibtex";
 }
@@ -42,6 +44,12 @@ export async function executeExport(
   if (options.all) {
     const items = await context.library.getAll();
     return { items, notFound: [] };
+  }
+
+  // --search mode: export matching references
+  if (options.search) {
+    const result = await context.library.search({ query: options.search, limit: 0 });
+    return { items: result.items, notFound: [] };
   }
 
   // ID mode: export specific references
@@ -75,7 +83,7 @@ export function formatExportOutput(
   if (format === "json") {
     // Single item with single ID request: output as object, not array
     // --all and --search always output as array
-    const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all;
+    const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all && !options.search;
     if (result.items.length === 1 && singleIdRequest) {
       return JSON.stringify(result.items[0], null, 2);
     }

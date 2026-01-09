@@ -177,6 +177,71 @@ describe("export command", () => {
         expect(result.notFound).toEqual([]);
       });
     });
+
+    describe("--search option", () => {
+      const mockSearch = vi.fn();
+
+      const createContextWithSearch = (): ExecutionContext =>
+        ({
+          mode: "local",
+          library: {
+            find: mockFind,
+            search: mockSearch,
+          },
+        }) as unknown as ExecutionContext;
+
+      beforeEach(() => {
+        mockSearch.mockReset();
+      });
+
+      it("should export references matching search query", async () => {
+        const mockItem2: CslItem = {
+          id: "smith-2023",
+          type: "article-journal",
+          title: "Smith's Article",
+          custom: { uuid: "uuid-smith2" },
+        };
+        mockSearch.mockResolvedValue({
+          items: [mockItem, mockItem2],
+          total: 2,
+          limit: 0,
+          offset: 0,
+          nextOffset: null,
+        });
+
+        const options: ExportCommandOptions = {
+          search: "author:smith",
+        };
+        const context = createContextWithSearch();
+
+        const result = await executeExport(options, context);
+
+        expect(mockSearch).toHaveBeenCalledWith({ query: "author:smith", limit: 0 });
+        expect(mockFind).not.toHaveBeenCalled();
+        expect(result.items).toEqual([mockItem, mockItem2]);
+        expect(result.notFound).toEqual([]);
+      });
+
+      it("should return empty array when no matches found", async () => {
+        mockSearch.mockResolvedValue({
+          items: [],
+          total: 0,
+          limit: 0,
+          offset: 0,
+          nextOffset: null,
+        });
+
+        const options: ExportCommandOptions = {
+          search: "nonexistent:query",
+        };
+        const context = createContextWithSearch();
+
+        const result = await executeExport(options, context);
+
+        expect(result.items).toEqual([]);
+        expect(result.notFound).toEqual([]);
+      });
+    });
   });
 
   describe("formatExportOutput", () => {
@@ -237,6 +302,23 @@ describe("export command", () => {
       const parsed = JSON.parse(output);
 
       // Even with single item, --all should output array
+      expect(Array.isArray(parsed)).toBe(true);
+    });
+
+    it("should always output as array for --search", () => {
+      const result: ExportCommandResult = {
+        items: [mockItem],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        search: "author:smith",
+        format: "json",
+      };
+
+      const output = formatExportOutput(result, options);
+      const parsed = JSON.parse(output);
+
+      // Even with single item, --search should output array
       expect(Array.isArray(parsed)).toBe(true);
     });
   });
