@@ -18,6 +18,7 @@
 | `list` | List all references |
 | `search <query>` | Search references |
 | `search -i [query]` | Interactive search mode |
+| `export [ids...]` | Export raw CSL-JSON for external tools |
 | `remove <id>` | Remove a reference |
 | `update <id>` | Update a reference |
 | `cite <id>...` | Generate formatted citations |
@@ -47,6 +48,35 @@
 | `--full` | Include full CSL-JSON data (with `--output json`) |
 
 See `spec/features/json-output.md` for JSON output schema.
+
+### export Command
+
+`ref export [ids...] [options]`
+
+Export raw CSL-JSON for external tool integration (pandoc, jq, etc.).
+
+**Selection Modes** (mutually exclusive):
+
+| Mode | Description |
+|------|-------------|
+| `[ids...]` | Export specific references by citation key |
+| `--all` | Export all references |
+| `--search <query>` | Export references matching search query |
+
+**Options:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--uuid` | | Interpret identifiers as UUIDs |
+| `--all` | | Export all references |
+| `--search <query>` | | Export matching references |
+| `--format <fmt>` | `-f` | Output format: `json` (default), `yaml`, `bibtex` |
+
+**Output Behavior:**
+- Single ID request: Output as object (not array)
+- Multiple items / `--all` / `--search`: Output as array
+- Empty results: `[]` with exit code 0
+- Not found (by ID): Error with exit code 1
 
 ## Pagination and Sorting
 

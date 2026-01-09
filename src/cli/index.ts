@@ -24,6 +24,12 @@ import {
   getCiteExitCode,
 } from "./commands/cite.js";
 import {
+  type ExportCommandOptions,
+  executeExport,
+  formatExportOutput,
+  getExportExitCode,
+} from "./commands/export.js";
+import {
   type FulltextAttachOptions,
   type FulltextDetachOptions,
   type FulltextGetOptions,
@@ -98,6 +104,7 @@ export function createProgram(): Command {
   // Register commands
   registerListCommand(program);
   registerSearchCommand(program);
+  registerExportCommand(program);
   registerAddCommand(program);
   registerRemoveCommand(program);
   registerUpdateCommand(program);
@@ -150,6 +157,56 @@ function registerListCommand(program: Command): void {
     .option("--offset <n>", "Number of results to skip", Number.parseInt)
     .action(async (options) => {
       await handleListAction(options, program);
+    });
+}
+
+/**
+ * Handle 'export' command action
+ */
+async function handleExportAction(
+  ids: string[],
+  options: Omit<ExportCommandOptions, "ids">,
+  program: Command
+): Promise<void> {
+  try {
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const context = await createExecutionContext(config, Library.load);
+    const result = await executeExport({ ...options, ids }, context);
+    const output = formatExportOutput(result, { ...options, ids });
+
+    if (output) {
+      process.stdout.write(`${output}\n`);
+    }
+
+    // Print not found errors to stderr
+    if (result.notFound.length > 0) {
+      for (const id of result.notFound) {
+        process.stderr.write(`Error: Reference not found: ${id}\n`);
+      }
+    }
+
+    process.exit(getExportExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
+ * Register 'export' command
+ */
+function registerExportCommand(program: Command): void {
+  program
+    .command("export [ids...]")
+    .description("Export raw CSL-JSON for external tool integration")
+    .option("--uuid", "Interpret identifiers as UUIDs")
+    .option("--all", "Export all references")
+    .option("--search <query>", "Export references matching search query")
+    .option("-f, --format <fmt>", "Output format: json (default), yaml, bibtex")
+    .action(async (ids, options) => {
+      await handleExportAction(ids, options, program);
     });
 }
 

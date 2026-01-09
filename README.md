@@ -262,6 +262,14 @@ ref search "title:\"deep learning\""
 ref search -i                         # Start interactive mode
 ref search -i "machine learning"      # Pre-fill query
 
+# Export raw CSL-JSON (for pandoc, jq, etc.)
+ref export smith2024                          # Single reference (as object)
+ref export smith2024 jones2023                # Multiple references (as array)
+ref export --all                              # All references
+ref export --search "author:smith"            # Search results
+ref export smith2024 --format yaml            # YAML format
+ref export --all --format bibtex              # BibTeX format
+
 # Add references
 ref add paper.json                    # From CSL-JSON file
 ref add references.bib                # From BibTeX

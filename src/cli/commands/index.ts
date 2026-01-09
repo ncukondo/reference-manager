@@ -46,3 +46,6 @@ export type {
   FulltextDetachOptions,
   FulltextDetachResult,
 } from "./fulltext.js";
+
+export { executeExport, formatExportOutput, getExportExitCode } from "./export.js";
+export type { ExportCommandOptions, ExportCommandResult } from "./export.js";

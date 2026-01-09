@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Export Command**: New `export` command for raw CSL-JSON output
+  - Export specific references: `ref export smith2024 jones2023`
+  - Export all: `ref export --all`
+  - Export search results: `ref export --search "author:smith"`
+  - Output formats: JSON (default), YAML, BibTeX (`--format yaml|bibtex`)
+  - Single ID outputs as object; multiple items output as array
+  - Lookup by UUID: `ref export --uuid <uuid>`
+  - Designed for external tools like pandoc, jq
+
 - **Citation Key Search (`id:` prefix)**: Search references by citation key using `id:` prefix
   - Example: `ref search "id:smith2023"`
   - Exact match only (no partial matching)

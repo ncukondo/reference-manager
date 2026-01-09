@@ -95,81 +95,82 @@ For each step:
 
 ### Step 1: Create export command with single ID support
 
-- [ ] Write test: `src/cli/commands/export.test.ts`
+- [x] Write test: `src/cli/commands/export.test.ts`
   - Test export by citation key (single ID)
   - Test export by UUID with `--uuid` flag
   - Test not found error
-- [ ] Implement: `src/cli/commands/export.ts`
+- [x] Implement: `src/cli/commands/export.ts`
   - Basic implementation with JSON output
-- [ ] Register in `src/cli/commands/index.ts`
-- [ ] Verify: `npm run test:unit -- export`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Register in `src/cli/commands/index.ts`
+- [x] Verify: `npm run test:unit -- export`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Add multiple ID support
 
-- [ ] Write test for multiple IDs
+- [x] Write test for multiple IDs
   - `ref export id1 id2 id3` returns array
   - Partial failures (some IDs not found)
-- [ ] Implement multiple ID handling
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Implement multiple ID handling
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 3: Add --all option
 
-- [ ] Write test for `--all` option
+- [x] Write test for `--all` option
   - Returns all references as array
   - Empty library returns `[]`
-- [ ] Implement `--all` option
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Implement `--all` option
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 4: Add --search option
 
-- [ ] Write test for `--search` option
+- [x] Write test for `--search` option
   - Returns matching references
   - No matches returns `[]`
-- [ ] Implement `--search` option
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Implement `--search` option
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 5: Add YAML output format
 
-- [ ] Write test for `--format yaml`
-- [ ] Implement YAML serialization
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Write test for `--format yaml`
+- [x] Implement YAML serialization
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 6: Add BibTeX output format
 
-- [ ] Write test for `--format bibtex`
-- [ ] Implement using existing BibTeX conversion
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Write test for `--format bibtex`
+- [x] Implement using existing BibTeX conversion
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 7: E2E tests
 
-- [ ] Write E2E tests: `src/cli/export.e2e.test.ts`
+- [x] Write E2E tests: `src/cli/export.e2e.test.ts`
   - Test all selection modes
   - Test all output formats
   - Test error cases
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ### Step 8: Update documentation
 
-- [ ] Update `spec/architecture/cli.md` with export command
-- [ ] Update `spec/features/json-output.md` if needed
+- [x] Update `spec/architecture/cli.md` with export command
+- [x] Update `README.md` with export command examples
+- [x] Update `README_ja.md` with export command examples
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification:
-  - [ ] `ref export <id>`
-  - [ ] `ref export <id1> <id2>`
-  - [ ] `ref export --all`
-  - [ ] `ref export --search "query"`
-  - [ ] `ref export --format yaml <id>`
-  - [ ] `ref export --format bibtex <id>`
-  - [ ] `ref export --uuid <uuid>`
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification:
+  - [x] `ref export <id>`
+  - [x] `ref export <id1> <id2>`
+  - [x] `ref export --all`
+  - [x] `ref export --search "query"`
+  - [x] `ref export --format yaml <id>`
+  - [x] `ref export --format bibtex <id>`
+  - [x] `ref export --uuid <uuid>`
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`
 
 ## Design Notes
 
