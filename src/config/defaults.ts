@@ -97,6 +97,9 @@ export const defaultConfig: Config = {
       limit: 20,
       debounceMs: 200,
     },
+    edit: {
+      defaultFormat: "yaml",
+    },
   },
   mcp: {
     defaultLimit: 20,

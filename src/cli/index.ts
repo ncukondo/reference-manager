@@ -704,10 +704,13 @@ async function handleEditAction(
 
     const context = await createExecutionContext(config, Library.load);
 
+    // Use config default format if not specified via CLI option
+    const format = options.format ?? config.cli.edit.defaultFormat;
+
     const result = await executeEditCommand(
       {
         identifiers,
-        format: options.format ?? "yaml",
+        format,
         ...(options.uuid && { useUuid: true }),
         ...(options.editor && { editor: options.editor }),
       },
@@ -732,7 +735,7 @@ function registerEditCommand(program: Command): void {
     .description("Edit references interactively using an external editor")
     .argument("<identifier...>", "Citation keys or UUIDs to edit")
     .option("--uuid", "Interpret identifiers as UUIDs")
-    .option("-f, --format <format>", "Edit format: yaml (default), json", "yaml")
+    .option("-f, --format <format>", "Edit format: yaml (default), json")
     .option("--editor <editor>", "Editor command (overrides $VISUAL/$EDITOR)")
     .action(async (identifiers: string[], options) => {
       await handleEditAction(identifiers, options, program);

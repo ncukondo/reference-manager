@@ -114,9 +114,9 @@ For each step:
 
 ### Step 10: Configuration support
 
-- [ ] Add `[cli.edit]` section to config schema
-- [ ] Add `default_format` option
-- [ ] Update config documentation
+- [x] Add `[cli.edit]` section to config schema
+- [x] Add `default_format` option
+- [x] Update config documentation
 
 ### Step 11: E2E tests
 
