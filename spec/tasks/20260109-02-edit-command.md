@@ -70,13 +70,13 @@ For each step:
 
 ### Step 6: JSON serializer/deserializer with _protected field
 
-- [ ] Write test: `src/features/edit/json-serializer.test.ts`
+- [x] Write test: `src/features/edit/json-serializer.test.ts`
   - Test serialization with `_protected` nested object
   - Test field transformations (date, keyword)
   - Test deserialization ignoring `_protected`
-- [ ] Implement: `src/features/edit/json-serializer.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/json-serializer.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Edit session manager
 
