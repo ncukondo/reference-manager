@@ -1,4 +1,5 @@
-import type { ListFormat, ListResult } from "../../features/operations/list.js";
+import { type ItemFormat, formatItems } from "../../features/format/index.js";
+import type { ListResult } from "../../features/operations/list.js";
 import {
   type SortField,
   type SortOrder,
@@ -41,9 +42,9 @@ export interface ListCommandOptions {
 export type ListCommandResult = ListResult;
 
 /**
- * Convert CLI options to ListFormat.
+ * Convert CLI options to ItemFormat.
  */
-function getListFormat(options: ListCommandOptions): ListFormat {
+function getOutputFormat(options: ListCommandOptions): ItemFormat {
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
   if (options.uuid) return "uuid";
@@ -100,20 +101,18 @@ function validateOptions(options: ListCommandOptions): void {
  *
  * @param options - List command options
  * @param context - Execution context
- * @returns List result containing formatted items
+ * @returns List result containing raw CslItem[]
  */
 export async function executeList(
   options: ListCommandOptions,
   context: ExecutionContext
 ): Promise<ListCommandResult> {
   validateOptions(options);
-  const format = getListFormat(options);
 
   // Resolve sort alias (e.g., "pub" -> "published")
   const sort = options.sort ? (resolveSortAlias(options.sort) as SortField) : undefined;
 
   return context.library.list({
-    format,
     ...(sort !== undefined && { sort }),
     ...pickDefined(options, ["order", "limit", "offset"] as const),
   });
@@ -122,14 +121,15 @@ export async function executeList(
 /**
  * Format list result for CLI output.
  *
- * @param result - List result
- * @param isJson - Whether the output format is JSON
+ * @param result - List result (CslItem[])
+ * @param options - Command options to determine format
  * @returns Formatted output string
  */
-export function formatListOutput(result: ListCommandResult, isJson = false): string {
-  if (isJson) {
+export function formatListOutput(result: ListCommandResult, options: ListCommandOptions): string {
+  const format = getOutputFormat(options);
+
+  if (format === "json") {
     // JSON output includes pagination metadata
-    // items are CslItem[] for JSON format
     return JSON.stringify({
       items: result.items,
       total: result.total,
@@ -139,10 +139,10 @@ export function formatListOutput(result: ListCommandResult, isJson = false): str
     });
   }
 
-  // For non-JSON formats, items are string[]
-  const items = result.items as string[];
+  // Format items for non-JSON formats
+  const formattedItems = formatItems(result.items, format) as string[];
 
-  if (items.length === 0) {
+  if (formattedItems.length === 0) {
     return "";
   }
 
@@ -151,10 +151,10 @@ export function formatListOutput(result: ListCommandResult, isJson = false): str
   // Add header line when limit is applied and not showing all
   if (result.limit > 0 && result.total > 0) {
     const start = result.offset + 1;
-    const end = result.offset + items.length;
+    const end = result.offset + formattedItems.length;
     lines.push(`# Showing ${start}-${end} of ${result.total} references`);
   }
 
-  lines.push(...items);
+  lines.push(...formattedItems);
   return lines.join("\n");
 }

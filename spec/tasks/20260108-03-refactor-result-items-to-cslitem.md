@@ -110,12 +110,12 @@ For each step:
 
 ### Step 5: Update CLI list command
 
-- [ ] Import `formatItems` from `@/features/format`
-- [ ] Update `executeList` to apply formatting before output
-- [ ] Update `formatListOutput` to handle CslItem[] input
-- [ ] Remove `as string[]` cast
-- [ ] Update tests
-- [ ] Verify: `npm run test:unit`
+- [x] Import `formatItems` from `@/features/format`
+- [x] Update `executeList` to apply formatting before output
+- [x] Update `formatListOutput` to handle CslItem[] input
+- [x] Remove `as string[]` cast
+- [x] Update tests
+- [x] Verify: `npm run test:unit`
 
 ### Step 6: Update MCP tools (remove format parameter)
 
