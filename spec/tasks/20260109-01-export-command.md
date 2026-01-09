@@ -95,15 +95,15 @@ For each step:
 
 ### Step 1: Create export command with single ID support
 
-- [ ] Write test: `src/cli/commands/export.test.ts`
+- [x] Write test: `src/cli/commands/export.test.ts`
   - Test export by citation key (single ID)
   - Test export by UUID with `--uuid` flag
   - Test not found error
-- [ ] Implement: `src/cli/commands/export.ts`
+- [x] Implement: `src/cli/commands/export.ts`
   - Basic implementation with JSON output
-- [ ] Register in `src/cli/commands/index.ts`
-- [ ] Verify: `npm run test:unit -- export`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Register in `src/cli/commands/index.ts`
+- [x] Verify: `npm run test:unit -- export`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Add multiple ID support
 
