@@ -35,14 +35,14 @@ For each step:
 
 ### Step 3: Field transformers (date, keyword)
 
-- [ ] Write test: `src/features/edit/field-transformer.test.ts`
+- [x] Write test: `src/features/edit/field-transformer.test.ts`
   - Test date-parts to ISO string (`[[2024, 3, 15]]` → `"2024-03-15"`)
   - Test partial dates (`[[2024]]` → `"2024"`, `[[2024, 3]]` → `"2024-03"`)
   - Test ISO string to date-parts (reverse)
   - Test keyword array passthrough (internal already array)
-- [ ] Implement: `src/features/edit/field-transformer.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/field-transformer.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: YAML serializer with protected fields as comments
 
