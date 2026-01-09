@@ -398,7 +398,7 @@ See `spec/features/json-output.md` for complete schema documentation.
 - **Phrase search**: `"machine learning"` (exact phrase)
 - **Combined**: `author:smith "deep learning" 2024`
 
-Supported field prefixes: `author:`, `title:`, `year:`, `doi:`, `pmid:`, `pmcid:`, `isbn:`, `url:`, `keyword:`, `tag:`
+Supported field prefixes: `id:`, `author:`, `title:`, `year:`, `doi:`, `pmid:`, `pmcid:`, `isbn:`, `url:`, `keyword:`, `tag:`
 
 ### Interactive Search
 
@@ -462,9 +462,8 @@ library = "~/references.json"
 log_level = "info"
 
 [backup]
-enabled = true
-max_count = 10
-max_age_days = 30
+max_generations = 50
+max_age_days = 365
 
 [fulltext]
 directory = "~/references/fulltext"

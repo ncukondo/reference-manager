@@ -395,7 +395,7 @@ ref add paper.bib -o json | jq -e '.summary.failed == 0'  # 失敗をチェッ�
 - **フレーズ検索**: `"machine learning"`（完全一致）
 - **組み合わせ**: `author:smith "deep learning" 2024`
 
-対応フィールドプレフィックス: `author:`, `title:`, `year:`, `doi:`, `pmid:`, `pmcid:`, `isbn:`, `url:`, `keyword:`, `tag:`
+対応フィールドプレフィックス: `id:`, `author:`, `title:`, `year:`, `doi:`, `pmid:`, `pmcid:`, `isbn:`, `url:`, `keyword:`, `tag:`
 
 ### インタラクティブ検索
 
@@ -459,9 +459,8 @@ library = "~/references.json"
 log_level = "info"
 
 [backup]
-enabled = true
-max_count = 10
-max_age_days = 30
+max_generations = 50
+max_age_days = 365
 
 [fulltext]
 directory = "~/references/fulltext"
