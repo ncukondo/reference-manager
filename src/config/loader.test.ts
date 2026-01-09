@@ -12,6 +12,7 @@ import { loadConfig } from "./loader.js";
 describe("Config Loader", () => {
   let testDir: string;
   let originalEnv: string | undefined;
+  let originalLibrary: string | undefined;
   let originalPubmedEmail: string | undefined;
   let originalPubmedApiKey: string | undefined;
 
@@ -22,6 +23,7 @@ describe("Config Loader", () => {
 
     // Save original environment variables
     originalEnv = process.env.REFERENCE_MANAGER_CONFIG;
+    originalLibrary = process.env.REFERENCE_MANAGER_LIBRARY;
     originalPubmedEmail = process.env.PUBMED_EMAIL;
     originalPubmedApiKey = process.env.PUBMED_API_KEY;
   });
@@ -36,6 +38,12 @@ describe("Config Loader", () => {
       delete process.env.REFERENCE_MANAGER_CONFIG;
     } else {
       process.env.REFERENCE_MANAGER_CONFIG = originalEnv;
+    }
+    if (originalLibrary === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.REFERENCE_MANAGER_LIBRARY;
+    } else {
+      process.env.REFERENCE_MANAGER_LIBRARY = originalLibrary;
     }
     if (originalPubmedEmail === undefined) {
       // biome-ignore lint/performance/noDelete: delete is required for env vars
@@ -142,6 +150,35 @@ log_level = "silent"
       const config = loadConfig({ cwd: testDir });
       expect(config.library).toBe("/env/library.json");
       expect(config.logLevel).toBe("silent");
+    });
+
+    it("should load library from REFERENCE_MANAGER_LIBRARY", () => {
+      process.env.REFERENCE_MANAGER_LIBRARY = "/env/direct-library.json";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.library).toBe("/env/direct-library.json");
+    });
+
+    it("should prioritize REFERENCE_MANAGER_LIBRARY over config file", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+library = "/config/library.json"
+`
+      );
+
+      process.env.REFERENCE_MANAGER_LIBRARY = "/env/library.json";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.library).toBe("/env/library.json");
+    });
+
+    it("should expand tilde in REFERENCE_MANAGER_LIBRARY", () => {
+      process.env.REFERENCE_MANAGER_LIBRARY = "~/my-library.json";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.library).toBe(join(homedir(), "my-library.json"));
     });
   });
 

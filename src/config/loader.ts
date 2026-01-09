@@ -128,8 +128,10 @@ function mergeConfigs(
  * Fill missing fields with defaults
  */
 function fillDefaults(partial: DeepPartialConfig): Config {
+  const envLibrary = process.env.REFERENCE_MANAGER_LIBRARY;
+  const library = envLibrary ?? partial.library ?? defaultConfig.library;
   return {
-    library: partial.library ?? defaultConfig.library,
+    library: expandTilde(library),
     logLevel: partial.logLevel ?? defaultConfig.logLevel,
     backup: {
       maxGenerations: partial.backup?.maxGenerations ?? defaultConfig.backup.maxGenerations,
