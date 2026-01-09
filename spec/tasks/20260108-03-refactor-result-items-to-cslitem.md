@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Improve type safety and separation of concerns by making `SearchResult.items` and `ListResult.items` always return `CslItem[]` (raw data), moving string formatting to the presentation layer (CLI/MCP).
+Improve type safety and separation of concerns by making `SearchResult.items` and `ListResult.items` always return `CslItem[]` (raw data), moving string formatting to the CLI layer only.
 
 Currently, `items` has type `string[] | CslItem[]` depending on the format, which reduces type safety and mixes data retrieval with presentation formatting in the operations layer.
 
@@ -16,6 +16,7 @@ This follows PR #29 which fixed double-escaped JSON output. The current implemen
 - Files: `src/features/operations/search.ts`, `src/features/operations/list.ts`
 - CLI: `src/cli/commands/search.ts`, `src/cli/commands/list.ts`
 - MCP: `src/mcp/tools/search.ts`, `src/mcp/tools/list.ts`
+- Existing formatters: `src/features/format/`
 
 ## Design
 
@@ -27,7 +28,7 @@ Operations層 (searchReferences/listReferences)
     ↓ items: string[] | CslItem[]
     ├── CLI commands → 出力
     ├── Server routes → JSON response
-    └── MCP tools → JSON response
+    └── MCP tools → format: "pretty" → JSON response (string[]をJSON化)
 ```
 
 ### Target Architecture
@@ -35,17 +36,26 @@ Operations層 (searchReferences/listReferences)
 ```
 Operations層 (searchReferences/listReferences)
     ↓ items: CslItem[] (常に生データ)
-    ├── CLI commands → formatItems() → 出力
-    ├── Server routes → JSON response (生データのまま)
-    └── MCP tools → formatItems() → JSON response
+    ├── CLI commands → formatItems() → string出力
+    ├── Server routes → JSON response (CslItem[]をそのまま)
+    └── MCP tools → JSON response (CslItem[]をそのまま、format引数なし)
 ```
 
 ### Key Changes
 
 1. `SearchResult.items` / `ListResult.items` = `CslItem[]` (always)
-2. Remove `format` parameter from operations (or make it only affect sorting/filtering, not output format)
-3. Move `formatItems()` to shared utility module
-4. CLI/MCP apply formatting at output time
+2. Remove `format` parameter from operations
+3. Move `formatItems()` to `src/features/format/items.ts`
+4. CLI applies formatting at output time using `formatItems()`
+5. **MCP removes `format` parameter and always returns raw `CslItem[]`** (LLM can process structured data directly)
+6. Server returns raw `CslItem[]`
+
+### Design Rationale: MCP returns raw data only
+
+- LLM can process structured data (`CslItem[]`) directly
+- LLM can format data itself if user requests specific format (e.g., BibTeX)
+- Raw data provides more information than pre-formatted strings
+- Simpler MCP interface (no format parameter needed)
 
 ## TDD Workflow
 
@@ -56,21 +66,25 @@ For each step:
 
 ## Steps
 
-### Step 1: Create shared formatter utility
+### Step 1: Create formatItems in features/format
 
-- [ ] Create `src/shared/formatters/reference-formatter.ts`
-- [ ] Write tests: `src/shared/formatters/reference-formatter.test.ts`
+- [ ] Create `src/features/format/items.ts`
+- [ ] Write tests: `src/features/format/items.test.ts`
   - Test formatting CslItem[] to bibtex strings
   - Test formatting CslItem[] to pretty strings
-  - Test formatting CslItem[] to CSL YAML strings
-- [ ] Move formatting logic from operations to shared module
+  - Test formatting CslItem[] to ids-only strings
+  - Test formatting CslItem[] to uuid strings
+  - Test returning CslItem[] for json format
+- [ ] Move formatting logic from operations to this module
+- [ ] Export from `src/features/format/index.ts`
 - [ ] Verify: `npm run test:unit`
 - [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Update SearchResult interface and searchReferences
 
 - [ ] Update `SearchResult.items` type to `CslItem[]`
-- [ ] Remove `format` parameter from `SearchOperationOptions` (or rename to clarify it's not for output)
+- [ ] Remove `format` parameter from `SearchOperationOptions`
+- [ ] Remove `formatItems()` call from `searchReferences`
 - [ ] Update `searchReferences` to always return raw CslItem[]
 - [ ] Update tests in `src/features/operations/search.test.ts`
 - [ ] Verify: `npm run test:unit`
@@ -78,31 +92,38 @@ For each step:
 ### Step 3: Update ListResult interface and listReferences
 
 - [ ] Update `ListResult.items` type to `CslItem[]`
-- [ ] Remove `format` parameter from `ListOptions` (or rename)
+- [ ] Remove `format` parameter from `ListOptions`
+- [ ] Remove `formatItems()` call from `listReferences`
 - [ ] Update `listReferences` to always return raw CslItem[]
 - [ ] Update tests in `src/features/operations/list.test.ts`
 - [ ] Verify: `npm run test:unit`
 
 ### Step 4: Update CLI search command
 
+- [ ] Import `formatItems` from `@/features/format`
 - [ ] Update `executeSearch` to apply formatting before output
-- [ ] Update `formatSearchOutput` to use shared formatter
+- [ ] Update `formatSearchOutput` to handle CslItem[] input
 - [ ] Remove `as string[]` cast (no longer needed)
 - [ ] Update tests
 - [ ] Verify: `npm run test:unit`
 
 ### Step 5: Update CLI list command
 
+- [ ] Import `formatItems` from `@/features/format`
 - [ ] Update `executeList` to apply formatting before output
-- [ ] Update `formatListOutput` to use shared formatter
+- [ ] Update `formatListOutput` to handle CslItem[] input
 - [ ] Remove `as string[]` cast
 - [ ] Update tests
 - [ ] Verify: `npm run test:unit`
 
-### Step 6: Update MCP tools
+### Step 6: Update MCP tools (remove format parameter)
 
-- [ ] Update `src/mcp/tools/search.ts` to apply formatting
-- [ ] Update `src/mcp/tools/list.ts` to apply formatting
+- [ ] Update `src/mcp/tools/search.ts`:
+  - Remove `format` from input schema (search doesn't have it currently)
+  - Ensure raw CslItem[] is returned
+- [ ] Update `src/mcp/tools/list.ts`:
+  - Remove `format` from input schema
+  - Always return raw CslItem[]
 - [ ] Update MCP tests
 - [ ] Verify: `npm run test:unit`
 
@@ -118,10 +139,13 @@ For each step:
 
 - [ ] Run full E2E tests: `npm run test:e2e`
 - [ ] Manual verification:
-  - [ ] `ref search --json "query"` outputs proper JSON
+  - [ ] `ref search --json "query"` outputs proper JSON (CslItem[])
   - [ ] `ref search --format bibtex "query"` outputs bibtex
-  - [ ] `ref list --json` outputs proper JSON
+  - [ ] `ref search --format pretty "query"` outputs pretty format
+  - [ ] `ref list --json` outputs proper JSON (CslItem[])
   - [ ] `ref list --format pretty` outputs pretty format
+  - [ ] MCP search tool returns CslItem[] in JSON
+  - [ ] MCP list tool returns CslItem[] in JSON (no format param)
 
 ## Completion Checklist
 
