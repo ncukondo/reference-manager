@@ -130,11 +130,11 @@ For each step:
 
 ### Step 7: Update Server routes (if needed)
 
-- [ ] Review `src/server/routes/search.ts` - should return raw data
-- [ ] Review `src/server/routes/list.ts` - should return raw data
-- [ ] Update `ServerClient` if interface changed
-- [ ] Update tests
-- [ ] Verify: `npm run test:unit`
+- [x] Review `src/server/routes/search.ts` - should return raw data
+- [x] Review `src/server/routes/list.ts` - should return raw data
+- [x] Update `ServerClient` if interface changed
+- [x] Update tests
+- [x] Verify: `npm run test:unit`
 
 ### Step 8: E2E verification
 

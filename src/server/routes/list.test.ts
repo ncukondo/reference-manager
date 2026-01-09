@@ -45,9 +45,13 @@ describe("List Route", () => {
   });
 
   describe("POST /", () => {
-    it("should list all references with default format", async () => {
+    it("should list all references and return CslItem[]", async () => {
       mockListReferences.mockReturnValue({
-        items: ["Author, T. (2024). Test Article. Journal, 1(1), 1-10."],
+        items: [{ id: "author-2024", type: "article-journal", title: "Test Article" }],
+        total: 1,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -61,12 +65,16 @@ describe("List Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.items).toHaveLength(1);
-      expect(data.items[0]).toContain("Author");
+      expect(data.items[0].id).toBe("author-2024");
     });
 
     it("should handle empty library", async () => {
       mockListReferences.mockReturnValue({
         items: [],
+        total: 0,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -82,83 +90,55 @@ describe("List Route", () => {
       expect(data.items).toHaveLength(0);
     });
 
-    it("should pass format option", async () => {
-      mockListReferences.mockReturnValue({ items: [] });
-
-      const req = new Request("http://localhost/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          format: "json",
-        }),
-      });
-
-      await route.fetch(req);
-
-      expect(mockListReferences).toHaveBeenCalledWith(
-        library,
-        expect.objectContaining({ format: "json" })
-      );
-    });
-
-    it("should pass bibtex format option", async () => {
-      mockListReferences.mockReturnValue({ items: [] });
-
-      const req = new Request("http://localhost/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          format: "bibtex",
-        }),
-      });
-
-      await route.fetch(req);
-
-      expect(mockListReferences).toHaveBeenCalledWith(
-        library,
-        expect.objectContaining({ format: "bibtex" })
-      );
-    });
-
-    it("should pass ids-only format option", async () => {
-      mockListReferences.mockReturnValue({ items: ["author2024"] });
-
-      const req = new Request("http://localhost/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          format: "ids-only",
-        }),
-      });
-
-      const res = await route.fetch(req);
-
-      expect(res.status).toBe(200);
-      expect(mockListReferences).toHaveBeenCalledWith(
-        library,
-        expect.objectContaining({ format: "ids-only" })
-      );
-    });
-
-    it("should pass uuid format option", async () => {
+    it("should pass sort options", async () => {
       mockListReferences.mockReturnValue({
-        items: ["550e8400-e29b-41d4-a716-446655440000"],
+        items: [],
+        total: 0,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          format: "uuid",
+          sort: "title",
+          order: "asc",
         }),
       });
 
-      const res = await route.fetch(req);
+      await route.fetch(req);
 
-      expect(res.status).toBe(200);
       expect(mockListReferences).toHaveBeenCalledWith(
         library,
-        expect.objectContaining({ format: "uuid" })
+        expect.objectContaining({ sort: "title", order: "asc" })
+      );
+    });
+
+    it("should pass pagination options", async () => {
+      mockListReferences.mockReturnValue({
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 5,
+        nextOffset: null,
+      });
+
+      const req = new Request("http://localhost/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          limit: 10,
+          offset: 5,
+        }),
+      });
+
+      await route.fetch(req);
+
+      expect(mockListReferences).toHaveBeenCalledWith(
+        library,
+        expect.objectContaining({ limit: 10, offset: 5 })
       );
     });
 
@@ -193,10 +173,14 @@ describe("List Route", () => {
     it("should handle multiple references", async () => {
       mockListReferences.mockReturnValue({
         items: [
-          "First, A. (2024). First Article.",
-          "Second, B. (2024). Second Article.",
-          "Third, C. (2024). Third Article.",
+          { id: "first", type: "article-journal" },
+          { id: "second", type: "article-journal" },
+          { id: "third", type: "book" },
         ],
+        total: 3,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -213,7 +197,13 @@ describe("List Route", () => {
     });
 
     it("should work with empty body", async () => {
-      mockListReferences.mockReturnValue({ items: [] });
+      mockListReferences.mockReturnValue({
+        items: [],
+        total: 0,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      });
 
       const req = new Request("http://localhost/", {
         method: "POST",

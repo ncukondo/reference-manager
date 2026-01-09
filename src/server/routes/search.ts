@@ -10,7 +10,6 @@ import { pickDefined } from "../../utils/object.js";
  */
 const searchRequestBodySchema = z.object({
   query: z.string(),
-  format: z.enum(["pretty", "json", "bibtex", "ids-only", "uuid"]).optional(),
   sort: searchSortFieldSchema.optional(),
   order: sortOrderSchema.optional(),
   limit: z.number().int().min(0).optional(),
@@ -50,10 +49,10 @@ export function createSearchRoute(library: Library) {
     // Build options for searchReferences
     const options: SearchOperationOptions = {
       query: requestBody.query,
-      ...pickDefined(requestBody, ["format", "sort", "order", "limit", "offset"] as const),
+      ...pickDefined(requestBody, ["sort", "order", "limit", "offset"] as const),
     };
 
-    // Call searchReferences operation
+    // Call searchReferences operation - always returns raw CslItem[]
     const result = await searchReferences(library, options);
 
     return c.json(result);

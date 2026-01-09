@@ -9,7 +9,6 @@ import { pickDefined } from "../../utils/object.js";
  * Request body schema for list endpoint
  */
 const listRequestBodySchema = z.object({
-  format: z.enum(["pretty", "json", "bibtex", "ids-only", "uuid"]).optional(),
   sort: sortFieldSchema.optional(),
   order: sortOrderSchema.optional(),
   limit: z.number().int().min(0).optional(),
@@ -48,14 +47,13 @@ export function createListRoute(library: Library) {
 
     // Build options for listReferences
     const options: ListOptions = pickDefined(requestBody, [
-      "format",
       "sort",
       "order",
       "limit",
       "offset",
     ] as const);
 
-    // Call listReferences operation
+    // Call listReferences operation - always returns raw CslItem[]
     const result = await listReferences(library, options);
 
     return c.json(result);

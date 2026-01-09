@@ -45,9 +45,13 @@ describe("Search Route", () => {
   });
 
   describe("POST /", () => {
-    it("should search references with query", async () => {
+    it("should search references with query and return CslItem[]", async () => {
       mockSearchReferences.mockReturnValue({
-        items: ["Author, T. (2024). Test Article. Journal, 1(1), 1-10."],
+        items: [{ id: "author-2024", type: "article-journal", title: "Test Article" }],
+        total: 1,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -63,12 +67,19 @@ describe("Search Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.items).toHaveLength(1);
-      expect(data.items[0]).toContain("Author");
+      expect(data.items[0].id).toBe("author-2024");
     });
 
     it("should handle empty query", async () => {
       mockSearchReferences.mockReturnValue({
-        items: ["First", "Second"],
+        items: [
+          { id: "first", type: "article-journal" },
+          { id: "second", type: "book" },
+        ],
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -89,6 +100,10 @@ describe("Search Route", () => {
     it("should handle no matches", async () => {
       mockSearchReferences.mockReturnValue({
         items: [],
+        total: 0,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -106,70 +121,13 @@ describe("Search Route", () => {
       expect(data.items).toHaveLength(0);
     });
 
-    it("should pass format option", async () => {
-      mockSearchReferences.mockReturnValue({ items: [] });
-
-      const req = new Request("http://localhost/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: "test",
-          format: "json",
-        }),
-      });
-
-      await route.fetch(req);
-
-      expect(mockSearchReferences).toHaveBeenCalledWith(
-        library,
-        expect.objectContaining({ format: "json" })
-      );
-    });
-
-    it("should pass bibtex format option", async () => {
-      mockSearchReferences.mockReturnValue({ items: [] });
-
-      const req = new Request("http://localhost/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: "test",
-          format: "bibtex",
-        }),
-      });
-
-      await route.fetch(req);
-
-      expect(mockSearchReferences).toHaveBeenCalledWith(
-        library,
-        expect.objectContaining({ format: "bibtex" })
-      );
-    });
-
-    it("should pass ids-only format option", async () => {
-      mockSearchReferences.mockReturnValue({ items: ["author2024"] });
-
-      const req = new Request("http://localhost/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: "test",
-          format: "ids-only",
-        }),
-      });
-
-      const res = await route.fetch(req);
-
-      expect(res.status).toBe(200);
-      expect(mockSearchReferences).toHaveBeenCalledWith(
-        library,
-        expect.objectContaining({ format: "ids-only" })
-      );
-    });
-
-    it("should pass uuid format option", async () => {
+    it("should pass pagination options", async () => {
       mockSearchReferences.mockReturnValue({
-        items: ["550e8400-e29b-41d4-a716-446655440000"],
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 5,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {
@@ -177,16 +135,43 @@ describe("Search Route", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: "test",
-          format: "uuid",
+          limit: 10,
+          offset: 5,
         }),
       });
 
-      const res = await route.fetch(req);
+      await route.fetch(req);
 
-      expect(res.status).toBe(200);
       expect(mockSearchReferences).toHaveBeenCalledWith(
         library,
-        expect.objectContaining({ format: "uuid" })
+        expect.objectContaining({ limit: 10, offset: 5 })
+      );
+    });
+
+    it("should pass sort options", async () => {
+      mockSearchReferences.mockReturnValue({
+        items: [],
+        total: 0,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      });
+
+      const req = new Request("http://localhost/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: "test",
+          sort: "title",
+          order: "asc",
+        }),
+      });
+
+      await route.fetch(req);
+
+      expect(mockSearchReferences).toHaveBeenCalledWith(
+        library,
+        expect.objectContaining({ sort: "title", order: "asc" })
       );
     });
 
@@ -248,7 +233,14 @@ describe("Search Route", () => {
 
     it("should handle complex queries", async () => {
       mockSearchReferences.mockReturnValue({
-        items: ["Match 1", "Match 2"],
+        items: [
+          { id: "match1", type: "article-journal" },
+          { id: "match2", type: "article-journal" },
+        ],
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
       });
 
       const req = new Request("http://localhost/", {

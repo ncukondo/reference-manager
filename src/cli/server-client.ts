@@ -232,9 +232,9 @@ export class ServerClient implements ILibraryOperations {
   }
 
   /**
-   * List all references with optional formatting.
-   * @param options - List options including format
-   * @returns List result with formatted items
+   * List all references.
+   * @param options - Pagination and sorting options
+   * @returns List result with raw CslItem[]
    */
   async list(options?: ListOptions): Promise<ListResult> {
     const url = `${this.baseUrl}/api/list`;
@@ -253,8 +253,8 @@ export class ServerClient implements ILibraryOperations {
 
   /**
    * Search references with query.
-   * @param options - Search options including query and format
-   * @returns Search result with formatted items
+   * @param options - Search options including query and pagination
+   * @returns Search result with raw CslItem[]
    */
   async search(options: SearchOperationOptions): Promise<SearchResult> {
     const url = `${this.baseUrl}/api/search`;
