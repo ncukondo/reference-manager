@@ -80,14 +80,14 @@ For each step:
 
 ### Step 7: Edit session manager
 
-- [ ] Write test: `src/features/edit/edit-session.test.ts`
+- [x] Write test: `src/features/edit/edit-session.test.ts`
   - Test temp file creation and cleanup
   - Test editor invocation (mock)
   - Test validation workflow
   - Test error recovery flow
-- [ ] Implement: `src/features/edit/edit-session.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/edit-session.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 8: Edit feature entry point
 
