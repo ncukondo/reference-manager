@@ -62,8 +62,8 @@ For each step:
 
 ### Step 4: E2E test
 
-- [ ] Add E2E test for CLI search with `id:` prefix
-- [ ] Verify: `npm run test:e2e`
+- [x] Add E2E test for CLI search with `id:` prefix
+- [x] Verify: `npm run test:e2e`
 
 ## Completion Checklist
 
