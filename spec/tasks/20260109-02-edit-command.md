@@ -25,13 +25,13 @@ For each step:
 
 ### Step 2: Editor resolution utility
 
-- [ ] Write test: `src/features/edit/editor-resolver.test.ts`
+- [x] Write test: `src/features/edit/editor-resolver.test.ts`
   - Test `$VISUAL` takes precedence
   - Test `$EDITOR` fallback
   - Test platform-specific fallback (vi/notepad)
-- [ ] Implement: `src/features/edit/editor-resolver.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/editor-resolver.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Field transformers (date, keyword)
 
