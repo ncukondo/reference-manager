@@ -6,6 +6,7 @@
 
 import { stringify as yamlStringify } from "yaml";
 import type { CslItem } from "../../core/csl-json/types.js";
+import { formatBibtex } from "../../features/format/bibtex.js";
 import type { ExecutionContext } from "../execution-context.js";
 
 /**
@@ -93,7 +94,10 @@ export function formatExportOutput(
     return yamlStringify(data);
   }
 
-  // TODO: bibtex format
+  if (format === "bibtex") {
+    return formatBibtex(result.items);
+  }
+
   return JSON.stringify(data, null, 2);
 }
 

@@ -363,6 +363,47 @@ describe("export command", () => {
       expect(output).toContain("- id: smith-2024");
       expect(output).toContain("- id: jones-2023");
     });
+
+    it("should output as BibTeX with --format bibtex", () => {
+      const result: ExportCommandResult = {
+        items: [mockItem],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        ids: ["smith-2024"],
+        format: "bibtex",
+      };
+
+      const output = formatExportOutput(result, options);
+
+      // BibTeX format characteristics
+      expect(output).toContain("@article{smith-2024");
+      expect(output).toContain("title = {Test Article}");
+      expect(output).toContain("author = {Smith, John}");
+    });
+
+    it("should output multiple items as BibTeX entries", () => {
+      const mockItem2: CslItem = {
+        id: "jones-2023",
+        type: "article-journal",
+        title: "Another Article",
+        author: [{ family: "Jones", given: "Jane" }],
+        custom: { uuid: "uuid-jones" },
+      };
+      const result: ExportCommandResult = {
+        items: [mockItem, mockItem2],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        all: true,
+        format: "bibtex",
+      };
+
+      const output = formatExportOutput(result, options);
+
+      expect(output).toContain("@article{smith-2024");
+      expect(output).toContain("@article{jones-2023");
+    });
   });
 
   describe("getExportExitCode", () => {

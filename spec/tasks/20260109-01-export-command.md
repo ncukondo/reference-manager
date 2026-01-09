@@ -137,9 +137,9 @@ For each step:
 
 ### Step 6: Add BibTeX output format
 
-- [ ] Write test for `--format bibtex`
-- [ ] Implement using existing BibTeX conversion
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Write test for `--format bibtex`
+- [x] Implement using existing BibTeX conversion
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 7: E2E tests
 
