@@ -187,6 +187,60 @@ describe("matchToken", () => {
       expect(matches[0].field).toBe("ISBN");
       expect(matches[0].strength).toBe("exact");
     });
+
+    it("should match exact id (citation key)", () => {
+      const token: SearchToken = {
+        raw: "id:smith2023",
+        value: "smith2023",
+        field: "id",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, reference);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("id");
+      expect(matches[0].strength).toBe("exact");
+    });
+
+    it("should match id case-insensitively", () => {
+      const token: SearchToken = {
+        raw: "id:SMITH2023",
+        value: "SMITH2023",
+        field: "id",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, reference);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("id");
+      expect(matches[0].strength).toBe("exact");
+    });
+
+    it("should not match partial id", () => {
+      const token: SearchToken = {
+        raw: "id:smith",
+        value: "smith",
+        field: "id",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, reference);
+      expect(matches).toHaveLength(0);
+    });
+
+    it("should match DOI case-insensitively", () => {
+      const token: SearchToken = {
+        raw: "doi:10.1234/JMI.2023.0045",
+        value: "10.1234/JMI.2023.0045",
+        field: "doi",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, reference);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("DOI");
+      expect(matches[0].strength).toBe("exact");
+    });
   });
 
   describe("Content field matching (partial, case-insensitive)", () => {
@@ -757,6 +811,19 @@ describe("matchToken", () => {
       const pmidMatch = matches.find((m) => m.field === "PMID");
       expect(pmidMatch).toBeDefined();
       expect(pmidMatch?.strength).toBe("exact");
+    });
+
+    it("should return exact match for citation key (id) in multi-field search", () => {
+      const token: SearchToken = {
+        raw: "smith2023",
+        value: "smith2023",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, reference);
+      const idMatch = matches.find((m) => m.field === "id");
+      expect(idMatch).toBeDefined();
+      expect(idMatch?.strength).toBe("exact");
     });
   });
 

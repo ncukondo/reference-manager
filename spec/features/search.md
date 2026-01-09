@@ -15,6 +15,7 @@
 
 - Syntax: `fieldname:value`
 - Supported field prefixes:
+  - `id:` - Search in citation key (exact match)
   - `author:` - Search in author names
   - `title:` - Search in title
   - `year:` - Search in publication year (extracted from `issued` field)
@@ -47,8 +48,9 @@ See: `src/features/search/uppercase.ts` for implementation, `uppercase.test.ts` 
 
 ## Search Fields
 
-### ID Fields (Exact Match, Case-Sensitive)
+### ID Fields (Exact Match, Case-Insensitive)
 
+- `id` - Citation key
 - `PMID` - PubMed ID
 - `PMCID` - PubMed Central ID
 - `DOI` - Digital Object Identifier
@@ -58,8 +60,8 @@ See: `src/features/search/uppercase.ts` for implementation, `uppercase.test.ts` 
 
 **Matching behavior:**
 - Exact match required (complete string equality)
-- Case-sensitive comparison
-- No normalization applied
+- Case-insensitive comparison
+- No normalization applied (except case folding)
 - For `url:` prefix: matches if the query value exactly matches **either** the primary `URL` field **or** any element in `custom.additional_urls` array
 
 ### Content Fields (Partial Match, Case-Insensitive)

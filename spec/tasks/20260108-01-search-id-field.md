@@ -11,9 +11,11 @@ Add citation key (`id` field) to the search target fields and support `id:` pref
 
 ## Changes Required
 
-### 1. Add `id` to STANDARD_SEARCH_FIELDS
+### 1. Add `id` to STANDARD_SEARCH_FIELDS and ID_FIELDS
 
-The `id` field should be searched as a content field (partial match, case-insensitive).
+The `id` field should be searched as an ID field (exact match, case-insensitive).
+
+**Note**: All ID fields (DOI, PMID, PMCID, ISBN, id) use case-insensitive exact matching.
 
 ### 2. Add `id:` prefix support
 
@@ -39,20 +41,24 @@ For each step:
 
 ### Step 2: Add `id` to searchable fields
 
-- [ ] Write test: `src/features/search/matcher.test.ts`
+- [x] Write test: `src/features/search/matcher.test.ts`
   - Test exact `id:` prefix search (e.g., `id:smith2023`)
-  - Test partial `id:` prefix search (e.g., `id:smith`)
+  - Test case-insensitive `id:` search (e.g., `id:SMITH2023`)
+  - Test that partial `id:` does not match
   - Test that `id` is included in multi-field search
-- [ ] Implement: `src/features/search/matcher.ts`
-  - Add `"id"` to `STANDARD_SEARCH_FIELDS`
-- [ ] Verify: `npm run test:unit -- matcher`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Test DOI case-insensitive matching
+- [x] Implement: `src/features/search/matcher.ts`
+  - Add `"id"` to `ID_FIELDS`, `FIELD_MAP`, and `STANDARD_SEARCH_FIELDS`
+  - Change all ID fields to case-insensitive exact matching
+- [x] Verify: `npm run test:unit -- matcher`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Update spec documentation
 
-- [ ] Update `spec/features/search.md`
+- [x] Update `spec/features/search.md`
   - Add `id:` to field prefixes list
-  - Document that `id` is now searched in multi-field search
+  - Add `id` to ID Fields section
+  - Update ID Fields to case-insensitive matching
 
 ### Step 4: E2E test
 
