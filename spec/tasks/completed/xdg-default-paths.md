@@ -80,61 +80,61 @@ For each step:
 
 ### Step 1: Add env-paths dependency
 
-- [ ] Install: `npm install env-paths`
-- [ ] Verify package.json updated
+- [x] Install: `npm install env-paths`
+- [x] Verify package.json updated
 
 ### Step 2: Create paths module
 
-- [ ] Write test: `src/config/paths.test.ts`
+- [x] Write test: `src/config/paths.test.ts`
   - Test that `getPaths()` returns object with config, data, cache properties
   - Test paths are non-empty strings
-- [ ] Implement: `src/config/paths.ts`
+- [x] Implement: `src/config/paths.ts`
   - Export `getPaths()` using env-paths
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Update defaults.ts
 
-- [ ] Write test: Update `src/config/defaults.test.ts`
+- [x] Write test: Update `src/config/defaults.test.ts`
   - Test `getDefaultUserConfigPath()` uses config path
   - Test `getDefaultLibraryPath()` uses data path
   - Test `getDefaultCslDirectory()` uses data path
   - Test `getDefaultFulltextDirectory()` uses data path
   - Test `getDefaultBackupDirectory()` uses cache path
-- [ ] Implement: Update `src/config/defaults.ts`
+- [x] Implement: Update `src/config/defaults.ts`
   - Use `getPaths()` instead of `homedir()` + `.reference-manager`
   - Rename library file from `csl.library.json` to `library.json` (optional, cleaner)
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update specs
 
 Update path references in affected spec files:
 
-- [ ] `spec/architecture/cli.md` - config file paths
-- [ ] `spec/architecture/directory-structure.md` - directory layout
-- [ ] `spec/architecture/http-server.md` - portfile/config paths
-- [ ] `spec/architecture/mcp-server.md` - config paths
-- [ ] `spec/core/data-model.md` - library file path
-- [ ] `spec/features/citation.md` - CSL directory path
-- [ ] `spec/features/fulltext.md` - fulltext directory path
-- [ ] `spec/features/write-safety.md` - backup directory path
+- [x] `spec/architecture/cli.md` - config file paths
+- [x] `spec/architecture/directory-structure.md` - no changes needed (source structure only)
+- [x] `spec/architecture/http-server.md` - portfile/config paths
+- [x] `spec/architecture/mcp-server.md` - no changes needed (paths not hardcoded)
+- [x] `spec/core/data-model.md` - no changes needed (example filename only)
+- [x] `spec/features/citation.md` - CSL directory path
+- [x] `spec/features/fulltext.md` - fulltext directory path
+- [x] `spec/features/write-safety.md` - backup directory path
 
 ### Step 5: Update documentation
 
-- [ ] Update `README.md` with new default paths
-- [ ] Update `README_ja.md` with new default paths
-- [ ] Add breaking change note to `CHANGELOG.md`
+- [x] Update `README.md` with new default paths
+- [x] Update `README_ja.md` with new default paths
+- [x] Add breaking change note to `CHANGELOG.md`
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification on current platform
-- [ ] Specs updated with new paths
-- [ ] README.md updated
-- [ ] README_ja.md updated
-- [ ] CHANGELOG.md updated with breaking change
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification on current platform
+- [x] Specs updated with new paths
+- [x] README.md updated
+- [x] README_ja.md updated
+- [x] CHANGELOG.md updated with breaking change
+- [x] Move this file to `spec/tasks/completed/`

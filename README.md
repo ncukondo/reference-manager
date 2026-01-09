@@ -149,11 +149,7 @@ Download the `.mcpb` file from the [latest release](https://github.com/ncukondo/
 3. Click **Install from file** and select the downloaded `.mcpb` file
 4. Configure the **Config File Path** when prompted (e.g., `~/.reference-manager/config.toml`)
 
-The config file should contain at minimum:
-
-```toml
-library = "~/.reference-manager/csl.library.json"
-```
+The config file is located at the platform-specific configuration directory (e.g., `~/.config/reference-manager/config.toml` on Linux).
 
 #### Option 2: Manual Configuration
 
@@ -452,10 +448,26 @@ Sort field aliases: `pub`→`published`, `mod`→`updated`, `add`→`created`, `
 
 ## Configuration
 
-Configuration file: `~/.reference-manager.config.toml`
+Configuration files follow platform conventions:
+
+| Platform | Location |
+|----------|----------|
+| Linux | `~/.config/reference-manager/config.toml` |
+| macOS | `~/Library/Preferences/reference-manager/config.toml` |
+| Windows | `%APPDATA%\reference-manager\Config\config.toml` |
+
+Default paths for data (library, fulltext, CSL styles):
+
+| Platform | Location |
+|----------|----------|
+| Linux | `~/.local/share/reference-manager/` |
+| macOS | `~/Library/Application Support/reference-manager/` |
+| Windows | `%LOCALAPPDATA%\reference-manager\Data\` |
+
+You can also use project-local configuration by creating `.reference-manager.config.toml` in any directory.
 
 ```toml
-# Path to the library file
+# Override library path (defaults to {data}/library.json)
 library = "~/references.json"
 
 # Logging level: silent, info, debug
@@ -466,6 +478,7 @@ max_generations = 50
 max_age_days = 365
 
 [fulltext]
+# Override fulltext directory (defaults to {data}/fulltext)
 directory = "~/references/fulltext"
 
 [server]

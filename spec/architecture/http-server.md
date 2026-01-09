@@ -25,7 +25,7 @@ This is an internal implementation detail. Users interact via CLI commands, whic
 
 ### Portfile
 
-Location: `~/.reference-manager/server.port`
+Location: `{data}/server.port` (platform-specific data directory)
 
 Format (JSON):
 ```json

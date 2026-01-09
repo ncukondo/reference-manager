@@ -37,12 +37,12 @@ Both fields are optional and independent (can coexist).
 
 ```toml
 [fulltext]
-directory = "~/.reference-manager/fulltext"
+# directory defaults to {data}/fulltext (platform-specific data directory)
 ```
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `directory` | `~/.reference-manager/fulltext` | Directory for storing full-text files |
+| `directory` | `{data}/fulltext` | Directory for storing full-text files (platform-specific) |
 
 ## Filename Generation
 

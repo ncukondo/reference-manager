@@ -2,33 +2,32 @@
  * Default configuration values
  */
 
-import { tmpdir } from "node:os";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { getPaths } from "./paths.js";
 import type { Config } from "./schema.js";
 
 /**
  * Get the default backup directory
- * Uses $TMPDIR/reference-manager/backups/
+ * Uses platform-specific cache path + backups/
  */
 export function getDefaultBackupDirectory(): string {
-  return join(tmpdir(), "reference-manager", "backups");
+  return join(getPaths().cache, "backups");
 }
 
 /**
  * Get the default library path
- * Uses ~/.reference-manager/csl.library.json
+ * Uses platform-specific data path + library.json
  */
 export function getDefaultLibraryPath(): string {
-  return join(homedir(), ".reference-manager", "csl.library.json");
+  return join(getPaths().data, "library.json");
 }
 
 /**
  * Get the default user config path
- * Uses ~/.reference-manager/config.toml
+ * Uses platform-specific config path + config.toml
  */
 export function getDefaultUserConfigPath(): string {
-  return join(homedir(), ".reference-manager", "config.toml");
+  return join(getPaths().config, "config.toml");
 }
 
 /**
@@ -41,18 +40,18 @@ export function getDefaultCurrentDirConfigFilename(): string {
 
 /**
  * Get the default CSL directory
- * Uses ~/.reference-manager/csl/
+ * Uses platform-specific data path + csl/
  */
 export function getDefaultCslDirectory(): string {
-  return join(homedir(), ".reference-manager", "csl");
+  return join(getPaths().data, "csl");
 }
 
 /**
  * Get the default fulltext directory
- * Uses ~/.reference-manager/fulltext/
+ * Uses platform-specific data path + fulltext/
  */
 export function getDefaultFulltextDirectory(): string {
-  return join(homedir(), ".reference-manager", "fulltext");
+  return join(getPaths().data, "fulltext");
 }
 
 /**
