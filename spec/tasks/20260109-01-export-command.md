@@ -157,19 +157,19 @@ For each step:
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification:
-  - [ ] `ref export <id>`
-  - [ ] `ref export <id1> <id2>`
-  - [ ] `ref export --all`
-  - [ ] `ref export --search "query"`
-  - [ ] `ref export --format yaml <id>`
-  - [ ] `ref export --format bibtex <id>`
-  - [ ] `ref export --uuid <uuid>`
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification:
+  - [x] `ref export <id>`
+  - [x] `ref export <id1> <id2>`
+  - [x] `ref export --all`
+  - [x] `ref export --search "query"`
+  - [x] `ref export --format yaml <id>`
+  - [x] `ref export --format bibtex <id>`
+  - [x] `ref export --uuid <uuid>`
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
 
 ## Design Notes
