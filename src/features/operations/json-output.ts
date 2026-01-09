@@ -87,8 +87,6 @@ export interface UpdateJsonOutput {
 export interface FormatAddJsonOptions {
   /** Include full CSL-JSON data */
   full?: boolean;
-  /** Map from added item ID to source string */
-  sources?: Map<string, string>;
   /** Map from added item ID to CslItem (for --full) */
   items?: Map<string, CslItem>;
 }
@@ -100,11 +98,11 @@ export function formatAddJsonOutput(
   result: AddReferencesResult,
   options: FormatAddJsonOptions
 ): AddJsonOutput {
-  const { full = false, sources = new Map(), items = new Map() } = options;
+  const { full = false, items = new Map() } = options;
 
   const added: AddJsonOutputItem[] = result.added.map((item) => {
     const output: AddJsonOutputItem = {
-      source: sources.get(item.id) ?? "",
+      source: item.source,
       id: item.id,
       uuid: item.uuid,
       title: item.title,

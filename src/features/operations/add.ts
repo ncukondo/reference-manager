@@ -31,6 +31,7 @@ export interface AddReferencesOptions {
  * Information about a successfully added reference
  */
 export interface AddedItem {
+  source: string;
   id: string;
   uuid: string;
   title: string;
@@ -198,6 +199,7 @@ async function processImportResult(
   // Build result (uuid comes from the library-added item which has ensured UUID)
   const uuid = addedToLibrary.custom?.uuid ?? "";
   const addedItem: AddedItem = {
+    source: result.source,
     id,
     uuid,
     title: typeof finalItem.title === "string" ? finalItem.title : "",

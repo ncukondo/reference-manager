@@ -15,8 +15,10 @@ describe("JSON output formatters", () => {
       id: string,
       uuid: string,
       title: string,
+      source: string,
       options?: { idChanged?: boolean; originalId?: string }
     ): AddedItem => ({
+      source,
       id,
       uuid,
       title,
@@ -55,19 +57,14 @@ describe("JSON output formatters", () => {
       it("should format result with added items", () => {
         const result: AddReferencesResult = {
           added: [
-            createAddedItem("smith-2024", "uuid-1", "Article One"),
-            createAddedItem("jones-2024", "uuid-2", "Article Two"),
+            createAddedItem("smith-2024", "uuid-1", "Article One", "10.1234/a"),
+            createAddedItem("jones-2024", "uuid-2", "Article Two", "12345678"),
           ],
           failed: [],
           skipped: [],
         };
 
-        const sources = new Map([
-          ["smith-2024", "10.1234/a"],
-          ["jones-2024", "12345678"],
-        ]);
-
-        const output = formatAddJsonOutput(result, { sources });
+        const output = formatAddJsonOutput(result, {});
 
         expect(output.summary).toEqual({
           total: 2,
@@ -87,7 +84,7 @@ describe("JSON output formatters", () => {
       it("should format result with ID collision", () => {
         const result: AddReferencesResult = {
           added: [
-            createAddedItem("smith-2024a", "uuid-1", "Article", {
+            createAddedItem("smith-2024a", "uuid-1", "Article", "10.1234/a", {
               idChanged: true,
               originalId: "smith-2024",
             }),
@@ -148,7 +145,7 @@ describe("JSON output formatters", () => {
 
       it("should format mixed result", () => {
         const result: AddReferencesResult = {
-          added: [createAddedItem("new-2024", "uuid-1", "New Article")],
+          added: [createAddedItem("new-2024", "uuid-1", "New Article", "10.1234/new")],
           failed: [{ source: "bad-pmid", error: "Invalid", reason: "parse_error" }],
           skipped: [{ source: "10.1234/dup", existingId: "dup-2024", duplicateType: "doi" }],
         };
@@ -168,7 +165,7 @@ describe("JSON output formatters", () => {
       it("should include item when full=true", () => {
         const item = createCslItem("smith-2024", "uuid-1", "Full Article");
         const result: AddReferencesResult = {
-          added: [createAddedItem("smith-2024", "uuid-1", "Full Article")],
+          added: [createAddedItem("smith-2024", "uuid-1", "Full Article", "10.1234/smith")],
           failed: [],
           skipped: [],
         };
@@ -181,7 +178,7 @@ describe("JSON output formatters", () => {
 
       it("should not include item when full=false", () => {
         const result: AddReferencesResult = {
-          added: [createAddedItem("smith-2024", "uuid-1", "Article")],
+          added: [createAddedItem("smith-2024", "uuid-1", "Article", "10.1234/smith")],
           failed: [],
           skipped: [],
         };

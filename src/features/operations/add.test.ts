@@ -67,6 +67,7 @@ describe("addReferences", () => {
 
       expect(result.added).toHaveLength(1);
       expect(result.added[0]).toEqual({
+        source: "10.1234/new",
         id: "smith-2020", // generateId normalizes to lowercase
         uuid: "Smith-2020-uuid", // UUID from the added item
         title: "Test Article",

@@ -327,12 +327,6 @@ async function outputAddResultJson(
   context: ExecutionContext,
   full: boolean
 ): Promise<void> {
-  // Build sources map (placeholder - would need explicit tracking for full support)
-  const sources = new Map<string, string>();
-  for (const item of result.added) {
-    sources.set(item.id, "");
-  }
-
   // Build items map for --full option
   const items = new Map<string, CslItem>();
   if (full) {
@@ -344,7 +338,7 @@ async function outputAddResultJson(
     }
   }
 
-  const options: FormatAddJsonOptions = { full, sources, items };
+  const options: FormatAddJsonOptions = { full, items };
   const jsonOutput = formatAddJsonOutput(result, options);
   process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
 }
