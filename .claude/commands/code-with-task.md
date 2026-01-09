@@ -1,6 +1,6 @@
 spec/_index.mdを起点として必要事項を確認後、spec/tasks/内のタスク[prefix]-$ARGUMENTS.mdに取り組んで下さい。
 
-作業は $ARGUMENTS に結びつけられたブランチを作成、git worktree内で行います。
+作業は $ARGUMENTS に結びつけられたブランチ(無ければ妥当な名前を考えて作成)、git worktree内(無ければ作成)で行います。git worktree作成時は、npm installを実行して下さい。
 
 Todos一つが完了する毎にタスクファイルを更新し、commitします。
 
