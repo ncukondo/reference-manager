@@ -92,12 +92,12 @@ For each step:
 
 ### Step 3: Update ListResult interface and listReferences
 
-- [ ] Update `ListResult.items` type to `CslItem[]`
-- [ ] Remove `format` parameter from `ListOptions`
-- [ ] Remove `formatItems()` call from `listReferences`
-- [ ] Update `listReferences` to always return raw CslItem[]
-- [ ] Update tests in `src/features/operations/list.test.ts`
-- [ ] Verify: `npm run test:unit`
+- [x] Update `ListResult.items` type to `CslItem[]`
+- [x] Remove `format` parameter from `ListOptions`
+- [x] Remove `formatItems()` call from `listReferences`
+- [x] Update `listReferences` to always return raw CslItem[]
+- [x] Update tests in `src/features/operations/list.test.ts`
+- [x] Verify: `npm run test:unit`
 
 ### Step 4: Update CLI search command
 

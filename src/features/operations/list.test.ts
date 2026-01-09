@@ -34,73 +34,18 @@ describe("listReferences", () => {
     } as unknown as Library;
   });
 
-  describe("format: pretty", () => {
-    it("should return formatted strings for each reference", async () => {
-      const options: ListOptions = { format: "pretty" };
-      const result = await listReferences(mockLibrary, options);
-
-      expect(result.items).toHaveLength(2);
-      expect(result.items[0]).toContain("[ref1]");
-      expect(result.items[0]).toContain("Test Article 1");
-      expect(result.items[1]).toContain("[ref2]");
-      expect(result.items[1]).toContain("Test Article 2");
-    });
-  });
-
-  describe("format: json", () => {
+  describe("returns raw CslItem[]", () => {
     it("should return CslItem objects for each reference", async () => {
-      const options: ListOptions = { format: "json" };
+      const options: ListOptions = {};
       const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
-      // JSON format returns raw CslItem[], not stringified JSON
-      const item0 = result.items[0] as { id: string };
-      const item1 = result.items[1] as { id: string };
-      expect(item0.id).toBe("ref1");
-      expect(item1.id).toBe("ref2");
-    });
-  });
-
-  describe("format: bibtex", () => {
-    it("should return BibTeX entry for each reference", async () => {
-      const options: ListOptions = { format: "bibtex" };
-      const result = await listReferences(mockLibrary, options);
-
-      expect(result.items).toHaveLength(2);
-      expect(result.items[0]).toContain("@article{ref1,");
-      expect(result.items[1]).toContain("@article{ref2,");
-    });
-  });
-
-  describe("format: ids-only", () => {
-    it("should return only IDs", async () => {
-      const options: ListOptions = { format: "ids-only" };
-      const result = await listReferences(mockLibrary, options);
-
-      expect(result.items).toEqual(["ref1", "ref2"]);
-    });
-  });
-
-  describe("format: uuid", () => {
-    it("should return only UUIDs", async () => {
-      const options: ListOptions = { format: "uuid" };
-      const result = await listReferences(mockLibrary, options);
-
-      expect(result.items).toEqual(["uuid-1", "uuid-2"]);
-    });
-
-    it("should skip items without UUID", async () => {
-      const itemsWithMissingUuid: CslItem[] = [
-        { id: "ref1", type: "article", custom: { uuid: "uuid-1" } },
-        { id: "ref2", type: "article" }, // no custom
-        { id: "ref3", type: "article", custom: {} }, // no uuid
-      ];
-      (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockResolvedValue(itemsWithMissingUuid);
-
-      const options: ListOptions = { format: "uuid" };
-      const result = await listReferences(mockLibrary, options);
-
-      expect(result.items).toEqual(["uuid-1"]);
+      expect(result.items[0].id).toBe("ref1");
+      expect(result.items[0].type).toBe("article-journal");
+      expect(result.items[0].title).toBe("Test Article 1");
+      expect(result.items[1].id).toBe("ref2");
+      expect(result.items[1].type).toBe("article-journal");
+      expect(result.items[1].title).toBe("Test Article 2");
     });
   });
 
@@ -108,20 +53,33 @@ describe("listReferences", () => {
     it("should return empty array when library is empty", async () => {
       (mockLibrary.getAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      const options: ListOptions = { format: "pretty" };
+      const options: ListOptions = {};
       const result = await listReferences(mockLibrary, options);
 
       expect(result.items).toEqual([]);
     });
   });
 
-  describe("default format", () => {
-    it("should use pretty format by default", async () => {
-      const options: ListOptions = {};
+  describe("pagination metadata", () => {
+    it("should return correct pagination metadata", async () => {
+      const options: ListOptions = { limit: 1, offset: 0 };
       const result = await listReferences(mockLibrary, options);
 
-      expect(result.items).toHaveLength(2);
-      expect(result.items[0]).toContain("[ref1]");
+      expect(result.total).toBe(2);
+      expect(result.limit).toBe(1);
+      expect(result.offset).toBe(0);
+      expect(result.items).toHaveLength(1);
+      expect(result.nextOffset).toBe(1);
+    });
+  });
+
+  describe("sorting", () => {
+    it("should apply sort options", async () => {
+      const options: ListOptions = { sort: "id", order: "asc" };
+      const result = await listReferences(mockLibrary, options);
+
+      expect(result.items[0].id).toBe("ref1");
+      expect(result.items[1].id).toBe("ref2");
     });
   });
 });
