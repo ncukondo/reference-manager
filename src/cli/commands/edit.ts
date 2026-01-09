@@ -1,0 +1,231 @@
+/**
+ * Edit command implementation
+ *
+ * Opens references in external editor for interactive editing.
+ */
+
+import type { CslItem } from "../../core/csl-json/types.js";
+import type { IdentifierType } from "../../core/library-interface.js";
+import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
+import type { ExecutionContext } from "../execution-context.js";
+
+/**
+ * Options for the edit command.
+ */
+export interface EditCommandOptions {
+  /** One or more identifiers (citation keys or UUIDs) */
+  identifiers: string[];
+  /** Edit format: yaml (default) or json */
+  format: EditFormat;
+  /** Whether identifiers are UUIDs */
+  useUuid?: boolean;
+  /** Custom editor command (overrides $VISUAL/$EDITOR) */
+  editor?: string;
+}
+
+/**
+ * Result from edit command execution.
+ */
+export interface EditCommandResult {
+  success: boolean;
+  updatedCount: number;
+  updatedIds: string[];
+  error?: string;
+  aborted?: boolean;
+}
+
+/**
+ * Protected fields that should not be updated from edited content.
+ */
+const PROTECTED_FIELDS = new Set(["uuid", "created_at", "timestamp", "fulltext"]);
+
+/**
+ * Merge edited item with original, preserving protected fields.
+ */
+function mergeWithProtectedFields(
+  original: CslItem,
+  edited: Record<string, unknown>
+): Partial<CslItem> {
+  // Create result excluding _extractedUuid
+  const { _extractedUuid, ...rest } = edited;
+  const result: Record<string, unknown> = { ...rest };
+
+  // Merge custom field, preserving protected fields
+  const originalCustom = original.custom as Record<string, unknown> | undefined;
+  const editedCustom = result.custom as Record<string, unknown> | undefined;
+
+  if (originalCustom) {
+    const mergedCustom: Record<string, unknown> = { ...(editedCustom || {}) };
+
+    // Copy protected fields from original
+    for (const field of PROTECTED_FIELDS) {
+      if (field in originalCustom) {
+        mergedCustom[field] = originalCustom[field];
+      }
+    }
+
+    result.custom = mergedCustom;
+  }
+
+  return result as Partial<CslItem>;
+}
+
+/**
+ * Get UUID from custom field of an item.
+ */
+function getUuidFromItem(item: CslItem): string | undefined {
+  return (item.custom as Record<string, unknown>)?.uuid as string | undefined;
+}
+
+/**
+ * Resolve all identifiers to CslItems.
+ */
+async function resolveIdentifiers(
+  identifiers: string[],
+  idType: IdentifierType,
+  context: ExecutionContext
+): Promise<{ items: CslItem[]; uuidToOriginal: Map<string, CslItem>; error?: string }> {
+  const items: CslItem[] = [];
+  const uuidToOriginal = new Map<string, CslItem>();
+
+  for (const identifier of identifiers) {
+    const item = await context.library.find(identifier, { idType });
+    if (!item) {
+      return { items: [], uuidToOriginal, error: `Reference not found: ${identifier}` };
+    }
+    items.push(item);
+    const uuid = getUuidFromItem(item);
+    if (uuid) {
+      uuidToOriginal.set(uuid, item);
+    }
+  }
+
+  return { items, uuidToOriginal };
+}
+
+/**
+ * Update a single edited item in the library.
+ */
+async function updateEditedItem(
+  editedItem: Record<string, unknown>,
+  items: CslItem[],
+  uuidToOriginal: Map<string, CslItem>,
+  context: ExecutionContext
+): Promise<string | undefined> {
+  const extractedUuid = editedItem._extractedUuid as string | undefined;
+  const original = extractedUuid ? uuidToOriginal.get(extractedUuid) : undefined;
+
+  if (original && extractedUuid) {
+    const updates = mergeWithProtectedFields(original, editedItem);
+    await context.library.update(extractedUuid, updates, { idType: "uuid" });
+    return editedItem.id as string;
+  }
+
+  // Fallback: match by id
+  const matchedOriginal = items.find((item) => item.id === editedItem.id);
+  if (!matchedOriginal) {
+    return undefined;
+  }
+
+  const matchedUuid = getUuidFromItem(matchedOriginal);
+  if (matchedUuid) {
+    const updates = mergeWithProtectedFields(matchedOriginal, editedItem);
+    await context.library.update(matchedUuid, updates, { idType: "uuid" });
+    return editedItem.id as string;
+  }
+
+  return undefined;
+}
+
+/**
+ * Execute the edit command.
+ *
+ * @param options - Edit command options
+ * @param context - Execution context
+ * @returns Edit result
+ */
+export async function executeEditCommand(
+  options: EditCommandOptions,
+  context: ExecutionContext
+): Promise<EditCommandResult> {
+  const { identifiers, format, useUuid = false, editor: customEditor } = options;
+  const idType: IdentifierType = useUuid ? "uuid" : "id";
+
+  // 1. Resolve all identifiers to items
+  const resolved = await resolveIdentifiers(identifiers, idType, context);
+  if (resolved.error) {
+    return {
+      success: false,
+      updatedCount: 0,
+      updatedIds: [],
+      error: resolved.error,
+    };
+  }
+
+  const { items, uuidToOriginal } = resolved;
+
+  // 2. Resolve editor
+  const editor = customEditor || resolveEditor();
+
+  // 3. Execute edit
+  const editResult = await executeEdit(items, { format, editor });
+
+  if (!editResult.success) {
+    return {
+      success: false,
+      updatedCount: 0,
+      updatedIds: [],
+      error: editResult.error ?? "Edit failed",
+    };
+  }
+
+  // 4. Update references
+  const updatedIds: string[] = [];
+  for (const editedItem of editResult.editedItems) {
+    const updatedId = await updateEditedItem(editedItem, items, uuidToOriginal, context);
+    if (updatedId) {
+      updatedIds.push(updatedId);
+    }
+  }
+
+  // 5. Save library
+  if (updatedIds.length > 0) {
+    await context.library.save();
+  }
+
+  return {
+    success: true,
+    updatedCount: updatedIds.length,
+    updatedIds,
+  };
+}
+
+/**
+ * Format edit result for CLI output.
+ *
+ * @param result - Edit result
+ * @returns Formatted output string
+ */
+export function formatEditOutput(result: EditCommandResult): string {
+  if (result.aborted) {
+    return "Edit aborted.";
+  }
+
+  if (!result.success) {
+    return `Error: ${result.error || "Unknown error"}`;
+  }
+
+  const count = result.updatedCount;
+  const refWord = count === 1 ? "reference" : "references";
+
+  if (count === 0) {
+    return "No references were updated.";
+  }
+
+  const lines = [`Updated ${count} ${refWord}:`];
+  for (const id of result.updatedIds) {
+    lines.push(`  - ${id}`);
+  }
+
+  return lines.join("\n");
+}

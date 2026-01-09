@@ -101,16 +101,16 @@ For each step:
 
 ### Step 9: CLI command integration
 
-- [ ] Write test: `src/cli/commands/edit.test.ts`
+- [x] Write test: `src/cli/commands/edit.test.ts`
   - Test command parsing
   - Test identifier resolution
   - Test --uuid flag
   - Test --format option
   - Test TTY requirement
-- [ ] Implement: `src/cli/commands/edit.ts`
-- [ ] Register in `src/cli/index.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/cli/commands/edit.ts`
+- [x] Register in `src/cli/index.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 10: Configuration support
 

@@ -49,3 +49,6 @@ export type {
 
 export { executeExport, formatExportOutput, getExportExitCode } from "./export.js";
 export type { ExportCommandOptions, ExportCommandResult } from "./export.js";
+
+export { executeEditCommand, formatEditOutput } from "./edit.js";
+export type { EditCommandOptions, EditCommandResult } from "./edit.js";
