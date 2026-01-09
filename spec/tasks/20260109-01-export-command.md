@@ -143,11 +143,11 @@ For each step:
 
 ### Step 7: E2E tests
 
-- [ ] Write E2E tests: `src/cli/export.e2e.test.ts`
+- [x] Write E2E tests: `src/cli/export.e2e.test.ts`
   - Test all selection modes
   - Test all output formats
   - Test error cases
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ### Step 8: Update documentation
 
