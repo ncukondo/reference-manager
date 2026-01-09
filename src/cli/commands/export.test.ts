@@ -321,6 +321,48 @@ describe("export command", () => {
       // Even with single item, --search should output array
       expect(Array.isArray(parsed)).toBe(true);
     });
+
+    it("should output as YAML with --format yaml", () => {
+      const result: ExportCommandResult = {
+        items: [mockItem],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        ids: ["smith-2024"],
+        format: "yaml",
+      };
+
+      const output = formatExportOutput(result, options);
+
+      // YAML should contain the title
+      expect(output).toContain("title: Test Article");
+      expect(output).toContain("id: smith-2024");
+      // Should not be JSON format
+      expect(output).not.toContain("{");
+    });
+
+    it("should output multiple items as YAML array", () => {
+      const mockItem2: CslItem = {
+        id: "jones-2023",
+        type: "article-journal",
+        title: "Another Article",
+        custom: { uuid: "uuid-jones" },
+      };
+      const result: ExportCommandResult = {
+        items: [mockItem, mockItem2],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        all: true,
+        format: "yaml",
+      };
+
+      const output = formatExportOutput(result, options);
+
+      // YAML array starts with -
+      expect(output).toContain("- id: smith-2024");
+      expect(output).toContain("- id: jones-2023");
+    });
   });
 
   describe("getExportExitCode", () => {

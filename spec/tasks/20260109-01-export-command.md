@@ -131,9 +131,9 @@ For each step:
 
 ### Step 5: Add YAML output format
 
-- [ ] Write test for `--format yaml`
-- [ ] Implement YAML serialization
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Write test for `--format yaml`
+- [x] Implement YAML serialization
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 6: Add BibTeX output format
 

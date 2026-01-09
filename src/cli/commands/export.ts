@@ -4,6 +4,7 @@
  * Exports raw CSL-JSON for external tool integration (pandoc, jq, etc.).
  */
 
+import { stringify as yamlStringify } from "yaml";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ExecutionContext } from "../execution-context.js";
 
@@ -80,19 +81,20 @@ export function formatExportOutput(
 ): string {
   const format = options.format ?? "json";
 
+  // Determine if this is a single ID request (output object vs array)
+  const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all && !options.search;
+  const data = result.items.length === 1 && singleIdRequest ? result.items[0] : result.items;
+
   if (format === "json") {
-    // Single item with single ID request: output as object, not array
-    // --all and --search always output as array
-    const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all && !options.search;
-    if (result.items.length === 1 && singleIdRequest) {
-      return JSON.stringify(result.items[0], null, 2);
-    }
-    // Multiple items or --all/--search: output as array
-    return JSON.stringify(result.items, null, 2);
+    return JSON.stringify(data, null, 2);
   }
 
-  // TODO: yaml and bibtex formats
-  return JSON.stringify(result.items, null, 2);
+  if (format === "yaml") {
+    return yamlStringify(data);
+  }
+
+  // TODO: bibtex format
+  return JSON.stringify(data, null, 2);
 }
 
 /**
