@@ -131,7 +131,10 @@ export async function executeSearch(
  * @param options - Command options to determine format
  * @returns Formatted output string
  */
-export function formatSearchOutput(result: SearchCommandResult, options: SearchCommandOptions): string {
+export function formatSearchOutput(
+  result: SearchCommandResult,
+  options: SearchCommandOptions
+): string {
   const format = getOutputFormat(options);
 
   if (format === "json") {

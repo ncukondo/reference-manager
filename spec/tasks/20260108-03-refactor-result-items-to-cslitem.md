@@ -119,14 +119,14 @@ For each step:
 
 ### Step 6: Update MCP tools (remove format parameter)
 
-- [ ] Update `src/mcp/tools/search.ts`:
+- [x] Update `src/mcp/tools/search.ts`:
   - Remove `format` from input schema (search doesn't have it currently)
   - Ensure raw CslItem[] is returned
-- [ ] Update `src/mcp/tools/list.ts`:
+- [x] Update `src/mcp/tools/list.ts`:
   - Remove `format` from input schema
   - Always return raw CslItem[]
-- [ ] Update MCP tests
-- [ ] Verify: `npm run test:unit`
+- [x] Update MCP tests
+- [x] Verify: `npm run test:unit`
 
 ### Step 7: Update Server routes (if needed)
 

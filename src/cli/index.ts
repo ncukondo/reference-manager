@@ -120,7 +120,7 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
 
     const context = await createExecutionContext(config, Library.load);
     const result = await executeList(options, context);
-    const output = formatListOutput(result, options.json ?? false);
+    const output = formatListOutput(result, options);
 
     if (output) {
       process.stdout.write(`${output}\n`);
@@ -178,7 +178,7 @@ async function handleSearchAction(
 
     // Regular search mode
     const result = await executeSearch({ ...options, query }, context);
-    const output = formatSearchOutput(result, options.json ?? false);
+    const output = formatSearchOutput(result, { ...options, query });
 
     if (output) {
       process.stdout.write(`${output}\n`);

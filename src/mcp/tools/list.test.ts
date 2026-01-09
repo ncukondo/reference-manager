@@ -69,7 +69,7 @@ describe("MCP list tool", () => {
   });
 
   describe("list tool callback", () => {
-    it("should return all references in pretty format by default", async () => {
+    it("should return all references as raw CslItem[]", async () => {
       let capturedCallback: (
         args: ListToolParams
       ) => Promise<{ content: Array<{ type: string; text: string }> }>;
@@ -92,38 +92,13 @@ describe("MCP list tool", () => {
       expect(response.limit).toBe(20); // from mockConfig
       expect(response.offset).toBe(0);
       expect(response.items).toHaveLength(2);
-      // Check that both references are present (order depends on default sorting)
-      const allText = response.items.join("\n");
-      expect(allText).toContain("smith2024");
-      expect(allText).toContain("jones2023");
-    });
-
-    it("should return references in json format", async () => {
-      let capturedCallback: (
-        args: ListToolParams
-      ) => Promise<{ content: Array<{ type: string; text: string }> }>;
-
-      const mockServer = {
-        registerTool: (_name: string, _config: unknown, cb: typeof capturedCallback) => {
-          capturedCallback = cb;
-        },
-      };
-
-      registerListTool(mockServer as never, () => libraryOperations, getConfig);
-
-      const result = await capturedCallback?.({ format: "json" });
-
-      // Single content block with metadata and items
-      expect(result.content).toHaveLength(1);
-      const response = JSON.parse(result.content[0].text);
-      expect(response.items).toHaveLength(2);
-      // JSON format returns raw CslItem objects, not stringified JSON
+      // Items are raw CslItem objects
       const ids = response.items.map((item: { id: string }) => item.id);
       expect(ids).toContain("smith2024");
       expect(ids).toContain("jones2023");
     });
 
-    it("should return references in bibtex format", async () => {
+    it("should return CslItem[] with all fields", async () => {
       let capturedCallback: (
         args: ListToolParams
       ) => Promise<{ content: Array<{ type: string; text: string }> }>;
@@ -136,13 +111,18 @@ describe("MCP list tool", () => {
 
       registerListTool(mockServer as never, () => libraryOperations, getConfig);
 
-      const result = await capturedCallback?.({ format: "bibtex" });
+      const result = await capturedCallback?.({});
 
       // Single content block with metadata and items
       expect(result.content).toHaveLength(1);
       const response = JSON.parse(result.content[0].text);
       expect(response.items).toHaveLength(2);
-      expect(response.items[0]).toContain("@");
+      // Verify CslItem structure
+      const smithItem = response.items.find((item: { id: string }) => item.id === "smith2024");
+      expect(smithItem).toBeDefined();
+      expect(smithItem.type).toBe("article-journal");
+      expect(smithItem.title).toBe("Machine Learning Applications");
+      expect(smithItem.author).toHaveLength(1);
     });
 
     it("should return empty array for empty library", async () => {

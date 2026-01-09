@@ -76,7 +76,7 @@ describe("MCP search tool", () => {
   });
 
   describe("search tool callback", () => {
-    it("should return matching references for query", async () => {
+    it("should return matching references as raw CslItem[]", async () => {
       let capturedCallback: (
         args: SearchToolParams
       ) => Promise<{ content: Array<{ type: string; text: string }> }>;
@@ -97,8 +97,9 @@ describe("MCP search tool", () => {
       const response = JSON.parse(result.content[0].text);
       expect(response.total).toBe(1);
       expect(response.items).toHaveLength(1);
-      expect(response.items[0]).toContain("smith2024");
-      expect(response.items[0]).toContain("Machine Learning Applications");
+      // Items are raw CslItem objects
+      expect(response.items[0].id).toBe("smith2024");
+      expect(response.items[0].title).toBe("Machine Learning Applications");
     });
 
     it("should return all references when query is empty", async () => {
@@ -121,6 +122,11 @@ describe("MCP search tool", () => {
       const response = JSON.parse(result.content[0].text);
       expect(response.total).toBe(3);
       expect(response.items).toHaveLength(3);
+      // All items are CslItem objects
+      const ids = response.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain("smith2024");
+      expect(ids).toContain("jones2023");
+      expect(ids).toContain("brown2022");
     });
 
     it("should return empty array when no matches found", async () => {
@@ -164,7 +170,7 @@ describe("MCP search tool", () => {
       expect(result.content).toHaveLength(1);
       const response = JSON.parse(result.content[0].text);
       expect(response.items).toHaveLength(1);
-      expect(response.items[0]).toContain("jones2023");
+      expect(response.items[0].id).toBe("jones2023");
     });
 
     it("should support year search", async () => {
@@ -186,7 +192,7 @@ describe("MCP search tool", () => {
       expect(result.content).toHaveLength(1);
       const response = JSON.parse(result.content[0].text);
       expect(response.items).toHaveLength(1);
-      expect(response.items[0]).toContain("brown2022");
+      expect(response.items[0].id).toBe("brown2022");
     });
   });
 });

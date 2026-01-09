@@ -66,7 +66,6 @@ export function registerSearchTool(
 
       const result = await libraryOps.search({
         query: args.query,
-        format: "pretty",
         limit,
         ...pickDefined(args, ["sort", "order", "offset"] as const),
       });

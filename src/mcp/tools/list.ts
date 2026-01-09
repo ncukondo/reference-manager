@@ -11,7 +11,6 @@ import {
 import { pickDefined } from "../../utils/object.js";
 
 export interface ListToolParams {
-  format?: "json" | "bibtex" | "pretty" | undefined;
   sort?: SortField | undefined;
   order?: SortOrder | undefined;
   limit?: number | undefined;
@@ -34,12 +33,8 @@ export function registerListTool(
     "list",
     {
       description:
-        "List references in the library. Supports different output formats, sorting, and pagination.",
+        "List references in the library. Returns raw CslItem[] data. Supports sorting and pagination.",
       inputSchema: {
-        format: z
-          .enum(["json", "bibtex", "pretty"])
-          .optional()
-          .describe("Output format: json, bibtex, or pretty (default: pretty)"),
         sort: sortFieldSchema
           .optional()
           .describe("Sort by field: created, updated, published, author, title (default: updated)"),
@@ -66,7 +61,6 @@ export function registerListTool(
       const limit = args.limit ?? config.mcp.defaultLimit;
 
       const result = await libraryOps.list({
-        format: args.format ?? "pretty",
         limit,
         ...pickDefined(args, ["sort", "order", "offset"] as const),
       });
