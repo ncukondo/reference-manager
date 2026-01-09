@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { defaultConfig } from "./defaults.js";
 import { loadConfig } from "./loader.js";
+import { getPaths } from "./paths.js";
 
 describe("Config Loader", () => {
   let testDir: string;
@@ -423,7 +424,7 @@ log_level = "info"
     it("should use default citation settings when not specified", () => {
       const config = loadConfig({ cwd: testDir });
       expect(config.citation.defaultStyle).toBe("apa");
-      expect(config.citation.cslDirectory).toEqual([join(homedir(), ".reference-manager", "csl")]);
+      expect(config.citation.cslDirectory).toEqual([join(getPaths().data, "csl")]);
       expect(config.citation.defaultLocale).toBe("en-US");
       expect(config.citation.defaultFormat).toBe("text");
     });
@@ -670,7 +671,7 @@ apiKey = "my-api-key"
   describe("Fulltext configuration", () => {
     it("should use default fulltext settings when not specified", () => {
       const config = loadConfig({ cwd: testDir });
-      expect(config.fulltext.directory).toBe(join(homedir(), ".reference-manager", "fulltext"));
+      expect(config.fulltext.directory).toBe(join(getPaths().data, "fulltext"));
     });
 
     it("should load fulltext.directory from config", () => {

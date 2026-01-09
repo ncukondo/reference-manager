@@ -95,17 +95,17 @@ For each step:
 
 ### Step 3: Update defaults.ts
 
-- [ ] Write test: Update `src/config/defaults.test.ts`
+- [x] Write test: Update `src/config/defaults.test.ts`
   - Test `getDefaultUserConfigPath()` uses config path
   - Test `getDefaultLibraryPath()` uses data path
   - Test `getDefaultCslDirectory()` uses data path
   - Test `getDefaultFulltextDirectory()` uses data path
   - Test `getDefaultBackupDirectory()` uses cache path
-- [ ] Implement: Update `src/config/defaults.ts`
+- [x] Implement: Update `src/config/defaults.ts`
   - Use `getPaths()` instead of `homedir()` + `.reference-manager`
   - Rename library file from `csl.library.json` to `library.json` (optional, cleaner)
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update specs
 
