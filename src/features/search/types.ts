@@ -17,7 +17,8 @@ export type FieldSpecifier =
   | "isbn"
   | "url"
   | "keyword"
-  | "tag";
+  | "tag"
+  | "id";
 
 /**
  * Search token representing a parsed query element

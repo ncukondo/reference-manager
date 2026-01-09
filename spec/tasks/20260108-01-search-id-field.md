@@ -30,12 +30,12 @@ For each step:
 
 ### Step 1: Add `id:` prefix to tokenizer
 
-- [ ] Write test: `src/features/search/tokenizer.test.ts`
+- [x] Write test: `src/features/search/tokenizer.test.ts`
   - Test that `id:smith2023` is tokenized with `field: "id"`
-- [ ] Implement: `src/features/search/tokenizer.ts`
+- [x] Implement: `src/features/search/tokenizer.ts`
   - Add `"id"` to valid field prefixes
-- [ ] Verify: `npm run test:unit -- tokenizer`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit -- tokenizer`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Add `id` to searchable fields
 
