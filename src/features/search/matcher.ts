@@ -4,9 +4,9 @@ import type { FieldMatch, MatchStrength, SearchResult, SearchToken } from "./typ
 import { matchWithUppercaseSensitivity } from "./uppercase.js";
 
 /**
- * ID fields require exact match (case-sensitive)
+ * ID fields require exact match (case-insensitive)
  */
-const ID_FIELDS = new Set(["DOI", "PMID", "PMCID", "URL", "ISBN"]);
+const ID_FIELDS = new Set(["DOI", "PMID", "PMCID", "URL", "ISBN", "id"]);
 
 /**
  * Extract year from CSL-JSON issued field
@@ -169,6 +169,7 @@ const FIELD_MAP: Record<string, string> = {
   pmid: "PMID",
   pmcid: "PMCID",
   isbn: "ISBN",
+  id: "id",
 };
 
 /**
@@ -195,21 +196,9 @@ function matchFieldValue(field: string, tokenValue: string, reference: CslItem):
     return null;
   }
 
-  // Check if this is an ID field (exact match)
+  // Check if this is an ID field (exact match, case-insensitive)
   if (ID_FIELDS.has(field)) {
-    // ISBN uses case-insensitive matching (for X check digit in ISBN-10)
-    if (field === "ISBN") {
-      if (fieldValue.toUpperCase() === tokenValue.toUpperCase()) {
-        return {
-          field,
-          strength: "exact",
-          value: fieldValue,
-        };
-      }
-      return null;
-    }
-    // Other ID fields: case-sensitive exact match
-    if (fieldValue === tokenValue) {
+    if (fieldValue.toUpperCase() === tokenValue.toUpperCase()) {
       return {
         field,
         strength: "exact",
@@ -283,6 +272,7 @@ function matchSpecificField(token: SearchToken, reference: CslItem): FieldMatch[
  * Standard fields to search (not special-cased)
  */
 const STANDARD_SEARCH_FIELDS = [
+  "id",
   "title",
   "author",
   "container-title",

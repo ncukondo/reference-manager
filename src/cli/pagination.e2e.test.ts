@@ -273,6 +273,30 @@ describe("Pagination E2E", () => {
       // rel is an alias for relevance
       expect(result.exitCode).toBe(0);
     });
+
+    it("should search by id: prefix (citation key)", async () => {
+      const result = await runCli(["search", "--library", libraryPath, "id:smith2024"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("smith2024");
+      // Should only match smith2024, not other refs containing "smith"
+      expect(result.stdout).not.toContain("jones2023");
+    });
+
+    it("should search by id: prefix case-insensitively", async () => {
+      const result = await runCli(["search", "--library", libraryPath, "id:SMITH2024"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("smith2024");
+    });
+
+    it("should not match partial id with id: prefix", async () => {
+      const result = await runCli(["search", "--library", libraryPath, "id:smith"]);
+
+      expect(result.exitCode).toBe(0);
+      // Partial match should not work for id field
+      expect(result.stdout).not.toContain("smith2024");
+    });
   });
 
   describe("combined options", () => {

@@ -11,6 +11,7 @@ const VALID_FIELDS: Set<FieldSpecifier> = new Set([
   "url",
   "keyword",
   "tag",
+  "id",
 ]);
 
 /**

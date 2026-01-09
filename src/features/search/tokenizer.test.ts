@@ -188,6 +188,17 @@ describe("tokenizer", () => {
       });
     });
 
+    it("should parse id field", () => {
+      const result = tokenize("id:smith2023");
+      expect(result.tokens).toHaveLength(1);
+      expect(result.tokens[0]).toEqual({
+        raw: "id:smith2023",
+        value: "smith2023",
+        field: "id",
+        isPhrase: false,
+      });
+    });
+
     it("should handle field with phrase", () => {
       const result = tokenize('author:"John Smith"');
       expect(result.tokens).toHaveLength(1);

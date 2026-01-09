@@ -28,6 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Citation Key Search (`id:` prefix)**: Search references by citation key using `id:` prefix
+  - Example: `ref search "id:smith2023"`
+  - Exact match only (no partial matching)
+  - Case-insensitive matching
+  - Citation key (`id` field) is also searched in multi-field search
+
+- **Case-Insensitive ID Field Matching**: All ID fields now use case-insensitive exact matching
+  - Affects: `id`, `DOI`, `PMID`, `PMCID`, `ISBN`, `URL`
+  - Example: `doi:10.1234/ABC` now matches `10.1234/abc`
+
 - **ISBN Search Field Prefix**: Search references by ISBN using `isbn:` prefix
   - Example: `ref search "isbn:9784000000000"`
   - Exact match (no partial matching)
