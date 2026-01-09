@@ -83,6 +83,10 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
   - New `export` command for external tool integration (pandoc, jq, etc.)
   - Multiple ID support, `--all`, `--search` options
   - Output formats: CSL-JSON, YAML, BibTeX
+- **Task 3**: Edit command (`20260109-02-edit-command.md`)
+  - Open references in external editor ($VISUAL/$EDITOR)
+  - YAML format (default) with protected fields as comments
+  - JSON format option, field transformations (ISO dates, keyword arrays)
 
 ---
 
