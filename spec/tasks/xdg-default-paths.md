@@ -1,0 +1,140 @@
+# Task: XDG-Compliant Default Paths with env-paths
+
+## Purpose
+
+Change default paths for config, data, and cache directories to follow platform conventions using `env-paths`:
+- Linux: XDG Base Directory Specification
+- macOS: `~/Library/...`
+- Windows: `%APPDATA%`, `%LOCALAPPDATA%`
+
+This is a **breaking change**. Pre-release phase, no migration needed.
+
+## References
+
+- Package: [env-paths](https://github.com/sindresorhus/env-paths)
+- Related: `src/config/defaults.ts`
+
+### Affected Specs
+
+- `spec/architecture/cli.md`
+- `spec/architecture/directory-structure.md`
+- `spec/architecture/http-server.md`
+- `spec/architecture/mcp-server.md`
+- `spec/core/data-model.md`
+- `spec/features/citation.md`
+- `spec/features/fulltext.md`
+- `spec/features/write-safety.md`
+
+### Affected Documentation
+
+- `README.md`
+- `README_ja.md`
+- `CHANGELOG.md`
+
+## Current vs New Paths
+
+### Current (all platforms)
+| Purpose | Path |
+|---------|------|
+| User config | `~/.reference-manager/config.toml` |
+| Library | `~/.reference-manager/csl.library.json` |
+| CSL styles | `~/.reference-manager/csl/` |
+| Fulltext | `~/.reference-manager/fulltext/` |
+| Backup | `/tmp/reference-manager/backups/` |
+
+### New (Linux)
+| Purpose | Path |
+|---------|------|
+| User config | `~/.config/reference-manager/config.toml` |
+| Library | `~/.local/share/reference-manager/library.json` |
+| CSL styles | `~/.local/share/reference-manager/csl/` |
+| Fulltext | `~/.local/share/reference-manager/fulltext/` |
+| Backup | `~/.cache/reference-manager/backups/` |
+
+### New (macOS)
+| Purpose | Path |
+|---------|------|
+| User config | `~/Library/Preferences/reference-manager/config.toml` |
+| Library | `~/Library/Application Support/reference-manager/library.json` |
+| CSL styles | `~/Library/Application Support/reference-manager/csl/` |
+| Fulltext | `~/Library/Application Support/reference-manager/fulltext/` |
+| Backup | `~/Library/Caches/reference-manager/backups/` |
+
+### New (Windows)
+| Purpose | Path |
+|---------|------|
+| User config | `%APPDATA%\reference-manager\Config\config.toml` |
+| Library | `%LOCALAPPDATA%\reference-manager\Data\library.json` |
+| CSL styles | `%LOCALAPPDATA%\reference-manager\Data\csl\` |
+| Fulltext | `%LOCALAPPDATA%\reference-manager\Data\fulltext\` |
+| Backup | `%LOCALAPPDATA%\reference-manager\Cache\backups\` |
+
+## TDD Workflow
+
+For each step:
+1. Write failing test
+2. Write minimal implementation to pass
+3. Clean up, pass lint/typecheck, verify tests still pass
+
+## Steps
+
+### Step 1: Add env-paths dependency
+
+- [ ] Install: `npm install env-paths`
+- [ ] Verify package.json updated
+
+### Step 2: Create paths module
+
+- [ ] Write test: `src/config/paths.test.ts`
+  - Test that `getPaths()` returns object with config, data, cache properties
+  - Test paths are non-empty strings
+- [ ] Implement: `src/config/paths.ts`
+  - Export `getPaths()` using env-paths
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 3: Update defaults.ts
+
+- [ ] Write test: Update `src/config/defaults.test.ts`
+  - Test `getDefaultUserConfigPath()` uses config path
+  - Test `getDefaultLibraryPath()` uses data path
+  - Test `getDefaultCslDirectory()` uses data path
+  - Test `getDefaultFulltextDirectory()` uses data path
+  - Test `getDefaultBackupDirectory()` uses cache path
+- [ ] Implement: Update `src/config/defaults.ts`
+  - Use `getPaths()` instead of `homedir()` + `.reference-manager`
+  - Rename library file from `csl.library.json` to `library.json` (optional, cleaner)
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 4: Update specs
+
+Update path references in affected spec files:
+
+- [ ] `spec/architecture/cli.md` - config file paths
+- [ ] `spec/architecture/directory-structure.md` - directory layout
+- [ ] `spec/architecture/http-server.md` - portfile/config paths
+- [ ] `spec/architecture/mcp-server.md` - config paths
+- [ ] `spec/core/data-model.md` - library file path
+- [ ] `spec/features/citation.md` - CSL directory path
+- [ ] `spec/features/fulltext.md` - fulltext directory path
+- [ ] `spec/features/write-safety.md` - backup directory path
+
+### Step 5: Update documentation
+
+- [ ] Update `README.md` with new default paths
+- [ ] Update `README_ja.md` with new default paths
+- [ ] Add breaking change note to `CHANGELOG.md`
+
+## Completion Checklist
+
+- [ ] All tests pass (`npm run test`)
+- [ ] Lint passes (`npm run lint`)
+- [ ] Type check passes (`npm run typecheck`)
+- [ ] Build succeeds (`npm run build`)
+- [ ] Manual verification on current platform
+- [ ] Specs updated with new paths
+- [ ] README.md updated
+- [ ] README_ja.md updated
+- [ ] CHANGELOG.md updated with breaking change
+- [ ] Move this file to `spec/tasks/completed/`
