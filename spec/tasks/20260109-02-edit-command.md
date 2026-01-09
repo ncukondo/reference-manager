@@ -91,13 +91,13 @@ For each step:
 
 ### Step 8: Edit feature entry point
 
-- [ ] Write test: `src/features/edit/index.test.ts`
+- [x] Write test: `src/features/edit/index.test.ts`
   - Test full edit flow (mock editor)
   - Test multiple references
   - Test format option
-- [ ] Implement: `src/features/edit/index.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/index.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 9: CLI command integration
 
