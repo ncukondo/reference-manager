@@ -73,7 +73,7 @@ describe("edit-session", () => {
 
       const exitCode = openEditor("vim", "/tmp/test.yaml");
 
-      expect(mockSpawnSync).toHaveBeenCalledWith("vim", ["/tmp/test.yaml"], {
+      expect(mockSpawnSync).toHaveBeenCalledWith('vim "/tmp/test.yaml"', {
         stdio: "inherit",
         shell: true,
       });

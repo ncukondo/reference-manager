@@ -31,7 +31,10 @@ export function createTempFile(content: string, format: EditFormat): string {
  * Opens the editor and waits for it to exit.
  */
 export function openEditor(editor: string, filePath: string): number {
-  const result = spawnSync(editor, [filePath], {
+  // Use shell: true with command string to avoid DEP0190 warning
+  // The filePath is quoted to handle paths with spaces
+  const command = `${editor} "${filePath}"`;
+  const result = spawnSync(command, {
     stdio: "inherit",
     shell: true,
   });
