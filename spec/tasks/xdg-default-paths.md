@@ -111,14 +111,14 @@ For each step:
 
 Update path references in affected spec files:
 
-- [ ] `spec/architecture/cli.md` - config file paths
-- [ ] `spec/architecture/directory-structure.md` - directory layout
-- [ ] `spec/architecture/http-server.md` - portfile/config paths
-- [ ] `spec/architecture/mcp-server.md` - config paths
-- [ ] `spec/core/data-model.md` - library file path
-- [ ] `spec/features/citation.md` - CSL directory path
-- [ ] `spec/features/fulltext.md` - fulltext directory path
-- [ ] `spec/features/write-safety.md` - backup directory path
+- [x] `spec/architecture/cli.md` - config file paths
+- [x] `spec/architecture/directory-structure.md` - no changes needed (source structure only)
+- [x] `spec/architecture/http-server.md` - portfile/config paths
+- [x] `spec/architecture/mcp-server.md` - no changes needed (paths not hardcoded)
+- [x] `spec/core/data-model.md` - no changes needed (example filename only)
+- [x] `spec/features/citation.md` - CSL directory path
+- [x] `spec/features/fulltext.md` - fulltext directory path
+- [x] `spec/features/write-safety.md` - backup directory path
 
 ### Step 5: Update documentation
 

@@ -118,13 +118,31 @@ See `spec/features/pagination.md` for complete specification.
 2. Environment variables
 3. Current directory: `.reference-manager.config.toml`
 4. `$REFERENCE_MANAGER_CONFIG`
-5. User config: `~/.reference-manager/config.toml`
+5. User config: Platform-specific location (see below)
 6. Built-in defaults
+
+### Default Paths
+
+Paths follow platform conventions using XDG Base Directory Specification on Linux:
+
+| Purpose | Linux | macOS | Windows |
+|---------|-------|-------|---------|
+| Config | `~/.config/reference-manager/` | `~/Library/Preferences/reference-manager/` | `%APPDATA%\reference-manager\Config\` |
+| Data | `~/.local/share/reference-manager/` | `~/Library/Application Support/reference-manager/` | `%LOCALAPPDATA%\reference-manager\Data\` |
+| Cache | `~/.cache/reference-manager/` | `~/Library/Caches/reference-manager/` | `%LOCALAPPDATA%\reference-manager\Cache\` |
+
+| File | Default Location |
+|------|------------------|
+| User config | `{config}/config.toml` |
+| Library | `{data}/library.json` |
+| CSL styles | `{data}/csl/` |
+| Fulltext | `{data}/fulltext/` |
+| Backups | `{cache}/backups/` |
 
 ### Core Settings
 
 ```toml
-library = "~/.reference-manager/csl.library.json"
+# library defaults to {data}/library.json
 log_level = "info"
 
 [backup]
@@ -144,9 +162,7 @@ default_style = "apa"
 default_locale = "en-US"
 default_format = "text"
 
-[fulltext]
-directory = "~/.reference-manager/fulltext"
-
+# fulltext.directory defaults to {data}/fulltext
 [cli]
 default_limit = 0          # 0 = unlimited
 default_sort = "updated"

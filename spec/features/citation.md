@@ -68,7 +68,7 @@ $ reference-manager cite smith2023 --style vancouver
 default_style = "apa"
 default_locale = "en-US"
 default_format = "text"
-csl_directory = ["~/.reference-manager/csl/"]
+# csl_directory defaults to [{data}/csl/] (platform-specific data directory)
 ```
 
 ## Style Resolution Order

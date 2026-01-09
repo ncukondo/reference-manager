@@ -7,10 +7,7 @@
 ## Backup
 
 - Created before write
-- Location:
-  ```
-  $TMPDIR/reference-manager/backups/<library-name>/
-  ```
+- Location: `{cache}/backups/<library-name>/` (platform-specific cache directory)
 - Retention:
   - Max 50 generations OR
   - Max age 1 year
