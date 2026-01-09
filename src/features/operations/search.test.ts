@@ -43,87 +43,66 @@ describe("searchReferences", () => {
   });
 
   describe("basic search", () => {
-    it("should find references matching query", async () => {
-      const options: SearchOperationOptions = { query: "Smith", format: "pretty" };
+    it("should find references matching query and return CslItem[]", async () => {
+      const options: SearchOperationOptions = { query: "Smith" };
       const result = await searchReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0]).toContain("[smith-2023]");
+      expect(result.items[0].id).toBe("smith-2023");
     });
 
     it("should find multiple references matching query", async () => {
-      const options: SearchOperationOptions = { query: "Learning", format: "pretty" };
+      const options: SearchOperationOptions = { query: "Learning" };
       const result = await searchReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(2);
+      expect(result.items.map((item) => item.id)).toContain("smith-2023");
+      expect(result.items.map((item) => item.id)).toContain("doe-2024");
     });
 
     it("should return empty array when no matches", async () => {
-      const options: SearchOperationOptions = { query: "nonexistent", format: "pretty" };
+      const options: SearchOperationOptions = { query: "nonexistent" };
       const result = await searchReferences(mockLibrary, options);
 
       expect(result.items).toEqual([]);
     });
   });
 
-  describe("format: json", () => {
-    it("should return CslItem objects for matching references", async () => {
-      const options: SearchOperationOptions = { query: "Smith", format: "json" };
-      const result = await searchReferences(mockLibrary, options);
-
-      expect(result.items).toHaveLength(1);
-      // JSON format returns raw CslItem[], not stringified JSON
-      const item = result.items[0] as { id: string };
-      expect(item.id).toBe("smith-2023");
-    });
-  });
-
-  describe("format: bibtex", () => {
-    it("should return BibTeX entries for matching references", async () => {
-      const options: SearchOperationOptions = { query: "Jones", format: "bibtex" };
-      const result = await searchReferences(mockLibrary, options);
-
-      expect(result.items).toHaveLength(1);
-      expect(result.items[0]).toContain("@book{jones-2022,");
-    });
-  });
-
-  describe("format: ids-only", () => {
-    it("should return only IDs of matching references", async () => {
-      const options: SearchOperationOptions = { query: "Learning", format: "ids-only" };
-      const result = await searchReferences(mockLibrary, options);
-
-      expect(result.items).toContain("smith-2023");
-      expect(result.items).toContain("doe-2024");
-    });
-  });
-
-  describe("format: uuid", () => {
-    it("should return only UUIDs of matching references", async () => {
-      const options: SearchOperationOptions = { query: "Learning", format: "uuid" };
-      const result = await searchReferences(mockLibrary, options);
-
-      expect(result.items).toContain("uuid-1");
-      expect(result.items).toContain("uuid-2");
-    });
-  });
-
-  describe("default format", () => {
-    it("should use pretty format by default", async () => {
+  describe("returns raw CslItem[]", () => {
+    it("should always return CslItem objects, not formatted strings", async () => {
       const options: SearchOperationOptions = { query: "Smith" };
       const result = await searchReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0]).toContain("[smith-2023]");
+      const item = result.items[0];
+      expect(item.id).toBe("smith-2023");
+      expect(item.type).toBe("article-journal");
+      expect(item.title).toBe("Machine Learning in Medical Diagnosis");
     });
   });
 
   describe("empty query", () => {
     it("should return all references when query is empty", async () => {
-      const options: SearchOperationOptions = { query: "", format: "ids-only" };
+      const options: SearchOperationOptions = { query: "" };
       const result = await searchReferences(mockLibrary, options);
 
       expect(result.items).toHaveLength(3);
+      expect(result.items.map((item) => item.id)).toContain("smith-2023");
+      expect(result.items.map((item) => item.id)).toContain("doe-2024");
+      expect(result.items.map((item) => item.id)).toContain("jones-2022");
+    });
+  });
+
+  describe("pagination metadata", () => {
+    it("should return correct pagination metadata", async () => {
+      const options: SearchOperationOptions = { query: "", limit: 2, offset: 0 };
+      const result = await searchReferences(mockLibrary, options);
+
+      expect(result.total).toBe(3);
+      expect(result.limit).toBe(2);
+      expect(result.offset).toBe(0);
+      expect(result.items).toHaveLength(2);
+      expect(result.nextOffset).toBe(2);
     });
   });
 });

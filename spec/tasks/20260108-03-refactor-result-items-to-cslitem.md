@@ -82,12 +82,13 @@ For each step:
 
 ### Step 2: Update SearchResult interface and searchReferences
 
-- [ ] Update `SearchResult.items` type to `CslItem[]`
-- [ ] Remove `format` parameter from `SearchOperationOptions`
-- [ ] Remove `formatItems()` call from `searchReferences`
-- [ ] Update `searchReferences` to always return raw CslItem[]
-- [ ] Update tests in `src/features/operations/search.test.ts`
-- [ ] Verify: `npm run test:unit`
+- [x] Update `SearchResult.items` type to `CslItem[]`
+- [x] Remove `format` parameter from `SearchOperationOptions`
+- [x] Remove `formatItems()` call from `searchReferences`
+- [x] Update `searchReferences` to always return raw CslItem[]
+- [x] Update tests in `src/features/operations/search.test.ts`
+- [x] Verify: `npm run test:unit`
+- Note: typecheck will fail until CLI/MCP are updated in Steps 4-6
 
 ### Step 3: Update ListResult interface and listReferences
 

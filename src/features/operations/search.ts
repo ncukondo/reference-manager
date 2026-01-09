@@ -1,6 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ILibrary } from "../../core/library-interface.js";
-import { formatBibtex, formatPretty } from "../format/index.js";
 import {
   type PaginationOptions,
   type SearchSortField,
@@ -12,11 +11,6 @@ import {
 import { search } from "../search/matcher.js";
 import { sortResults as sortByRelevance } from "../search/sorter.js";
 import { tokenize } from "../search/tokenizer.js";
-
-/**
- * Output format options for search operation
- */
-export type SearchFormat = "pretty" | "json" | "bibtex" | "ids-only" | "uuid";
 
 /**
  * Sort options for search (includes relevance)
@@ -32,16 +26,14 @@ export interface SearchSortOptions {
 export interface SearchOperationOptions extends PaginationOptions, SearchSortOptions {
   /** Search query string */
   query: string;
-  /** Output format (default: "pretty") */
-  format?: SearchFormat;
 }
 
 /**
  * Result of searchReferences operation
  */
 export interface SearchResult {
-  /** Formatted items (strings for most formats, CslItem[] for JSON format) */
-  items: string[] | CslItem[];
+  /** Raw CslItem array */
+  items: CslItem[];
   /** Total count before pagination */
   total: number;
   /** Applied limit (0 if unlimited) */
@@ -53,44 +45,16 @@ export interface SearchResult {
 }
 
 /**
- * Format items according to the specified format
- */
-function formatItems(items: CslItem[], format: SearchFormat): string[] | CslItem[] {
-  switch (format) {
-    case "json":
-      // Return raw CslItem[] for JSON format - CLI will handle JSON.stringify
-      return items;
-
-    case "bibtex":
-      return items.map((item) => formatBibtex([item]));
-
-    case "ids-only":
-      return items.map((item) => item.id);
-
-    case "uuid":
-      return items
-        .filter((item): item is CslItem & { custom: { uuid: string } } =>
-          Boolean(item.custom?.uuid)
-        )
-        .map((item) => item.custom.uuid);
-
-    default:
-      return items.map((item) => formatPretty([item]));
-  }
-}
-
-/**
- * Search references in the library and return formatted results.
+ * Search references in the library and return raw CslItem[] results.
  *
  * @param library - The library to search in
- * @param options - Search query, formatting, and pagination options
- * @returns Formatted strings for each matching reference with pagination metadata
+ * @param options - Search query and pagination options
+ * @returns Raw CslItem[] with pagination metadata
  */
 export async function searchReferences(
   library: ILibrary,
   options: SearchOperationOptions
 ): Promise<SearchResult> {
-  const format = options.format ?? "pretty";
   const query = options.query;
   const sort: SearchSortField = options.sort ?? "updated";
   const order: SortOrder = options.order ?? "desc";
@@ -134,11 +98,8 @@ export async function searchReferences(
   // Paginate
   const { items: paginatedItems, nextOffset } = paginate(sorted, { limit, offset });
 
-  // Format
-  const formattedItems = formatItems(paginatedItems, format);
-
   return {
-    items: formattedItems,
+    items: paginatedItems,
     total,
     limit,
     offset,
