@@ -46,15 +46,15 @@ For each step:
 
 ### Step 4: YAML serializer with protected fields as comments
 
-- [ ] Write test: `src/features/edit/yaml-serializer.test.ts`
+- [x] Write test: `src/features/edit/yaml-serializer.test.ts`
   - Test single reference serialization
   - Test multiple references serialization
   - Test protected fields as YAML comments
   - Test field transformations (date, keyword)
   - Test special characters and multi-line text
-- [ ] Implement: `src/features/edit/yaml-serializer.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/yaml-serializer.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: YAML deserializer with UUID extraction from comments
 
