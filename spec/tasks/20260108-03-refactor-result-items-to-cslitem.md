@@ -68,17 +68,17 @@ For each step:
 
 ### Step 1: Create formatItems in features/format
 
-- [ ] Create `src/features/format/items.ts`
-- [ ] Write tests: `src/features/format/items.test.ts`
+- [x] Create `src/features/format/items.ts`
+- [x] Write tests: `src/features/format/items.test.ts`
   - Test formatting CslItem[] to bibtex strings
   - Test formatting CslItem[] to pretty strings
   - Test formatting CslItem[] to ids-only strings
   - Test formatting CslItem[] to uuid strings
   - Test returning CslItem[] for json format
-- [ ] Move formatting logic from operations to this module
-- [ ] Export from `src/features/format/index.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Move formatting logic from operations to this module
+- [x] Export from `src/features/format/index.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Update SearchResult interface and searchReferences
 

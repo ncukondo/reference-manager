@@ -8,3 +8,5 @@ export { formatBibtex } from "./bibtex.js";
 export { formatBibliography, formatInText } from "./citation-fallback.js";
 export { formatBibliographyCSL, formatInTextCSL } from "./citation-csl.js";
 export type { CitationFormatOptions } from "./citation-csl.js";
+export { formatItems } from "./items.js";
+export type { ItemFormat } from "./items.js";
