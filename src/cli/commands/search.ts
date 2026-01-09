@@ -1,5 +1,6 @@
 import type { Config } from "../../config/schema.js";
-import type { SearchFormat, SearchResult } from "../../features/operations/search.js";
+import { type ItemFormat, formatItems } from "../../features/format/index.js";
+import type { SearchResult } from "../../features/operations/search.js";
 import {
   type SearchSortField,
   type SortOrder,
@@ -46,9 +47,9 @@ export interface SearchCommandOptions {
 export type SearchCommandResult = SearchResult;
 
 /**
- * Convert CLI options to SearchFormat.
+ * Convert CLI options to ItemFormat.
  */
-function getSearchFormat(options: SearchCommandOptions): SearchFormat {
+function getOutputFormat(options: SearchCommandOptions): ItemFormat {
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
   if (options.uuid) return "uuid";
@@ -105,21 +106,19 @@ function validateOptions(options: SearchCommandOptions): void {
  *
  * @param options - Search command options
  * @param context - Execution context
- * @returns Search result containing formatted items
+ * @returns Search result containing raw CslItem[]
  */
 export async function executeSearch(
   options: SearchCommandOptions,
   context: ExecutionContext
 ): Promise<SearchCommandResult> {
   validateOptions(options);
-  const format = getSearchFormat(options);
 
   // Resolve sort alias (e.g., "pub" -> "published", "rel" -> "relevance")
   const sort = options.sort ? resolveSortAlias(options.sort) : undefined;
 
   return context.library.search({
     query: options.query,
-    format,
     ...(sort !== undefined && { sort }),
     ...pickDefined(options, ["order", "limit", "offset"] as const),
   });
@@ -128,14 +127,15 @@ export async function executeSearch(
 /**
  * Format search result for CLI output.
  *
- * @param result - Search result
- * @param isJson - Whether the output format is JSON
+ * @param result - Search result (CslItem[])
+ * @param options - Command options to determine format
  * @returns Formatted output string
  */
-export function formatSearchOutput(result: SearchCommandResult, isJson = false): string {
-  if (isJson) {
+export function formatSearchOutput(result: SearchCommandResult, options: SearchCommandOptions): string {
+  const format = getOutputFormat(options);
+
+  if (format === "json") {
     // JSON output includes pagination metadata
-    // items are CslItem[] for JSON format
     return JSON.stringify({
       items: result.items,
       total: result.total,
@@ -145,10 +145,10 @@ export function formatSearchOutput(result: SearchCommandResult, isJson = false):
     });
   }
 
-  // For non-JSON formats, items are string[]
-  const items = result.items as string[];
+  // Format items for non-JSON formats
+  const formattedItems = formatItems(result.items, format) as string[];
 
-  if (items.length === 0) {
+  if (formattedItems.length === 0) {
     return "";
   }
 
@@ -157,11 +157,11 @@ export function formatSearchOutput(result: SearchCommandResult, isJson = false):
   // Add header line when limit is applied and not showing all
   if (result.limit > 0 && result.total > 0) {
     const start = result.offset + 1;
-    const end = result.offset + items.length;
+    const end = result.offset + formattedItems.length;
     lines.push(`# Showing ${start}-${end} of ${result.total} references`);
   }
 
-  lines.push(...items);
+  lines.push(...formattedItems);
   return lines.join("\n");
 }
 

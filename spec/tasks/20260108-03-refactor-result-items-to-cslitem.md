@@ -101,12 +101,12 @@ For each step:
 
 ### Step 4: Update CLI search command
 
-- [ ] Import `formatItems` from `@/features/format`
-- [ ] Update `executeSearch` to apply formatting before output
-- [ ] Update `formatSearchOutput` to handle CslItem[] input
-- [ ] Remove `as string[]` cast (no longer needed)
-- [ ] Update tests
-- [ ] Verify: `npm run test:unit`
+- [x] Import `formatItems` from `@/features/format`
+- [x] Update `executeSearch` to apply formatting before output
+- [x] Update `formatSearchOutput` to handle CslItem[] input
+- [x] Remove `as string[]` cast (no longer needed)
+- [x] Update tests
+- [x] Verify: `npm run test:unit`
 
 ### Step 5: Update CLI list command
 

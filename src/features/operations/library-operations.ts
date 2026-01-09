@@ -38,16 +38,16 @@ export interface ILibraryOperations extends ILibrary {
   /**
    * Search references by query
    *
-   * @param options - Search options including query and format
-   * @returns Search results with formatted items
+   * @param options - Search options including query and pagination
+   * @returns Search results with raw CslItem[]
    */
   search(options: SearchOperationOptions): Promise<SearchResult>;
 
   /**
    * List all references
    *
-   * @param options - List options including format
-   * @returns List results with formatted items
+   * @param options - Pagination and sorting options
+   * @returns List results with raw CslItem[]
    */
   list(options?: ListOptions): Promise<ListResult>;
 
