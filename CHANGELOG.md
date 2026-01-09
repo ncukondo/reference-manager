@@ -28,6 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Edit Command**: New `edit` command for interactive reference editing
+  - Opens references in external editor (YAML or JSON format)
+  - Editor resolution: `$VISUAL` → `$EDITOR` → platform fallback (vi/notepad)
+  - Protected fields (uuid, created_at, timestamp, fulltext) shown as comments
+  - Date fields transformed to ISO format for easy editing
+  - Multi-reference editing in a single file
+  - Validation with error recovery (re-edit, restore, abort)
+  - Examples: `ref edit smith2024`, `ref edit --format json smith2024`
+  - Configuration: `[cli.edit]` section with `default_format` option
+
 - **Export Command**: New `export` command for raw CSL-JSON output
   - Export specific references: `ref export smith2024 jones2023`
   - Export all: `ref export --all`

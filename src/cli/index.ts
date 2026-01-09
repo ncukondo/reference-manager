@@ -8,6 +8,7 @@ import { z } from "zod";
 import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
 import { Library } from "../core/library.js";
+import type { EditFormat } from "../features/edit/index.js";
 import {
   type FormatAddJsonOptions,
   formatAddJsonOutput,
@@ -23,6 +24,7 @@ import {
   formatCiteOutput,
   getCiteExitCode,
 } from "./commands/cite.js";
+import { executeEditCommand, formatEditOutput } from "./commands/edit.js";
 import {
   type ExportCommandOptions,
   executeExport,
@@ -108,6 +110,7 @@ export function createProgram(): Command {
   registerAddCommand(program);
   registerRemoveCommand(program);
   registerUpdateCommand(program);
+  registerEditCommand(program);
   registerCiteCommand(program);
   registerServerCommand(program);
   registerFulltextCommand(program);
@@ -672,6 +675,70 @@ function registerUpdateCommand(program: Command): void {
     .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program);
+    });
+}
+
+/**
+ * Handle 'edit' command action
+ */
+interface EditActionOptions extends CliOptions {
+  format?: EditFormat;
+  uuid?: boolean;
+  editor?: string;
+}
+
+async function handleEditAction(
+  identifiers: string[],
+  options: EditActionOptions,
+  program: Command
+): Promise<void> {
+  try {
+    // Check TTY requirement
+    if (!isTTY()) {
+      process.stderr.write("Error: Edit command requires a TTY\n");
+      process.exit(1);
+    }
+
+    const globalOpts = program.opts();
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+
+    const context = await createExecutionContext(config, Library.load);
+
+    // Use config default format if not specified via CLI option
+    const format = options.format ?? config.cli.edit.defaultFormat;
+
+    const result = await executeEditCommand(
+      {
+        identifiers,
+        format,
+        ...(options.uuid && { useUuid: true }),
+        ...(options.editor && { editor: options.editor }),
+      },
+      context
+    );
+    const output = formatEditOutput(result);
+    process.stderr.write(`${output}\n`);
+
+    process.exit(result.success ? 0 : 1);
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
+}
+
+/**
+ * Register 'edit' command
+ */
+function registerEditCommand(program: Command): void {
+  program
+    .command("edit")
+    .description("Edit references interactively using an external editor")
+    .argument("<identifier...>", "Citation keys or UUIDs to edit")
+    .option("--uuid", "Interpret identifiers as UUIDs")
+    .option("-f, --format <format>", "Edit format: yaml (default), json")
+    .option("--editor <editor>", "Editor command (overrides $VISUAL/$EDITOR)")
+    .action(async (identifiers: string[], options) => {
+      await handleEditAction(identifiers, options, program);
     });
 }
 

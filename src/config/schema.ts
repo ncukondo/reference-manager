@@ -19,6 +19,18 @@ export const interactiveConfigSchema = z.object({
 });
 
 /**
+ * Edit format schema
+ */
+export const editFormatSchema = z.enum(["yaml", "json"]);
+
+/**
+ * Edit command configuration schema
+ */
+export const editConfigSchema = z.object({
+  defaultFormat: editFormatSchema,
+});
+
+/**
  * CLI configuration schema
  */
 export const cliConfigSchema = z.object({
@@ -26,6 +38,7 @@ export const cliConfigSchema = z.object({
   defaultSort: sortFieldSchema,
   defaultOrder: sortOrderSchema,
   interactive: interactiveConfigSchema,
+  edit: editConfigSchema,
 });
 
 /**
@@ -187,6 +200,12 @@ export const partialConfigSchema = z
             debounce_ms: z.number().int().nonnegative().optional(),
           })
           .optional(),
+        edit: z
+          .object({
+            defaultFormat: editFormatSchema.optional(),
+            default_format: editFormatSchema.optional(),
+          })
+          .optional(),
       })
       .optional(),
     mcp: z
@@ -210,6 +229,8 @@ export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
 export type InteractiveConfig = z.infer<typeof interactiveConfigSchema>;
+export type EditConfigFormat = z.infer<typeof editFormatSchema>;
+export type EditConfig = z.infer<typeof editConfigSchema>;
 export type CliConfig = z.infer<typeof cliConfigSchema>;
 export type McpConfig = z.infer<typeof mcpConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
@@ -227,8 +248,9 @@ export type DeepPartialConfig = {
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
   fulltext?: Partial<FulltextConfig>;
-  cli?: Partial<Omit<CliConfig, "interactive">> & {
+  cli?: Partial<Omit<CliConfig, "interactive" | "edit">> & {
     interactive?: Partial<InteractiveConfig>;
+    edit?: Partial<EditConfig>;
   };
   mcp?: Partial<McpConfig>;
 };
@@ -468,6 +490,44 @@ function normalizeFulltextConfig(fulltext: {
 }
 
 /**
+ * Normalize interactive config subsection
+ */
+function normalizeInteractiveSection(
+  interactive: Partial<{
+    limit?: number;
+    debounceMs?: number;
+    debounce_ms?: number;
+  }>
+): Partial<InteractiveConfig> | undefined {
+  const normalized: Partial<InteractiveConfig> = {};
+  if (interactive.limit !== undefined) {
+    normalized.limit = interactive.limit;
+  }
+  const debounceMs = interactive.debounceMs ?? interactive.debounce_ms;
+  if (debounceMs !== undefined) {
+    normalized.debounceMs = debounceMs;
+  }
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
+ * Normalize edit config subsection
+ */
+function normalizeEditSection(
+  edit: Partial<{
+    defaultFormat?: EditConfigFormat;
+    default_format?: EditConfigFormat;
+  }>
+): Partial<EditConfig> | undefined {
+  const normalized: Partial<EditConfig> = {};
+  const defaultFormat = edit.defaultFormat ?? edit.default_format;
+  if (defaultFormat !== undefined) {
+    normalized.defaultFormat = defaultFormat;
+  }
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Normalize CLI configuration from snake_case to camelCase
  */
 function normalizeCliConfig(
@@ -482,6 +542,10 @@ function normalizeCliConfig(
       limit?: number;
       debounceMs?: number;
       debounce_ms?: number;
+    }>;
+    edit?: Partial<{
+      defaultFormat?: EditConfigFormat;
+      default_format?: EditConfigFormat;
     }>;
   }>
 ): Partial<CliConfig> | undefined {
@@ -503,16 +567,16 @@ function normalizeCliConfig(
   }
 
   if (cli.interactive !== undefined) {
-    const interactive: Partial<InteractiveConfig> = {};
-    if (cli.interactive.limit !== undefined) {
-      interactive.limit = cli.interactive.limit;
-    }
-    const debounceMs = cli.interactive.debounceMs ?? cli.interactive.debounce_ms;
-    if (debounceMs !== undefined) {
-      interactive.debounceMs = debounceMs;
-    }
-    if (Object.keys(interactive).length > 0) {
+    const interactive = normalizeInteractiveSection(cli.interactive);
+    if (interactive) {
       normalized.interactive = interactive as InteractiveConfig;
+    }
+  }
+
+  if (cli.edit !== undefined) {
+    const edit = normalizeEditSection(cli.edit);
+    if (edit) {
+      normalized.edit = edit as EditConfig;
     }
   }
 

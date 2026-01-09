@@ -137,9 +137,15 @@ export function getOutputFormat(options: CliOptions): OutputFormat {
 
 /**
  * Check if running in TTY
- * @returns True if stdin and stdout are TTY
+ * @returns True if stdin and stdout are TTY, or if REF_SKIP_TTY_CHECK is set
+ *
+ * @remarks
+ * Set REF_SKIP_TTY_CHECK=1 environment variable to skip TTY check (for testing only)
  */
 export function isTTY(): boolean {
+  if (process.env.REF_SKIP_TTY_CHECK === "1") {
+    return true;
+  }
   return Boolean(stdin.isTTY && stdout.isTTY);
 }
 

@@ -229,6 +229,9 @@ function fillCliDefaults(partial: DeepPartialConfig["cli"]): Config["cli"] {
       limit: partial?.interactive?.limit ?? defaultConfig.cli.interactive.limit,
       debounceMs: partial?.interactive?.debounceMs ?? defaultConfig.cli.interactive.debounceMs,
     },
+    edit: {
+      defaultFormat: partial?.edit?.defaultFormat ?? defaultConfig.cli.edit.defaultFormat,
+    },
   };
 }
 
