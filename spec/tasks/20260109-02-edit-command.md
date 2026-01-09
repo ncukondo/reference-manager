@@ -58,15 +58,15 @@ For each step:
 
 ### Step 5: YAML deserializer with UUID extraction from comments
 
-- [ ] Write test: `src/features/edit/yaml-deserializer.test.ts`
+- [x] Write test: `src/features/edit/yaml-deserializer.test.ts`
   - Test parsing valid YAML
   - Test extracting UUID from comment block
   - Test handling modified protected fields (ignore)
   - Test reverse field transformations (ISO → date-parts)
   - Test error handling for invalid YAML
-- [ ] Implement: `src/features/edit/yaml-deserializer.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/edit/yaml-deserializer.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: JSON serializer/deserializer with _protected field
 
