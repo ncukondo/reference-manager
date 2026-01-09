@@ -80,18 +80,18 @@ For each step:
 
 ### Step 1: Add env-paths dependency
 
-- [ ] Install: `npm install env-paths`
-- [ ] Verify package.json updated
+- [x] Install: `npm install env-paths`
+- [x] Verify package.json updated
 
 ### Step 2: Create paths module
 
-- [ ] Write test: `src/config/paths.test.ts`
+- [x] Write test: `src/config/paths.test.ts`
   - Test that `getPaths()` returns object with config, data, cache properties
   - Test paths are non-empty strings
-- [ ] Implement: `src/config/paths.ts`
+- [x] Implement: `src/config/paths.ts`
   - Export `getPaths()` using env-paths
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Update defaults.ts
 

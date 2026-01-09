@@ -54,6 +54,7 @@
     "chokidar": "^5.0.0",
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
+    "env-paths": "^3.0.0",
     "hono": "^4.11.1",
     "js-yaml": "^4.1.1",
     "tabtab": "^3.0.2",
