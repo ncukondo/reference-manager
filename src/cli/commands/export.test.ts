@@ -406,6 +406,72 @@ describe("export command", () => {
     });
   });
 
+  describe("validation", () => {
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        library: {
+          find: vi.fn(),
+          getAll: vi.fn(),
+          search: vi.fn(),
+        },
+      }) as unknown as ExecutionContext;
+
+    it("should throw error when no selection mode is specified", async () => {
+      const options: ExportCommandOptions = {};
+      const context = createContext();
+
+      await expect(executeExport(options, context)).rejects.toThrow(
+        "No references specified"
+      );
+    });
+
+    it("should throw error when empty ids array is provided without other options", async () => {
+      const options: ExportCommandOptions = { ids: [] };
+      const context = createContext();
+
+      await expect(executeExport(options, context)).rejects.toThrow(
+        "No references specified"
+      );
+    });
+
+    it("should throw error when --all and --search are used together", async () => {
+      const options: ExportCommandOptions = { all: true, search: "query" };
+      const context = createContext();
+
+      await expect(executeExport(options, context)).rejects.toThrow(
+        "Cannot use --all, --search, and IDs together"
+      );
+    });
+
+    it("should throw error when --all and ids are used together", async () => {
+      const options: ExportCommandOptions = { all: true, ids: ["smith-2024"] };
+      const context = createContext();
+
+      await expect(executeExport(options, context)).rejects.toThrow(
+        "Cannot use --all, --search, and IDs together"
+      );
+    });
+
+    it("should throw error when --search and ids are used together", async () => {
+      const options: ExportCommandOptions = { search: "query", ids: ["smith-2024"] };
+      const context = createContext();
+
+      await expect(executeExport(options, context)).rejects.toThrow(
+        "Cannot use --all, --search, and IDs together"
+      );
+    });
+
+    it("should throw error when all three modes are used together", async () => {
+      const options: ExportCommandOptions = { all: true, search: "query", ids: ["smith-2024"] };
+      const context = createContext();
+
+      await expect(executeExport(options, context)).rejects.toThrow(
+        "Cannot use --all, --search, and IDs together"
+      );
+    });
+  });
+
   describe("getExportExitCode", () => {
     it("should return 0 when all items found", () => {
       const result: ExportCommandResult = {

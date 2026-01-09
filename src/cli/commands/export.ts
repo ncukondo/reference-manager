@@ -42,6 +42,18 @@ export async function executeExport(
   options: ExportCommandOptions,
   context: ExecutionContext
 ): Promise<ExportCommandResult> {
+  // Validate mutually exclusive options
+  const hasIds = (options.ids?.length ?? 0) > 0;
+  const modeCount = [options.all, !!options.search, hasIds].filter(Boolean).length;
+
+  if (modeCount > 1) {
+    throw new Error("Cannot use --all, --search, and IDs together. Choose one selection mode.");
+  }
+
+  if (modeCount === 0) {
+    throw new Error("No references specified. Provide IDs, use --all, or use --search <query>.");
+  }
+
   // --all mode: export all references
   if (options.all) {
     const items = await context.library.getAll();

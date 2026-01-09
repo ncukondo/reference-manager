@@ -170,6 +170,36 @@ describe("export command E2E", () => {
     });
   });
 
+  describe("validation errors", () => {
+    it("should return error when no arguments provided", async () => {
+      const result = await runCli(["export"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("No references specified");
+    });
+
+    it("should return error when --all and --search used together", async () => {
+      const result = await runCli(["export", "--all", "--search", "author:smith"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("Cannot use --all, --search, and IDs together");
+    });
+
+    it("should return error when --all and IDs used together", async () => {
+      const result = await runCli(["export", "--all", "smith-2024"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("Cannot use --all, --search, and IDs together");
+    });
+
+    it("should return error when --search and IDs used together", async () => {
+      const result = await runCli(["export", "--search", "author:smith", "smith-2024"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("Cannot use --all, --search, and IDs together");
+    });
+  });
+
   describe("output formats", () => {
     it("should output YAML with --format yaml", async () => {
       const result = await runCli(["export", "smith-2024", "--format", "yaml"]);
