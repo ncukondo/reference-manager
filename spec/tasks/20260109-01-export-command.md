@@ -107,11 +107,11 @@ For each step:
 
 ### Step 2: Add multiple ID support
 
-- [ ] Write test for multiple IDs
+- [x] Write test for multiple IDs
   - `ref export id1 id2 id3` returns array
   - Partial failures (some IDs not found)
-- [ ] Implement multiple ID handling
-- [ ] Verify: `npm run test:unit -- export`
+- [x] Implement multiple ID handling
+- [x] Verify: `npm run test:unit -- export`
 
 ### Step 3: Add --all option
 

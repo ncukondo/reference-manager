@@ -79,6 +79,51 @@ describe("export command", () => {
       expect(result.items).toEqual([]);
       expect(result.notFound).toEqual(["nonexistent"]);
     });
+
+    it("should export multiple references", async () => {
+      const mockItem2: CslItem = {
+        id: "jones-2023",
+        type: "article-journal",
+        title: "Another Article",
+        author: [{ family: "Jones", given: "Jane" }],
+        issued: { "date-parts": [[2023]] },
+        custom: { uuid: "uuid-jones" },
+      };
+
+      mockFind.mockImplementation((id: string) => {
+        if (id === "smith-2024") return Promise.resolve(mockItem);
+        if (id === "jones-2023") return Promise.resolve(mockItem2);
+        return Promise.resolve(undefined);
+      });
+
+      const options: ExportCommandOptions = {
+        ids: ["smith-2024", "jones-2023"],
+      };
+      const context = createContext();
+
+      const result = await executeExport(options, context);
+
+      expect(mockFind).toHaveBeenCalledTimes(2);
+      expect(result.items).toEqual([mockItem, mockItem2]);
+      expect(result.notFound).toEqual([]);
+    });
+
+    it("should handle partial failures (some IDs not found)", async () => {
+      mockFind.mockImplementation((id: string) => {
+        if (id === "smith-2024") return Promise.resolve(mockItem);
+        return Promise.resolve(undefined);
+      });
+
+      const options: ExportCommandOptions = {
+        ids: ["smith-2024", "nonexistent"],
+      };
+      const context = createContext();
+
+      const result = await executeExport(options, context);
+
+      expect(result.items).toEqual([mockItem]);
+      expect(result.notFound).toEqual(["nonexistent"]);
+    });
   });
 
   describe("formatExportOutput", () => {
@@ -98,6 +143,31 @@ describe("export command", () => {
       // Single item should be object, not array
       expect(parsed).not.toBeInstanceOf(Array);
       expect(parsed.id).toBe("smith-2024");
+    });
+
+    it("should output multiple items as array", () => {
+      const mockItem2: CslItem = {
+        id: "jones-2023",
+        type: "article-journal",
+        title: "Another Article",
+        custom: { uuid: "uuid-jones" },
+      };
+      const result: ExportCommandResult = {
+        items: [mockItem, mockItem2],
+        notFound: [],
+      };
+      const options: ExportCommandOptions = {
+        ids: ["smith-2024", "jones-2023"],
+        format: "json",
+      };
+
+      const output = formatExportOutput(result, options);
+      const parsed = JSON.parse(output);
+
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed).toHaveLength(2);
+      expect(parsed[0].id).toBe("smith-2024");
+      expect(parsed[1].id).toBe("jones-2023");
     });
   });
 
