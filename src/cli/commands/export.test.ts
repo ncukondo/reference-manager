@@ -421,18 +421,14 @@ describe("export command", () => {
       const options: ExportCommandOptions = {};
       const context = createContext();
 
-      await expect(executeExport(options, context)).rejects.toThrow(
-        "No references specified"
-      );
+      await expect(executeExport(options, context)).rejects.toThrow("No references specified");
     });
 
     it("should throw error when empty ids array is provided without other options", async () => {
       const options: ExportCommandOptions = { ids: [] };
       const context = createContext();
 
-      await expect(executeExport(options, context)).rejects.toThrow(
-        "No references specified"
-      );
+      await expect(executeExport(options, context)).rejects.toThrow("No references specified");
     });
 
     it("should throw error when --all and --search are used together", async () => {
