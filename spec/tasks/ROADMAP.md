@@ -74,16 +74,15 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 21: Search & Show Enhancements
+### Phase 21: Search & Export Enhancements
 
 - **Task 1**: Search ID field support (`20260108-01-search-id-field.md`)
   - Add `id` field to search targets
   - Support `id:` prefix for citation key search
-- **Task 2**: Fix JSON output escaping (`20260108-02-fix-json-output-escaping.md`)
-  - Fix double-escaped JSON in `--json` output for search/list
-- **Task 3**: Show command (`20260108-03-show-command.md`)
-  - New `show` command to display single reference by ID
-  - Multiple output formats: JSON, YAML, BibTeX, text
+- **Task 2**: Export command (`20260109-01-export-command.md`)
+  - New `export` command for external tool integration (pandoc, jq, etc.)
+  - Multiple ID support, `--all`, `--search` options
+  - Output formats: CSL-JSON, YAML, BibTeX
 
 ---
 
