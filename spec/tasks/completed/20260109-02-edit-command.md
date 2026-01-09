@@ -120,18 +120,18 @@ For each step:
 
 ### Step 11: E2E tests
 
-- [ ] Write E2E test: `e2e/edit.test.ts`
+- [x] Write E2E test: `src/cli/edit.e2e.test.ts`
   - Test basic edit flow with mock editor
   - Test validation error recovery
   - Test multiple references
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification with real editor
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification with real editor
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`
