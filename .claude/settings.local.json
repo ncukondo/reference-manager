@@ -61,7 +61,8 @@
       "Bash(gh run list:*)",
       "Bash(git worktree:*)",
       "Bash(echo:*)",
-      "Bash(npm run lint:fix:*)"
+      "Bash(npm run lint:fix:*)",
+      "Bash(find:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
