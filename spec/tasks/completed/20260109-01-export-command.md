@@ -170,7 +170,7 @@ For each step:
   - [x] `ref export --format bibtex <id>`
   - [x] `ref export --uuid <uuid>`
 - [x] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] Move this file to `spec/tasks/completed/`
 
 ## Design Notes
 
