@@ -568,3 +568,4 @@ MIT
 - [npm Package](https://www.npmjs.com/package/@ncukondo/reference-manager)
 - [Issues](https://github.com/ncukondo/reference-manager/issues)
 - [Documentation](./spec/)
+
