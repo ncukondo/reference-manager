@@ -30,14 +30,14 @@ For each step:
 
 ### Step 2: Create style selection prompt for cite
 
-- [ ] Write test: `src/features/interactive/style-select.test.ts`
-- [ ] Implement: `src/features/interactive/style-select.ts`
+- [x] Write test: `src/features/interactive/style-select.test.ts`
+- [x] Implement: `src/features/interactive/style-select.ts`
   - `runStyleSelect()` function
   - List built-in styles from `BUILTIN_STYLES`
   - List custom styles from `csl_directory` (glob `*.csl`)
   - Show default style first with `(default)` marker
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Update cite command
 
