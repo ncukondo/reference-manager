@@ -40,7 +40,8 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.16",
@@ -71,6 +72,8 @@
     "@types/tabtab": "^3.0.4",
     "@types/write-file-atomic": "^4.0.3",
     "@vitest/coverage-v8": "^2.1.9",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "typescript": "^5.6.0",
     "vite": "^6.0.0",
     "vite-node": "^2.1.0",
@@ -88,5 +91,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ncukondo/reference-manager.git"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "biome check --write"
+    ]
   }
 }
