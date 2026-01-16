@@ -95,6 +95,28 @@ export function getTerminalWidth(): number {
 }
 
 /**
+ * Gets terminal height, falling back to 24 if not available
+ */
+export function getTerminalHeight(): number {
+  return process.stdout.rows ?? 24;
+}
+
+/**
+ * Calculates the effective limit for the autocomplete list
+ * based on terminal height to prevent input field from being hidden.
+ * Reserves space for: prompt header (1), input line (1), footer hint (1), and padding (2)
+ * Each item displays up to 3 lines (author/year, title, identifiers)
+ */
+export function calculateEffectiveLimit(configLimit: number): number {
+  const terminalHeight = getTerminalHeight();
+  const reservedLines = 5; // header + input + footer hint + padding
+  const linesPerItem = 3; // each search result shows up to 3 lines
+  const availableLines = terminalHeight - reservedLines;
+  const maxVisibleChoices = Math.max(1, Math.floor(availableLines / linesPerItem));
+  return configLimit > 0 ? Math.min(configLimit, maxVisibleChoices) : maxVisibleChoices;
+}
+
+/**
  * Collects enabled (selected) item IDs from choices
  */
 function collectEnabledIds(choices: AutoCompleteChoice[]): Set<string> {
@@ -140,7 +162,7 @@ export async function runSearchPrompt(
   // Dynamic import to allow mocking in tests
   // enquirer is a CommonJS module, so we must use default import
   const enquirer = await import("enquirer");
-  const AutoComplete = (enquirer.default as unknown as Record<string, unknown>)
+  const BaseAutoComplete = (enquirer.default as unknown as Record<string, unknown>)
     .AutoComplete as new (
     options: Record<string, unknown>
   ) => {
@@ -148,11 +170,13 @@ export async function runSearchPrompt(
   };
 
   const terminalWidth = getTerminalWidth();
+  // Calculate effective limit based on terminal height
+  const effectiveLimit = calculateEffectiveLimit(config.limit);
 
   // Create initial choices from all references (limited)
   const initialResults: SearchResult[] = initialQuery
-    ? searchFn(initialQuery).slice(0, config.limit)
-    : allReferences.slice(0, config.limit).map((ref) => ({
+    ? searchFn(initialQuery).slice(0, effectiveLimit)
+    : allReferences.slice(0, effectiveLimit).map((ref) => ({
         reference: ref,
         overallStrength: "exact" as const,
         tokenMatches: [],
@@ -170,7 +194,8 @@ export async function runSearchPrompt(
     initial: initialQuery,
     choices: initialChoices,
     multiple: true,
-    limit: config.limit,
+    limit: effectiveLimit,
+    footer: "(Tab: select, Enter: confirm)",
     suggest: (input: string, choices: AutoCompleteChoice[]) => {
       // If input hasn't changed, return current choices
       if (input === lastQuery) {
@@ -183,9 +208,9 @@ export async function runSearchPrompt(
 
       // Create new choices based on input
       const newChoices = input.trim()
-        ? createChoices(searchFn(input).slice(0, config.limit), terminalWidth)
+        ? createChoices(searchFn(input).slice(0, effectiveLimit), terminalWidth)
         : createChoices(
-            allReferences.slice(0, config.limit).map((ref) => ({
+            allReferences.slice(0, effectiveLimit).map((ref) => ({
               reference: ref,
               overallStrength: "exact" as const,
               tokenMatches: [],
@@ -202,8 +227,36 @@ export async function runSearchPrompt(
   };
 
   try {
-    const prompt = new AutoComplete(promptOptions);
-    const result = await prompt.run();
+    const prompt = new BaseAutoComplete(promptOptions);
+
+    // Override key handlers:
+    // - Space: append character instead of toggling selection
+    // - Tab: toggle selection (like space does in default multiple mode)
+    const promptInstance = prompt as unknown as {
+      space: () => void;
+      dispatch: (s: string, key: { name: string }) => Promise<void>;
+      append: (ch: string) => void;
+      toggle: (item: unknown) => void;
+      focused: unknown;
+      run(): Promise<string | string[]>;
+    };
+
+    promptInstance.space = function () {
+      return this.append(" ");
+    };
+
+    // Override next() which is called on Tab key press
+    // Make it toggle selection only (no movement, use arrow keys to move)
+    const promptWithRender = promptInstance as unknown as {
+      next: () => void;
+      render: () => void;
+    };
+    promptWithRender.next = function () {
+      promptInstance.toggle(promptInstance.focused);
+      this.render();
+    };
+
+    const result = await promptInstance.run();
 
     // Workaround for Enquirer bug: focused item with enabled=true may not be in result
     const promptAny = prompt as unknown as {
