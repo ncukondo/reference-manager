@@ -41,7 +41,7 @@
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
-    "prepare": "husky"
+    "prepare": "node -e \"try{require.resolve('husky')}catch(e){process.exit(0)}\" && husky"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.16",
