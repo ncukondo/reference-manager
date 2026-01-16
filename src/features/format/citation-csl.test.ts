@@ -320,4 +320,167 @@ describe("CSL Processor Wrapper", () => {
       expect(result1).toBe(result2);
     });
   });
+
+  describe("custom CSL styles", () => {
+    const customCslXml = `<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" default-locale="en-US">
+  <info>
+    <title>Test Custom Style</title>
+    <id>http://test/custom-style</id>
+    <updated>2024-01-01T00:00:00+00:00</updated>
+  </info>
+  <macro name="journal-title">
+    <choose>
+      <if variable="container-title-short">
+        <text variable="container-title-short" font-style="italic"/>
+      </if>
+      <else-if variable="container-title">
+        <text variable="container-title" font-style="italic"/>
+      </else-if>
+    </choose>
+  </macro>
+  <macro name="issued-year">
+    <date variable="issued"><date-part name="year"/></date>
+  </macro>
+  <macro name="volume-issue">
+    <group>
+      <text variable="volume"/>
+      <text variable="issue" prefix="(" suffix=")"/>
+    </group>
+  </macro>
+  <macro name="pages">
+    <text variable="page"/>
+  </macro>
+  <macro name="identifiers">
+    <choose>
+      <if variable="PMID">
+        <group><text value="PMID: "/><text variable="PMID"/></group>
+      </if>
+      <else-if variable="DOI">
+        <group><text value="doi:"/><text variable="DOI"/></group>
+      </else-if>
+    </choose>
+  </macro>
+  <citation>
+    <layout delimiter="; ">
+      <group delimiter=". ">
+        <text macro="journal-title"/>
+        <group>
+          <text macro="issued-year"/>
+          <text macro="volume-issue" prefix=";"/>
+          <text macro="pages" prefix=":"/>
+        </group>
+        <text macro="identifiers"/>
+      </group>
+    </layout>
+  </citation>
+  <bibliography>
+    <layout suffix=".">
+      <group delimiter=". ">
+        <text macro="journal-title"/>
+        <group>
+          <text macro="issued-year"/>
+          <text macro="volume-issue" prefix=";"/>
+          <text macro="pages" prefix=":"/>
+        </group>
+        <text macro="identifiers"/>
+      </group>
+    </layout>
+  </bibliography>
+</style>`;
+
+    const sampleItemWithPMID: CslItem = {
+      id: "pmid-article",
+      type: "article-journal",
+      title: "Test Article",
+      author: [{ family: "Smith", given: "John" }],
+      issued: { "date-parts": [[2023]] },
+      "container-title": "Journal of Medical Informatics",
+      "container-title-short": "J Med Inform",
+      volume: "10",
+      issue: "2",
+      page: "123-145",
+      DOI: "10.1234/jmi.2023.0045",
+      PMID: "12345678",
+      custom: {
+        uuid: "550e8400-e29b-41d4-a716-446655440010",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+      },
+    };
+
+    it("should format in-text citation with custom CSL style", () => {
+      const result = formatInTextCSL([sampleItemWithPMID], {
+        style: "custom-test",
+        styleXml: customCslXml,
+      });
+
+      // Custom style outputs: J Med Inform. 2023;10(2):123-145. PMID: 12345678
+      expect(result).toContain("J Med Inform");
+      expect(result).toContain("2023");
+      expect(result).toContain("10(2)");
+      expect(result).toContain("PMID: 12345678");
+    });
+
+    it("should format bibliography with custom CSL style", () => {
+      const result = formatBibliographyCSL([sampleItemWithPMID], {
+        style: "custom-test",
+        styleXml: customCslXml,
+      });
+
+      expect(result).toContain("J Med Inform");
+      expect(result).toContain("2023");
+      expect(result).toContain("PMID: 12345678");
+    });
+
+    it("should use DOI when PMID is not available", () => {
+      const itemWithDOI: CslItem = {
+        ...sampleItemWithPMID,
+        id: "doi-article",
+        PMID: undefined,
+      };
+
+      const result = formatInTextCSL([itemWithDOI], {
+        style: "custom-doi-test",
+        styleXml: customCslXml,
+      });
+
+      expect(result).toContain("doi:");
+      expect(result).toContain("10.1234/jmi.2023.0045");
+      expect(result).not.toContain("PMID");
+    });
+
+    describe("error handling", () => {
+      it("should throw error for malformed XML (missing closing tag)", () => {
+        const malformedXml = `<?xml version="1.0"?>
+<style xmlns="http://purl.org/net/xbiblio/csl">
+  <info><title>Bad`;
+
+        expect(() =>
+          formatInTextCSL([sampleItemWithPMID], {
+            style: "malformed-test",
+            styleXml: malformedXml,
+          })
+        ).toThrow(/Invalid CSL file: Missing <style> element/);
+      });
+
+      it("should throw error for CSL without citation or bibliography section", () => {
+        const incompleteCsl = `<?xml version="1.0"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" version="1.0" class="in-text">
+  <info>
+    <title>Incomplete</title>
+    <id>incomplete</id>
+    <updated>2024-01-01T00:00:00+00:00</updated>
+  </info>
+</style>`;
+
+        expect(() =>
+          formatInTextCSL([sampleItemWithPMID], {
+            style: "incomplete-test",
+            styleXml: incompleteCsl,
+          })
+        ).toThrow(/Missing <citation> or <bibliography> section/);
+      });
+    });
+  });
 });

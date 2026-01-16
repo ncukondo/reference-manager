@@ -27,6 +27,24 @@ declare module "@citation-js/core" {
     ): string;
     get(options?: GetOptions): unknown[];
   }
+
+  interface TemplateConfig {
+    add(name: string, template: string): void;
+    get(name: string): string | undefined;
+    has(name: string): boolean;
+  }
+
+  interface CSLConfig {
+    templates: TemplateConfig;
+  }
+
+  interface Plugins {
+    config: {
+      get(plugin: "@csl"): CSLConfig;
+    };
+  }
+
+  export const plugins: Plugins;
 }
 
 declare module "@citation-js/plugin-csl" {

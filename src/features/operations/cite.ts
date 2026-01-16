@@ -1,4 +1,4 @@
-import { isBuiltinStyle } from "../../config/csl-styles.js";
+import { isBuiltinStyle, resolveStyle } from "../../config/csl-styles.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../core/library-interface.js";
 import {
@@ -45,7 +45,7 @@ export interface CiteResult {
 
 interface FormatOptions {
   style?: string | undefined;
-  cslFile?: string | undefined;
+  styleXml?: string | undefined;
   locale?: string | undefined;
   format?: "text" | "html" | "rtf" | undefined;
 }
@@ -53,11 +53,11 @@ interface FormatOptions {
 /**
  * Check if fallback formatter should be used.
  */
-function shouldUseFallback(options: FormatOptions): boolean {
-  if (options.cslFile) {
+function shouldUseFallback(style: string | undefined, hasCustomXml: boolean): boolean {
+  if (hasCustomXml) {
     return false;
   }
-  if (options.style && !isBuiltinStyle(options.style)) {
+  if (style && !isBuiltinStyle(style)) {
     return true;
   }
   return false;
@@ -67,18 +67,18 @@ function shouldUseFallback(options: FormatOptions): boolean {
  * Format a single item as citation.
  */
 function formatCitation(item: CslItem, inText: boolean, options: FormatOptions): string {
-  const useFallback = shouldUseFallback(options);
-  const style = options.cslFile ?? options.style ?? "apa";
+  const useFallback = shouldUseFallback(options.style, !!options.styleXml);
+  const style = options.style ?? "apa";
   const locale = options.locale ?? "en-US";
   const format = options.format ?? "text";
+  const styleXml = options.styleXml;
 
   if (useFallback) {
     return inText ? formatInText([item]) : formatBibliography([item]);
   }
 
-  return inText
-    ? formatInTextCSL([item], { style, locale, format })
-    : formatBibliographyCSL([item], { style, locale, format });
+  const formatOptions = { style, locale, format, ...(styleXml && { styleXml }) };
+  return inText ? formatInTextCSL([item], formatOptions) : formatBibliographyCSL([item], formatOptions);
 }
 
 /**
@@ -125,10 +125,20 @@ export async function citeReferences(
   const { identifiers, idType = "id", inText = false, style, cslFile, locale, format } = options;
   const results: CiteItemResult[] = [];
 
+  // Resolve style: load custom CSL file if specified
+  let resolvedStyle = style;
+  let styleXml: string | undefined;
+
+  if (cslFile) {
+    const resolution = resolveStyle({ cslFile });
+    resolvedStyle = resolution.styleName;
+    styleXml = resolution.styleXml;
+  }
+
   for (const identifier of identifiers) {
     const result = await generateCitationForIdentifier(library, identifier, idType, inText, {
-      style,
-      cslFile,
+      style: resolvedStyle,
+      styleXml,
       locale,
       format,
     });

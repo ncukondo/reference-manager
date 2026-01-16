@@ -1,4 +1,4 @@
-import { Cite } from "@citation-js/core";
+import { Cite, plugins } from "@citation-js/core";
 import "@citation-js/plugin-csl";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibliography, formatInText } from "./citation-fallback.js";
@@ -14,6 +14,12 @@ export type CitationFormatOptions = {
   style?: string;
 
   /**
+   * Custom CSL style XML content.
+   * When provided, this XML is registered and used instead of built-in styles.
+   */
+  styleXml?: string;
+
+  /**
    * Output format: text, html, or rtf
    * @default 'text'
    */
@@ -25,6 +31,39 @@ export type CitationFormatOptions = {
    */
   locale?: string;
 };
+
+/**
+ * Register a custom CSL style with citation-js.
+ * Returns the style name to use for formatting.
+ * @throws Error if CSL XML is invalid or malformed
+ */
+function registerCustomStyle(styleName: string, styleXml: string): string {
+  // Basic XML validation
+  if (!styleXml.includes("<style") || !styleXml.includes("</style>")) {
+    throw new Error(
+      `Invalid CSL file: Missing <style> element. The file may be malformed or not a valid CSL style.`
+    );
+  }
+
+  // Check for required CSL sections
+  const hasCitation = styleXml.includes("<citation") || styleXml.includes("<citation>");
+  const hasBibliography = styleXml.includes("<bibliography") || styleXml.includes("<bibliography>");
+  if (!hasCitation && !hasBibliography) {
+    throw new Error(
+      `Invalid CSL file: Missing <citation> or <bibliography> section. ` +
+        `A valid CSL style must define at least one of these sections.`
+    );
+  }
+
+  try {
+    const config = plugins.config.get("@csl");
+    config.templates.add(styleName, styleXml);
+    return styleName;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to register CSL style '${styleName}': ${message}`);
+  }
+}
 
 /**
  * Format CSL-JSON items as bibliography using CSL processor.
@@ -41,9 +80,14 @@ export function formatBibliographyCSL(items: CslItem[], options: CitationFormatO
   }
 
   // Set defaults
-  const style = options.style || "apa";
+  let style = options.style || "apa";
   const format = options.format || "text";
   const locale = options.locale || "en-US";
+
+  // Register custom style if XML is provided
+  if (options.styleXml) {
+    style = registerCustomStyle(style, options.styleXml);
+  }
 
   try {
     // Create Cite instance with CSL-JSON data
@@ -82,9 +126,14 @@ export function formatInTextCSL(items: CslItem[], options: CitationFormatOptions
   }
 
   // Set defaults
-  const style = options.style || "apa";
+  let style = options.style || "apa";
   const format = options.format || "text";
   const locale = options.locale || "en-US";
+
+  // Register custom style if XML is provided
+  if (options.styleXml) {
+    style = registerCustomStyle(style, options.styleXml);
+  }
 
   try {
     // Create Cite instance with CSL-JSON data
