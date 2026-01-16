@@ -41,7 +41,7 @@ function registerCustomStyle(styleName: string, styleXml: string): string {
   // Basic XML validation
   if (!styleXml.includes("<style") || !styleXml.includes("</style>")) {
     throw new Error(
-      `Invalid CSL file: Missing <style> element. The file may be malformed or not a valid CSL style.`
+      "Invalid CSL file: Missing <style> element. The file may be malformed or not a valid CSL style."
     );
   }
 
@@ -50,8 +50,8 @@ function registerCustomStyle(styleName: string, styleXml: string): string {
   const hasBibliography = styleXml.includes("<bibliography") || styleXml.includes("<bibliography>");
   if (!hasCitation && !hasBibliography) {
     throw new Error(
-      `Invalid CSL file: Missing <citation> or <bibliography> section. ` +
-        `A valid CSL style must define at least one of these sections.`
+      "Invalid CSL file: Missing <citation> or <bibliography> section. " +
+        "A valid CSL style must define at least one of these sections."
     );
   }
 

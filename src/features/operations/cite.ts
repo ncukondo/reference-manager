@@ -78,7 +78,9 @@ function formatCitation(item: CslItem, inText: boolean, options: FormatOptions):
   }
 
   const formatOptions = { style, locale, format, ...(styleXml && { styleXml }) };
-  return inText ? formatInTextCSL([item], formatOptions) : formatBibliographyCSL([item], formatOptions);
+  return inText
+    ? formatInTextCSL([item], formatOptions)
+    : formatBibliographyCSL([item], formatOptions);
 }
 
 /**
