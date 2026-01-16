@@ -90,8 +90,8 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(1);
-      // generateId creates author-year format in lowercase
-      expect(data.added[0].id).toBe("author-2024");
+      // Original ID is preserved
+      expect(data.added[0].id).toBe("author2024");
       expect(data.added[0].title).toBe("Test Article");
       expect(data.failed).toHaveLength(0);
       expect(data.skipped).toHaveLength(0);
@@ -369,9 +369,9 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(2);
-      // generateId creates author-year format in lowercase
-      expect(data.added[0].id).toBe("success-2024");
-      expect(data.added[1].id).toBe("another-2024");
+      // Original IDs are preserved
+      expect(data.added[0].id).toBe("success2024");
+      expect(data.added[1].id).toBe("another2024");
       expect(data.failed).toHaveLength(1);
       expect(data.failed[0].source).toBe("99999999");
       expect(data.failed[0].error).toBe("Not found");
@@ -430,8 +430,8 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(1);
-      // generateId creates author-year format in lowercase
-      expect(data.added[0].id).toBe("new-2024");
+      // Original ID is preserved
+      expect(data.added[0].id).toBe("new2024");
       expect(data.failed).toHaveLength(0);
       expect(data.skipped).toHaveLength(1);
       expect(data.skipped[0].source).toBe("10.1000/existing");
@@ -495,8 +495,8 @@ describe("Add Route", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.added).toHaveLength(1);
-      // generateId creates author-year format in lowercase
-      expect(data.added[0].id).toBe("new-2024");
+      // Original ID is preserved
+      expect(data.added[0].id).toBe("new2024");
       expect(data.failed).toHaveLength(1);
       expect(data.failed[0].source).toBe("99999999");
       expect(data.skipped).toHaveLength(1);
