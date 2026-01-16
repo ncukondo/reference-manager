@@ -45,6 +45,7 @@ spec/
 │   ├── fulltext.md              # Full-text PDF/Markdown management
 │   ├── search.md                # Search query syntax
 │   ├── interactive-search.md    # Interactive incremental search mode
+│   ├── interactive-id-selection.md # Fallback to interactive search for ID selection
 │   ├── pagination.md            # Sorting, limit, offset for list/search
 │   ├── shell-completion.md      # Bash/Zsh/Fish auto-completion
 │   ├── duplicate-detection.md   # Duplicate detection rules
@@ -95,6 +96,7 @@ spec/
 | `fulltext` | `features/fulltext.md` |
 | `search` / `list` | `features/search.md`, `features/pagination.md` |
 | `search -i` | `features/interactive-search.md` |
+| ID-less invocation (cite, edit, etc.) | `features/interactive-id-selection.md` |
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |
 | `completion` | `features/shell-completion.md` |

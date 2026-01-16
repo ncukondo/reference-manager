@@ -88,6 +88,14 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
   - YAML format (default) with protected fields as comments
   - JSON format option, field transformations (ISO dates, keyword arrays)
 
+### Phase 22: Interactive ID Selection
+
+- **Task 1**: Interactive ID selection (`20260116-01-interactive-id-selection.md`)
+  - Fallback to interactive search when commands invoked without ID in TTY
+  - Supported commands: cite, edit, remove, update, fulltext subcommands
+  - Style selection prompt for cite (built-in + custom styles from csl_directory)
+  - Multi-select for cite/edit/remove, single-select for update/fulltext
+
 ---
 
 ## Next Steps
