@@ -35,9 +35,9 @@ export interface AddedItem {
   id: string;
   uuid: string;
   title: string;
-  /** True if the ID was changed due to collision */
+  /** True if the original ID from source file was changed due to collision */
   idChanged?: boolean;
-  /** Original ID before collision resolution */
+  /** Original ID from source file before collision resolution */
   originalId?: string;
 }
 
@@ -186,9 +186,12 @@ async function processImportResult(
   }
 
   // Resolve ID collision
+  // Prioritize original ID from source file; generate ID only if not present
   const allExistingIds = new Set([...existingItems.map((i) => i.id), ...addedIds]);
-  const generatedId = generateId(item);
-  const { id, changed } = resolveIdCollision(generatedId, allExistingIds);
+  const originalId = item.id?.trim() || "";
+  const hasOriginalId = originalId.length > 0;
+  const baseId = hasOriginalId ? originalId : generateId(item);
+  const { id, changed } = resolveIdCollision(baseId, allExistingIds);
 
   const finalItem: CslItem = { ...item, id };
 
@@ -205,9 +208,11 @@ async function processImportResult(
     title: typeof finalItem.title === "string" ? finalItem.title : "",
   };
 
-  if (changed) {
+  // Report idChanged only when original ID from source was changed due to collision
+  // Generated ID collisions are internal and not reported
+  if (hasOriginalId && changed) {
     addedItem.idChanged = true;
-    addedItem.originalId = generatedId;
+    addedItem.originalId = originalId;
   }
 
   return { type: "added", item: addedItem };

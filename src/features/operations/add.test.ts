@@ -68,7 +68,7 @@ describe("addReferences", () => {
       expect(result.added).toHaveLength(1);
       expect(result.added[0]).toEqual({
         source: "10.1234/new",
-        id: "smith-2020", // generateId normalizes to lowercase
+        id: "Smith-2020", // Original ID is preserved
         uuid: "Smith-2020-uuid", // UUID from the added item
         title: "Test Article",
       });
@@ -187,13 +187,12 @@ describe("addReferences", () => {
   });
 
   describe("ID collision resolution", () => {
-    it("should resolve ID collision by appending suffix", async () => {
-      // Use lowercase IDs to match generateId output
-      // Use different titles to avoid title+author+year duplicate detection
+    it("should resolve original ID collision by appending suffix and report change", async () => {
+      // Existing item with lowercase ID
       existingItems = [createItem("smith-2020", { doi: "10.1234/a", title: "Article A" })];
 
-      // New item with same generated ID but different DOI and title
-      const newItem = createItem("Smith-2020", { doi: "10.1234/b", title: "Article B" });
+      // New item with original ID that collides (case-sensitive match)
+      const newItem = createItem("smith-2020", { doi: "10.1234/b", title: "Article B" });
 
       mockedImportFromInputs.mockResolvedValue({
         results: [{ success: true, item: newItem, source: "10.1234/b" }],
@@ -203,20 +202,20 @@ describe("addReferences", () => {
 
       expect(result.added).toHaveLength(1);
       expect(result.added[0].id).toBe("smith-2020a");
+      // Original ID collision should be reported
       expect(result.added[0].idChanged).toBe(true);
       expect(result.added[0].originalId).toBe("smith-2020");
     });
 
-    it("should handle multiple ID collisions", async () => {
-      // Use lowercase IDs to match generateId output
-      // Use different titles to avoid title+author+year duplicate detection
+    it("should handle multiple ID collisions with original ID", async () => {
       existingItems = [
         createItem("smith-2020", { doi: "10.1234/a", title: "Article A" }),
         createItem("smith-2020a", { doi: "10.1234/b", title: "Article B" }),
         createItem("smith-2020b", { doi: "10.1234/c", title: "Article C" }),
       ];
 
-      const newItem = createItem("Smith-2020", { doi: "10.1234/d", title: "Article D" });
+      // New item with original ID that collides
+      const newItem = createItem("smith-2020", { doi: "10.1234/d", title: "Article D" });
 
       mockedImportFromInputs.mockResolvedValue({
         results: [{ success: true, item: newItem, source: "10.1234/d" }],
@@ -226,10 +225,13 @@ describe("addReferences", () => {
 
       expect(result.added).toHaveLength(1);
       expect(result.added[0].id).toBe("smith-2020c");
+      // Original ID collision should be reported
+      expect(result.added[0].idChanged).toBe(true);
+      expect(result.added[0].originalId).toBe("smith-2020");
     });
 
-    it("should not change ID when no collision", async () => {
-      const newItem = createItem("Unique-2020", { doi: "10.1234/unique" });
+    it("should preserve original ID when no collision", async () => {
+      const newItem = createItem("my-custom-key", { doi: "10.1234/unique" });
 
       mockedImportFromInputs.mockResolvedValue({
         results: [{ success: true, item: newItem, source: "10.1234/unique" }],
@@ -238,7 +240,57 @@ describe("addReferences", () => {
       const result = await addReferences(["10.1234/unique"], mockLibrary, {});
 
       expect(result.added).toHaveLength(1);
-      expect(result.added[0].id).toBe("unique-2020"); // generateId normalizes to lowercase
+      // Original ID should be preserved as-is
+      expect(result.added[0].id).toBe("my-custom-key");
+      expect(result.added[0].idChanged).toBeUndefined();
+      expect(result.added[0].originalId).toBeUndefined();
+    });
+
+    it("should NOT report idChanged when generated ID collides (no original ID)", async () => {
+      existingItems = [createItem("smith-2020", { doi: "10.1234/a", title: "Article A" })];
+
+      // New item without original ID (empty string)
+      const newItem: CslItem = {
+        id: "", // No original ID
+        type: "article",
+        title: "Article B",
+        DOI: "10.1234/b",
+        author: [{ family: "Smith" }],
+        issued: { "date-parts": [[2020]] },
+      };
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [{ success: true, item: newItem, source: "10.1234/b" }],
+      });
+
+      const result = await addReferences(["10.1234/b"], mockLibrary, {});
+
+      expect(result.added).toHaveLength(1);
+      // Generated ID collision - suffix added but NOT reported
+      expect(result.added[0].id).toBe("smith-2020a");
+      expect(result.added[0].idChanged).toBeUndefined();
+      expect(result.added[0].originalId).toBeUndefined();
+    });
+
+    it("should generate ID when original ID is undefined", async () => {
+      // New item without id property
+      const newItem: CslItem = {
+        type: "article",
+        title: "Test Article",
+        DOI: "10.1234/test",
+        author: [{ family: "Jones" }],
+        issued: { "date-parts": [[2021]] },
+      } as CslItem;
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [{ success: true, item: newItem, source: "10.1234/test" }],
+      });
+
+      const result = await addReferences(["10.1234/test"], mockLibrary, {});
+
+      expect(result.added).toHaveLength(1);
+      // ID should be generated from author-year
+      expect(result.added[0].id).toBe("jones-2021");
       expect(result.added[0].idChanged).toBeUndefined();
       expect(result.added[0].originalId).toBeUndefined();
     });

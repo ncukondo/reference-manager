@@ -230,7 +230,7 @@ describe("JSON Output E2E", () => {
     });
 
     it("should include idChanged when ID collision resolved", async () => {
-      // Add first reference
+      // Add first reference with original ID
       const first = JSON.stringify([
         {
           id: "collision-2024",
@@ -242,13 +242,13 @@ describe("JSON Output E2E", () => {
       ]);
       await runCli(["add"], first);
 
-      // Add another with same generated ID pattern
+      // Add another with same original ID (causes collision)
       const second = JSON.stringify([
         {
-          id: "collision-new",
+          id: "collision-2024",
           type: "article-journal",
           title: "Second",
-          author: [{ family: "Smith" }],
+          author: [{ family: "Jones" }],
           issued: { "date-parts": [[2024]] },
         },
       ]);
@@ -257,10 +257,10 @@ describe("JSON Output E2E", () => {
       expect(result.exitCode).toBe(0);
       const output = JSON.parse(result.stdout);
       expect(output.added).toHaveLength(1);
-      // ID should be different from "smith-2024" due to collision
-      expect(output.added[0].id).not.toBe("smith-2024");
+      // ID should be suffixed due to collision with original ID
+      expect(output.added[0].id).toBe("collision-2024a");
       expect(output.added[0].idChanged).toBe(true);
-      expect(output.added[0].originalId).toBe("smith-2024");
+      expect(output.added[0].originalId).toBe("collision-2024");
     });
   });
 

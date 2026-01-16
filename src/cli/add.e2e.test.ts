@@ -242,8 +242,8 @@ ER  - `;
 
       const result = await runCli(["add", "--library", libraryPath, jsonPath]);
 
-      // generateId creates author-year format in lowercase
-      expect(result.stderr).toContain("smith-2024");
+      // Original ID is preserved
+      expect(result.stderr).toContain("smith2024");
       expect(result.stderr).toContain("Machine Learning Paper");
     });
 
