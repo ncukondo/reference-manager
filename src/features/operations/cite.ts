@@ -20,6 +20,10 @@ export interface CiteOperationOptions {
   style?: string;
   /** Path to custom CSL file */
   cslFile?: string;
+  /** Default style from config (used when style is not specified) */
+  defaultStyle?: string;
+  /** Directory or directories to search for custom CSL files */
+  cslDirectory?: string | string[];
   /** Locale for citation formatting (default: "en-US") */
   locale?: string;
   /** Output format (default: "text") */
@@ -124,23 +128,36 @@ export async function citeReferences(
   library: ILibrary,
   options: CiteOperationOptions
 ): Promise<CiteResult> {
-  const { identifiers, idType = "id", inText = false, style, cslFile, locale, format } = options;
+  const {
+    identifiers,
+    idType = "id",
+    inText = false,
+    style,
+    cslFile,
+    defaultStyle,
+    cslDirectory,
+    locale,
+    format,
+  } = options;
   const results: CiteItemResult[] = [];
 
-  // Resolve style: load custom CSL file if specified
-  let resolvedStyle = style;
-  let styleXml: string | undefined;
-
-  if (cslFile) {
-    const resolution = resolveStyle({ cslFile });
-    resolvedStyle = resolution.styleName;
-    styleXml = resolution.styleXml;
-  }
+  // Resolve style using the full resolution chain:
+  // 1. cslFile (exact path)
+  // 2. style (if built-in)
+  // 3. Search in cslDirectory
+  // 4. defaultStyle (if built-in or found in cslDirectory)
+  // 5. Fallback to 'apa'
+  const resolution = resolveStyle({
+    ...(cslFile !== undefined && { cslFile }),
+    ...(style !== undefined && { style }),
+    ...(defaultStyle !== undefined && { defaultStyle }),
+    ...(cslDirectory !== undefined && { cslDirectory }),
+  });
 
   for (const identifier of identifiers) {
     const result = await generateCitationForIdentifier(library, identifier, idType, inText, {
-      style: resolvedStyle,
-      styleXml,
+      style: resolution.styleName,
+      styleXml: resolution.styleXml,
       locale,
       format,
     });

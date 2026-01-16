@@ -34,7 +34,7 @@ export async function createMcpContext(options: CreateMcpContextOptions): Promis
   const library = await Library.load(libraryPath);
 
   // Wrap library with OperationsLibrary for ILibraryOperations interface
-  const libraryOperations = new OperationsLibrary(library);
+  const libraryOperations = new OperationsLibrary(library, config.citation);
 
   // Create and start file watcher
   const fileWatcher = new FileWatcher(libraryPath, {

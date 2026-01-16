@@ -207,10 +207,13 @@ describe("OperationsLibrary", () => {
       };
       vi.mocked(citeReferences).mockResolvedValue(citeResult);
 
+      // Without citationConfig, defaultStyle and cslDirectory should not be included
       const ops = new OperationsLibrary(mockLibrary);
       const result = await ops.cite({ identifiers: ["smith2023"] });
 
-      expect(citeReferences).toHaveBeenCalledWith(mockLibrary, { identifiers: ["smith2023"] });
+      expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
+        identifiers: ["smith2023"],
+      });
       expect(result).toBe(citeResult);
     });
 
@@ -223,6 +226,7 @@ describe("OperationsLibrary", () => {
       };
       vi.mocked(citeReferences).mockResolvedValue(citeResult);
 
+      // Without citationConfig, defaultStyle and cslDirectory should not be included
       const ops = new OperationsLibrary(mockLibrary);
       const options = {
         identifiers: ["smith2023"],
@@ -233,6 +237,63 @@ describe("OperationsLibrary", () => {
       const result = await ops.cite(options);
 
       expect(citeReferences).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(citeResult);
+    });
+
+    it("should merge citationConfig defaults into cite options", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { citeReferences } = await import("./cite.js");
+      const mockLibrary = createMockLibrary();
+      const citeResult = {
+        results: [{ identifier: "smith2023", found: true, citation: "Smith (2023)" }],
+      };
+      vi.mocked(citeReferences).mockResolvedValue(citeResult);
+
+      const citationConfig = {
+        defaultStyle: "vancouver",
+        cslDirectory: ["/custom/csl"],
+        defaultLocale: "en-US",
+        defaultFormat: "text" as const,
+      };
+      const ops = new OperationsLibrary(mockLibrary, citationConfig);
+      const result = await ops.cite({ identifiers: ["smith2023"] });
+
+      expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
+        identifiers: ["smith2023"],
+        defaultStyle: "vancouver",
+        cslDirectory: ["/custom/csl"],
+      });
+      expect(result).toBe(citeResult);
+    });
+
+    it("should allow explicit options to override citationConfig defaults", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { citeReferences } = await import("./cite.js");
+      const mockLibrary = createMockLibrary();
+      const citeResult = {
+        results: [{ identifier: "smith2023", found: true, citation: "Smith (2023)" }],
+      };
+      vi.mocked(citeReferences).mockResolvedValue(citeResult);
+
+      const citationConfig = {
+        defaultStyle: "vancouver",
+        cslDirectory: ["/custom/csl"],
+        defaultLocale: "en-US",
+        defaultFormat: "text" as const,
+      };
+      const ops = new OperationsLibrary(mockLibrary, citationConfig);
+      const result = await ops.cite({
+        identifiers: ["smith2023"],
+        defaultStyle: "apa",
+        cslDirectory: ["/other/csl"],
+      });
+
+      // Explicit options should take precedence
+      expect(citeReferences).toHaveBeenCalledWith(mockLibrary, {
+        identifiers: ["smith2023"],
+        defaultStyle: "apa",
+        cslDirectory: ["/other/csl"],
+      });
       expect(result).toBe(citeResult);
     });
 
