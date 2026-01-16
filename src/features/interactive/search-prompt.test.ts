@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock enquirer before importing search-prompt
 const mockRun = vi.fn();
+const mockNext = vi.fn();
 const MockAutoComplete = vi.fn().mockImplementation(() => ({
   run: mockRun,
+  next: mockNext,
 }));
 
 vi.mock("enquirer", () => ({
@@ -16,7 +18,9 @@ vi.mock("enquirer", () => ({
 
 import {
   type SearchPromptConfig,
+  calculateEffectiveLimit,
   createChoices,
+  getTerminalHeight,
   getTerminalWidth,
   parseSelectedValues,
   runSearchPrompt,
@@ -191,14 +195,112 @@ describe("getTerminalWidth", () => {
   });
 });
 
+describe("getTerminalHeight", () => {
+  const originalRows = process.stdout.rows;
+
+  afterEach(() => {
+    // Restore original value
+    Object.defineProperty(process.stdout, "rows", {
+      value: originalRows,
+      writable: true,
+    });
+  });
+
+  it("returns process.stdout.rows when available", () => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: 40,
+      writable: true,
+    });
+
+    expect(getTerminalHeight()).toBe(40);
+  });
+
+  it("returns 24 as fallback when rows is undefined", () => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: undefined,
+      writable: true,
+    });
+
+    expect(getTerminalHeight()).toBe(24);
+  });
+});
+
+describe("calculateEffectiveLimit", () => {
+  const originalRows = process.stdout.rows;
+
+  afterEach(() => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: originalRows,
+      writable: true,
+    });
+  });
+
+  it("returns config limit when terminal is large enough", () => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: 70,
+      writable: true,
+    });
+
+    // 70 rows - 5 reserved = 65 available, 65 / 3 lines per item = 21 max
+    // config limit 20 is smaller, so returns 20
+    expect(calculateEffectiveLimit(20)).toBe(20);
+  });
+
+  it("limits to terminal height minus reserved lines divided by lines per item", () => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: 20,
+      writable: true,
+    });
+
+    // 20 rows - 5 reserved = 15 available, 15 / 3 = 5 max items
+    // config limit 20 is larger, so returns 5
+    expect(calculateEffectiveLimit(20)).toBe(5);
+  });
+
+  it("returns terminal-based limit when config limit is 0", () => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: 44,
+      writable: true,
+    });
+
+    // 44 rows - 5 reserved = 39 available, 39 / 3 = 13 max items
+    expect(calculateEffectiveLimit(0)).toBe(13);
+  });
+
+  it("returns at least 1 even with very small terminal", () => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: 5,
+      writable: true,
+    });
+
+    // 5 - 5 = 0 available, 0 / 3 = 0, but should be at least 1
+    expect(calculateEffectiveLimit(20)).toBe(1);
+  });
+});
+
 describe("runSearchPrompt", () => {
   const defaultConfig: SearchPromptConfig = {
     limit: 20,
     debounceMs: 200,
   };
 
+  const originalRows = process.stdout.rows;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set terminal height large enough so config.limit is used as-is
+    // With rows=70: (70-5)/3 = 21 max items, so config.limit=20 is used
+    Object.defineProperty(process.stdout, "rows", {
+      value: 70,
+      writable: true,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process.stdout, "rows", {
+      value: originalRows,
+      writable: true,
+    });
   });
 
   it("returns selected items when user makes selection", async () => {
