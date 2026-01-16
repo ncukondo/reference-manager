@@ -20,13 +20,13 @@ For each step:
 
 ### Step 1: Create shared reference selection utility
 
-- [ ] Write test: `src/features/interactive/reference-select.test.ts`
-- [ ] Implement: `src/features/interactive/reference-select.ts`
+- [x] Write test: `src/features/interactive/reference-select.test.ts`
+- [x] Implement: `src/features/interactive/reference-select.ts`
   - `runReferenceSelect()` function
   - Support both single and multi-select modes
   - Reuse `runSearchPrompt` from existing interactive search
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Create style selection prompt for cite
 
