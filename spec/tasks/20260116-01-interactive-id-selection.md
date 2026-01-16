@@ -41,13 +41,14 @@ For each step:
 
 ### Step 3: Update cite command
 
-- [ ] Write test: `src/cli/commands/cite.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/cite.ts`
+- [x] Write test: `src/cli/commands/cite.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/cite.ts`
   - Change argument from `<id-or-uuid...>` to `[id-or-uuid...]`
   - Add interactive mode when no IDs provided in TTY
   - Integrate style selection when `--style` not specified
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Move `handleCiteAction` from index.ts to cite.ts for better separation of concerns
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update edit command
 

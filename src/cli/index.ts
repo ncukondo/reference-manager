@@ -17,13 +17,7 @@ import {
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
-import {
-  type CiteCommandOptions,
-  executeCite,
-  formatCiteErrors,
-  formatCiteOutput,
-  getCiteExitCode,
-} from "./commands/cite.js";
+import { handleCiteAction } from "./commands/cite.js";
 import { executeEditCommand, formatEditOutput } from "./commands/edit.js";
 import {
   type ExportCommandOptions,
@@ -739,45 +733,14 @@ function registerEditCommand(program: Command): void {
 /**
  * Handle 'cite' command action
  */
-async function handleCiteAction(
-  identifiers: string[],
-  options: Omit<CiteCommandOptions, "identifiers">,
-  program: Command
-): Promise<void> {
-  try {
-    const globalOpts = program.opts();
-    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-
-    const context = await createExecutionContext(config, Library.load);
-    const result = await executeCite({ ...options, identifiers }, context);
-
-    // Output successful citations
-    const output = formatCiteOutput(result);
-    if (output) {
-      process.stdout.write(`${output}\n`);
-    }
-
-    // Output errors
-    const errors = formatCiteErrors(result);
-    if (errors) {
-      process.stderr.write(`${errors}\n`);
-    }
-
-    process.exit(getCiteExitCode(result));
-  } catch (error) {
-    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
-  }
-}
-
-/**
- * Register 'cite' command
- */
 function registerCiteCommand(program: Command): void {
   program
     .command("cite")
     .description("Generate formatted citations for references")
-    .argument("<id-or-uuid...>", "Citation keys or UUIDs to cite")
+    .argument(
+      "[id-or-uuid...]",
+      "Citation keys or UUIDs to cite (interactive selection if omitted)"
+    )
     .option("--uuid", "Treat arguments as UUIDs instead of IDs")
     .option("--style <style>", "CSL style name")
     .option("--csl-file <path>", "Path to custom CSL file")
@@ -785,7 +748,7 @@ function registerCiteCommand(program: Command): void {
     .option("--format <format>", "Output format: text|html|rtf")
     .option("--in-text", "Generate in-text citations instead of bibliography entries")
     .action(async (identifiers: string[], options) => {
-      await handleCiteAction(identifiers, options, program);
+      await handleCiteAction(identifiers, options, program.opts());
     });
 }
 
