@@ -245,6 +245,27 @@ export async function runSearchPrompt(
       return this.append(" ");
     };
 
+    // Fix backspace at position 0 bug in enquirer
+    // enquirer's delete() doesn't check if cursor is at position 0
+    const promptWithDelete = promptInstance as unknown as {
+      delete: () => unknown;
+      cursor: number;
+      input: string;
+      alert: () => unknown;
+      moveCursor: (n: number) => void;
+      complete: () => Promise<void>;
+    };
+    if (typeof promptWithDelete.delete === "function") {
+      const originalDelete = promptWithDelete.delete.bind(promptWithDelete);
+      promptWithDelete.delete = function () {
+        // Prevent deletion when cursor is at position 0
+        if (this.cursor <= 0) {
+          return this.alert();
+        }
+        return originalDelete();
+      };
+    }
+
     // Override next() which is called on Tab key press
     // Make it toggle selection only (no movement, use arrow keys to move)
     const promptWithRender = promptInstance as unknown as {
@@ -255,6 +276,65 @@ export async function runSearchPrompt(
       promptInstance.toggle(promptInstance.focused);
       this.render();
     };
+
+    // Fix cursor position calculation bug in enquirer
+    // enquirer's restore() uses input.length - cursor for cursor positioning,
+    // but this doesn't account for the actual display width properly
+    const promptWithRestore = promptInstance as unknown as {
+      restore: () => void;
+      sections: () => {
+        header: string;
+        prompt: string;
+        after: string;
+        rest: string[];
+        last: string;
+      };
+      cursor: number;
+      input: string;
+      initial: string;
+      value: string;
+      state: { size: number; prompt: string };
+      stdout: { write: (s: string) => void };
+      options: { show?: boolean };
+    };
+
+    // Only override if restore method exists (it won't in test mocks)
+    if (typeof promptWithRestore.restore === "function") {
+      const originalRestore = promptWithRestore.restore.bind(promptWithRestore);
+      promptWithRestore.restore = function () {
+        if (this.options.show === false) return;
+
+        const sections = this.sections();
+        const size = sections.rest.length;
+        this.state.size = size;
+
+        if (size > 0) {
+          // Move cursor up by 'size' lines and to the correct column position
+          // Use the actual prompt from state (without input) for accurate positioning
+          const basePrompt = this.state.prompt || "";
+          const cursorPos = this.cursor;
+
+          // Strip ANSI escape codes to get accurate display width
+          // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes require control characters
+          const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
+          const promptDisplayWidth = stripAnsi(basePrompt).length;
+
+          // Calculate target column: base prompt length + cursor position in input
+          // Add 1 because cursor.to() uses 0-indexed column but we want 1-indexed for ANSI
+          const targetCol = promptDisplayWidth + cursorPos;
+
+          // Build ANSI escape sequence
+          let codes = "";
+          codes += `\u001b[${size}A`; // cursor up
+          codes += `\u001b[${targetCol + 1}G`; // cursor to column (1-indexed)
+
+          this.stdout.write(codes);
+        } else {
+          // Fall back to original behavior for non-list cases
+          originalRestore();
+        }
+      };
+    }
 
     const result = await promptInstance.run();
 
