@@ -28,6 +28,12 @@ describe("execution-context", () => {
       autoStart: false,
       autoStopMinutes: 0,
     },
+    citation: {
+      defaultStyle: "apa",
+      cslDirectory: [],
+      defaultLocale: "en-US",
+      defaultFormat: "text",
+    },
   };
 
   const mockLibrary = {

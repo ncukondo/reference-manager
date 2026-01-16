@@ -294,6 +294,40 @@ describe("CSL Style Management", () => {
         expect(result.styleName).toBe("custom");
         expect(result.styleXml).toBe(mockCSL);
       });
+
+      it("should use default_style from csl_directory when style is not specified", () => {
+        const mockCSL = '<?xml version="1.0"?><style>nature</style>';
+        vi.mocked(fs.existsSync).mockImplementation((p) => {
+          return p === path.join("/home/user/.csl", "nature.csl");
+        });
+        vi.mocked(fs.readFileSync).mockReturnValue(mockCSL);
+
+        // default_style is "nature" which is not a built-in style
+        // It should be found in csl_directory
+        const result = resolveStyle({
+          defaultStyle: "nature",
+          cslDirectory: "/home/user/.csl",
+        });
+
+        expect(result.type).toBe("custom");
+        expect(result.styleName).toBe("nature");
+        expect(result.styleXml).toBe(mockCSL);
+      });
+
+      it("should fall back to apa when default_style CSL file not found in csl_directory", () => {
+        vi.mocked(fs.existsSync).mockReturnValue(false);
+
+        // default_style is "nature" which is not a built-in style
+        // and not found in csl_directory
+        const result = resolveStyle({
+          defaultStyle: "nature",
+          cslDirectory: "/home/user/.csl",
+        });
+
+        // Should fall back to apa
+        expect(result.type).toBe("builtin");
+        expect(result.styleName).toBe("apa");
+      });
     });
   });
 

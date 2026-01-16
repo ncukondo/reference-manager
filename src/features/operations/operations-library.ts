@@ -8,6 +8,7 @@
  * See: spec/decisions/ADR-009-ilibrary-operations-pattern.md
  */
 
+import type { CitationConfig } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type {
   FindOptions,
@@ -28,7 +29,10 @@ import type { SearchOperationOptions, SearchResult } from "./search.js";
  * between local (Library) and server (ServerClient) modes.
  */
 export class OperationsLibrary implements ILibraryOperations {
-  constructor(private readonly library: ILibrary) {}
+  constructor(
+    private readonly library: ILibrary,
+    private readonly citationConfig?: CitationConfig
+  ) {}
 
   // ILibrary delegation
 
@@ -74,7 +78,15 @@ export class OperationsLibrary implements ILibraryOperations {
 
   async cite(options: CiteOperationOptions): Promise<CiteResult> {
     const { citeReferences } = await import("./cite.js");
-    return citeReferences(this.library, options);
+    // Merge citation config defaults with explicit options
+    const defaultStyle = options.defaultStyle ?? this.citationConfig?.defaultStyle;
+    const cslDirectory = options.cslDirectory ?? this.citationConfig?.cslDirectory;
+    const mergedOptions: CiteOperationOptions = {
+      ...options,
+      ...(defaultStyle !== undefined && { defaultStyle }),
+      ...(cslDirectory !== undefined && { cslDirectory }),
+    };
+    return citeReferences(this.library, mergedOptions);
   }
 
   async import(inputs: string[], options?: ImportOptions): Promise<ImportResult> {

@@ -70,6 +70,6 @@ export async function createExecutionContext(
   const library = await loadLibrary(config.library);
   return {
     mode: "local",
-    library: new OperationsLibrary(library),
+    library: new OperationsLibrary(library, config.citation),
   };
 }
