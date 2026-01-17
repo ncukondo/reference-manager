@@ -4,10 +4,13 @@
  * Opens references in external editor for interactive editing.
  */
 
+import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
+import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
-import type { ExecutionContext } from "../execution-context.js";
+import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
+import { isTTY, loadConfigWithOverrides } from "../helpers.js";
 
 /**
  * Options for the edit command.
@@ -228,4 +231,97 @@ export function formatEditOutput(result: EditCommandResult): string {
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Options for handleEditAction.
+ */
+export interface EditActionOptions {
+  uuid?: boolean;
+  format?: EditFormat;
+  editor?: string;
+}
+
+/**
+ * Execute interactive edit: select references then open editor.
+ */
+async function executeInteractiveEdit(
+  options: EditActionOptions,
+  context: ExecutionContext,
+  config: Config
+): Promise<EditCommandResult> {
+  const { runReferenceSelect } = await import("../../features/interactive/reference-select.js");
+
+  const allReferences = await context.library.getAll();
+  if (allReferences.length === 0) {
+    process.stderr.write("No references in library.\n");
+    process.exit(0);
+  }
+
+  const selectResult = await runReferenceSelect(
+    allReferences,
+    { multiSelect: true },
+    config.cli.interactive
+  );
+
+  if (selectResult.cancelled || selectResult.selected.length === 0) {
+    process.exit(0);
+  }
+
+  const identifiers = selectResult.selected.map((item) => item.id);
+  const format = options.format ?? config.cli.edit.defaultFormat;
+
+  return executeEditCommand(
+    {
+      identifiers,
+      format,
+      ...(options.uuid && { useUuid: true }),
+      ...(options.editor && { editor: options.editor }),
+    },
+    context
+  );
+}
+
+/**
+ * Handle 'edit' command action.
+ */
+export async function handleEditAction(
+  identifiers: string[],
+  options: EditActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    if (!isTTY()) {
+      process.stderr.write("Error: Edit command requires a TTY\n");
+      process.exit(1);
+    }
+
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    let result: EditCommandResult;
+
+    if (identifiers.length === 0) {
+      result = await executeInteractiveEdit(options, context, config);
+    } else {
+      const format = options.format ?? config.cli.edit.defaultFormat;
+      result = await executeEditCommand(
+        {
+          identifiers,
+          format,
+          ...(options.uuid && { useUuid: true }),
+          ...(options.editor && { editor: options.editor }),
+        },
+        context
+      );
+    }
+
+    const output = formatEditOutput(result);
+    process.stderr.write(`${output}\n`);
+
+    process.exit(result.success ? 0 : 1);
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
 }

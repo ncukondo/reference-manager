@@ -768,4 +768,14 @@ describe("fulltext command", () => {
       expect(getFulltextExitCode(result)).toBe(1);
     });
   });
+
+  describe("interactive fulltext commands", () => {
+    // Note: Interactive fulltext functionality is tested via E2E tests
+    // because it requires mocking multiple interactive modules
+    // See src/cli/interactive-id-selection.e2e.test.ts
+    it.todo("attach should be tested via E2E tests");
+    it.todo("get should be tested via E2E tests");
+    it.todo("detach should be tested via E2E tests");
+    it.todo("open should be tested via E2E tests");
+  });
 });

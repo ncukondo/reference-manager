@@ -52,50 +52,50 @@ For each step:
 
 ### Step 4: Update edit command
 
-- [ ] Write test: `src/cli/commands/edit.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/edit.ts`
+- [x] Write test: `src/cli/commands/edit.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/edit.ts`
   - Change argument from `<identifier...>` to `[identifier...]`
   - Add interactive mode when no IDs provided in TTY
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: Update remove command
 
-- [ ] Write test: `src/cli/commands/remove.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/remove.ts`
+- [x] Write test: `src/cli/commands/remove.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/remove.ts`
   - Support optional ID with interactive fallback
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Update update command
 
-- [ ] Write test: `src/cli/commands/update.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/update.ts`
+- [x] Write test: `src/cli/commands/update.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/update.ts`
   - Change argument from `<identifier>` to `[identifier]`
   - Add single-select interactive mode when no ID provided in TTY
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Update fulltext subcommands
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts`
+- [x] Write test: `src/cli/commands/fulltext.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts`
   - `fulltext attach`: Change to `[identifier]`, add interactive mode
   - `fulltext get`: Change to `[identifier]`, add interactive mode
   - `fulltext detach`: Change to `[identifier]`, add interactive mode
   - `fulltext open`: Update existing optional handling to use interactive mode
   - All use single-select mode
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 8: E2E tests
 
-- [ ] Write E2E tests: `src/cli/interactive-id-selection.e2e.test.ts`
+- [x] Write E2E tests: `src/cli/interactive-id-selection.e2e.test.ts`
   - Test cite with interactive selection
   - Test edit with interactive selection
   - Test fulltext open with interactive selection
   - Test style selection for cite
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ### Step 9: Build and prepare for manual testing
 

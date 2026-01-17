@@ -1,7 +1,11 @@
+import { z } from "zod";
+import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
+import { Library } from "../../core/library.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
-import type { ExecutionContext } from "../execution-context.js";
+import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
+import { isTTY, loadConfigWithOverrides, parseJsonInput, readJsonInput } from "../helpers.js";
 
 /**
  * Operator type for --set option.
@@ -362,4 +366,169 @@ export function formatUpdateOutput(result: UpdateCommandResult, identifier: stri
   }
 
   return parts.join("\n");
+}
+
+/**
+ * Options for handleUpdateAction.
+ */
+export interface UpdateActionOptions {
+  uuid?: boolean;
+  set?: string[];
+  output?: "json" | "text";
+  full?: boolean;
+}
+
+/**
+ * Execute interactive update: select a single reference.
+ */
+async function executeInteractiveUpdate(
+  context: ExecutionContext,
+  config: Config
+): Promise<string> {
+  const { runReferenceSelect } = await import("../../features/interactive/reference-select.js");
+
+  const allReferences = await context.library.getAll();
+  if (allReferences.length === 0) {
+    process.stderr.write("No references in library.\n");
+    process.exit(0);
+  }
+
+  const selectResult = await runReferenceSelect(
+    allReferences,
+    { multiSelect: false },
+    config.cli.interactive
+  );
+
+  if (selectResult.cancelled || selectResult.selected.length === 0) {
+    process.exit(0);
+  }
+
+  // Type assertion is safe here because we checked length > 0 above
+  const selectedItem = selectResult.selected[0] as CslItem;
+  return selectedItem.id;
+}
+
+/**
+ * Parse update input from --set options or file.
+ */
+function parseUpdateInput(
+  setOptions: string[] | undefined,
+  file: string | undefined
+): Promise<Partial<CslItem>> | Partial<CslItem> {
+  if (setOptions && setOptions.length > 0 && file) {
+    throw new Error("Cannot use --set with a file argument. Use one or the other.");
+  }
+
+  if (setOptions && setOptions.length > 0) {
+    const operations = setOptions.map((s) => parseSetOption(s));
+    return applySetOperations(operations) as Partial<CslItem>;
+  }
+
+  return readJsonInput(file).then((inputStr) => {
+    const updates = parseJsonInput(inputStr);
+    const updatesSchema = z.record(z.string(), z.unknown());
+    return updatesSchema.parse(updates) as Partial<CslItem>;
+  });
+}
+
+/**
+ * Handle update error.
+ */
+function handleUpdateError(error: unknown): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("Parse error")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(3);
+  }
+  if (message.includes("not found") || message.includes("validation")) {
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(1);
+  }
+  process.stderr.write(`Error: ${message}\n`);
+  process.exit(4);
+}
+
+/**
+ * Handle update error with format support.
+ */
+function handleUpdateErrorWithFormat(
+  error: unknown,
+  identifier: string,
+  outputFormat: "json" | "text"
+): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (outputFormat === "json") {
+    process.stdout.write(`${JSON.stringify({ success: false, id: identifier, error: message })}\n`);
+    process.exit(message.includes("not found") || message.includes("validation") ? 1 : 4);
+  }
+  handleUpdateError(error);
+}
+
+/**
+ * Handle 'update' command action.
+ */
+export async function handleUpdateAction(
+  identifierArg: string | undefined,
+  file: string | undefined,
+  options: UpdateActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  const { formatUpdateJsonOutput } = await import("../../features/operations/json-output.js");
+  const outputFormat = options.output ?? "text";
+
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    let identifier: string;
+    if (identifierArg) {
+      identifier = identifierArg;
+    } else {
+      if (!isTTY()) {
+        process.stderr.write(
+          "Error: No identifier provided. Provide an ID or run interactively in a TTY.\n"
+        );
+        process.exit(1);
+      }
+      identifier = await executeInteractiveUpdate(context, config);
+    }
+
+    const validatedUpdates = await parseUpdateInput(options.set, file);
+
+    const idType = options.uuid ? "uuid" : "id";
+    const beforeItem = options.full
+      ? await context.library.find(identifier, { idType })
+      : undefined;
+
+    const updateOptions: UpdateCommandOptions = {
+      identifier,
+      updates: validatedUpdates,
+      ...(options.uuid && { idType: "uuid" }),
+    };
+
+    const result = await executeUpdate(updateOptions, context);
+
+    if (outputFormat === "json") {
+      const jsonOptions = {
+        ...(options.full && { full: true }),
+        ...(beforeItem && { before: beforeItem }),
+      };
+      const jsonOutput = formatUpdateJsonOutput(result, identifier, jsonOptions);
+      process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
+    } else {
+      const output = formatUpdateOutput(result, identifier);
+      process.stderr.write(`${output}\n`);
+    }
+
+    process.exit(result.updated ? 0 : 1);
+  } catch (error) {
+    handleUpdateErrorWithFormat(error, identifierArg ?? "", outputFormat);
+  }
+}
+
+/**
+ * Collect multiple --set options into an array.
+ */
+export function collectSetOption(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
 }
