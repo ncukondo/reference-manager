@@ -67,6 +67,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 18**: Interactive Search (Issue #16, real-time filtering with Enquirer)
 - **Phase 19**: Fulltext Open Command (open PDF/Markdown with system default app)
 - **Phase 20**: Update Command --set Option (inline field updates for update command)
+- **Phase 21**: Search & Export Enhancements (search ID field, export command, edit command)
 - **Phase 22**: Interactive ID Selection (fallback to interactive search for ID selection)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
