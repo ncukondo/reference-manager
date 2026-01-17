@@ -111,14 +111,14 @@ For each step:
 
 ### Step 8: Config unset subcommand
 
-- [ ] Write test: `src/features/config/unset.test.ts`
+- [x] Write test: `src/features/config/unset.test.ts`
   - Test removing simple key
   - Test removing nested key
   - Test --local flag
   - Test no error when key not in file
-- [ ] Implement: `src/features/config/unset.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/unset.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 9: Config list-keys subcommand
 
