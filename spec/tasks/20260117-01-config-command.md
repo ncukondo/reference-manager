@@ -57,7 +57,7 @@ For each step:
 
 ### Step 4: Environment variable override detector
 
-- [ ] Write test: `src/config/env-override.test.ts`
+- [x] Write test: `src/config/env-override.test.ts`
   - Test detecting REFERENCE_MANAGER_LIBRARY override
   - Test detecting PUBMED_EMAIL override
   - Test detecting PUBMED_API_KEY override
@@ -65,9 +65,9 @@ For each step:
   - Test detecting REFERENCE_MANAGER_CLI_DEFAULT_LIMIT override
   - Test detecting REFERENCE_MANAGER_MCP_DEFAULT_LIMIT override
   - Test returning null when no override
-- [ ] Implement: `src/config/env-override.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/config/env-override.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: Config show subcommand
 
