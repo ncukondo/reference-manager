@@ -235,6 +235,22 @@ Completion includes:
 
 ## CLI Reference
 
+### Interactive ID Selection
+
+When you invoke certain commands without specifying IDs in a TTY environment, an interactive search prompt appears:
+
+```bash
+# These commands support interactive selection when ID is omitted
+ref cite                  # Select references → generate citation
+ref edit                  # Select references → open in editor
+ref remove                # Select reference → confirm deletion
+ref update                # Select reference → update flow
+ref fulltext attach       # Select reference → attach file
+ref fulltext open         # Select reference → open file
+```
+
+This makes it easy to quickly find and act on references without remembering citation keys.
+
 ### Basic Commands
 
 ```bash
@@ -311,6 +327,15 @@ ref update smith2024 --set "abstract="
 ref cite smith2024
 ref cite smith2024 jones2023 --style apa
 ref cite smith2024 --style chicago-author-date --format html
+
+# Interactive selection (no ID argument)
+ref cite
+# → Select references interactively → choose style → output citation
+
+# Additional options
+ref cite smith2024 --in-text                 # In-text citation: (Smith, 2024)
+ref cite smith2024 --csl-file ./custom.csl   # Use custom CSL file
+ref cite smith2024 --locale ja-JP            # Japanese locale
 ```
 
 ### Fulltext Management
@@ -340,6 +365,38 @@ ref search "review" --format ids-only | xargs -I{} ref fulltext open {}
 ref fulltext detach smith2024 --pdf
 ref fulltext detach smith2024 --pdf --delete      # Also delete the file
 ```
+
+### Edit Command
+
+Edit references interactively using your preferred text editor:
+
+```bash
+# Edit single reference
+ref edit smith2024
+
+# Edit multiple references
+ref edit smith2024 jones2023
+
+# Edit by UUID
+ref edit --uuid 550e8400-e29b-41d4-a716-446655440000
+
+# Edit in JSON format (default is YAML)
+ref edit smith2024 --format json
+
+# Interactive selection (no ID argument)
+ref edit
+```
+
+**Editor selection** (same as Git):
+1. `$VISUAL` environment variable
+2. `$EDITOR` environment variable
+3. Platform fallback: `vi` (Linux/macOS) or `notepad` (Windows)
+
+**Features:**
+- Opens references in YAML or JSON format
+- Protected fields (uuid, timestamps, fulltext) shown as comments
+- Validation with re-edit option on errors
+- Date fields simplified to ISO format (`"2024-03-15"`)
 
 ### Output Formats
 

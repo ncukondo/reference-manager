@@ -235,6 +235,22 @@ ref cite smith<TAB>          # 表示: smith2023 smith2024-review
 
 ## CLIリファレンス
 
+### インタラクティブID選択
+
+TTY環境でIDを指定せずに特定のコマンドを実行すると、インタラクティブな検索プロンプトが表示されます：
+
+```bash
+# これらのコマンドはID省略時にインタラクティブ選択をサポート
+ref cite                  # 文献を選択 → 引用を生成
+ref edit                  # 文献を選択 → エディタで開く
+ref remove                # 文献を選択 → 削除確認
+ref update                # 文献を選択 → 更新フロー
+ref fulltext attach       # 文献を選択 → ファイル添付
+ref fulltext open         # 文献を選択 → ファイルを開く
+```
+
+引用キーを覚えていなくても、素早く文献を見つけて操作できます。
+
 ### 基本コマンド
 
 ```bash
@@ -273,7 +289,10 @@ ref add export.ris                    # RISから
 ref add "10.1038/nature12373"         # DOIから
 ref add pmid:25056061                 # PubMed IDから
 ref add "ISBN:978-4-00-000000-0"      # ISBNから
-cat references.json | ref add         # 標準入力から
+cat references.json | ref add         # 標準入力から（ファイル内容）
+echo "10.1038/nature12373" | ref add  # 標準入力から（DOI自動検出）
+echo "12345678" | ref add --format pmid  # 標準入力から（PMID）
+echo "ISBN:978-4-00-000000-0" | ref add --format isbn  # 標準入力から（ISBN）
 
 # 文献を削除
 ref remove smith2024
@@ -308,6 +327,15 @@ ref update smith2024 --set "abstract="
 ref cite smith2024
 ref cite smith2024 jones2023 --style apa
 ref cite smith2024 --style chicago-author-date --format html
+
+# インタラクティブ選択（ID引数なし）
+ref cite
+# → 文献をインタラクティブに選択 → スタイルを選択 → 引用を出力
+
+# 追加オプション
+ref cite smith2024 --in-text                 # 文中引用: (Smith, 2024)
+ref cite smith2024 --csl-file ./custom.csl   # カスタムCSLファイルを使用
+ref cite smith2024 --locale ja-JP            # 日本語ロケール
 ```
 
 ### フルテキスト管理
@@ -337,6 +365,38 @@ ref search "review" --format ids-only | xargs -I{} ref fulltext open {}
 ref fulltext detach smith2024 --pdf
 ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 ```
+
+### editコマンド
+
+外部エディタを使って文献をインタラクティブに編集：
+
+```bash
+# 単一文献を編集
+ref edit smith2024
+
+# 複数文献を編集
+ref edit smith2024 jones2023
+
+# UUIDで編集
+ref edit --uuid 550e8400-e29b-41d4-a716-446655440000
+
+# JSON形式で編集（デフォルトはYAML）
+ref edit smith2024 --format json
+
+# インタラクティブ選択（ID引数なし）
+ref edit
+```
+
+**エディタの選択順序**（Gitと同じ）：
+1. `$VISUAL` 環境変数
+2. `$EDITOR` 環境変数
+3. プラットフォームのフォールバック：`vi`（Linux/macOS）または `notepad`（Windows）
+
+**機能：**
+- YAMLまたはJSON形式で文献を開く
+- 保護フィールド（uuid、タイムスタンプ、fulltext）はコメントとして表示
+- エラー時に再編集オプションで検証
+- 日付フィールドはISO形式（`"2024-03-15"`）に簡略化
 
 ### 出力フォーマット
 
