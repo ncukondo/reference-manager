@@ -99,10 +99,10 @@ For each step:
 
 ### Step 9: Build and prepare for manual testing
 
-- [ ] Run full test suite: `npm run test`
-- [ ] Run lint: `npm run lint`
-- [ ] Run typecheck: `npm run typecheck`
-- [ ] Build: `npm run build`
+- [x] Run full test suite: `npm run test`
+- [x] Run lint: `npm run lint`
+- [x] Run typecheck: `npm run typecheck`
+- [x] Build: `npm run build`
 - [ ] Create test data (see Manual Testing section below)
 
 ## Manual Testing

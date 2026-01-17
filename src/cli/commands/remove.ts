@@ -55,7 +55,11 @@ export async function executeRemove(
     });
   }
 
-  return context.library.remove(identifier, { idType });
+  const result = await context.library.remove(identifier, { idType });
+  if (result.removed) {
+    await context.library.save();
+  }
+  return result;
 }
 
 /**

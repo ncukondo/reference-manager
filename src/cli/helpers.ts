@@ -160,22 +160,26 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
     return true;
   }
 
-  // Display prompt
-  stdout.write(`${prompt} (y/N): `);
+  // Use Enquirer for confirmation to work correctly after other Enquirer prompts
+  // enquirer is a CommonJS module, so we must use default import
+  const enquirer = await import("enquirer");
+  const Confirm = (enquirer.default as unknown as Record<string, unknown>)
+    .Confirm as new (options: { name: string; message: string; initial?: boolean }) => {
+    run: () => Promise<boolean>;
+  };
 
-  // Read input
-  const chunks: Buffer[] = [];
-  for await (const chunk of stdin) {
-    chunks.push(chunk as Buffer);
-    // Break after first line
-    const input = Buffer.concat(chunks).toString("utf-8");
-    if (input.includes("\n")) {
-      break;
-    }
+  const confirmPrompt = new Confirm({
+    name: "confirm",
+    message: prompt,
+    initial: false,
+  });
+
+  try {
+    return await confirmPrompt.run();
+  } catch {
+    // User cancelled (Ctrl+C)
+    return false;
   }
-
-  const input = Buffer.concat(chunks).toString("utf-8").trim().toLowerCase();
-  return input === "y" || input === "yes";
 }
 
 /**
