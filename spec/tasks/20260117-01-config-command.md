@@ -83,16 +83,16 @@ For each step:
 
 ### Step 6: Config get subcommand
 
-- [ ] Write test: `src/features/config/get.test.ts`
+- [x] Write test: `src/features/config/get.test.ts`
   - Test getting simple value
   - Test getting nested value
   - Test getting deeply nested value
   - Test --config-only flag (ignore env override)
   - Test exit code 1 for missing key
   - Test exit code 1 for unset value
-- [ ] Implement: `src/features/config/get.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/get.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Config set subcommand
 
