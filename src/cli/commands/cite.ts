@@ -2,7 +2,7 @@ import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
 import type { CiteOperationOptions, CiteResult } from "../../features/operations/cite.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides } from "../helpers.js";
+import { isTTY, loadConfigWithOverrides, readIdentifiersFromStdin } from "../helpers.js";
 
 /**
  * Options for the cite command.
@@ -170,13 +170,20 @@ export async function handleCiteAction(
     let result: CiteCommandResult;
 
     if (identifiers.length === 0) {
-      if (!isTTY()) {
-        process.stderr.write(
-          "Error: No identifiers provided. Provide IDs or run interactively in a TTY.\n"
-        );
-        process.exit(1);
+      if (isTTY()) {
+        // TTY mode: interactive selection
+        result = await executeInteractiveCite(options, context, config);
+      } else {
+        // Non-TTY mode: read from stdin (pipeline support)
+        const stdinIds = await readIdentifiersFromStdin();
+        if (stdinIds.length === 0) {
+          process.stderr.write(
+            "Error: No identifiers provided. Provide IDs, pipe them via stdin, or run interactively in a TTY.\n"
+          );
+          process.exit(1);
+        }
+        result = await executeCite({ ...options, identifiers: stdinIds }, context);
       }
-      result = await executeInteractiveCite(options, context, config);
     } else {
       result = await executeCite({ ...options, identifiers }, context);
     }

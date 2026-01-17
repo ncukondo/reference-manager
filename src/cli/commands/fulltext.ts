@@ -23,7 +23,12 @@ import {
   fulltextOpen,
 } from "../../features/operations/fulltext/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides, readStdinBuffer } from "../helpers.js";
+import {
+  isTTY,
+  loadConfigWithOverrides,
+  readIdentifierFromStdin,
+  readStdinBuffer,
+} from "../helpers.js";
 
 /**
  * Options for fulltext attach command
@@ -393,14 +398,19 @@ export async function handleFulltextGetAction(
     let identifier: string;
     if (identifierArg) {
       identifier = identifierArg;
+    } else if (isTTY()) {
+      // TTY mode: interactive selection
+      identifier = await executeInteractiveSelect(context, config);
     } else {
-      if (!isTTY()) {
+      // Non-TTY mode: read from stdin (pipeline support)
+      const stdinId = await readIdentifierFromStdin();
+      if (!stdinId) {
         process.stderr.write(
-          "Error: No identifier provided. Provide an ID or run interactively in a TTY.\n"
+          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
         );
         process.exit(1);
       }
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = stdinId;
     }
 
     const getOptions: FulltextGetOptions = {
@@ -447,14 +457,19 @@ export async function handleFulltextDetachAction(
     let identifier: string;
     if (identifierArg) {
       identifier = identifierArg;
+    } else if (isTTY()) {
+      // TTY mode: interactive selection
+      identifier = await executeInteractiveSelect(context, config);
     } else {
-      if (!isTTY()) {
+      // Non-TTY mode: read from stdin (pipeline support)
+      const stdinId = await readIdentifierFromStdin();
+      if (!stdinId) {
         process.stderr.write(
-          "Error: No identifier provided. Provide an ID or run interactively in a TTY.\n"
+          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
         );
         process.exit(1);
       }
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = stdinId;
     }
 
     const detachOptions: FulltextDetachOptions = {
@@ -502,14 +517,19 @@ export async function handleFulltextOpenAction(
     let identifier: string;
     if (identifierArg) {
       identifier = identifierArg;
+    } else if (isTTY()) {
+      // TTY mode: interactive selection
+      identifier = await executeInteractiveSelect(context, config);
     } else {
-      if (!isTTY()) {
+      // Non-TTY mode: read from stdin (pipeline support)
+      const stdinId = await readIdentifierFromStdin();
+      if (!stdinId) {
         process.stderr.write(
-          "Error: No identifier provided. Provide an ID or run interactively in a TTY.\n"
+          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
         );
         process.exit(1);
       }
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = stdinId;
     }
 
     const openOptions: FulltextOpenOptions = {

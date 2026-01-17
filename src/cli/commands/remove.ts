@@ -5,7 +5,12 @@ import { Library } from "../../core/library.js";
 import type { FulltextType } from "../../features/fulltext/index.js";
 import { type RemoveResult, getFulltextAttachmentTypes } from "../../features/operations/remove.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides, readConfirmation } from "../helpers.js";
+import {
+  isTTY,
+  loadConfigWithOverrides,
+  readConfirmation,
+  readIdentifierFromStdin,
+} from "../helpers.js";
 
 // Re-export for convenience
 export { getFulltextAttachmentTypes };
@@ -170,19 +175,29 @@ async function resolveRemoveTarget(
   config: Config,
   useUuid: boolean
 ): Promise<{ identifier: string; item: CslItem }> {
+  let identifier: string;
+
   if (identifierArg) {
-    const item = await context.library.find(identifierArg, { idType: useUuid ? "uuid" : "id" });
-    if (!item) {
-      throw new Error(`Reference not found: ${identifierArg}`);
+    identifier = identifierArg;
+  } else if (isTTY()) {
+    // TTY mode: interactive selection
+    return executeInteractiveRemove(context, config);
+  } else {
+    // Non-TTY mode: read from stdin (pipeline support)
+    const stdinId = await readIdentifierFromStdin();
+    if (!stdinId) {
+      throw new Error(
+        "No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY."
+      );
     }
-    return { identifier: identifierArg, item };
+    identifier = stdinId;
   }
 
-  if (!isTTY()) {
-    throw new Error("No identifier provided. Provide an ID or run interactively in a TTY.");
+  const item = await context.library.find(identifier, { idType: useUuid ? "uuid" : "id" });
+  if (!item) {
+    throw new Error(`Reference not found: ${identifier}`);
   }
-
-  return executeInteractiveRemove(context, config);
+  return { identifier, item };
 }
 
 /**

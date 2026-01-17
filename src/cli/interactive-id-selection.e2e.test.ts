@@ -47,8 +47,8 @@ function runCli(
 
     if (options.stdin) {
       child.stdin?.write(options.stdin);
-      child.stdin?.end();
     }
+    child.stdin?.end();
 
     child.on("close", (code) => {
       resolve({ code: code ?? 0, stdout, stderr });
@@ -108,7 +108,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifiers provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option
+      expect(stderr).toContain("stdin");
     });
 
     it("should work normally when ID is provided", async () => {
@@ -139,7 +140,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifiers provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option
+      expect(stderr).toContain("stdin");
     });
   });
 
@@ -151,7 +153,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifier provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option
+      expect(stderr).toContain("stdin");
     });
 
     it("should work normally when ID is provided with --force", async () => {
@@ -174,7 +177,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifier provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option (when --set is used)
+      expect(stderr).toContain("stdin");
     });
 
     it("should work normally when ID is provided", async () => {
@@ -196,7 +200,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifier provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option
+      expect(stderr).toContain("stdin");
     });
   });
 
@@ -208,7 +213,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifier provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option
+      expect(stderr).toContain("stdin");
     });
   });
 
@@ -220,6 +226,7 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifier provided");
+      // fulltext attach uses stdin for file content, so no stdin option for identifier
       expect(stderr).toContain("TTY");
     });
   });
@@ -232,7 +239,8 @@ describe("Interactive ID Selection E2E", () => {
 
       expect(code).toBe(1);
       expect(stderr).toContain("No identifier provided");
-      expect(stderr).toContain("TTY");
+      // New message includes stdin option
+      expect(stderr).toContain("stdin");
     });
   });
 });

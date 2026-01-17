@@ -10,7 +10,7 @@ import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides } from "../helpers.js";
+import { isTTY, loadConfigWithOverrides, readIdentifiersFromStdin } from "../helpers.js";
 
 /**
  * Options for the edit command.
@@ -284,32 +284,45 @@ export async function handleEditAction(
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
 
-    let result: EditCommandResult;
-
-    if (identifiers.length === 0) {
-      if (!isTTY()) {
+    // Resolve identifiers: from args, stdin, or interactive selection
+    let resolvedIdentifiers: string[];
+    if (identifiers.length > 0) {
+      resolvedIdentifiers = identifiers;
+    } else if (isTTY()) {
+      // TTY mode: interactive selection
+      const result = await executeInteractiveEdit(options, context, config);
+      const output = formatEditOutput(result);
+      process.stderr.write(`${output}\n`);
+      process.exit(result.success ? 0 : 1);
+      return; // unreachable, but satisfies TypeScript
+    } else {
+      // Non-TTY mode: read from stdin (pipeline support)
+      const stdinIds = await readIdentifiersFromStdin();
+      if (stdinIds.length === 0) {
         process.stderr.write(
-          "Error: No identifiers provided. Provide IDs or run interactively in a TTY.\n"
+          "Error: No identifiers provided. Provide IDs, pipe them via stdin, or run interactively in a TTY.\n"
         );
         process.exit(1);
       }
-      result = await executeInteractiveEdit(options, context, config);
-    } else {
-      if (!isTTY()) {
-        process.stderr.write("Error: Edit command requires a TTY.\n");
-        process.exit(1);
-      }
-      const format = options.format ?? config.cli.edit.defaultFormat;
-      result = await executeEditCommand(
-        {
-          identifiers,
-          format,
-          ...(options.uuid && { useUuid: true }),
-          ...(options.editor && { editor: options.editor }),
-        },
-        context
-      );
+      resolvedIdentifiers = stdinIds;
     }
+
+    // Edit requires TTY for the editor
+    if (!isTTY()) {
+      process.stderr.write("Error: Edit command requires a TTY to open the editor.\n");
+      process.exit(1);
+    }
+
+    const format = options.format ?? config.cli.edit.defaultFormat;
+    const result = await executeEditCommand(
+      {
+        identifiers: resolvedIdentifiers,
+        format,
+        ...(options.uuid && { useUuid: true }),
+        ...(options.editor && { editor: options.editor }),
+      },
+      context
+    );
 
     const output = formatEditOutput(result);
     process.stderr.write(`${output}\n`);

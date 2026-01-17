@@ -5,7 +5,13 @@ import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides, parseJsonInput, readJsonInput } from "../helpers.js";
+import {
+  isTTY,
+  loadConfigWithOverrides,
+  parseJsonInput,
+  readIdentifierFromStdin,
+  readJsonInput,
+} from "../helpers.js";
 
 /**
  * Operator type for --set option.
@@ -399,6 +405,42 @@ async function executeInteractiveUpdate(
 }
 
 /**
+ * Resolve identifier from argument, stdin, or interactive selection.
+ */
+async function resolveUpdateIdentifier(
+  identifierArg: string | undefined,
+  hasSetOptions: boolean,
+  context: ExecutionContext,
+  config: Config
+): Promise<string> {
+  if (identifierArg) {
+    return identifierArg;
+  }
+
+  if (isTTY()) {
+    return executeInteractiveUpdate(context, config);
+  }
+
+  if (hasSetOptions) {
+    // Non-TTY mode with --set: read identifier from stdin (pipeline support)
+    const stdinId = await readIdentifierFromStdin();
+    if (!stdinId) {
+      process.stderr.write(
+        "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
+      );
+      process.exit(1);
+    }
+    return stdinId;
+  }
+
+  // Non-TTY mode without --set: stdin is used for JSON, so identifier is required
+  process.stderr.write(
+    "Error: No identifier provided. When using stdin for JSON input, identifier must be provided as argument.\n"
+  );
+  process.exit(1);
+}
+
+/**
  * Parse update input from --set options or file.
  */
 function parseUpdateInput(
@@ -465,24 +507,13 @@ export async function handleUpdateAction(
 ): Promise<void> {
   const { formatUpdateJsonOutput } = await import("../../features/operations/json-output.js");
   const outputFormat = options.output ?? "text";
+  const hasSetOptions = Boolean(options.set && options.set.length > 0);
 
   try {
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
 
-    let identifier: string;
-    if (identifierArg) {
-      identifier = identifierArg;
-    } else {
-      if (!isTTY()) {
-        process.stderr.write(
-          "Error: No identifier provided. Provide an ID or run interactively in a TTY.\n"
-        );
-        process.exit(1);
-      }
-      identifier = await executeInteractiveUpdate(context, config);
-    }
-
+    const identifier = await resolveUpdateIdentifier(identifierArg, hasSetOptions, context, config);
     const validatedUpdates = await parseUpdateInput(options.set, file);
 
     const idType = options.uuid ? "uuid" : "id";
