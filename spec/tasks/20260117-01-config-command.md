@@ -71,15 +71,15 @@ For each step:
 
 ### Step 5: Config show subcommand
 
-- [ ] Write test: `src/features/config/show.test.ts`
+- [x] Write test: `src/features/config/show.test.ts`
   - Test TOML output format
   - Test JSON output format (--json)
   - Test section filter (--section)
   - Test source annotation (--sources)
   - Test environment override annotation
-- [ ] Implement: `src/features/config/show.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/show.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Config get subcommand
 
