@@ -32,15 +32,15 @@ For each step:
 
 ### Step 2: Config key parser
 
-- [ ] Write test: `src/config/key-parser.test.ts`
+- [x] Write test: `src/config/key-parser.test.ts`
   - Test parsing simple keys (`library`, `log_level`)
   - Test parsing nested keys (`citation.default_style`)
   - Test parsing deeply nested keys (`cli.interactive.limit`)
   - Test invalid key detection
   - Test key existence validation against schema
-- [ ] Implement: `src/config/key-parser.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/config/key-parser.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Config value validator
 
