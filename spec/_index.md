@@ -93,6 +93,7 @@ spec/
 |---------|------|
 | `add` | `features/add.md` |
 | `cite` | `features/citation.md` |
+| `config` | `features/config-command.md` |
 | `fulltext` | `features/fulltext.md` |
 | `search` / `list` | `features/search.md`, `features/pagination.md` |
 | `search -i` | `features/interactive-search.md` |

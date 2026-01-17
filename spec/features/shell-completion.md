@@ -67,6 +67,7 @@ Each command provides its specific options:
 | `remove` | `--force`, `--uuid` |
 | `update` | `--field`, `--uuid` |
 | `cite` | `--style`, `--csl-file`, `--locale`, `--format`, `--in-text`, `--uuid` |
+| `config` | Subcommands: `show`, `get`, `set`, `unset`, `list-keys`, `path`, `edit` |
 | `fulltext` | Subcommands: `attach`, `get`, `detach` |
 | `server` | Subcommands: `start`, `stop`, `status` |
 | `mcp` | `--config` |
@@ -82,6 +83,7 @@ Context-aware value completion:
 | `--format` (cite) | `text`, `html`, `rtf` |
 | `--style` | `apa`, `vancouver`, `chicago-author-date`, `harvard1`, `ieee`, `mla` |
 | `--log-level` | `silent`, `info`, `debug` |
+| `config <subcmd>` | `show`, `get`, `set`, `unset`, `list-keys`, `path`, `edit` |
 | `fulltext <subcmd>` | `attach`, `get`, `detach` |
 | `server <action>` | `start`, `stop`, `status` |
 

@@ -67,6 +67,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 18**: Interactive Search (Issue #16, real-time filtering with Enquirer)
 - **Phase 19**: Fulltext Open Command (open PDF/Markdown with system default app)
 - **Phase 20**: Update Command --set Option (inline field updates for update command)
+- **Phase 22**: Interactive ID Selection (fallback to interactive search for ID selection)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -74,27 +75,14 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 21: Search & Export Enhancements
+### Phase 23: Config Command
 
-- **Task 1**: Search ID field support (`20260108-01-search-id-field.md`)
-  - Add `id` field to search targets
-  - Support `id:` prefix for citation key search
-- **Task 2**: Export command (`20260109-01-export-command.md`)
-  - New `export` command for external tool integration (pandoc, jq, etc.)
-  - Multiple ID support, `--all`, `--search` options
-  - Output formats: CSL-JSON, YAML, BibTeX
-- **Task 3**: Edit command (`20260109-02-edit-command.md`)
-  - Open references in external editor ($VISUAL/$EDITOR)
-  - YAML format (default) with protected fields as comments
-  - JSON format option, field transformations (ISO dates, keyword arrays)
-
-### Phase 22: Interactive ID Selection
-
-- **Task 1**: Interactive ID selection (`20260116-01-interactive-id-selection.md`)
-  - Fallback to interactive search when commands invoked without ID in TTY
-  - Supported commands: cite, edit, remove, update, fulltext subcommands
-  - Style selection prompt for cite (built-in + custom styles from csl_directory)
-  - Multi-select for cite/edit/remove, single-select for update/fulltext
+- **Task 1**: Config command (`20260117-01-config-command.md`)
+  - New `config` command for managing configuration via CLI
+  - Subcommands: `show`, `get`, `set`, `unset`, `list-keys`, `path`, `edit`
+  - Zod schema validation for all values
+  - Environment variable override warnings
+  - Support for user config and local (project) config
 
 ---
 
@@ -113,7 +101,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 20: Citation Enhancements
+### Phase 24: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -122,7 +110,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 21: Advanced Features
+### Phase 25: Advanced Features
 
 Additional features beyond core functionality:
 

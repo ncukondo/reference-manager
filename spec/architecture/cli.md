@@ -23,6 +23,7 @@
 | `update <id>` | Update a reference |
 | `cite <id>...` | Generate formatted citations |
 | `fulltext <subcommand>` | Manage full-text files (attach/get/detach) |
+| `config <subcommand>` | Manage configuration (show/get/set/edit) |
 | `server start\|stop\|status` | Manage HTTP server |
 | `mcp` | Start MCP stdio server |
 | `completion [action]` | Manage shell completion (install/uninstall) |
@@ -172,6 +173,12 @@ default_order = "desc"
 limit = 20                 # Max results in interactive mode
 debounce_ms = 200          # Search debounce delay
 ```
+
+### Managing Configuration
+
+Use the `config` command to view and modify settings without editing files directly.
+
+See `spec/features/config-command.md` for complete specification.
 
 ## Server Integration
 
