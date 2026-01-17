@@ -19,6 +19,7 @@ vi.mock("node:fs", () => ({
 }));
 
 import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   type StyleSelectOptions,
   buildStyleChoices,
@@ -84,7 +85,7 @@ describe("listCustomStyles", () => {
 
     const result = listCustomStyles("~/styles");
 
-    expect(fs.existsSync).toHaveBeenCalledWith("/home/user/styles");
+    expect(fs.existsSync).toHaveBeenCalledWith(path.join("/home/user", "styles"));
     expect(result).toEqual(["custom"]);
 
     process.env.HOME = originalHome;
