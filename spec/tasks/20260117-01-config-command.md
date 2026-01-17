@@ -44,16 +44,16 @@ For each step:
 
 ### Step 3: Config value validator
 
-- [ ] Write test: `src/config/value-validator.test.ts`
+- [x] Write test: `src/config/value-validator.test.ts`
   - Test string validation
   - Test number validation (integer, non-negative)
   - Test boolean validation
   - Test enum validation (log_level, sort, order, format)
   - Test array validation (csl_directory)
   - Test error message formatting
-- [ ] Implement: `src/config/value-validator.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/config/value-validator.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Environment variable override detector
 
