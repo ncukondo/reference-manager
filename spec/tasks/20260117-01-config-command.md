@@ -96,7 +96,7 @@ For each step:
 
 ### Step 7: Config set subcommand
 
-- [ ] Write test: `src/features/config/set.test.ts`
+- [x] Write test: `src/features/config/set.test.ts`
   - Test setting string value
   - Test setting number value
   - Test setting boolean value
@@ -105,9 +105,9 @@ For each step:
   - Test validation error handling
   - Test environment override warning
   - Test creating config file if not exists
-- [ ] Implement: `src/features/config/set.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/set.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 8: Config unset subcommand
 
