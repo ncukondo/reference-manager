@@ -20,89 +20,90 @@ For each step:
 
 ### Step 1: Create shared reference selection utility
 
-- [ ] Write test: `src/features/interactive/reference-select.test.ts`
-- [ ] Implement: `src/features/interactive/reference-select.ts`
+- [x] Write test: `src/features/interactive/reference-select.test.ts`
+- [x] Implement: `src/features/interactive/reference-select.ts`
   - `runReferenceSelect()` function
   - Support both single and multi-select modes
   - Reuse `runSearchPrompt` from existing interactive search
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Create style selection prompt for cite
 
-- [ ] Write test: `src/features/interactive/style-select.test.ts`
-- [ ] Implement: `src/features/interactive/style-select.ts`
+- [x] Write test: `src/features/interactive/style-select.test.ts`
+- [x] Implement: `src/features/interactive/style-select.ts`
   - `runStyleSelect()` function
   - List built-in styles from `BUILTIN_STYLES`
   - List custom styles from `csl_directory` (glob `*.csl`)
   - Show default style first with `(default)` marker
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Update cite command
 
-- [ ] Write test: `src/cli/commands/cite.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/cite.ts`
+- [x] Write test: `src/cli/commands/cite.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/cite.ts`
   - Change argument from `<id-or-uuid...>` to `[id-or-uuid...]`
   - Add interactive mode when no IDs provided in TTY
   - Integrate style selection when `--style` not specified
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Move `handleCiteAction` from index.ts to cite.ts for better separation of concerns
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update edit command
 
-- [ ] Write test: `src/cli/commands/edit.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/edit.ts`
+- [x] Write test: `src/cli/commands/edit.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/edit.ts`
   - Change argument from `<identifier...>` to `[identifier...]`
   - Add interactive mode when no IDs provided in TTY
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: Update remove command
 
-- [ ] Write test: `src/cli/commands/remove.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/remove.ts`
+- [x] Write test: `src/cli/commands/remove.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/remove.ts`
   - Support optional ID with interactive fallback
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Update update command
 
-- [ ] Write test: `src/cli/commands/update.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts` and `src/cli/commands/update.ts`
+- [x] Write test: `src/cli/commands/update.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts` and `src/cli/commands/update.ts`
   - Change argument from `<identifier>` to `[identifier]`
   - Add single-select interactive mode when no ID provided in TTY
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Update fulltext subcommands
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` (add interactive mode tests)
-- [ ] Implement: Update `src/cli/index.ts`
+- [x] Write test: `src/cli/commands/fulltext.test.ts` (add interactive mode tests)
+- [x] Implement: Update `src/cli/index.ts`
   - `fulltext attach`: Change to `[identifier]`, add interactive mode
   - `fulltext get`: Change to `[identifier]`, add interactive mode
   - `fulltext detach`: Change to `[identifier]`, add interactive mode
   - `fulltext open`: Update existing optional handling to use interactive mode
   - All use single-select mode
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 8: E2E tests
 
-- [ ] Write E2E tests: `src/cli/interactive-id-selection.e2e.test.ts`
+- [x] Write E2E tests: `src/cli/interactive-id-selection.e2e.test.ts`
   - Test cite with interactive selection
   - Test edit with interactive selection
   - Test fulltext open with interactive selection
   - Test style selection for cite
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
 
 ### Step 9: Build and prepare for manual testing
 
-- [ ] Run full test suite: `npm run test`
-- [ ] Run lint: `npm run lint`
-- [ ] Run typecheck: `npm run typecheck`
-- [ ] Build: `npm run build`
-- [ ] Create test data (see Manual Testing section below)
+- [x] Run full test suite: `npm run test`
+- [x] Run lint: `npm run lint`
+- [x] Run typecheck: `npm run typecheck`
+- [x] Build: `npm run build`
+- [x] Create test data (see Manual Testing section below)
 
 ## Manual Testing
 
@@ -177,10 +178,10 @@ unset TEST_DIR REF_LIBRARY
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification completed (all items above checked)
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification completed (all items above checked)
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

@@ -246,4 +246,11 @@ describe("cite command", () => {
       expect(getCiteExitCode(result)).toBe(0);
     });
   });
+
+  describe("executeInteractiveCite", () => {
+    // Note: Interactive cite functionality is tested via E2E tests
+    // because it requires mocking multiple interactive modules
+    // See src/cli/interactive-id-selection.e2e.test.ts
+    it.todo("should be tested via E2E tests");
+  });
 });

@@ -569,4 +569,11 @@ describe("update command", () => {
       });
     });
   });
+
+  describe("executeInteractiveUpdate", () => {
+    // Note: Interactive update functionality is tested via E2E tests
+    // because it requires mocking multiple interactive modules
+    // See src/cli/interactive-id-selection.e2e.test.ts
+    it.todo("should be tested via E2E tests");
+  });
 });

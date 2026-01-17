@@ -150,6 +150,29 @@ export function isTTY(): boolean {
 }
 
 /**
+ * Read identifiers from stdin (for non-TTY/pipeline mode).
+ * Reads all lines, splits by whitespace/newlines, filters empty.
+ * Returns empty array if stdin has no content.
+ */
+export async function readIdentifiersFromStdin(): Promise<string[]> {
+  const content = await readStdinContent();
+  if (!content) {
+    return [];
+  }
+  return content.split(/[\s\n]+/).filter((id) => id.length > 0);
+}
+
+/**
+ * Read a single identifier from stdin (for non-TTY/pipeline mode).
+ * Returns the first non-empty line, or undefined if stdin is empty.
+ */
+export async function readIdentifierFromStdin(): Promise<string | undefined> {
+  const content = await readStdinContent();
+  const firstLine = content.split("\n")[0]?.trim();
+  return firstLine || undefined;
+}
+
+/**
  * Read confirmation from user (y/N)
  * @param prompt - Confirmation prompt message
  * @returns True if user confirmed (y/yes), false otherwise
@@ -160,22 +183,26 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
     return true;
   }
 
-  // Display prompt
-  stdout.write(`${prompt} (y/N): `);
+  // Use Enquirer for confirmation to work correctly after other Enquirer prompts
+  // enquirer is a CommonJS module, so we must use default import
+  const enquirer = await import("enquirer");
+  const Confirm = (enquirer.default as unknown as Record<string, unknown>)
+    .Confirm as new (options: { name: string; message: string; initial?: boolean }) => {
+    run: () => Promise<boolean>;
+  };
 
-  // Read input
-  const chunks: Buffer[] = [];
-  for await (const chunk of stdin) {
-    chunks.push(chunk as Buffer);
-    // Break after first line
-    const input = Buffer.concat(chunks).toString("utf-8");
-    if (input.includes("\n")) {
-      break;
-    }
+  const confirmPrompt = new Confirm({
+    name: "confirm",
+    message: prompt,
+    initial: false,
+  });
+
+  try {
+    return await confirmPrompt.run();
+  } catch {
+    // User cancelled (Ctrl+C)
+    return false;
   }
-
-  const input = Buffer.concat(chunks).toString("utf-8").trim().toLowerCase();
-  return input === "y" || input === "yes";
 }
 
 /**

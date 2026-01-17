@@ -1,5 +1,8 @@
+import type { Config } from "../../config/schema.js";
+import { Library } from "../../core/library.js";
 import type { CiteOperationOptions, CiteResult } from "../../features/operations/cite.js";
-import type { ExecutionContext } from "../execution-context.js";
+import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
+import { isTTY, loadConfigWithOverrides, readIdentifiersFromStdin } from "../helpers.js";
 
 /**
  * Options for the cite command.
@@ -116,4 +119,88 @@ export function getCiteExitCode(result: CiteCommandResult): number {
     return 1;
   }
   return 0;
+}
+
+/**
+ * Execute interactive cite: select references and optionally style.
+ */
+async function executeInteractiveCite(
+  options: Omit<CiteCommandOptions, "identifiers">,
+  context: ExecutionContext,
+  config: Config
+): Promise<CiteCommandResult> {
+  const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
+  const { runStyleSelect } = await import("../../features/interactive/style-select.js");
+
+  const allReferences = await context.library.getAll();
+  const identifiers = await selectReferencesOrExit(
+    allReferences,
+    { multiSelect: true },
+    config.cli.interactive
+  );
+
+  let style = options.style;
+  if (!style && !options.cslFile) {
+    const styleResult = await runStyleSelect({
+      cslDirectory: config.citation.cslDirectory,
+      defaultStyle: config.citation.defaultStyle,
+    });
+
+    if (styleResult.cancelled) {
+      process.exit(0);
+    }
+    style = styleResult.style;
+  }
+
+  return executeCite({ ...options, ...(style && { style }), identifiers }, context);
+}
+
+/**
+ * Handle 'cite' command action.
+ */
+export async function handleCiteAction(
+  identifiers: string[],
+  options: Omit<CiteCommandOptions, "identifiers">,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    let result: CiteCommandResult;
+
+    if (identifiers.length === 0) {
+      if (isTTY()) {
+        // TTY mode: interactive selection
+        result = await executeInteractiveCite(options, context, config);
+      } else {
+        // Non-TTY mode: read from stdin (pipeline support)
+        const stdinIds = await readIdentifiersFromStdin();
+        if (stdinIds.length === 0) {
+          process.stderr.write(
+            "Error: No identifiers provided. Provide IDs, pipe them via stdin, or run interactively in a TTY.\n"
+          );
+          process.exit(1);
+        }
+        result = await executeCite({ ...options, identifiers: stdinIds }, context);
+      }
+    } else {
+      result = await executeCite({ ...options, identifiers }, context);
+    }
+
+    const output = formatCiteOutput(result);
+    if (output) {
+      process.stdout.write(`${output}\n`);
+    }
+
+    const errors = formatCiteErrors(result);
+    if (errors) {
+      process.stderr.write(`${errors}\n`);
+    }
+
+    process.exit(getCiteExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
 }

@@ -4,10 +4,13 @@
  * Opens references in external editor for interactive editing.
  */
 
+import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
+import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
-import type { ExecutionContext } from "../execution-context.js";
+import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
+import { isTTY, loadConfigWithOverrides, readIdentifiersFromStdin } from "../helpers.js";
 
 /**
  * Options for the edit command.
@@ -228,4 +231,105 @@ export function formatEditOutput(result: EditCommandResult): string {
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Options for handleEditAction.
+ */
+export interface EditActionOptions {
+  uuid?: boolean;
+  format?: EditFormat;
+  editor?: string;
+}
+
+/**
+ * Execute interactive edit: select references then open editor.
+ */
+async function executeInteractiveEdit(
+  options: EditActionOptions,
+  context: ExecutionContext,
+  config: Config
+): Promise<EditCommandResult> {
+  const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
+
+  const allReferences = await context.library.getAll();
+  const identifiers = await selectReferencesOrExit(
+    allReferences,
+    { multiSelect: true },
+    config.cli.interactive
+  );
+
+  const format = options.format ?? config.cli.edit.defaultFormat;
+
+  return executeEditCommand(
+    {
+      identifiers,
+      format,
+      ...(options.uuid && { useUuid: true }),
+      ...(options.editor && { editor: options.editor }),
+    },
+    context
+  );
+}
+
+/**
+ * Handle 'edit' command action.
+ */
+export async function handleEditAction(
+  identifiers: string[],
+  options: EditActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    // Resolve identifiers: from args, stdin, or interactive selection
+    let resolvedIdentifiers: string[];
+    if (identifiers.length > 0) {
+      resolvedIdentifiers = identifiers;
+    } else if (isTTY()) {
+      // TTY mode: interactive selection
+      const result = await executeInteractiveEdit(options, context, config);
+      const output = formatEditOutput(result);
+      process.stderr.write(`${output}\n`);
+      process.exit(result.success ? 0 : 1);
+      return; // unreachable, but satisfies TypeScript
+    } else {
+      // Non-TTY mode: read from stdin (pipeline support)
+      const stdinIds = await readIdentifiersFromStdin();
+      if (stdinIds.length === 0) {
+        process.stderr.write(
+          "Error: No identifiers provided. Provide IDs, pipe them via stdin, or run interactively in a TTY.\n"
+        );
+        process.exit(1);
+      }
+      resolvedIdentifiers = stdinIds;
+    }
+
+    // Edit requires TTY for the editor
+    if (!isTTY()) {
+      process.stderr.write("Error: Edit command requires a TTY to open the editor.\n");
+      process.exit(1);
+    }
+
+    const format = options.format ?? config.cli.edit.defaultFormat;
+    const result = await executeEditCommand(
+      {
+        identifiers: resolvedIdentifiers,
+        format,
+        ...(options.uuid && { useUuid: true }),
+        ...(options.editor && { editor: options.editor }),
+      },
+      context
+    );
+
+    const output = formatEditOutput(result);
+    process.stderr.write(`${output}\n`);
+
+    process.exit(result.success ? 0 : 1);
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(4);
+  }
 }
