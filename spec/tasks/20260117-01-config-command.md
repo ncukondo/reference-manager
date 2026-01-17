@@ -20,15 +20,15 @@ For each step:
 
 ### Step 1: TOML writer utility
 
-- [ ] Write test: `src/config/toml-writer.test.ts`
+- [x] Write test: `src/config/toml-writer.test.ts`
   - Test writing simple key-value pairs
   - Test writing nested sections
   - Test preserving existing content
   - Test creating new file with template
   - Test updating existing values
-- [ ] Implement: `src/config/toml-writer.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/config/toml-writer.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Config key parser
 
