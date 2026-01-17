@@ -102,6 +102,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Descriptive error messages for missing files and references
   - See `spec/features/fulltext.md` for full specification
 
+- **Interactive ID Selection (Phase 22)**: Fallback to interactive search when commands are invoked without ID in TTY
+  - Supported commands: cite, edit, remove, update, fulltext subcommands
+  - Multi-select for cite/edit/remove, single-select for update/fulltext
+  - Style selection prompt for cite command when `--style` not specified
+  - Lists built-in styles (apa, vancouver, harvard) and custom styles from `csl_directory`
+  - Default style shown first with `(default)` marker
+  - Non-TTY mode: error message prompts user to provide ID or run interactively
+  - Examples:
+    - `ref cite` → Opens interactive search, select references, choose style
+    - `ref edit` → Opens interactive search, select references to edit
+    - `ref fulltext open` → Opens interactive search for single reference
+  - See `spec/features/interactive-id-selection.md` for full specification
+
 - **Interactive Search (Phase 18)**: Real-time interactive reference search mode
   - New `-i, --interactive` flag for search command: `ref search -i [query]`
   - Real-time filtering: results update as you type (200ms debounce)
