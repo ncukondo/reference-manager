@@ -21,7 +21,12 @@ vi.mock("../search/tokenizer.js", () => ({
   tokenize: vi.fn().mockReturnValue({ tokens: [] }),
 }));
 
-import { type ReferenceSelectOptions, runReferenceSelect } from "./reference-select.js";
+import {
+  type ReferenceSelectOptions,
+  runReferenceSelect,
+  selectReferenceItemsOrExit,
+  selectReferencesOrExit,
+} from "./reference-select.js";
 
 function createMockItem(overrides: Partial<CslItem> = {}): CslItem {
   return {
@@ -151,5 +156,131 @@ describe("runReferenceSelect", () => {
 
     expect(result.selected).toHaveLength(0);
     expect(result.cancelled).toBe(false);
+  });
+});
+
+describe("selectReferencesOrExit", () => {
+  const defaultConfig = {
+    limit: 20,
+    debounceMs: 200,
+  };
+
+  let mockExit: ReturnType<typeof vi.spyOn>;
+  let mockStderr: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit called");
+    });
+    mockStderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    mockExit.mockRestore();
+    mockStderr.mockRestore();
+  });
+
+  it("returns identifiers for selected items", async () => {
+    const item1 = createMockItem({ id: "ref-001" });
+    const item2 = createMockItem({ id: "ref-002" });
+    const allRefs = [item1, item2];
+
+    mockRunSearchPrompt.mockResolvedValueOnce({
+      selected: [item1, item2],
+      cancelled: false,
+    });
+
+    const result = await selectReferencesOrExit(allRefs, { multiSelect: true }, defaultConfig);
+
+    expect(result).toEqual(["ref-001", "ref-002"]);
+  });
+
+  it("exits with code 0 when library is empty", async () => {
+    await expect(selectReferencesOrExit([], { multiSelect: true }, defaultConfig)).rejects.toThrow(
+      "process.exit called"
+    );
+
+    expect(mockExit).toHaveBeenCalledWith(0);
+    expect(mockStderr).toHaveBeenCalledWith("No references in library.\n");
+  });
+
+  it("exits with code 0 when cancelled", async () => {
+    const item1 = createMockItem({ id: "ref-001" });
+
+    mockRunSearchPrompt.mockResolvedValueOnce({
+      selected: [],
+      cancelled: true,
+    });
+
+    await expect(
+      selectReferencesOrExit([item1], { multiSelect: true }, defaultConfig)
+    ).rejects.toThrow("process.exit called");
+
+    expect(mockExit).toHaveBeenCalledWith(0);
+  });
+});
+
+describe("selectReferenceItemsOrExit", () => {
+  const defaultConfig = {
+    limit: 20,
+    debounceMs: 200,
+  };
+
+  let mockExit: ReturnType<typeof vi.spyOn>;
+  let mockStderr: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit called");
+    });
+    mockStderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    mockExit.mockRestore();
+    mockStderr.mockRestore();
+  });
+
+  it("returns full CslItem objects for selected items", async () => {
+    const item1 = createMockItem({ id: "ref-001" });
+    const item2 = createMockItem({ id: "ref-002" });
+    const allRefs = [item1, item2];
+
+    mockRunSearchPrompt.mockResolvedValueOnce({
+      selected: [item1, item2],
+      cancelled: false,
+    });
+
+    const result = await selectReferenceItemsOrExit(allRefs, { multiSelect: true }, defaultConfig);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toBe(item1);
+    expect(result[1]).toBe(item2);
+  });
+
+  it("exits with code 0 when library is empty", async () => {
+    await expect(
+      selectReferenceItemsOrExit([], { multiSelect: true }, defaultConfig)
+    ).rejects.toThrow("process.exit called");
+
+    expect(mockExit).toHaveBeenCalledWith(0);
+    expect(mockStderr).toHaveBeenCalledWith("No references in library.\n");
+  });
+
+  it("exits with code 0 when cancelled", async () => {
+    const item1 = createMockItem({ id: "ref-001" });
+
+    mockRunSearchPrompt.mockResolvedValueOnce({
+      selected: [],
+      cancelled: true,
+    });
+
+    await expect(
+      selectReferenceItemsOrExit([item1], { multiSelect: true }, defaultConfig)
+    ).rejects.toThrow("process.exit called");
+
+    expect(mockExit).toHaveBeenCalledWith(0);
   });
 });

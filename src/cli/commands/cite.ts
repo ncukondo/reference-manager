@@ -129,24 +129,15 @@ async function executeInteractiveCite(
   context: ExecutionContext,
   config: Config
 ): Promise<CiteCommandResult> {
-  const { runReferenceSelect } = await import("../../features/interactive/reference-select.js");
+  const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
   const { runStyleSelect } = await import("../../features/interactive/style-select.js");
 
   const allReferences = await context.library.getAll();
-  if (allReferences.length === 0) {
-    process.stderr.write("No references in library.\n");
-    process.exit(0);
-  }
-
-  const selectResult = await runReferenceSelect(
+  const identifiers = await selectReferencesOrExit(
     allReferences,
     { multiSelect: true },
     config.cli.interactive
   );
-
-  if (selectResult.cancelled || selectResult.selected.length === 0) {
-    process.exit(0);
-  }
 
   let style = options.style;
   if (!style && !options.cslFile) {
@@ -161,7 +152,6 @@ async function executeInteractiveCite(
     style = styleResult.style;
   }
 
-  const identifiers = selectResult.selected.map((item) => item.id);
   return executeCite({ ...options, ...(style && { style }), identifiers }, context);
 }
 

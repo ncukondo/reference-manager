@@ -138,7 +138,8 @@ describe("Interactive ID Selection E2E", () => {
       });
 
       expect(code).toBe(1);
-      expect(stderr).toContain("Edit command requires a TTY");
+      expect(stderr).toContain("No identifiers provided");
+      expect(stderr).toContain("TTY");
     });
   });
 

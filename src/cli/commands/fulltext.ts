@@ -5,7 +5,6 @@
  */
 
 import type { Config } from "../../config/schema.js";
-import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import type { FulltextType } from "../../features/fulltext/index.js";
@@ -250,27 +249,17 @@ async function executeInteractiveSelect(
   context: ExecutionContext,
   config: Config
 ): Promise<string> {
-  const { runReferenceSelect } = await import("../../features/interactive/reference-select.js");
+  const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
 
   const allReferences = await context.library.getAll();
-  if (allReferences.length === 0) {
-    process.stderr.write("No references in library.\n");
-    process.exit(0);
-  }
-
-  const selectResult = await runReferenceSelect(
+  const identifiers = await selectReferencesOrExit(
     allReferences,
     { multiSelect: false },
     config.cli.interactive
   );
 
-  if (selectResult.cancelled || selectResult.selected.length === 0) {
-    process.exit(0);
-  }
-
-  // Type assertion is safe here because we checked length > 0 above
-  const selectedItem = selectResult.selected[0] as CslItem;
-  return selectedItem.id;
+  // Type assertion is safe: selectReferencesOrExit guarantees non-empty array
+  return identifiers[0] as string;
 }
 
 /**

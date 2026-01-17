@@ -250,25 +250,15 @@ async function executeInteractiveEdit(
   context: ExecutionContext,
   config: Config
 ): Promise<EditCommandResult> {
-  const { runReferenceSelect } = await import("../../features/interactive/reference-select.js");
+  const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
 
   const allReferences = await context.library.getAll();
-  if (allReferences.length === 0) {
-    process.stderr.write("No references in library.\n");
-    process.exit(0);
-  }
-
-  const selectResult = await runReferenceSelect(
+  const identifiers = await selectReferencesOrExit(
     allReferences,
     { multiSelect: true },
     config.cli.interactive
   );
 
-  if (selectResult.cancelled || selectResult.selected.length === 0) {
-    process.exit(0);
-  }
-
-  const identifiers = selectResult.selected.map((item) => item.id);
   const format = options.format ?? config.cli.edit.defaultFormat;
 
   return executeEditCommand(
@@ -291,19 +281,24 @@ export async function handleEditAction(
   globalOpts: Record<string, unknown>
 ): Promise<void> {
   try {
-    if (!isTTY()) {
-      process.stderr.write("Error: Edit command requires a TTY\n");
-      process.exit(1);
-    }
-
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
 
     let result: EditCommandResult;
 
     if (identifiers.length === 0) {
+      if (!isTTY()) {
+        process.stderr.write(
+          "Error: No identifiers provided. Provide IDs or run interactively in a TTY.\n"
+        );
+        process.exit(1);
+      }
       result = await executeInteractiveEdit(options, context, config);
     } else {
+      if (!isTTY()) {
+        process.stderr.write("Error: Edit command requires a TTY.\n");
+        process.exit(1);
+      }
       const format = options.format ?? config.cli.edit.defaultFormat;
       result = await executeEditCommand(
         {

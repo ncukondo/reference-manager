@@ -103,7 +103,7 @@ For each step:
 - [x] Run lint: `npm run lint`
 - [x] Run typecheck: `npm run typecheck`
 - [x] Build: `npm run build`
-- [ ] Create test data (see Manual Testing section below)
+- [x] Create test data (see Manual Testing section below)
 
 ## Manual Testing
 
@@ -184,4 +184,4 @@ unset TEST_DIR REF_LIBRARY
 - [x] Build succeeds (`npm run build`)
 - [x] Manual verification completed (all items above checked)
 - [x] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] Move this file to `spec/tasks/completed/`

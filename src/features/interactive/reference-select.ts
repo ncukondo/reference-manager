@@ -79,3 +79,77 @@ export async function runReferenceSelect(
     cancelled: false,
   };
 }
+
+/**
+ * Options for selectReferencesOrExit helper
+ */
+export interface SelectReferencesOrExitOptions {
+  /** Whether to allow multiple selection */
+  multiSelect: boolean;
+  /** Initial search query */
+  initialQuery?: string;
+}
+
+/**
+ * Select references interactively or exit if cancelled/empty.
+ *
+ * This is a convenience wrapper around runReferenceSelect that handles
+ * common patterns:
+ * - Exits with code 0 if library is empty
+ * - Exits with code 0 if selection is cancelled
+ * - Returns selected identifiers
+ *
+ * @param allReferences - All references available for selection
+ * @param options - Selection options
+ * @param config - Interactive prompt configuration
+ * @returns Array of selected reference IDs (never empty)
+ */
+export async function selectReferencesOrExit(
+  allReferences: CslItem[],
+  options: SelectReferencesOrExitOptions,
+  config: SearchPromptConfig
+): Promise<string[]> {
+  if (allReferences.length === 0) {
+    process.stderr.write("No references in library.\n");
+    process.exit(0);
+  }
+
+  const selectResult = await runReferenceSelect(allReferences, options, config);
+
+  if (selectResult.cancelled || selectResult.selected.length === 0) {
+    process.exit(0);
+  }
+
+  return selectResult.selected.map((item) => item.id);
+}
+
+/**
+ * Select reference items interactively or exit if cancelled/empty.
+ *
+ * Similar to selectReferencesOrExit but returns full CslItem objects
+ * instead of just identifiers. Useful when the caller needs access to
+ * the full reference data (e.g., for confirmation dialogs).
+ *
+ * @param allReferences - All references available for selection
+ * @param options - Selection options
+ * @param config - Interactive prompt configuration
+ * @returns Array of selected CslItem objects (never empty)
+ */
+export async function selectReferenceItemsOrExit(
+  allReferences: CslItem[],
+  options: SelectReferencesOrExitOptions,
+  config: SearchPromptConfig
+): Promise<CslItem[]> {
+  if (allReferences.length === 0) {
+    process.stderr.write("No references in library.\n");
+    process.exit(0);
+  }
+
+  const selectResult = await runReferenceSelect(allReferences, options, config);
+
+  if (selectResult.cancelled || selectResult.selected.length === 0) {
+    process.exit(0);
+  }
+
+  return selectResult.selected;
+}

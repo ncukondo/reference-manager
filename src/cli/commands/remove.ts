@@ -145,26 +145,19 @@ async function executeInteractiveRemove(
   context: ExecutionContext,
   config: Config
 ): Promise<{ identifier: string; item: CslItem }> {
-  const { runReferenceSelect } = await import("../../features/interactive/reference-select.js");
+  const { selectReferenceItemsOrExit } = await import(
+    "../../features/interactive/reference-select.js"
+  );
 
   const allReferences = await context.library.getAll();
-  if (allReferences.length === 0) {
-    process.stderr.write("No references in library.\n");
-    process.exit(0);
-  }
-
-  const selectResult = await runReferenceSelect(
+  const selectedItems = await selectReferenceItemsOrExit(
     allReferences,
     { multiSelect: false },
     config.cli.interactive
   );
 
-  if (selectResult.cancelled || selectResult.selected.length === 0) {
-    process.exit(0);
-  }
-
-  // Type assertion is safe here because we checked length > 0 above
-  const selectedItem = selectResult.selected[0] as CslItem;
+  // Type assertion is safe: selectReferenceItemsOrExit guarantees non-empty array
+  const selectedItem = selectedItems[0] as CslItem;
   return { identifier: selectedItem.id, item: selectedItem };
 }
 
