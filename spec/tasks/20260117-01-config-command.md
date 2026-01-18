@@ -143,15 +143,15 @@ For each step:
 
 ### Step 11: Config edit subcommand
 
-- [ ] Write test: `src/features/config/edit.test.ts`
+- [x] Write test: `src/features/config/edit.test.ts`
   - Test opening existing config file
   - Test creating template for new file
   - Test --local flag
   - Test editor resolution (same as edit command)
   - Test TTY requirement
-- [ ] Implement: `src/features/config/edit.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/edit.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 12: CLI command integration
 
