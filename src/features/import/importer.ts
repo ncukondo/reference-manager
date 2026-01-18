@@ -94,6 +94,15 @@ function buildUnknownResults(unknowns: string[]): ImportItemResult[] {
 }
 
 /**
+ * Clear the id from a fetched item to force regeneration using author-year format
+ * Identifiers (PMID, DOI, ISBN) from APIs may have non-standard IDs that should not be used
+ */
+function clearItemId(item: CslItem): CslItem {
+  const { id: _ignored, ...rest } = item;
+  return { ...rest, id: "" };
+}
+
+/**
  * Fetch PMIDs with cache support
  */
 async function fetchPmidsWithCache(
@@ -107,7 +116,7 @@ async function fetchPmidsWithCache(
   for (const pmid of pmids) {
     const cached = getPmidFromCache(pmid);
     if (cached) {
-      results.push({ success: true, item: cached, source: pmid });
+      results.push({ success: true, item: clearItemId(cached), source: pmid });
     } else {
       pmidsToFetch.push(pmid);
     }
@@ -121,7 +130,7 @@ async function fetchPmidsWithCache(
         cachePmidResult(fetchResult.pmid, fetchResult.item);
         results.push({
           success: true,
-          item: fetchResult.item,
+          item: clearItemId(fetchResult.item),
           source: fetchResult.pmid,
         });
       } else {
@@ -147,14 +156,14 @@ async function fetchDoisWithCache(dois: string[]): Promise<ImportItemResult[]> {
   for (const doi of dois) {
     const cached = getDoiFromCache(doi);
     if (cached) {
-      results.push({ success: true, item: cached, source: doi });
+      results.push({ success: true, item: clearItemId(cached), source: doi });
       continue;
     }
 
     const fetchResult = await fetchDoi(doi);
     if (fetchResult.success) {
       cacheDoiResult(doi, fetchResult.item);
-      results.push({ success: true, item: fetchResult.item, source: doi });
+      results.push({ success: true, item: clearItemId(fetchResult.item), source: doi });
     } else {
       results.push({
         success: false,
@@ -177,14 +186,14 @@ async function fetchIsbnsWithCache(isbns: string[]): Promise<ImportItemResult[]>
   for (const isbn of isbns) {
     const cached = getIsbnFromCache(isbn);
     if (cached) {
-      results.push({ success: true, item: cached, source: isbn });
+      results.push({ success: true, item: clearItemId(cached), source: isbn });
       continue;
     }
 
     const fetchResult = await fetchIsbn(isbn);
     if (fetchResult.success) {
       cacheIsbnResult(isbn, fetchResult.item);
-      results.push({ success: true, item: fetchResult.item, source: isbn });
+      results.push({ success: true, item: clearItemId(fetchResult.item), source: isbn });
     } else {
       results.push({
         success: false,
