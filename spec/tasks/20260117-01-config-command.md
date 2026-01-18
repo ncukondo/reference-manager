@@ -373,18 +373,18 @@ const expectConfigValue = async (key: string, expected: unknown) => {
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification
-  - [ ] `ref config show` displays current config
-  - [ ] `ref config get citation.default_style` returns value
-  - [ ] `ref config set citation.default_style ieee` updates config
-  - [ ] `ref config unset citation.default_style` removes value
-  - [ ] `ref config list-keys` shows all available keys
-  - [ ] `ref config path` shows file locations
-  - [ ] `ref config edit` opens editor
-  - [ ] Environment override warning appears when applicable
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification
+  - [x] `ref config show` displays current config
+  - [x] `ref config get citation.default_style` returns value
+  - [x] `ref config set citation.default_style ieee` updates config
+  - [x] `ref config unset citation.default_style` removes value
+  - [x] `ref config list-keys` shows all available keys
+  - [x] `ref config path` shows file locations
+  - [x] `ref config edit` opens editor (requires TTY)
+  - [x] Environment override warning appears when applicable (tested in E2E)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
