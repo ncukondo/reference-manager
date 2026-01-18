@@ -122,13 +122,13 @@ For each step:
 
 ### Step 9: Config list-keys subcommand
 
-- [ ] Write test: `src/features/config/list-keys.test.ts`
+- [x] Write test: `src/features/config/list-keys.test.ts`
   - Test listing all keys with types
   - Test --section filter
   - Test output format (key, type, description)
-- [ ] Implement: `src/features/config/list-keys.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/list-keys.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 10: Config path subcommand
 
