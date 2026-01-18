@@ -131,21 +131,28 @@ Set a configuration value in a configuration file.
 
 | Flag | Description |
 |------|-------------|
-| `--local` | Write to current directory config (default: user config) |
+| `--local` | Write to current directory config (create if not exists) |
+| `--user` | Write to user config (ignore local config even if exists) |
 
 **Behavior:**
 - Validates value against schema before writing
 - Creates config file if it doesn't exist
 - Warns if environment variable overrides the value
+- Write target selection (without flags):
+  1. If `.reference-manager.config.toml` exists in current directory → write there
+  2. Otherwise → write to user config
 
 **Examples:**
 
 ```bash
-# Set in user config
+# Set value (writes to local config if exists, otherwise user config)
 ref config set citation.default_style chicago-author-date
 
-# Set in local (project) config
+# Explicitly write to local (project) config (creates if not exists)
 ref config set --local citation.default_style ieee
+
+# Explicitly write to user config (even if local config exists)
+ref config set --user citation.default_style apa
 
 # Set numeric value
 ref config set cli.default_limit 50
@@ -184,16 +191,24 @@ Remove a configuration value, reverting to default.
 
 | Flag | Description |
 |------|-------------|
-| `--local` | Remove from current directory config (default: user config) |
+| `--local` | Remove from current directory config |
+| `--user` | Remove from user config (ignore local config even if exists) |
+
+**Behavior:**
+- Write target selection follows same rules as `set` command
+- No error if key doesn't exist in file
 
 **Examples:**
 
 ```bash
-# Remove from user config
+# Remove value (from local config if exists, otherwise user config)
 ref config unset citation.default_style
 
-# Remove from local config
+# Explicitly remove from local config
 ref config unset --local cli.default_limit
+
+# Explicitly remove from user config (even if local config exists)
+ref config unset --user citation.default_style
 ```
 
 ### `ref config list-keys`

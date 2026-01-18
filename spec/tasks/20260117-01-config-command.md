@@ -166,12 +166,42 @@ For each step:
 
 ### Step 13: Shell completion support
 
-- [ ] Update `src/cli/completion.ts`
+- [x] Update `src/cli/completion.ts`
   - Add config subcommand completions
   - Add option completions for each subcommand
-- [ ] Verify completion works manually
+- [x] Verify completion works manually
 
-### Step 14: E2E tests
+### Step 14: Write target consistency fix
+
+Update set/unset to use consistent write target selection matching read behavior.
+
+**Spec change:** Write target selection (without flags):
+1. If `.reference-manager.config.toml` exists in current directory → write there
+2. Otherwise → write to user config
+3. `--local` → force write to local config (create if not exists)
+4. `--user` → force write to user config (ignore local even if exists)
+
+- [ ] Update test: `src/features/config/set.test.ts`
+  - Add test: writes to local config if it exists (no flag)
+  - Add test: writes to user config if local doesn't exist (no flag)
+  - Add test: --user flag writes to user config even if local exists
+  - Update existing --local tests
+- [ ] Update implementation: `src/features/config/set.ts`
+  - Add `resolveWriteTarget()` function
+  - Add `--user` option support
+- [ ] Update test: `src/features/config/unset.test.ts`
+  - Same test cases as set
+- [ ] Update implementation: `src/features/config/unset.ts`
+  - Use same `resolveWriteTarget()` logic
+- [ ] Update CLI: `src/cli/commands/config.ts`
+  - Add `--user` option to set and unset subcommands
+  - Update write target resolution logic
+- [ ] Update shell completion: `src/cli/completion.ts`
+  - Add `--user` option completion
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 15: E2E tests
 
 **Important**: E2E tests must be implemented even if unit tests cover similar scenarios. E2E tests verify the actual CLI behavior with real file I/O and process execution.
 
