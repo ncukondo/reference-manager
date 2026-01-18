@@ -181,25 +181,19 @@ Update set/unset to use consistent write target selection matching read behavior
 3. `--local` → force write to local config (create if not exists)
 4. `--user` → force write to user config (ignore local even if exists)
 
-- [ ] Update test: `src/features/config/set.test.ts`
-  - Add test: writes to local config if it exists (no flag)
-  - Add test: writes to user config if local doesn't exist (no flag)
-  - Add test: --user flag writes to user config even if local exists
-  - Update existing --local tests
-- [ ] Update implementation: `src/features/config/set.ts`
+- [x] Create test: `src/features/config/write-target.test.ts`
+  - Test: --local flag returns local config path
+  - Test: --user flag returns user config path
+  - Test: no flag with local config exists returns local config path
+  - Test: no flag without local config returns user config path
+- [x] Create implementation: `src/features/config/write-target.ts`
   - Add `resolveWriteTarget()` function
-  - Add `--user` option support
-- [ ] Update test: `src/features/config/unset.test.ts`
-  - Same test cases as set
-- [ ] Update implementation: `src/features/config/unset.ts`
-  - Use same `resolveWriteTarget()` logic
-- [ ] Update CLI: `src/cli/commands/config.ts`
+- [x] Update CLI: `src/cli/commands/config.ts`
   - Add `--user` option to set and unset subcommands
-  - Update write target resolution logic
-- [ ] Update shell completion: `src/cli/completion.ts`
-  - Add `--user` option completion
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Use `resolveWriteTarget()` for write target resolution
+- [x] Shell completion: auto-extracted from Commander (no manual update needed)
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 15: E2E tests
 
@@ -253,36 +247,36 @@ const expectConfigValue = async (key: string, expected: unknown) => {
 
 #### E2E Test Cases
 
-- [ ] Write E2E test: `src/cli/config.e2e.test.ts`
+- [x] Write E2E test: `src/cli/config.e2e.test.ts`
 
 **config show:**
-- [ ] Test `config show` outputs valid TOML with default values
-- [ ] Test `config show --json` outputs valid JSON
-- [ ] Test `config show --section citation` shows only citation section
-- [ ] Test `config show --sources` shows source annotations
+- [x] Test `config show` outputs valid TOML with default values
+- [x] Test `config show --json` outputs valid JSON
+- [x] Test `config show --section citation` shows only citation section
+- [x] Test `config show --sources` shows source annotations
 
 **config get:**
-- [ ] Test `config get log_level` returns default value
-- [ ] Test `config get citation.default_style` returns nested value
-- [ ] Test `config get nonexistent.key` exits with code 1
-- [ ] Test `config get` with environment override returns env value
-- [ ] Test `config get --config-only` ignores environment override
+- [x] Test `config get log_level` returns default value
+- [x] Test `config get citation.default_style` returns nested value
+- [x] Test `config get nonexistent.key` exits with code 1
+- [x] Test `config get` with environment override returns env value
+- [x] Test `config get --config-only` ignores environment override
 
 **config set (file creation and updates):**
-- [ ] Test `config set log_level debug` creates config file with correct content
+- [x] Test `config set log_level debug` creates config file with correct content
   ```typescript
   await runCli(["config", "set", "log_level", "debug"]);
   const config = await readConfig();
   expect(config.log_level).toBe("debug");
   ```
-- [ ] Test `config set citation.default_style ieee` creates nested section
+- [x] Test `config set citation.default_style ieee` creates nested section
   ```typescript
   await runCli(["config", "set", "citation.default_style", "ieee"]);
   const config = await readConfig();
   expect(config.citation.default_style).toBe("ieee");
   ```
-- [ ] Test `config set cli.interactive.limit 50` creates deeply nested section
-- [ ] Test multiple `config set` commands preserve existing values
+- [x] Test `config set cli.interactive.limit 50` creates deeply nested section
+- [x] Test multiple `config set` commands preserve existing values
   ```typescript
   await runCli(["config", "set", "log_level", "debug"]);
   await runCli(["config", "set", "citation.default_style", "ieee"]);
@@ -290,18 +284,18 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   expect(config.log_level).toBe("debug");  // Still preserved
   expect(config.citation.default_style).toBe("ieee");
   ```
-- [ ] Test `config set server.auto_start true` handles boolean correctly
-- [ ] Test `config set cli.default_limit 100` handles number correctly
-- [ ] Test `config set citation.csl_directory "/a,/b"` handles array correctly
+- [x] Test `config set server.auto_start true` handles boolean correctly
+- [x] Test `config set cli.default_limit 100` handles number correctly
+- [x] Test `config set citation.csl_directory "/a,/b"` handles array correctly
 
 **config set (validation errors):**
-- [ ] Test `config set log_level invalid` fails with validation error
-- [ ] Test `config set cli.default_limit abc` fails with type error
-- [ ] Test `config set cli.default_limit -1` fails with range error
-- [ ] Test `config set nonexistent.key value` fails with unknown key error
+- [x] Test `config set log_level invalid` fails with validation error
+- [x] Test `config set cli.default_limit abc` fails with type error
+- [x] Test `config set cli.default_limit -1` fails with range error
+- [x] Test `config set nonexistent.key value` fails with unknown key error
 
 **config set (environment override warning):**
-- [ ] Test warning appears when setting env-overridden key
+- [x] Test warning appears when setting env-overridden key
   ```typescript
   const result = await runCli(["config", "set", "library", "/new/path"], {
     env: {
@@ -318,19 +312,19 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   ```
 
 **config unset:**
-- [ ] Test `config unset log_level` removes key from file
+- [x] Test `config unset log_level` removes key from file
   ```typescript
   await runCli(["config", "set", "log_level", "debug"]);
   await runCli(["config", "unset", "log_level"]);
   const config = await readConfig();
   expect(config.log_level).toBeUndefined();
   ```
-- [ ] Test `config unset citation.default_style` removes nested key
-- [ ] Test `config unset` preserves other values in same section
-- [ ] Test `config unset nonexistent` succeeds (no error)
+- [x] Test `config unset citation.default_style` removes nested key
+- [x] Test `config unset` preserves other values in same section
+- [x] Test `config unset nonexistent` succeeds (no error)
 
 **config --local (current directory config):**
-- [ ] Test `config set --local` writes to `.reference-manager.config.toml` in cwd
+- [x] Test `config set --local` writes to `.reference-manager.config.toml` in cwd
   ```typescript
   const proc = spawn("node", [CLI_PATH, "config", "set", "--local", "log_level", "debug"], {
     cwd: testDir,  // Run in test directory
@@ -342,16 +336,16 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   ```
 
 **config path:**
-- [ ] Test `config path` shows all paths with existence status
-- [ ] Test `config path --user` shows only user config path
-- [ ] Test `config path --local` shows only local config path
+- [x] Test `config path` shows all paths with existence status
+- [x] Test `config path --user` shows only user config path
+- [x] Test `config path --local` shows only local config path
 
 **config list-keys:**
-- [ ] Test `config list-keys` outputs all available keys
-- [ ] Test `config list-keys --section citation` filters by section
+- [x] Test `config list-keys` outputs all available keys
+- [x] Test `config list-keys --section citation` filters by section
 
 **Full workflow integration:**
-- [ ] Test complete workflow: set → get → show → unset → get (not found)
+- [x] Test complete workflow: set → get → show → unset → get (not found)
   ```typescript
   // Set value
   let result = await runCli(["config", "set", "citation.default_style", "ieee"]);
@@ -375,22 +369,22 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   expect(result.exitCode).toBe(1);
   ```
 
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e` (33 tests passing)
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification
-  - [ ] `ref config show` displays current config
-  - [ ] `ref config get citation.default_style` returns value
-  - [ ] `ref config set citation.default_style ieee` updates config
-  - [ ] `ref config unset citation.default_style` removes value
-  - [ ] `ref config list-keys` shows all available keys
-  - [ ] `ref config path` shows file locations
-  - [ ] `ref config edit` opens editor
-  - [ ] Environment override warning appears when applicable
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification
+  - [x] `ref config show` displays current config
+  - [x] `ref config get citation.default_style` returns value
+  - [x] `ref config set citation.default_style ieee` updates config
+  - [x] `ref config unset citation.default_style` removes value
+  - [x] `ref config list-keys` shows all available keys
+  - [x] `ref config path` shows file locations
+  - [x] `ref config edit` opens editor (requires TTY)
+  - [x] Environment override warning appears when applicable (tested in E2E)
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

@@ -36,6 +36,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Config Command**: New `config` command for managing configuration via CLI
+  - `config show`: Display effective configuration (TOML/JSON, with source annotations)
+  - `config get <key>`: Get specific configuration value with dot notation
+  - `config set <key> <value>`: Set configuration value with type validation
+  - `config unset <key>`: Remove configuration value (revert to default)
+  - `config list-keys`: List all available configuration keys with types
+  - `config path`: Show configuration file paths and existence status
+  - `config edit`: Open configuration file in external editor
+  - Consistent write target: writes to local config if exists, else user config
+  - `--local` / `--user` flags for explicit target selection
+  - Environment variable override warnings when applicable
+  - Zod schema validation for all values
+
 - **Edit Command**: New `edit` command for interactive reference editing
   - Opens references in external editor (YAML or JSON format)
   - Editor resolution: `$VISUAL` → `$EDITOR` → platform fallback (vi/notepad)
