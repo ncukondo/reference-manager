@@ -550,6 +550,45 @@ auto_stop_minutes = 60
 | `REFERENCE_MANAGER_LIBRARY` | ライブラリファイルパスを上書き |
 | `REFERENCE_MANAGER_FULLTEXT_DIR` | フルテキストディレクトリを上書き |
 
+### configコマンド
+
+TOMLファイルを直接編集せずにCLIで設定を管理：
+
+```bash
+# すべての設定を表示
+ref config show
+ref config show --json            # JSON形式
+ref config show --sources         # 各値のソースを表示
+
+# 個別の値を取得/設定
+ref config get citation.default_style
+ref config set citation.default_style chicago-author-date
+ref config set --local citation.default_style ieee  # プロジェクトローカル設定
+
+# デフォルトに戻す
+ref config unset citation.default_style
+
+# 利用可能なキーを一覧表示
+ref config list-keys
+
+# 設定ファイルの場所を表示
+ref config path
+
+# エディタで設定を開く
+ref config edit
+ref config edit --local           # プロジェクトローカル設定を編集
+```
+
+**キーのカテゴリ：**
+- `library`, `log_level` — 基本設定
+- `backup.*` — バックアップ設定
+- `server.*` — HTTPサーバー設定
+- `citation.*` — 引用のデフォルト（スタイル、ロケール、フォーマット）
+- `pubmed.*` — PubMed API認証情報
+- `fulltext.*` — フルテキスト保存先
+- `cli.*` — CLI動作（制限、ソート、インタラクティブモード）
+- `mcp.*` — MCPサーバー設定
+
 ## データ形式
 
 reference-managerは[CSL-JSON](https://citeproc-js.readthedocs.io/en/latest/csl-json/markup.html)をネイティブ形式として使用します。これはPandoc、Zotero、その他の学術ツールで使用されているのと同じ形式です。

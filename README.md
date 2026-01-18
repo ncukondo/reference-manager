@@ -550,6 +550,45 @@ auto_stop_minutes = 60
 | `REFERENCE_MANAGER_LIBRARY` | Override library file path |
 | `REFERENCE_MANAGER_FULLTEXT_DIR` | Override fulltext directory |
 
+### Config Command
+
+Manage configuration via CLI without manually editing TOML files:
+
+```bash
+# View all configuration
+ref config show
+ref config show --json            # JSON format
+ref config show --sources         # Show where each value comes from
+
+# Get/set individual values
+ref config get citation.default_style
+ref config set citation.default_style chicago-author-date
+ref config set --local citation.default_style ieee  # Project-local config
+
+# Reset to default
+ref config unset citation.default_style
+
+# List all available keys
+ref config list-keys
+
+# Show config file locations
+ref config path
+
+# Open config in editor
+ref config edit
+ref config edit --local           # Edit project-local config
+```
+
+**Key categories:**
+- `library`, `log_level` — Core settings
+- `backup.*` — Backup configuration
+- `server.*` — HTTP server settings
+- `citation.*` — Citation defaults (style, locale, format)
+- `pubmed.*` — PubMed API credentials
+- `fulltext.*` — Fulltext storage
+- `cli.*` — CLI behavior (limits, sorting, interactive mode)
+- `mcp.*` — MCP server settings
+
 ## Data Format
 
 reference-manager uses [CSL-JSON](https://citeproc-js.readthedocs.io/en/latest/csl-json/markup.html) as its native format — the same format used by Pandoc, Zotero, and other academic tools.
