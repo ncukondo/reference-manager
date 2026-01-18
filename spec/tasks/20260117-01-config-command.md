@@ -132,14 +132,14 @@ For each step:
 
 ### Step 10: Config path subcommand
 
-- [ ] Write test: `src/features/config/path.test.ts`
+- [x] Write test: `src/features/config/path.test.ts`
   - Test showing all paths with existence status
   - Test --user flag
   - Test --local flag
   - Test showing REFERENCE_MANAGER_CONFIG env path
-- [ ] Implement: `src/features/config/path.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/config/path.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 11: Config edit subcommand
 
