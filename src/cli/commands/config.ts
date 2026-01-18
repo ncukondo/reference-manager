@@ -8,6 +8,7 @@ import type { Command } from "commander";
 import { getDefaultUserConfigPath } from "../../config/defaults.js";
 import { getEnvOverrideInfo } from "../../config/env-override.js";
 import { loadConfig } from "../../config/loader.js";
+import { parseValueForKey } from "../../config/value-validator.js";
 import { createConfigTemplate, getConfigEditTarget } from "../../features/config/edit.js";
 import { getConfigValue } from "../../features/config/get.js";
 import { listConfigKeys } from "../../features/config/list-keys.js";
@@ -96,11 +97,14 @@ export function registerConfigCommand(program: Command): void {
           userConfigPath: getDefaultUserConfigPath(),
         });
 
+        // Parse value to appropriate type
+        const parsedValue = parseValueForKey(key, value);
+
         // Check for environment override
         const envOverrideInfo = getEnvOverrideInfo(key);
 
         const setOptions = envOverrideInfo ? { envOverrideInfo } : {};
-        const result = await setConfigValue(configPath, key, value, setOptions);
+        const result = await setConfigValue(configPath, key, parsedValue, setOptions);
 
         if (!result.success) {
           process.stderr.write(`Error: ${result.error}\n`);

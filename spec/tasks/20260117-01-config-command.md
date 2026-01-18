@@ -247,36 +247,36 @@ const expectConfigValue = async (key: string, expected: unknown) => {
 
 #### E2E Test Cases
 
-- [ ] Write E2E test: `src/cli/config.e2e.test.ts`
+- [x] Write E2E test: `src/cli/config.e2e.test.ts`
 
 **config show:**
-- [ ] Test `config show` outputs valid TOML with default values
-- [ ] Test `config show --json` outputs valid JSON
-- [ ] Test `config show --section citation` shows only citation section
-- [ ] Test `config show --sources` shows source annotations
+- [x] Test `config show` outputs valid TOML with default values
+- [x] Test `config show --json` outputs valid JSON
+- [x] Test `config show --section citation` shows only citation section
+- [x] Test `config show --sources` shows source annotations
 
 **config get:**
-- [ ] Test `config get log_level` returns default value
-- [ ] Test `config get citation.default_style` returns nested value
-- [ ] Test `config get nonexistent.key` exits with code 1
-- [ ] Test `config get` with environment override returns env value
-- [ ] Test `config get --config-only` ignores environment override
+- [x] Test `config get log_level` returns default value
+- [x] Test `config get citation.default_style` returns nested value
+- [x] Test `config get nonexistent.key` exits with code 1
+- [x] Test `config get` with environment override returns env value
+- [x] Test `config get --config-only` ignores environment override
 
 **config set (file creation and updates):**
-- [ ] Test `config set log_level debug` creates config file with correct content
+- [x] Test `config set log_level debug` creates config file with correct content
   ```typescript
   await runCli(["config", "set", "log_level", "debug"]);
   const config = await readConfig();
   expect(config.log_level).toBe("debug");
   ```
-- [ ] Test `config set citation.default_style ieee` creates nested section
+- [x] Test `config set citation.default_style ieee` creates nested section
   ```typescript
   await runCli(["config", "set", "citation.default_style", "ieee"]);
   const config = await readConfig();
   expect(config.citation.default_style).toBe("ieee");
   ```
-- [ ] Test `config set cli.interactive.limit 50` creates deeply nested section
-- [ ] Test multiple `config set` commands preserve existing values
+- [x] Test `config set cli.interactive.limit 50` creates deeply nested section
+- [x] Test multiple `config set` commands preserve existing values
   ```typescript
   await runCli(["config", "set", "log_level", "debug"]);
   await runCli(["config", "set", "citation.default_style", "ieee"]);
@@ -284,18 +284,18 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   expect(config.log_level).toBe("debug");  // Still preserved
   expect(config.citation.default_style).toBe("ieee");
   ```
-- [ ] Test `config set server.auto_start true` handles boolean correctly
-- [ ] Test `config set cli.default_limit 100` handles number correctly
-- [ ] Test `config set citation.csl_directory "/a,/b"` handles array correctly
+- [x] Test `config set server.auto_start true` handles boolean correctly
+- [x] Test `config set cli.default_limit 100` handles number correctly
+- [x] Test `config set citation.csl_directory "/a,/b"` handles array correctly
 
 **config set (validation errors):**
-- [ ] Test `config set log_level invalid` fails with validation error
-- [ ] Test `config set cli.default_limit abc` fails with type error
-- [ ] Test `config set cli.default_limit -1` fails with range error
-- [ ] Test `config set nonexistent.key value` fails with unknown key error
+- [x] Test `config set log_level invalid` fails with validation error
+- [x] Test `config set cli.default_limit abc` fails with type error
+- [x] Test `config set cli.default_limit -1` fails with range error
+- [x] Test `config set nonexistent.key value` fails with unknown key error
 
 **config set (environment override warning):**
-- [ ] Test warning appears when setting env-overridden key
+- [x] Test warning appears when setting env-overridden key
   ```typescript
   const result = await runCli(["config", "set", "library", "/new/path"], {
     env: {
@@ -312,19 +312,19 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   ```
 
 **config unset:**
-- [ ] Test `config unset log_level` removes key from file
+- [x] Test `config unset log_level` removes key from file
   ```typescript
   await runCli(["config", "set", "log_level", "debug"]);
   await runCli(["config", "unset", "log_level"]);
   const config = await readConfig();
   expect(config.log_level).toBeUndefined();
   ```
-- [ ] Test `config unset citation.default_style` removes nested key
-- [ ] Test `config unset` preserves other values in same section
-- [ ] Test `config unset nonexistent` succeeds (no error)
+- [x] Test `config unset citation.default_style` removes nested key
+- [x] Test `config unset` preserves other values in same section
+- [x] Test `config unset nonexistent` succeeds (no error)
 
 **config --local (current directory config):**
-- [ ] Test `config set --local` writes to `.reference-manager.config.toml` in cwd
+- [x] Test `config set --local` writes to `.reference-manager.config.toml` in cwd
   ```typescript
   const proc = spawn("node", [CLI_PATH, "config", "set", "--local", "log_level", "debug"], {
     cwd: testDir,  // Run in test directory
@@ -336,16 +336,16 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   ```
 
 **config path:**
-- [ ] Test `config path` shows all paths with existence status
-- [ ] Test `config path --user` shows only user config path
-- [ ] Test `config path --local` shows only local config path
+- [x] Test `config path` shows all paths with existence status
+- [x] Test `config path --user` shows only user config path
+- [x] Test `config path --local` shows only local config path
 
 **config list-keys:**
-- [ ] Test `config list-keys` outputs all available keys
-- [ ] Test `config list-keys --section citation` filters by section
+- [x] Test `config list-keys` outputs all available keys
+- [x] Test `config list-keys --section citation` filters by section
 
 **Full workflow integration:**
-- [ ] Test complete workflow: set → get → show → unset → get (not found)
+- [x] Test complete workflow: set → get → show → unset → get (not found)
   ```typescript
   // Set value
   let result = await runCli(["config", "set", "citation.default_style", "ieee"]);
@@ -369,7 +369,7 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   expect(result.exitCode).toBe(1);
   ```
 
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e` (33 tests passing)
 
 ## Completion Checklist
 
