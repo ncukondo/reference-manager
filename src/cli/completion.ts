@@ -9,6 +9,7 @@
 import type { Command, Option } from "commander";
 import type { CompletionItem, TabtabEnv } from "tabtab";
 import { BUILTIN_STYLES } from "../config/csl-styles.js";
+import { getAllConfigKeys } from "../config/key-parser.js";
 import { loadConfig } from "../config/loader.js";
 import type { ILibrary } from "../core/library-interface.js";
 import { Library } from "../core/library.js";
@@ -26,6 +27,18 @@ const CITATION_FORMATS = ["text", "html", "rtf"] as const;
 // Log level options (from LogLevel type)
 const LOG_LEVELS = ["silent", "info", "debug"] as const;
 
+// Config section names for --section option
+const CONFIG_SECTIONS = [
+  "backup",
+  "citation",
+  "cli",
+  "fulltext",
+  "mcp",
+  "pubmed",
+  "server",
+  "watch",
+] as const;
+
 // Option values for specific options
 // These map option flags to their possible values
 export const OPTION_VALUES: Record<string, readonly string[]> = {
@@ -34,6 +47,7 @@ export const OPTION_VALUES: Record<string, readonly string[]> = {
   "--format": CITATION_FORMATS,
   "--style": BUILTIN_STYLES,
   "--log-level": LOG_LEVELS,
+  "--section": CONFIG_SECTIONS,
 };
 
 // Commands that support ID completion
@@ -191,6 +205,52 @@ export function needsIdCompletion(env: TabtabEnv): {
   return { needs: false };
 }
 
+// Config subcommands that need key completion
+const CONFIG_KEY_SUBCOMMANDS = new Set(["get", "set", "unset"]);
+
+/**
+ * Check if the current context requires config key completion
+ */
+export function needsConfigKeyCompletion(env: TabtabEnv): boolean {
+  const { line, prev } = env;
+  const words = line.trim().split(/\s+/);
+  const args = words.slice(1);
+
+  if (args.length < 2) {
+    return false;
+  }
+
+  const command = args[0] ?? "";
+  const subcommand = args[1] ?? "";
+
+  // Don't complete keys if we're completing an option value
+  if (prev?.startsWith("-")) {
+    return false;
+  }
+
+  // Check for config subcommands that need key completion
+  if (command === "config" && CONFIG_KEY_SUBCOMMANDS.has(subcommand)) {
+    // For "set", we need key completion only for the first argument after subcommand
+    // "config set <key> <value>" - complete key at position 2
+    if (subcommand === "set" && args.length > 3) {
+      return false; // Already have key, now completing value
+    }
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Get config key completions
+ */
+export function getConfigKeyCompletions(prefix: string): CompletionItem[] {
+  const keys = getAllConfigKeys();
+  return keys
+    .filter((key) => key.toLowerCase().startsWith(prefix.toLowerCase()))
+    .map((key) => ({ name: key }));
+}
+
 /** Maximum number of ID completion candidates */
 export const MAX_ID_COMPLETIONS = 100;
 
@@ -305,6 +365,13 @@ export async function handleCompletion(program: Command): Promise<void> {
   if (env.last.startsWith("-")) {
     const completions = getCompletions(env, program);
     tabtab.log(completions);
+    return;
+  }
+
+  // Check if we need config key completion
+  if (needsConfigKeyCompletion(env)) {
+    const keyCompletions = getConfigKeyCompletions(env.last);
+    tabtab.log(keyCompletions);
     return;
   }
 

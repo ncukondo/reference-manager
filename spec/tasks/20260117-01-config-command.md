@@ -166,10 +166,11 @@ For each step:
 
 ### Step 13: Shell completion support
 
-- [ ] Update `src/cli/completion.ts`
+- [x] Update `src/cli/completion.ts`
   - Add config subcommand completions
-  - Add option completions for each subcommand
-- [ ] Verify completion works manually
+  - Add --section option value completions
+  - Add config key completions for get/set/unset
+- [x] Verify completion works manually
 
 ### Step 14: E2E tests
 
