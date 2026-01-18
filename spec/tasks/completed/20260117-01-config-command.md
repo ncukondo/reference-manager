@@ -387,4 +387,4 @@ const expectConfigValue = async (key: string, expected: unknown) => {
   - [x] `ref config edit` opens editor (requires TTY)
   - [x] Environment override warning appears when applicable (tested in E2E)
 - [x] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] Move this file to `spec/tasks/completed/`
