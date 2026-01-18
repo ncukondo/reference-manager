@@ -65,7 +65,8 @@
       "Bash(find:*)",
       "Bash(npm info:*)",
       "Bash(node ./bin/reference-manager.js cite:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:www.zotero.org)"
     ]
   },
   "enableAllProjectMcpServers": true,
