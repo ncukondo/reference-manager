@@ -14,6 +14,7 @@ import {
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
 import { handleCiteAction } from "./commands/cite.js";
+import { registerConfigCommand } from "./commands/config.js";
 import { handleEditAction } from "./commands/edit.js";
 import {
   type ExportCommandOptions,
@@ -76,6 +77,7 @@ export function createProgram(): Command {
   registerServerCommand(program);
   registerFulltextCommand(program);
   registerMcpCommand(program);
+  registerConfigCommand(program);
   registerCompletionCommand(program);
 
   return program;

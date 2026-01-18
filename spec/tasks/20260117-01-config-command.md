@@ -155,14 +155,14 @@ For each step:
 
 ### Step 12: CLI command integration
 
-- [ ] Write test: `src/cli/commands/config.test.ts`
+- [x] Write test: `src/cli/commands/config.test.ts`
   - Test subcommand routing
   - Test option parsing for each subcommand
   - Test help output
-- [ ] Implement: `src/cli/commands/config.ts`
-- [ ] Register in `src/cli/index.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/cli/commands/config.ts`
+- [x] Register in `src/cli/index.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 13: Shell completion support
 
