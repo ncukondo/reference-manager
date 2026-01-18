@@ -63,7 +63,9 @@
       "Bash(echo:*)",
       "Bash(npm run lint:fix:*)",
       "Bash(find:*)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "Bash(node ./bin/reference-manager.js cite:*)",
+      "Bash(node:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
