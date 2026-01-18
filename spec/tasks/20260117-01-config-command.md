@@ -20,44 +20,44 @@ For each step:
 
 ### Step 1: TOML writer utility
 
-- [x] Write test: `src/config/toml-writer.test.ts`
+- [ ] Write test: `src/config/toml-writer.test.ts`
   - Test writing simple key-value pairs
   - Test writing nested sections
   - Test preserving existing content
   - Test creating new file with template
   - Test updating existing values
-- [x] Implement: `src/config/toml-writer.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/config/toml-writer.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Config key parser
 
-- [x] Write test: `src/config/key-parser.test.ts`
+- [ ] Write test: `src/config/key-parser.test.ts`
   - Test parsing simple keys (`library`, `log_level`)
   - Test parsing nested keys (`citation.default_style`)
   - Test parsing deeply nested keys (`cli.interactive.limit`)
   - Test invalid key detection
   - Test key existence validation against schema
-- [x] Implement: `src/config/key-parser.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/config/key-parser.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Config value validator
 
-- [x] Write test: `src/config/value-validator.test.ts`
+- [ ] Write test: `src/config/value-validator.test.ts`
   - Test string validation
   - Test number validation (integer, non-negative)
   - Test boolean validation
   - Test enum validation (log_level, sort, order, format)
   - Test array validation (csl_directory)
   - Test error message formatting
-- [x] Implement: `src/config/value-validator.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/config/value-validator.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Environment variable override detector
 
-- [x] Write test: `src/config/env-override.test.ts`
+- [ ] Write test: `src/config/env-override.test.ts`
   - Test detecting REFERENCE_MANAGER_LIBRARY override
   - Test detecting PUBMED_EMAIL override
   - Test detecting PUBMED_API_KEY override
@@ -65,38 +65,38 @@ For each step:
   - Test detecting REFERENCE_MANAGER_CLI_DEFAULT_LIMIT override
   - Test detecting REFERENCE_MANAGER_MCP_DEFAULT_LIMIT override
   - Test returning null when no override
-- [x] Implement: `src/config/env-override.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/config/env-override.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: Config show subcommand
 
-- [x] Write test: `src/features/config/show.test.ts`
+- [ ] Write test: `src/features/config/show.test.ts`
   - Test TOML output format
   - Test JSON output format (--json)
   - Test section filter (--section)
   - Test source annotation (--sources)
   - Test environment override annotation
-- [x] Implement: `src/features/config/show.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/show.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Config get subcommand
 
-- [x] Write test: `src/features/config/get.test.ts`
+- [ ] Write test: `src/features/config/get.test.ts`
   - Test getting simple value
   - Test getting nested value
   - Test getting deeply nested value
   - Test --config-only flag (ignore env override)
   - Test exit code 1 for missing key
   - Test exit code 1 for unset value
-- [x] Implement: `src/features/config/get.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/get.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Config set subcommand
 
-- [x] Write test: `src/features/config/set.test.ts`
+- [ ] Write test: `src/features/config/set.test.ts`
   - Test setting string value
   - Test setting number value
   - Test setting boolean value
@@ -105,74 +105,97 @@ For each step:
   - Test validation error handling
   - Test environment override warning
   - Test creating config file if not exists
-- [x] Implement: `src/features/config/set.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/set.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 8: Config unset subcommand
 
-- [x] Write test: `src/features/config/unset.test.ts`
+- [ ] Write test: `src/features/config/unset.test.ts`
   - Test removing simple key
   - Test removing nested key
   - Test --local flag
   - Test no error when key not in file
-- [x] Implement: `src/features/config/unset.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/unset.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 9: Config list-keys subcommand
 
-- [x] Write test: `src/features/config/list-keys.test.ts`
+- [ ] Write test: `src/features/config/list-keys.test.ts`
   - Test listing all keys with types
   - Test --section filter
   - Test output format (key, type, description)
-- [x] Implement: `src/features/config/list-keys.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/list-keys.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 10: Config path subcommand
 
-- [x] Write test: `src/features/config/path.test.ts`
+- [ ] Write test: `src/features/config/path.test.ts`
   - Test showing all paths with existence status
   - Test --user flag
   - Test --local flag
   - Test showing REFERENCE_MANAGER_CONFIG env path
-- [x] Implement: `src/features/config/path.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/path.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 11: Config edit subcommand
 
-- [x] Write test: `src/features/config/edit.test.ts`
+- [ ] Write test: `src/features/config/edit.test.ts`
   - Test opening existing config file
   - Test creating template for new file
   - Test --local flag
   - Test editor resolution (same as edit command)
   - Test TTY requirement
-- [x] Implement: `src/features/config/edit.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/features/config/edit.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 12: CLI command integration
 
-- [x] Write test: `src/cli/commands/config.test.ts`
+- [ ] Write test: `src/cli/commands/config.test.ts`
   - Test subcommand routing
   - Test option parsing for each subcommand
   - Test help output
-- [x] Implement: `src/cli/commands/config.ts`
-- [x] Register in `src/cli/index.ts`
-- [x] Verify: `npm run test:unit`
-- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [ ] Implement: `src/cli/commands/config.ts`
+- [ ] Register in `src/cli/index.ts`
+- [ ] Verify: `npm run test:unit`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 13: Shell completion support
 
 - [x] Update `src/cli/completion.ts`
   - Add config subcommand completions
-  - Add --section option value completions
-  - Add config key completions for get/set/unset
+  - Add option completions for each subcommand
 - [x] Verify completion works manually
 
-### Step 14: E2E tests
+### Step 14: Write target consistency fix
+
+Update set/unset to use consistent write target selection matching read behavior.
+
+**Spec change:** Write target selection (without flags):
+1. If `.reference-manager.config.toml` exists in current directory → write there
+2. Otherwise → write to user config
+3. `--local` → force write to local config (create if not exists)
+4. `--user` → force write to user config (ignore local even if exists)
+
+- [x] Create test: `src/features/config/write-target.test.ts`
+  - Test: --local flag returns local config path
+  - Test: --user flag returns user config path
+  - Test: no flag with local config exists returns local config path
+  - Test: no flag without local config returns user config path
+- [x] Create implementation: `src/features/config/write-target.ts`
+  - Add `resolveWriteTarget()` function
+- [x] Update CLI: `src/cli/commands/config.ts`
+  - Add `--user` option to set and unset subcommands
+  - Use `resolveWriteTarget()` for write target resolution
+- [x] Shell completion: auto-extracted from Commander (no manual update needed)
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 15: E2E tests
 
 **Important**: E2E tests must be implemented even if unit tests cover similar scenarios. E2E tests verify the actual CLI behavior with real file I/O and process execution.
 

@@ -3,12 +3,9 @@
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import type { Command } from "commander";
-import {
-  getDefaultCurrentDirConfigFilename,
-  getDefaultUserConfigPath,
-} from "../../config/defaults.js";
+import { getDefaultUserConfigPath } from "../../config/defaults.js";
 import { getEnvOverrideInfo } from "../../config/env-override.js";
 import { loadConfig } from "../../config/loader.js";
 import { createConfigTemplate, getConfigEditTarget } from "../../features/config/edit.js";
@@ -18,6 +15,7 @@ import { showConfigPaths } from "../../features/config/path.js";
 import { setConfigValue } from "../../features/config/set.js";
 import { showConfig } from "../../features/config/show.js";
 import { unsetConfigValue } from "../../features/config/unset.js";
+import { resolveWriteTarget } from "../../features/config/write-target.js";
 import { openEditor } from "../../features/edit/edit-session.js";
 import { resolveEditor } from "../../features/edit/editor-resolver.js";
 
@@ -86,13 +84,17 @@ export function registerConfigCommand(program: Command): void {
   configCmd
     .command("set <key> <value>")
     .description("Set a configuration value")
-    .option("--local", "Write to current directory config")
+    .option("--local", "Write to current directory config (create if not exists)")
+    .option("--user", "Write to user config (ignore local config even if exists)")
     .action(async (key: string, value: string, options) => {
       try {
-        // Determine config path
-        const configPath = options.local
-          ? join(process.cwd(), getDefaultCurrentDirConfigFilename())
-          : getDefaultUserConfigPath();
+        // Determine config path using consistent write target resolution
+        const configPath = resolveWriteTarget({
+          local: options.local,
+          user: options.user,
+          cwd: process.cwd(),
+          userConfigPath: getDefaultUserConfigPath(),
+        });
 
         // Check for environment override
         const envOverrideInfo = getEnvOverrideInfo(key);
@@ -121,12 +123,16 @@ export function registerConfigCommand(program: Command): void {
     .command("unset <key>")
     .description("Remove a configuration value (revert to default)")
     .option("--local", "Remove from current directory config")
+    .option("--user", "Remove from user config (ignore local config even if exists)")
     .action(async (key: string, options) => {
       try {
-        // Determine config path
-        const configPath = options.local
-          ? join(process.cwd(), getDefaultCurrentDirConfigFilename())
-          : getDefaultUserConfigPath();
+        // Determine config path using consistent write target resolution
+        const configPath = resolveWriteTarget({
+          local: options.local,
+          user: options.user,
+          cwd: process.cwd(),
+          userConfigPath: getDefaultUserConfigPath(),
+        });
 
         const result = await unsetConfigValue(configPath, key);
 
