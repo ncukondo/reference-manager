@@ -21,11 +21,18 @@ import { getServerConnection } from "./server-detection.js";
 const SEARCH_SORT_FIELDS = searchSortFieldSchema.options;
 const SORT_ORDERS = sortOrderSchema.options;
 
-// Output format options (from CitationFormatOptions type)
-const CITATION_FORMATS = ["text", "html", "rtf"] as const;
+// Output format options by command
+const CITATION_OUTPUT_FORMATS = ["text", "html", "rtf"] as const;
+const EXPORT_OUTPUT_FORMATS = ["json", "yaml", "bibtex"] as const;
+const LIST_OUTPUT_FORMATS = ["pretty", "json", "bibtex", "ids", "uuid"] as const;
+const MUTATION_OUTPUT_FORMATS = ["json", "text"] as const;
+const CONFIG_OUTPUT_FORMATS = ["text", "json"] as const;
 
 // Log level options (from LogLevel type)
 const LOG_LEVELS = ["silent", "info", "debug"] as const;
+
+// Input format options for add command
+const ADD_INPUT_FORMATS = ["json", "bibtex", "ris", "pmid", "doi", "isbn", "auto"] as const;
 
 // Config section names for --section option
 const CONFIG_SECTIONS = [
@@ -39,16 +46,54 @@ const CONFIG_SECTIONS = [
   "watch",
 ] as const;
 
-// Option values for specific options
+// Option values for specific options (command-independent)
 // These map option flags to their possible values
 export const OPTION_VALUES: Record<string, readonly string[]> = {
   "--sort": SEARCH_SORT_FIELDS, // search includes 'relevance'
   "--order": SORT_ORDERS,
-  "--format": CITATION_FORMATS,
   "--style": BUILTIN_STYLES,
   "--log-level": LOG_LEVELS,
   "--section": CONFIG_SECTIONS,
+  "--input": ADD_INPUT_FORMATS,
+  "-i": ADD_INPUT_FORMATS,
 };
+
+// Command-specific --output/-o values
+const OUTPUT_VALUES_BY_COMMAND: Record<string, readonly string[]> = {
+  cite: CITATION_OUTPUT_FORMATS,
+  export: EXPORT_OUTPUT_FORMATS,
+  list: LIST_OUTPUT_FORMATS,
+  search: LIST_OUTPUT_FORMATS,
+  add: MUTATION_OUTPUT_FORMATS,
+  remove: MUTATION_OUTPUT_FORMATS,
+  update: MUTATION_OUTPUT_FORMATS,
+  // config show uses CONFIG_OUTPUT_FORMATS, handled specially
+};
+
+/**
+ * Get option values considering command context
+ */
+function getOptionValuesForCommand(
+  option: string,
+  command: string | undefined,
+  subcommand: string | undefined
+): readonly string[] | undefined {
+  // Handle --output/-o with command context
+  if (option === "--output" || option === "-o") {
+    // Special case: config show
+    if (command === "config" && subcommand === "show") {
+      return CONFIG_OUTPUT_FORMATS;
+    }
+    if (command && OUTPUT_VALUES_BY_COMMAND[command]) {
+      return OUTPUT_VALUES_BY_COMMAND[command];
+    }
+    // Fallback to citation formats if command unknown
+    return CITATION_OUTPUT_FORMATS;
+  }
+
+  // Other options use command-independent values
+  return OPTION_VALUES[option];
+}
 
 // Commands that support ID completion
 const ID_COMPLETION_COMMANDS = new Set(["cite", "remove", "update"]);
@@ -112,6 +157,23 @@ function findSubcommand(program: Command, name: string): Command | undefined {
 }
 
 /**
+ * Parse command context from completion environment
+ */
+function parseCommandContext(env: TabtabEnv): {
+  command: string | undefined;
+  subcommand: string | undefined;
+} {
+  const words = env.line.trim().split(/\s+/);
+  const args = words.slice(1);
+
+  const command = args[0];
+  // For nested commands like "config show", "fulltext attach"
+  const subcommand = args.length >= 2 ? args[1] : undefined;
+
+  return { command, subcommand };
+}
+
+/**
  * Get completions based on the current completion environment
  */
 export function getCompletions(env: TabtabEnv, program: Command): CompletionItem[] {
@@ -133,7 +195,8 @@ export function getCompletions(env: TabtabEnv, program: Command): CompletionItem
 
   // Check if we're completing an option value
   if (prev?.startsWith("-")) {
-    const optionValues = OPTION_VALUES[prev];
+    const { command, subcommand } = parseCommandContext(env);
+    const optionValues = getOptionValuesForCommand(prev, command, subcommand);
     if (optionValues) {
       return toCompletionItems(optionValues);
     }

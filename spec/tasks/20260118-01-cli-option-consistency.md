@@ -119,8 +119,12 @@ For each step:
 
 ### Step 9: Update shell completion
 
-- [ ] Update: `src/cli/completion.ts` - update option definitions
-- [ ] Verify shell completion still works
+- [x] Update: `src/cli/completion.ts` - update option definitions
+  - Added command-context-aware --output completion
+  - Different output formats for each command (cite, export, list, add, config)
+  - Added --input completion for add command
+- [x] Update: `src/cli/completion.test.ts` - update tests
+- [x] Verify: tests pass
 
 ### Step 10: Integration testing
 
