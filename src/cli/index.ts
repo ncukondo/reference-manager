@@ -246,7 +246,7 @@ function registerSearchCommand(program: Command): void {
  */
 interface AddCommandOptions extends CliOptions {
   force?: boolean;
-  format?: string;
+  input?: string;
   verbose?: boolean;
   output?: "json" | "text";
   full?: boolean;
@@ -262,8 +262,8 @@ function buildAddOptions(
     inputs,
     force: options.force ?? false,
   };
-  if (options.format !== undefined) {
-    addOptions.format = options.format;
+  if (options.input !== undefined) {
+    addOptions.format = options.input;
   }
   if (options.verbose !== undefined) {
     addOptions.verbose = options.verbose;
@@ -357,11 +357,7 @@ function registerAddCommand(program: Command): void {
     .description("Add new reference(s) to the library")
     .argument("[input...]", "File paths or identifiers (PMID/DOI/ISBN), or use stdin")
     .option("-f, --force", "Skip duplicate detection")
-    .option(
-      "--format <format>",
-      "Explicit input format: json|bibtex|ris|pmid|doi|isbn|auto",
-      "auto"
-    )
+    .option("-i, --input <format>", "Input format: json|bibtex|ris|pmid|doi|isbn|auto", "auto")
     .option("--verbose", "Show detailed error information")
     .option("-o, --output <format>", "Output format: json|text", "text")
     .option("--full", "Include full CSL-JSON data in JSON output")

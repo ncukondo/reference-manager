@@ -51,11 +51,11 @@ For each step:
 
 ### Step 1: Update add command (`--format` → `--input`)
 
-- [ ] Update test: `src/cli/commands/add.test.ts` - change `--format` to `--input`
-- [ ] Update: `src/cli/index.ts` - change option registration
-- [ ] Update: `src/cli/commands/add.ts` - update option handling
-- [ ] Verify: `npm run test:unit -- add`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Update test: `src/cli/commands/add.test.ts` - change `--format` to `--input` (N/A - test uses internal option name)
+- [x] Update: `src/cli/index.ts` - change option registration
+- [x] Update: `src/cli/commands/add.ts` - update option handling (N/A - internal name unchanged)
+- [x] Verify: `npm run test:unit -- add`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Update search command (`--interactive` → `--tui`)
 
