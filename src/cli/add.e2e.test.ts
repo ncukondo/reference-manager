@@ -62,10 +62,7 @@ describe("Add Command E2E", () => {
   year = {2024}
 }`;
 
-      const result = await runCli(
-        ["add", "--library", libraryPath, "--format", "bibtex"],
-        bibtexData
-      );
+      const result = await runCli(["add", "--library", libraryPath, "-i", "bibtex"], bibtexData);
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Added 1 reference");
@@ -78,7 +75,7 @@ TI  - RIS from Stdin
 PY  - 2024
 ER  - `;
 
-      const result = await runCli(["add", "--library", libraryPath, "--format", "ris"], risData);
+      const result = await runCli(["add", "--library", libraryPath, "-i", "ris"], risData);
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Added 1 reference");
