@@ -100,13 +100,13 @@ For each step:
 
 ### Step 7: Update config command
 
-- [ ] Update test: `src/cli/commands/config.test.ts`
+- [x] Update test: `src/cli/commands/config.test.ts`
   - Rename `list-keys` to `keys`
   - Change `--json` to `--output json`
-- [ ] Update: `src/cli/commands/config.ts`
-- [ ] Update: `src/features/config/list-keys.ts` (if filename needs change)
-- [ ] Verify: `npm run test:unit -- config`
-- [ ] Lint/Type check
+- [x] Update: `src/cli/commands/config.ts`
+- [x] Update: `src/features/config/list-keys.ts` (N/A - filename unchanged, only CLI command name changed)
+- [x] Verify: `npm run test:unit -- config`
+- [x] Lint/Type check
 
 ### Step 8: Update config schema (`cli.interactive` → `cli.tui`)
 

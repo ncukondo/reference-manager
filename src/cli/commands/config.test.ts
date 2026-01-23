@@ -49,11 +49,11 @@ describe("config command", () => {
       expect(unsetCmd).toBeDefined();
     });
 
-    it("should register list-keys subcommand", () => {
+    it("should register keys subcommand", () => {
       const program = createProgram();
       const configCmd = program.commands.find((cmd) => cmd.name() === "config");
-      const listKeysCmd = configCmd?.commands.find((cmd) => cmd.name() === "list-keys");
-      expect(listKeysCmd).toBeDefined();
+      const keysCmd = configCmd?.commands.find((cmd) => cmd.name() === "keys");
+      expect(keysCmd).toBeDefined();
     });
 
     it("should register path subcommand", () => {
@@ -72,12 +72,12 @@ describe("config command", () => {
   });
 
   describe("option parsing", () => {
-    it("should parse show --json option", async () => {
+    it("should parse show --output option", async () => {
       const program = createProgram();
       const configCmd = program.commands.find((cmd) => cmd.name() === "config");
       const showCmd = configCmd?.commands.find((cmd) => cmd.name() === "show");
 
-      expect(showCmd?.options.some((opt) => opt.long === "--json")).toBe(true);
+      expect(showCmd?.options.some((opt) => opt.long === "--output")).toBe(true);
     });
 
     it("should parse show --section option", async () => {
@@ -112,12 +112,12 @@ describe("config command", () => {
       expect(setCmd?.options.some((opt) => opt.long === "--local")).toBe(true);
     });
 
-    it("should parse list-keys --section option", async () => {
+    it("should parse keys --section option", async () => {
       const program = createProgram();
       const configCmd = program.commands.find((cmd) => cmd.name() === "config");
-      const listKeysCmd = configCmd?.commands.find((cmd) => cmd.name() === "list-keys");
+      const keysCmd = configCmd?.commands.find((cmd) => cmd.name() === "keys");
 
-      expect(listKeysCmd?.options.some((opt) => opt.long === "--section")).toBe(true);
+      expect(keysCmd?.options.some((opt) => opt.long === "--section")).toBe(true);
     });
 
     it("should parse path --user and --local options", async () => {
