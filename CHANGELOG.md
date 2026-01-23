@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING: CLI Option Consistency**: Unified input/output format options and short option conventions across all commands
+  - `add`: `--format` → `-i, --input` (input format)
+  - `export`: `-f, --format` → `-o, --output` (output format)
+  - `cite`: `--format` → `-o, --output` (output format)
+  - `edit`: `-f, --format` → `--format` (removed short option to avoid conflict with `--force`)
+  - `search`: `-i, --interactive` → `-t, --tui` (TUI mode)
+  - `list`/`search`: `--uuid` → `--uuid-only` (output mode flag)
+  - `list`/`search`: added `-o, --output` option for output format
+  - `config show`: `--json` → `-o, --output json`
+  - `config`: `list-keys` subcommand renamed to `keys`
+  - Config: `[cli.interactive]` section renamed to `[cli.tui]`
+  - Short option conventions: `-i` for input, `-o` for output, `-f` for force, `-t` for TUI, `-n` for limit
+
+- **Shell Completion**: Command-context-aware `--output` completions
+  - `cite`: text|html|rtf
+  - `export`: json|yaml|bibtex
+  - `list`/`search`: pretty|json|bibtex|ids|uuid
+  - `add`/`remove`/`update`: json|text
+  - `config show`: text|json
+
 - **BREAKING: Default Paths**: Default paths now follow platform conventions using XDG Base Directory Specification on Linux, standard paths on macOS/Windows
   - **Linux**: Config in `~/.config/reference-manager/`, data in `~/.local/share/reference-manager/`, cache in `~/.cache/reference-manager/`
   - **macOS**: Config in `~/Library/Preferences/reference-manager/`, data in `~/Library/Application Support/reference-manager/`, cache in `~/Library/Caches/reference-manager/`
@@ -41,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `config get <key>`: Get specific configuration value with dot notation
   - `config set <key> <value>`: Set configuration value with type validation
   - `config unset <key>`: Remove configuration value (revert to default)
-  - `config list-keys`: List all available configuration keys with types
+  - `config keys`: List all available configuration keys with types
   - `config path`: Show configuration file paths and existence status
   - `config edit`: Open configuration file in external editor
   - Consistent write target: writes to local config if exists, else user config
