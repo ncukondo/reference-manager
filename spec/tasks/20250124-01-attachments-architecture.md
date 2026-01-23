@@ -42,16 +42,16 @@ For each step:
 
 Define TypeScript types for the new attachments data model.
 
-- [ ] Write test: `src/features/attachments/types.test.ts`
+- [x] Write test: `src/features/attachments/types.test.ts`
   - Test attachment file interface
   - Test attachments container interface
   - Test role validation (reserved vs custom)
-- [ ] Implement: `src/features/attachments/types.ts`
+- [x] Implement: `src/features/attachments/types.ts`
   - `AttachmentFile` interface (filename, role, label?)
   - `Attachments` interface (directory, files)
   - `ReservedRole` type and validation
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Directory Name Generation
 
