@@ -57,15 +57,15 @@ Define TypeScript types for the new attachments data model.
 
 Generate per-reference directory names.
 
-- [ ] Write test: `src/features/attachments/directory.test.ts`
+- [x] Write test: `src/features/attachments/directory.test.ts`
   - Test with PMID: `Smith-2024-PMID12345678-123e4567`
   - Test without PMID: `Smith-2024-123e4567`
   - Test UUID prefix extraction (first 8 chars)
-- [ ] Implement: `src/features/attachments/directory.ts`
+- [x] Implement: `src/features/attachments/directory.ts`
   - `generateDirectoryName(reference: Reference): string`
   - `parseDirectoryName(name: string): { id, pmid?, uuidPrefix }`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: File Name Generation & Parsing
 
