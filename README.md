@@ -43,7 +43,7 @@ Streamline your writing workflow:
 
 ```bash
 # Find and select references interactively
-ref search -i "machine learning"
+ref search -t "machine learning"
 # → Select references with Space, then export as BibTeX or generate citations
 
 # Generate citations
@@ -271,16 +271,16 @@ ref search "author:jones year:2024"
 ref search "title:\"deep learning\""
 
 # Interactive search (with real-time filtering)
-ref search -i                         # Start interactive mode
-ref search -i "machine learning"      # Pre-fill query
+ref search -t                         # Start interactive mode
+ref search -t "machine learning"      # Pre-fill query
 
 # Export raw CSL-JSON (for pandoc, jq, etc.)
 ref export smith2024                          # Single reference (as object)
 ref export smith2024 jones2023                # Multiple references (as array)
 ref export --all                              # All references
 ref export --search "author:smith"            # Search results
-ref export smith2024 --format yaml            # YAML format
-ref export --all --format bibtex              # BibTeX format
+ref export smith2024 -o yaml                  # YAML format
+ref export --all -o bibtex                    # BibTeX format
 
 # Add references
 ref add paper.json                    # From CSL-JSON file
@@ -291,8 +291,8 @@ ref add pmid:25056061                 # From PubMed ID
 ref add "ISBN:978-4-00-000000-0"      # From ISBN
 cat references.json | ref add         # From stdin (file content)
 echo "10.1038/nature12373" | ref add  # From stdin (DOI auto-detect)
-echo "12345678" | ref add --format pmid  # From stdin (PMID)
-echo "ISBN:978-4-00-000000-0" | ref add --format isbn  # From stdin (ISBN)
+echo "12345678" | ref add -i pmid     # From stdin (PMID)
+echo "ISBN:978-4-00-000000-0" | ref add -i isbn  # From stdin (ISBN)
 
 # Remove a reference
 ref remove smith2024
@@ -326,7 +326,7 @@ ref update smith2024 --set "abstract="
 # Generate citations
 ref cite smith2024
 ref cite smith2024 jones2023 --style apa
-ref cite smith2024 --style chicago-author-date --format html
+ref cite smith2024 --style chicago-author-date -o html
 
 # Interactive selection (no ID argument)
 ref cite
@@ -458,8 +458,8 @@ Supported field prefixes: `id:`, `author:`, `title:`, `year:`, `doi:`, `pmid:`, 
 Start an interactive search session with real-time filtering:
 
 ```bash
-ref search -i                    # Start with empty query
-ref search -i "machine learning" # Pre-fill the search query
+ref search -t                    # Start with empty query
+ref search -t "machine learning" # Pre-fill the search query
 ```
 
 **Features:**
@@ -557,7 +557,7 @@ Manage configuration via CLI without manually editing TOML files:
 ```bash
 # View all configuration
 ref config show
-ref config show --json            # JSON format
+ref config show -o json           # JSON format
 ref config show --sources         # Show where each value comes from
 
 # Get/set individual values
@@ -569,7 +569,7 @@ ref config set --local citation.default_style ieee  # Project-local config
 ref config unset citation.default_style
 
 # List all available keys
-ref config list-keys
+ref config keys
 
 # Show config file locations
 ref config path
@@ -586,7 +586,7 @@ ref config edit --local           # Edit project-local config
 - `citation.*` — Citation defaults (style, locale, format)
 - `pubmed.*` — PubMed API credentials
 - `fulltext.*` — Fulltext storage
-- `cli.*` — CLI behavior (limits, sorting, interactive mode)
+- `cli.*` — CLI behavior (limits, sorting, TUI mode)
 - `mcp.*` — MCP server settings
 
 ## Data Format
