@@ -171,7 +171,7 @@ function registerExportCommand(program: Command): void {
     .option("--uuid", "Interpret identifiers as UUIDs")
     .option("--all", "Export all references")
     .option("--search <query>", "Export references matching search query")
-    .option("-f, --format <fmt>", "Output format: json (default), yaml, bibtex")
+    .option("-o, --output <format>", "Output format: json (default), yaml, bibtex")
     .action(async (ids, options) => {
       await handleExportAction(ids, options, program);
     });

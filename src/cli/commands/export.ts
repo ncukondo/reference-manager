@@ -22,7 +22,7 @@ export interface ExportCommandOptions {
   /** Export references matching search query */
   search?: string;
   /** Output format */
-  format?: "json" | "yaml" | "bibtex";
+  output?: "json" | "yaml" | "bibtex";
 }
 
 /**
@@ -92,7 +92,7 @@ export function formatExportOutput(
   result: ExportCommandResult,
   options: ExportCommandOptions
 ): string {
-  const format = options.format ?? "json";
+  const format = options.output ?? "json";
 
   // Determine if this is a single ID request (output object vs array)
   const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all && !options.search;

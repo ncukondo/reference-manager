@@ -252,7 +252,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         ids: ["smith-2024"],
-        format: "json",
+        output: "json",
       };
 
       const output = formatExportOutput(result, options);
@@ -276,7 +276,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         ids: ["smith-2024", "jones-2023"],
-        format: "json",
+        output: "json",
       };
 
       const output = formatExportOutput(result, options);
@@ -295,7 +295,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         all: true,
-        format: "json",
+        output: "json",
       };
 
       const output = formatExportOutput(result, options);
@@ -312,7 +312,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         search: "author:smith",
-        format: "json",
+        output: "json",
       };
 
       const output = formatExportOutput(result, options);
@@ -329,7 +329,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         ids: ["smith-2024"],
-        format: "yaml",
+        output: "yaml",
       };
 
       const output = formatExportOutput(result, options);
@@ -354,7 +354,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         all: true,
-        format: "yaml",
+        output: "yaml",
       };
 
       const output = formatExportOutput(result, options);
@@ -371,7 +371,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         ids: ["smith-2024"],
-        format: "bibtex",
+        output: "bibtex",
       };
 
       const output = formatExportOutput(result, options);
@@ -396,7 +396,7 @@ describe("export command", () => {
       };
       const options: ExportCommandOptions = {
         all: true,
-        format: "bibtex",
+        output: "bibtex",
       };
 
       const output = formatExportOutput(result, options);

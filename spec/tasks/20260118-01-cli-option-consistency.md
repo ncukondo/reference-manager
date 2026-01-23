@@ -77,11 +77,11 @@ For each step:
 
 ### Step 4: Update export command (`-f, --format` → `-o, --output`)
 
-- [ ] Update test: `src/cli/commands/export.test.ts`
-- [ ] Update: `src/cli/index.ts`
-- [ ] Update: `src/cli/commands/export.ts`
-- [ ] Verify: `npm run test:unit -- export`
-- [ ] Lint/Type check
+- [x] Update test: `src/cli/commands/export.test.ts`
+- [x] Update: `src/cli/index.ts`
+- [x] Update: `src/cli/commands/export.ts`
+- [x] Verify: `npm run test:unit -- export`
+- [x] Lint/Type check
 
 ### Step 5: Update cite command (`--format` → `-o, --output`)
 
