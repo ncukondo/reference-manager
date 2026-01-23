@@ -1,5 +1,5 @@
 /**
- * TTY detection for interactive mode
+ * TTY detection for TUI mode
  */
 
 /**
@@ -18,12 +18,12 @@ export class TTYError extends Error {
  * Check if the current environment is a TTY
  *
  * Throws TTYError if stdin or stdout is not a TTY,
- * which means interactive mode cannot be used.
+ * which means TUI mode cannot be used.
  *
  * @throws {TTYError} If not running in a TTY
  */
 export function checkTTY(): void {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new TTYError("Interactive mode requires a TTY");
+    throw new TTYError("TUI mode requires a TTY");
   }
 }

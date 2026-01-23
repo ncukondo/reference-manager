@@ -3,7 +3,7 @@
  *
  * Note: Full interactive testing is not possible in CI/automated tests.
  * These tests verify:
- * 1. CLI option parsing (-i, --interactive)
+ * 1. CLI option parsing (-t, --tui)
  * 2. TTY detection and error handling
  * 3. Option conflict validation
  */
@@ -85,92 +85,95 @@ describe("Interactive Search E2E", () => {
   });
 
   describe("TTY detection", () => {
-    it("should exit with error when running interactive mode without TTY", async () => {
-      const { code, stderr } = await runCli(["search", "-i", "--library", libraryPath], {
+    it("should exit with error when running TUI mode without TTY", async () => {
+      const { code, stderr } = await runCli(["search", "-t", "--library", libraryPath], {
         cwd: testDir,
       });
 
       expect(code).toBe(4); // Error exit code
-      expect(stderr).toContain("Interactive mode requires a TTY");
+      expect(stderr).toContain("TUI mode requires a TTY");
     });
 
-    it("should exit with error when using --interactive flag without TTY", async () => {
-      const { code, stderr } = await runCli(["search", "--interactive", "--library", libraryPath], {
+    it("should exit with error when using --tui flag without TTY", async () => {
+      const { code, stderr } = await runCli(["search", "--tui", "--library", libraryPath], {
         cwd: testDir,
       });
 
       expect(code).toBe(4);
-      expect(stderr).toContain("Interactive mode requires a TTY");
+      expect(stderr).toContain("TUI mode requires a TTY");
     });
 
-    it("should accept initial query with interactive mode", async () => {
+    it("should accept initial query with TUI mode", async () => {
       const { code, stderr } = await runCli(
-        ["search", "-i", "test query", "--library", libraryPath],
+        ["search", "-t", "test query", "--library", libraryPath],
         { cwd: testDir }
       );
 
       // Still fails due to TTY, but query was accepted
       expect(code).toBe(4);
-      expect(stderr).toContain("Interactive mode requires a TTY");
+      expect(stderr).toContain("TUI mode requires a TTY");
     });
   });
 
   describe("option conflicts", () => {
-    it("should reject interactive mode with --json", async () => {
-      const { code, stderr } = await runCli(["search", "-i", "--json", "--library", libraryPath], {
+    it("should reject TUI mode with --json", async () => {
+      const { code, stderr } = await runCli(["search", "-t", "--json", "--library", libraryPath], {
         cwd: testDir,
       });
 
       expect(code).toBe(4);
-      expect(stderr).toContain("Interactive mode cannot be combined with output format options");
+      expect(stderr).toContain("TUI mode cannot be combined with output format options");
     });
 
-    it("should reject interactive mode with --bibtex", async () => {
+    it("should reject TUI mode with --bibtex", async () => {
       const { code, stderr } = await runCli(
-        ["search", "-i", "--bibtex", "--library", libraryPath],
+        ["search", "-t", "--bibtex", "--library", libraryPath],
         { cwd: testDir }
       );
 
       expect(code).toBe(4);
-      expect(stderr).toContain("Interactive mode cannot be combined with output format options");
+      expect(stderr).toContain("TUI mode cannot be combined with output format options");
     });
 
-    it("should reject interactive mode with --ids-only", async () => {
+    it("should reject TUI mode with --ids-only", async () => {
       const { code, stderr } = await runCli(
-        ["search", "-i", "--ids-only", "--library", libraryPath],
+        ["search", "-t", "--ids-only", "--library", libraryPath],
         { cwd: testDir }
       );
 
       expect(code).toBe(4);
-      expect(stderr).toContain("Interactive mode cannot be combined with output format options");
+      expect(stderr).toContain("TUI mode cannot be combined with output format options");
     });
 
-    it("should reject interactive mode with --uuid", async () => {
-      const { code, stderr } = await runCli(["search", "-i", "--uuid", "--library", libraryPath], {
-        cwd: testDir,
-      });
+    it("should reject TUI mode with --uuid-only", async () => {
+      const { code, stderr } = await runCli(
+        ["search", "-t", "--uuid-only", "--library", libraryPath],
+        {
+          cwd: testDir,
+        }
+      );
 
       expect(code).toBe(4);
-      expect(stderr).toContain("Interactive mode cannot be combined with output format options");
+      expect(stderr).toContain("TUI mode cannot be combined with output format options");
     });
   });
 
   describe("query argument", () => {
-    it("should require query when not using interactive mode", async () => {
+    it("should require query when not using TUI mode", async () => {
       const { code, stderr } = await runCli(["search", "--library", libraryPath], { cwd: testDir });
 
       expect(code).toBe(1);
-      expect(stderr).toContain("Search query is required unless using --interactive");
+      expect(stderr).toContain("Search query is required unless using --tui");
     });
 
-    it("should not require query in interactive mode", async () => {
-      const { stderr } = await runCli(["search", "-i", "--library", libraryPath], {
+    it("should not require query in TUI mode", async () => {
+      const { stderr } = await runCli(["search", "-t", "--library", libraryPath], {
         cwd: testDir,
       });
 
       // Fails due to TTY, not due to missing query
       expect(stderr).not.toContain("Search query is required");
-      expect(stderr).toContain("Interactive mode requires a TTY");
+      expect(stderr).toContain("TUI mode requires a TTY");
     });
   });
 

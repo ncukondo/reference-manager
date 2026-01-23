@@ -46,7 +46,7 @@ describe("TTY detection", () => {
       });
 
       expect(() => checkTTY()).toThrow(TTYError);
-      expect(() => checkTTY()).toThrow("Interactive mode requires a TTY");
+      expect(() => checkTTY()).toThrow("TUI mode requires a TTY");
     });
 
     it("should throw TTYError when stdin is undefined", () => {
@@ -73,7 +73,7 @@ describe("TTY detection", () => {
       });
 
       expect(() => checkTTY()).toThrow(TTYError);
-      expect(() => checkTTY()).toThrow("Interactive mode requires a TTY");
+      expect(() => checkTTY()).toThrow("TUI mode requires a TTY");
     });
 
     it("should throw TTYError when both stdin and stdout are not TTY", () => {
