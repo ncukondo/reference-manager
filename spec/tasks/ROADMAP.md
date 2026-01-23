@@ -70,6 +70,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 21**: Search & Export Enhancements (search ID field, export command, edit command)
 - **Phase 22**: Interactive ID Selection (fallback to interactive search for ID selection)
 - **Phase 23**: Config Command (show/get/set/unset/list-keys/path/edit subcommands)
+- **Phase 24**: CLI Option Consistency (unified input/output options, --tui, config keys)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -77,26 +78,20 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 24: CLI Option Consistency
+### Phase 25: Attachments Architecture
 
-- **Task 1**: CLI option consistency (`20260118-01-cli-option-consistency.md`)
-  - Unify input/output format options across all commands
-  - `--input` / `-i` for input format (add command)
-  - `--output` / `-o` for output format (all commands)
-  - `-f` exclusively for `--force` (resolves conflict with `--format`)
-  - `--tui` / `-t` replaces `--interactive` / `-i` (search command)
-  - `--uuid-only` replaces `--uuid` for output mode (list/search)
-  - `config list-keys` → `config keys`
-  - `[cli.interactive]` → `[cli.tui]` in config
+Comprehensive file attachment system replacing the limited fulltext feature.
 
-**Breaking Changes** (acceptable in pre-release):
-- `add --format` → `add --input`
-- `search -i` → `search -t`
-- `export -f` → `export -o`
-- `cite --format` → `cite --output`
-- `edit -f` → `edit --format` (no short option)
-- `list/search --uuid` → `list/search --uuid-only`
-- `config list-keys` → `config keys`
+- **Task 1**: Attachments system (`20250124-01-attachments-architecture.md`)
+  - Per-reference directories for file organization
+  - Role-based file categorization (fulltext, supplement, notes, draft, custom)
+  - `attach` command with open/add/list/get/detach/sync subcommands
+  - Interactive mode for manual file addition (TTY)
+  - WSL support via wslview
+  - Migrate `fulltext` command to use new attachments backend
+
+**Spec**: `spec/features/attachments.md`
+**ADR**: `spec/decisions/ADR-013-attachments-architecture.md`
 
 ---
 
@@ -115,7 +110,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 25: Citation Enhancements
+### Phase 26: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -124,7 +119,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 26: Advanced Features
+### Phase 27: Advanced Features
 
 Additional features beyond core functionality:
 

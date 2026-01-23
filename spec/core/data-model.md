@@ -48,9 +48,13 @@ The `custom` field stores reference-manager-specific metadata:
   "timestamp": "2024-01-02T10:30:00.000Z",
   "additional_urls": ["https://example.com/resource"],
   "tags": ["review", "important"],
-  "fulltext": {
-    "pdf": "Smith-2024-PMID12345678-<uuid>.pdf",
-    "markdown": "Smith-2024-PMID12345678-<uuid>.md"
+  "attachments": {
+    "directory": "Smith-2024-PMID12345678-<uuid-prefix>",
+    "files": [
+      { "filename": "fulltext.pdf", "role": "fulltext", "format": "pdf" },
+      { "filename": "fulltext.md", "role": "fulltext", "format": "markdown" },
+      { "filename": "supplement-table-s1.xlsx", "role": "supplement", "format": "xlsx", "label": "Table S1" }
+    ]
   }
 }
 ```
@@ -62,9 +66,9 @@ The `custom` field stores reference-manager-specific metadata:
 | `timestamp` | Last modification time (for LWW conflict resolution) |
 | `additional_urls` | Optional array of additional URLs |
 | `tags` | User-defined tags for categorization (see `features/metadata.md`) |
-| `fulltext` | Attached full-text files (see `features/fulltext.md`) |
-| `fulltext.pdf` | PDF filename (stored in fulltext directory) |
-| `fulltext.markdown` | Markdown filename (stored in fulltext directory) |
+| `attachments` | Attached files (see `features/attachments.md`) |
+| `attachments.directory` | Per-reference directory name |
+| `attachments.files` | Array of attached file metadata |
 
 ### Unknown Fields (Passthrough)
 
