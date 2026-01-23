@@ -128,9 +128,24 @@ See `spec/features/pagination.md` for complete sorting and pagination options.
 
 ## Output Formats
 
-- Default: pretty-printed CSL-JSON
-- Options:
-  - `--json` - Compact JSON
-  - `--ids-only` - Only reference IDs (CSL-JSON `id` field)
-  - `--uuid` - Only internal UUIDs (`custom.uuid` field)
-  - `--bibtex` - BibTeX format
+Output format is specified with `--output` / `-o` option.
+
+| Value | Description |
+|-------|-------------|
+| `pretty` | Pretty-printed CSL-JSON (default) |
+| `json` | Compact JSON with pagination metadata |
+| `bibtex` | BibTeX format |
+| `ids` | Citation keys only, one per line |
+| `uuid` | Internal UUIDs only, one per line |
+
+**Convenience flags** (aliases for `--output`):
+- `--json` → `--output json`
+- `--bibtex` → `--output bibtex`
+- `--ids-only` → `--output ids`
+- `--uuid-only` → `--output uuid`
+
+## TUI Mode
+
+Use `--tui` / `-t` for interactive search with real-time filtering.
+
+See `spec/features/interactive-search.md` for details.

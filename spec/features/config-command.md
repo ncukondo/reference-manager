@@ -24,7 +24,7 @@ ref config <subcommand> [options]
 | `get <key>` | Get a specific configuration value |
 | `set <key> <value>` | Set a configuration value |
 | `unset <key>` | Remove a configuration value (revert to default) |
-| `list-keys` | List all available configuration keys |
+| `keys` | List all available configuration keys |
 | `path` | Show configuration file paths |
 | `edit` | Open configuration file in editor |
 
@@ -36,11 +36,11 @@ Display the effective (merged) configuration.
 
 **Options:**
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Output in JSON format (default: TOML) |
-| `--section <name>` | Show only a specific section |
-| `--sources` | Include source information for each value |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output <format>` | `-o` | Output format: text (default), json |
+| `--section <name>` | | Show only a specific section |
+| `--sources` | | Include source information for each value |
 
 **Examples:**
 
@@ -49,7 +49,7 @@ Display the effective (merged) configuration.
 ref config show
 
 # Show in JSON format
-ref config show --json
+ref config show -o json
 
 # Show only citation section
 ref config show --section citation
@@ -106,7 +106,7 @@ ref config get citation.default_style
 # → apa
 
 # Get nested value
-ref config get cli.interactive.limit
+ref config get cli.tui.limit
 # → 20
 
 # Get config file value only (ignoring env override)
@@ -211,7 +211,7 @@ ref config unset --local cli.default_limit
 ref config unset --user citation.default_style
 ```
 
-### `ref config list-keys`
+### `ref config keys`
 
 List all available configuration keys with their types and descriptions.
 
@@ -247,8 +247,8 @@ fulltext.directory           string    Fulltext storage directory
 cli.default_limit            integer   Default result limit (0 = unlimited)
 cli.default_sort             enum      Default sort field
 cli.default_order            enum      Default sort order (asc, desc)
-cli.interactive.limit        integer   Result limit in interactive mode
-cli.interactive.debounce_ms  integer   Search debounce delay (ms)
+cli.tui.limit                integer   Result limit in TUI mode
+cli.tui.debounce_ms          integer   Search debounce delay (ms)
 cli.edit.default_format      enum      Default edit format (yaml, json)
 
 mcp.default_limit            integer   Default result limit for MCP
@@ -323,7 +323,7 @@ Open a configuration file in the default editor.
 # default_sort = "updated"
 # default_order = "desc"
 
-[cli.interactive]
+[cli.tui]
 # limit = 20
 # debounce_ms = 200
 
@@ -359,8 +359,8 @@ All configuration keys can be read and written via `config get/set`:
 | `cli.default_limit` | integer | `0` | Default result limit |
 | `cli.default_sort` | enum | `updated` | Sort: `created`, `updated`, `published`, `author`, `title` |
 | `cli.default_order` | enum | `desc` | Order: `asc`, `desc` |
-| `cli.interactive.limit` | integer | `20` | Interactive mode limit |
-| `cli.interactive.debounce_ms` | integer | `200` | Search debounce |
+| `cli.tui.limit` | integer | `20` | TUI mode limit |
+| `cli.tui.debounce_ms` | integer | `200` | Search debounce |
 | `cli.edit.default_format` | enum | `yaml` | Edit format: `yaml`, `json` |
 | `mcp.default_limit` | integer | `20` | MCP result limit |
 
@@ -444,11 +444,11 @@ ref config set --local citation.default_style ieee
 ref config set pubmed.email "user@example.com"
 ref config set pubmed.api_key "your-api-key"
 
-# Increase interactive search results
-ref config set cli.interactive.limit 50
+# Increase TUI search results
+ref config set cli.tui.limit 50
 
 # Reset to default
-ref config unset cli.interactive.limit
+ref config unset cli.tui.limit
 
 # Open config in editor
 ref config edit

@@ -1,4 +1,4 @@
-# Interactive Search
+# TUI Search
 
 Interactive incremental search mode for CLI with real-time filtering.
 
@@ -13,27 +13,27 @@ Enable users to search references interactively with:
 ## Command Interface
 
 ```bash
-ref search --interactive [initial-query]
-ref search -i [initial-query]
+ref search --tui [initial-query]
+ref search -t [initial-query]
 ```
 
 ### Options
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--interactive` | `-i` | Enable interactive search mode |
+| `--tui` | `-t` | Enable TUI (Terminal UI) search mode |
 
 The optional `[initial-query]` pre-fills the search input.
 
 ### Examples
 
 ```bash
-# Start interactive search
-ref search -i
+# Start TUI search
+ref search -t
 
 # Start with pre-filled query
-ref search -i "machine learning"
-ref search --interactive "author:Smith"
+ref search -t "machine learning"
+ref search --tui "author:Smith"
 ```
 
 ## Behavior
@@ -110,7 +110,7 @@ After pressing Enter with selection:
 ### Output
 
 - All output goes to `stdout`
-- Suitable for piping: `ref search -i | xargs ref cite`
+- Suitable for piping: `ref search -t | xargs ref cite`
 
 ## Technical Specifications
 
@@ -131,9 +131,9 @@ No modifications to existing search logic required.
 
 ### Caching
 
-- Cache `library.getAll()` results during interactive session
+- Cache `library.getAll()` results during TUI session
 - Invalidate cache on session end
-- No file system watching during interactive mode
+- No file system watching during TUI mode
 
 ### TTY Requirement
 
@@ -142,11 +142,11 @@ No modifications to existing search logic required.
 
 ```bash
 # Works
-ref search -i
+ref search -t
 
-# Error: "Interactive mode requires a TTY"
-echo "query" | ref search -i
-ref search -i > output.txt
+# Error: "TUI mode requires a TTY"
+echo "query" | ref search -t
+ref search -t > output.txt
 ```
 
 ## Configuration
@@ -154,7 +154,7 @@ ref search -i > output.txt
 ### Config File
 
 ```toml
-[cli.interactive]
+[cli.tui]
 limit = 20              # Maximum displayed results
 debounce_ms = 200       # Debounce delay in milliseconds
 ```

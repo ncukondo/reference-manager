@@ -18,12 +18,11 @@ Where `input` can be:
 ## Options
 
 ```
--f, --force          Skip duplicate detection
---format <format>    Explicit format: json|bibtex|ris|pmid|doi|isbn|auto (default: auto)
---output <format>    Output format: json|text (default: text)
--o <format>          Short for --output
---full               Include full CSL-JSON data in JSON output
---verbose            Show detailed error information (text mode only)
+-i, --input <format>  Input format: json|bibtex|ris|pmid|doi|isbn|auto (default: auto)
+-f, --force           Skip duplicate detection
+-o, --output <format> Output format: json|text (default: text)
+--full                Include full CSL-JSON data in JSON output
+--verbose             Show detailed error information (text mode only)
 ```
 
 ### JSON Output
@@ -61,12 +60,12 @@ All recognized as DOI:
 
 ### ISBN Input Patterns
 
-ISBN requires explicit prefix or `--format isbn` option:
+ISBN requires explicit prefix or `--input isbn` option:
 - `ISBN:978-4-00-000000-0` (with prefix)
 - `isbn:4000000000` (case-insensitive prefix)
-- `9784000000000 --format isbn` (explicit format)
+- `9784000000000 --input isbn` (explicit format)
 
-**Note**: Pure numeric strings are interpreted as PMID by default. Use `ISBN:` prefix or `--format isbn` for ISBNs.
+**Note**: Pure numeric strings are interpreted as PMID by default. Use `ISBN:` prefix or `--input isbn` for ISBNs.
 
 Supported formats:
 - ISBN-13: 13 digits (starting with 978 or 979)
@@ -121,12 +120,16 @@ cat refs.json | reference-manager add
 
 # From stdin (identifiers)
 echo "10.1038/nature12373" | reference-manager add           # DOI (auto-detect)
-echo "12345678" | reference-manager add --format pmid        # PMID
-echo "12345678 23456789" | reference-manager add --format pmid  # Multiple PMIDs
-echo "ISBN:978-4-00-000000-0" | reference-manager add --format isbn  # ISBN
+echo "12345678" | reference-manager add --input pmid         # PMID
+echo "12345678 23456789" | reference-manager add -i pmid     # Multiple PMIDs
+echo "ISBN:978-4-00-000000-0" | reference-manager add -i isbn  # ISBN
 
 # Force add despite duplicates
 reference-manager add --force paper.json
+
+# JSON output
+reference-manager add 12345678 -o json
+reference-manager add 12345678 -o json --full
 ```
 
 ## Dependencies

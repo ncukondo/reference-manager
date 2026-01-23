@@ -17,7 +17,7 @@ reference-manager cite <id-or-uuid>...
 --style <style>     CSL style name (default: from config or 'apa')
 --csl-file <path>   Path to custom CSL file
 --locale <locale>   Locale code (default: 'en-US')
---format <format>   Output format: text|html|rtf (default: text)
+-o, --output <fmt>  Output format: text|html|rtf (default: text)
 --in-text           Generate in-text citations instead of bibliography
 ```
 
@@ -59,6 +59,11 @@ $ reference-manager cite smith2023 jones2024
 **Custom style:**
 ```bash
 $ reference-manager cite smith2023 --style vancouver
+```
+
+**HTML output:**
+```bash
+$ reference-manager cite smith2023 -o html
 ```
 
 ## Configuration

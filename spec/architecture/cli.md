@@ -10,74 +10,320 @@
 - Logs and diagnostics: `stderr`
 - Log levels: `silent`, `info` (default), `debug`
 
+## Option Conventions
+
+### Short Options
+
+| Short | Long | Meaning | Commands |
+|-------|------|---------|----------|
+| `-i` | `--input` | Input format | `add` |
+| `-o` | `--output` | Output format | all |
+| `-f` | `--force` | Skip confirmation/duplicate check | `add`, `remove`, `fulltext` |
+| `-t` | `--tui` | TUI (interactive) mode | `search` |
+| `-n` | `--limit` | Result limit | `list`, `search` |
+
+### Input Format (`--input` / `-i`)
+
+Specifies how to interpret input data.
+
+**Applies to:** `add`
+
+| Value | Description |
+|-------|-------------|
+| `auto` | Auto-detect from extension/content (default) |
+| `json` | CSL-JSON |
+| `bibtex` | BibTeX |
+| `ris` | RIS |
+| `pmid` | PubMed ID |
+| `doi` | Digital Object Identifier |
+| `isbn` | ISBN |
+
+### Output Format (`--output` / `-o`)
+
+Specifies output format. Available values depend on command.
+
+| Command | Values | Default |
+|---------|--------|---------|
+| `add`, `remove`, `update` | `json`, `text` | `text` |
+| `list`, `search` | `pretty`, `json`, `bibtex`, `ids`, `uuid` | `pretty` |
+| `export` | `json`, `yaml`, `bibtex` | `json` |
+| `cite` | `text`, `html`, `rtf` | `text` |
+| `config show` | `text`, `json` | `text` |
+
+**Convenience flags for list/search:**
+
+These are aliases for `--output`:
+
+| Flag | Equivalent |
+|------|------------|
+| `--json` | `--output json` |
+| `--bibtex` | `--output bibtex` |
+| `--ids-only` | `--output ids` |
+| `--uuid-only` | `--output uuid` |
+
+### UUID Interpretation (`--uuid`)
+
+When specified, interprets identifier arguments as UUIDs instead of citation keys.
+
+**Applies to:** `remove`, `update`, `edit`, `cite`, `export`, `fulltext`
+
+**Note:** For `list`/`search`, use `--output uuid` or `--uuid-only` to output UUIDs.
+
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
 | `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI, ISBN) |
 | `list` | List all references |
-| `search <query>` | Search references |
-| `search -i [query]` | Interactive search mode |
+| `search [query]` | Search references |
+| `search -t [query]` | TUI search mode |
 | `export [ids...]` | Export raw CSL-JSON for external tools |
 | `remove <id>` | Remove a reference |
 | `update <id>` | Update a reference |
 | `cite <id>...` | Generate formatted citations |
-| `fulltext <subcommand>` | Manage full-text files (attach/get/detach) |
+| `edit [ids...]` | Edit references in external editor |
+| `fulltext <subcommand>` | Manage full-text files (attach/get/detach/open) |
 | `config <subcommand>` | Manage configuration (show/get/set/edit) |
 | `server start\|stop\|status` | Manage HTTP server |
 | `mcp` | Start MCP stdio server |
 | `completion [action]` | Manage shell completion (install/uninstall) |
 
-## Output Formats
+## Command Options
 
-### list / search Commands
+### add
 
-| Flag | Description |
-|------|-------------|
-| (default) | Pretty-printed format |
-| `--json` | Compact JSON (includes pagination metadata) |
-| `--ids-only` | Citation keys only |
-| `--uuid` | Internal UUIDs only |
-| `--bibtex` | BibTeX format |
+```
+ref add [input...] [options]
+```
 
-### add / remove / update Commands
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--input <format>` | `-i` | Input format: json\|bibtex\|ris\|pmid\|doi\|isbn\|auto |
+| `--force` | `-f` | Skip duplicate detection |
+| `--output <format>` | `-o` | Output format: json\|text (default: text) |
+| `--full` | | Include full CSL-JSON data in JSON output |
+| `--verbose` | | Show detailed error information |
 
-| Flag | Description |
-|------|-------------|
-| `--output text` | Human-readable format (default) |
-| `--output json` / `-o json` | Machine-readable JSON |
-| `--full` | Include full CSL-JSON data (with `--output json`) |
+### list
 
-See `spec/features/json-output.md` for JSON output schema.
+```
+ref list [options]
+```
 
-### export Command
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output <format>` | `-o` | Output format: pretty\|json\|bibtex\|ids\|uuid |
+| `--json` | | Alias for `--output json` |
+| `--bibtex` | | Alias for `--output bibtex` |
+| `--ids-only` | | Alias for `--output ids` |
+| `--uuid-only` | | Alias for `--output uuid` |
+| `--sort <field>` | | Sort field (see Pagination) |
+| `--order <order>` | | Sort order: asc\|desc |
+| `--limit <n>` | `-n` | Maximum results |
+| `--offset <n>` | | Skip count |
 
-`ref export [ids...] [options]`
+### search
 
-Export raw CSL-JSON for external tool integration (pandoc, jq, etc.).
+```
+ref search [query] [options]
+```
 
-**Selection Modes** (mutually exclusive):
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tui` | `-t` | Enable TUI (interactive) search mode |
+| `--output <format>` | `-o` | Output format: pretty\|json\|bibtex\|ids\|uuid |
+| `--json` | | Alias for `--output json` |
+| `--bibtex` | | Alias for `--output bibtex` |
+| `--ids-only` | | Alias for `--output ids` |
+| `--uuid-only` | | Alias for `--output uuid` |
+| `--sort <field>` | | Sort field (see Pagination) |
+| `--order <order>` | | Sort order: asc\|desc |
+| `--limit <n>` | `-n` | Maximum results |
+| `--offset <n>` | | Skip count |
 
-| Mode | Description |
-|------|-------------|
-| `[ids...]` | Export specific references by citation key |
-| `--all` | Export all references |
-| `--search <query>` | Export references matching search query |
+Query is required unless using `--tui`.
 
-**Options:**
+### export
+
+```
+ref export [ids...] [options]
+```
 
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--uuid` | | Interpret identifiers as UUIDs |
 | `--all` | | Export all references |
-| `--search <query>` | | Export matching references |
-| `--format <fmt>` | `-f` | Output format: `json` (default), `yaml`, `bibtex` |
+| `--search <query>` | | Export references matching search query |
+| `--output <format>` | `-o` | Output format: json\|yaml\|bibtex (default: json) |
 
-**Output Behavior:**
+**Selection modes** (mutually exclusive): `[ids...]`, `--all`, `--search`
+
+**Output behavior:**
 - Single ID request: Output as object (not array)
 - Multiple items / `--all` / `--search`: Output as array
 - Empty results: `[]` with exit code 0
 - Not found (by ID): Error with exit code 1
+
+### remove
+
+```
+ref remove [identifier] [options]
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--uuid` | | Interpret identifier as UUID |
+| `--force` | `-f` | Skip confirmation prompt |
+| `--output <format>` | `-o` | Output format: json\|text (default: text) |
+| `--full` | | Include full CSL-JSON data in JSON output |
+
+Interactive selection if identifier omitted.
+
+### update
+
+```
+ref update [identifier] [file] [options]
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--uuid` | | Interpret identifier as UUID |
+| `--set <field=value>` | | Set field value (repeatable) |
+| `--output <format>` | `-o` | Output format: json\|text (default: text) |
+| `--full` | | Include full CSL-JSON data in JSON output |
+
+**--set Syntax:**
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| `field=value` | Set simple field | `--set "title=New Title"` |
+| `field=` | Clear field | `--set "abstract="` |
+| `field=a,b,c` | Replace array | `--set "custom.tags=a,b,c"` |
+| `field+=value` | Add to array | `--set "custom.tags+=urgent"` |
+| `field-=value` | Remove from array | `--set "custom.tags-=done"` |
+| `author=Family, Given` | Set author | `--set "author=Smith, John"` |
+| `author=A; B` | Multiple authors | `--set "author=Smith, John; Doe, Jane"` |
+| `issued.raw=date` | Set date (raw) | `--set "issued.raw=2024-03-15"` |
+| `id=key` | Change citation key | `--set "id=new-key"` |
+
+**Settable Fields:**
+- String: `title`, `abstract`, `type`, `DOI`, `PMID`, `PMCID`, `ISBN`, `ISSN`, `URL`, `publisher`, `publisher-place`, `page`, `volume`, `issue`, `container-title`, `note`, `id`
+- Array (+=/−=): `custom.tags`, `custom.additional_urls`, `keyword`
+- Name: `author`, `editor` (simple format only)
+- Date: `issued.raw`, `accessed.raw`
+
+**Not settable via --set:**
+- `custom.uuid`, `custom.created_at`, `custom.timestamp`, `custom.fulltext`
+- Complex date with `date-parts` (use JSON file)
+
+**Note:** `--set` and `[file]` are mutually exclusive.
+
+### edit
+
+```
+ref edit [identifier...] [options]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--uuid` | Interpret identifiers as UUIDs |
+| `--format <format>` | Edit format: yaml (default), json |
+| `--editor <editor>` | Editor command (overrides $VISUAL/$EDITOR) |
+
+**Note:** `--format` has no short option (to avoid conflict with `-f` for `--force`).
+
+### cite
+
+```
+ref cite [id-or-uuid...] [options]
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--uuid` | | Treat arguments as UUIDs |
+| `--style <style>` | | CSL style name |
+| `--csl-file <path>` | | Path to custom CSL file |
+| `--locale <locale>` | | Locale code (e.g., en-US, ja-JP) |
+| `--output <format>` | `-o` | Output format: text\|html\|rtf |
+| `--in-text` | | Generate in-text citations |
+
+### fulltext
+
+```
+ref fulltext <subcommand> [identifier] [options]
+```
+
+**Subcommands:** `attach`, `get`, `detach`, `open`
+
+Common options:
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--uuid` | | Interpret identifier as UUID |
+| `--pdf` | | Target PDF file |
+| `--markdown` | | Target Markdown file |
+
+Subcommand-specific options:
+
+| Subcommand | Flag | Short | Description |
+|------------|------|-------|-------------|
+| `attach` | `--move` | | Move file instead of copy |
+| `attach` | `--force` | `-f` | Overwrite existing |
+| `detach` | `--delete` | | Delete file from disk |
+| `detach` | `--force` | `-f` | Skip confirmation |
+| `get` | `--stdout` | | Output content to stdout |
+
+### config
+
+```
+ref config <subcommand> [options]
+```
+
+**Subcommands:**
+
+| Subcommand | Description |
+|------------|-------------|
+| `show` | Display effective configuration |
+| `get <key>` | Get a specific value |
+| `set <key> <value>` | Set a value |
+| `unset <key>` | Remove a value |
+| `edit` | Open config in editor |
+| `path` | Show config file paths |
+| `keys` | List available config keys |
+
+**config show options:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output <format>` | `-o` | Output format: text\|json |
+| `--section <name>` | | Show specific section |
+| `--sources` | | Include source information |
+
+**config set/unset options:**
+
+| Flag | Description |
+|------|-------------|
+| `--local` | Write to current directory config |
+| `--user` | Write to user config |
+
+### server
+
+```
+ref server <subcommand> [options]
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `start` | Start HTTP server |
+| `stop` | Stop running server |
+| `status` | Check server status |
+
+**server start options:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--port <port>` | | Specify port number |
+| `--daemon` | `-d` | Run in background |
 
 ## Pagination and Sorting
 
@@ -169,8 +415,8 @@ default_limit = 0          # 0 = unlimited
 default_sort = "updated"
 default_order = "desc"
 
-[cli.interactive]
-limit = 20                 # Max results in interactive mode
+[cli.tui]
+limit = 20                 # Max results in TUI mode
 debounce_ms = 200          # Search debounce delay
 ```
 
@@ -219,9 +465,9 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 - `remove` command shows confirmation unless `--force`
 - Non-TTY: Prompts skipped, uses default behavior
 
-### Interactive Search
+### TUI Search
 
-`ref search -i` provides an interactive search mode with:
+`ref search -t` provides an interactive search mode with:
 - Real-time incremental search with debounce
 - Multiple selection support
 - Action menu for selected references
@@ -229,46 +475,3 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 **Requires TTY**: Exits with error in non-TTY environment.
 
 See `spec/features/interactive-search.md` for complete specification.
-
-### Update Command
-
-`ref update <identifier> [file] [options]`
-
-Update fields of an existing reference.
-
-**Arguments:**
-- `<identifier>` - Citation key or UUID
-- `[file]` - JSON file with updates (or use stdin)
-
-**Options:**
-
-| Flag | Description |
-|------|-------------|
-| `--uuid` | Interpret identifier as UUID |
-| `--set <field=value>` | Set field value (repeatable) |
-
-**--set Syntax:**
-
-| Pattern | Description | Example |
-|---------|-------------|---------|
-| `field=value` | Set simple field | `--set "title=New Title"` |
-| `field=` | Clear field | `--set "abstract="` |
-| `field=a,b,c` | Replace array | `--set "custom.tags=a,b,c"` |
-| `field+=value` | Add to array | `--set "custom.tags+=urgent"` |
-| `field-=value` | Remove from array | `--set "custom.tags-=done"` |
-| `author=Family, Given` | Set author | `--set "author=Smith, John"` |
-| `author=A; B` | Multiple authors | `--set "author=Smith, John; Doe, Jane"` |
-| `issued.raw=date` | Set date (raw) | `--set "issued.raw=2024-03-15"` |
-| `id=key` | Change citation key | `--set "id=new-key"` |
-
-**Settable Fields:**
-- String: `title`, `abstract`, `type`, `DOI`, `PMID`, `PMCID`, `ISBN`, `ISSN`, `URL`, `publisher`, `publisher-place`, `page`, `volume`, `issue`, `container-title`, `note`, `id`
-- Array (+=/−=): `custom.tags`, `custom.additional_urls`, `keyword`
-- Name: `author`, `editor` (simple format only)
-- Date: `issued.raw`, `accessed.raw`
-
-**Not settable via --set:**
-- `custom.uuid`, `custom.created_at`, `custom.timestamp`, `custom.fulltext`
-- Complex date with `date-parts` (use JSON file)
-
-**Note:** `--set` and `[file]` are mutually exclusive.
