@@ -59,11 +59,11 @@ For each step:
 
 ### Step 2: Update search command (`--interactive` → `--tui`)
 
-- [ ] Update test: `src/cli/commands/search.test.ts`
-- [ ] Update: `src/cli/index.ts` - change `-i, --interactive` to `-t, --tui`
-- [ ] Update: `src/cli/commands/search.ts` - rename option
-- [ ] Verify: `npm run test:unit -- search`
-- [ ] Lint/Type check
+- [x] Update test: `src/cli/commands/search.test.ts`
+- [x] Update: `src/cli/index.ts` - change `-i, --interactive` to `-t, --tui`
+- [x] Update: `src/cli/commands/search.ts` - rename option
+- [x] Verify: `npm run test:unit -- search`
+- [x] Lint/Type check
 
 ### Step 3: Update list/search output options (`--uuid` → `--uuid-only`)
 

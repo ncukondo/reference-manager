@@ -38,7 +38,7 @@ export interface SearchCommandOptions {
   order?: SortOrder;
   limit?: number;
   offset?: number;
-  interactive?: boolean;
+  tui?: boolean;
 }
 
 /**
@@ -187,7 +187,7 @@ function validateInteractiveOptions(options: SearchCommandOptions): void {
 
   if (outputOptions.length > 0) {
     throw new Error(
-      "Interactive mode cannot be combined with output format options (--json, --ids-only, --uuid, --bibtex)"
+      "TUI mode cannot be combined with output format options (--json, --ids-only, --uuid, --bibtex)"
     );
   }
 }

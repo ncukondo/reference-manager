@@ -242,36 +242,28 @@ describe("search command", () => {
       vi.clearAllMocks();
     });
 
-    it("should throw error when interactive option conflicts with output format options", async () => {
+    it("should throw error when tui option conflicts with output format options", async () => {
       const context = createContext();
 
       // Test with --json
       await expect(
-        executeInteractiveSearch({ query: "", interactive: true, json: true }, context, mockConfig)
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, json: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
       // Test with --bibtex
       await expect(
-        executeInteractiveSearch(
-          { query: "", interactive: true, bibtex: true },
-          context,
-          mockConfig
-        )
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, bibtex: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
       // Test with --ids-only
       await expect(
-        executeInteractiveSearch(
-          { query: "", interactive: true, idsOnly: true },
-          context,
-          mockConfig
-        )
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, idsOnly: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
       // Test with --uuid
       await expect(
-        executeInteractiveSearch({ query: "", interactive: true, uuid: true }, context, mockConfig)
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, uuid: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
     });
   });
 });

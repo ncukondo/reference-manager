@@ -190,8 +190,8 @@ async function handleSearchAction(
 
     const context = await createExecutionContext(config, Library.load);
 
-    // Handle interactive mode
-    if (options.interactive) {
+    // Handle TUI mode
+    if (options.tui) {
       const result = await executeInteractiveSearch({ ...options, query }, context, config);
       if (result.output) {
         process.stdout.write(`${result.output}\n`);
@@ -221,8 +221,8 @@ function registerSearchCommand(program: Command): void {
   program
     .command("search")
     .description("Search references")
-    .argument("[query]", "Search query (required unless using --interactive)")
-    .option("-i, --interactive", "Enable interactive search mode")
+    .argument("[query]", "Search query (required unless using --tui)")
+    .option("-t, --tui", "Enable TUI (interactive) search mode")
     .option("--json", "Output in JSON format")
     .option("--ids-only", "Output only citation keys")
     .option("--uuid", "Output only UUIDs")
@@ -232,9 +232,9 @@ function registerSearchCommand(program: Command): void {
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
     .option("--offset <n>", "Number of results to skip", Number.parseInt)
     .action(async (query: string | undefined, options) => {
-      // Validate: query is required unless interactive mode
-      if (!options.interactive && !query) {
-        process.stderr.write("Error: Search query is required unless using --interactive\n");
+      // Validate: query is required unless TUI mode
+      if (!options.tui && !query) {
+        process.stderr.write("Error: Search query is required unless using --tui\n");
         process.exit(1);
       }
       await handleSearchAction(query ?? "", options, program);
