@@ -85,11 +85,11 @@ For each step:
 
 ### Step 5: Update cite command (`--format` → `-o, --output`)
 
-- [ ] Update test: `src/cli/commands/cite.test.ts`
-- [ ] Update: `src/cli/index.ts`
-- [ ] Update: `src/cli/commands/cite.ts`
-- [ ] Verify: `npm run test:unit -- cite`
-- [ ] Lint/Type check
+- [x] Update test: `src/cli/commands/cite.test.ts`
+- [x] Update: `src/cli/index.ts`
+- [x] Update: `src/cli/commands/cite.ts`
+- [x] Verify: `npm run test:unit -- cite`
+- [x] Lint/Type check
 
 ### Step 6: Update edit command (remove `-f` short option for `--format`)
 

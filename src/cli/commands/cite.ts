@@ -13,7 +13,7 @@ export interface CiteCommandOptions {
   style?: string;
   cslFile?: string;
   locale?: string;
-  format?: "text" | "html" | "rtf";
+  output?: "text" | "html" | "rtf";
   inText?: boolean;
 }
 
@@ -26,8 +26,8 @@ export type CiteCommandResult = CiteResult;
  * Validate citation options.
  */
 async function validateOptions(options: CiteCommandOptions): Promise<void> {
-  if (options.format && !["text", "html", "rtf"].includes(options.format)) {
-    throw new Error(`Invalid format '${options.format}'. Must be one of: text, html, rtf`);
+  if (options.output && !["text", "html", "rtf"].includes(options.output)) {
+    throw new Error(`Invalid output format '${options.output}'. Must be one of: text, html, rtf`);
   }
 
   if (options.cslFile) {
@@ -48,7 +48,7 @@ function buildCiteOptions(options: CiteCommandOptions): CiteOperationOptions {
     ...(options.style !== undefined && { style: options.style }),
     ...(options.cslFile !== undefined && { cslFile: options.cslFile }),
     ...(options.locale !== undefined && { locale: options.locale }),
-    ...(options.format !== undefined && { format: options.format }),
+    ...(options.output !== undefined && { format: options.output }),
     ...(options.inText !== undefined && { inText: options.inText }),
   };
 }

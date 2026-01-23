@@ -434,7 +434,7 @@ function registerCiteCommand(program: Command): void {
     .option("--style <style>", "CSL style name")
     .option("--csl-file <path>", "Path to custom CSL file")
     .option("--locale <locale>", "Locale code (e.g., en-US, ja-JP)")
-    .option("--format <format>", "Output format: text|html|rtf")
+    .option("-o, --output <format>", "Output format: text|html|rtf")
     .option("--in-text", "Generate in-text citations instead of bibliography entries")
     .action(async (identifiers: string[], options) => {
       await handleCiteAction(identifiers, options, program.opts());
