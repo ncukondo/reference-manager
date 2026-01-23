@@ -61,16 +61,13 @@ function mergeCliConfig(
   base: DeepPartialConfig["cli"],
   override: NonNullable<DeepPartialConfig["cli"]>
 ): NonNullable<DeepPartialConfig["cli"]> {
-  const { interactive: overrideInteractive, ...overrideCliRest } = override;
-  const { interactive: baseInteractive, ...baseCliRest } = base ?? {};
-  const mergedInteractive =
-    overrideInteractive !== undefined
-      ? { ...baseInteractive, ...overrideInteractive }
-      : baseInteractive;
+  const { tui: overrideTui, ...overrideCliRest } = override;
+  const { tui: baseTui, ...baseCliRest } = base ?? {};
+  const mergedTui = overrideTui !== undefined ? { ...baseTui, ...overrideTui } : baseTui;
   return {
     ...baseCliRest,
     ...overrideCliRest,
-    ...(mergedInteractive !== undefined ? { interactive: mergedInteractive } : {}),
+    ...(mergedTui !== undefined ? { tui: mergedTui } : {}),
   };
 }
 
@@ -227,9 +224,9 @@ function fillCliDefaults(partial: DeepPartialConfig["cli"]): Config["cli"] {
     defaultLimit,
     defaultSort: partial?.defaultSort ?? defaultConfig.cli.defaultSort,
     defaultOrder: partial?.defaultOrder ?? defaultConfig.cli.defaultOrder,
-    interactive: {
-      limit: partial?.interactive?.limit ?? defaultConfig.cli.interactive.limit,
-      debounceMs: partial?.interactive?.debounceMs ?? defaultConfig.cli.interactive.debounceMs,
+    tui: {
+      limit: partial?.tui?.limit ?? defaultConfig.cli.tui.limit,
+      debounceMs: partial?.tui?.debounceMs ?? defaultConfig.cli.tui.debounceMs,
     },
     edit: {
       defaultFormat: partial?.edit?.defaultFormat ?? defaultConfig.cli.edit.defaultFormat,

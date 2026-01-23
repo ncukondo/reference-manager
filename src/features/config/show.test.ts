@@ -38,7 +38,7 @@ const mockConfig: Config = {
     defaultLimit: 0,
     defaultSort: "updated",
     defaultOrder: "desc",
-    interactive: {
+    tui: {
       limit: 20,
       debounceMs: 200,
     },
@@ -69,7 +69,7 @@ describe("showConfig", () => {
       expect(result).toContain("[pubmed]");
       expect(result).toContain("[fulltext]");
       expect(result).toContain("[cli]");
-      expect(result).toContain("[cli.interactive]");
+      expect(result).toContain("[cli.tui]");
       expect(result).toContain("[cli.edit]");
       expect(result).toContain("[mcp]");
     });
@@ -98,7 +98,7 @@ describe("showConfig", () => {
       expect(parsed.backup).toBeDefined();
       expect(parsed.citation).toBeDefined();
       expect(parsed.cli).toBeDefined();
-      expect(parsed.cli.interactive).toBeDefined();
+      expect(parsed.cli.tui).toBeDefined();
     });
   });
 
@@ -116,7 +116,7 @@ describe("showConfig", () => {
       const result = showConfig(mockConfig, { section: "cli" });
 
       expect(result).toContain("[cli]");
-      expect(result).toContain("[cli.interactive]");
+      expect(result).toContain("[cli.tui]");
       expect(result).toContain("[cli.edit]");
       expect(result).not.toContain("[citation]");
     });

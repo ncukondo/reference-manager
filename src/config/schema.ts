@@ -11,9 +11,9 @@ import { sortFieldSchema, sortOrderSchema } from "../features/pagination/types.j
 export const logLevelSchema = z.enum(["silent", "info", "debug"]);
 
 /**
- * Interactive search configuration schema
+ * TUI (interactive) search configuration schema
  */
-export const interactiveConfigSchema = z.object({
+export const tuiConfigSchema = z.object({
   limit: z.number().int().nonnegative(),
   debounceMs: z.number().int().nonnegative(),
 });
@@ -37,7 +37,7 @@ export const cliConfigSchema = z.object({
   defaultLimit: z.number().int().nonnegative(),
   defaultSort: sortFieldSchema,
   defaultOrder: sortOrderSchema,
-  interactive: interactiveConfigSchema,
+  tui: tuiConfigSchema,
   edit: editConfigSchema,
 });
 
@@ -193,7 +193,7 @@ export const partialConfigSchema = z
         default_sort: sortFieldSchema.optional(),
         defaultOrder: sortOrderSchema.optional(),
         default_order: sortOrderSchema.optional(),
-        interactive: z
+        tui: z
           .object({
             limit: z.number().int().nonnegative().optional(),
             debounceMs: z.number().int().nonnegative().optional(),
@@ -228,7 +228,7 @@ export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
-export type InteractiveConfig = z.infer<typeof interactiveConfigSchema>;
+export type TuiConfig = z.infer<typeof tuiConfigSchema>;
 export type EditConfigFormat = z.infer<typeof editFormatSchema>;
 export type EditConfig = z.infer<typeof editConfigSchema>;
 export type CliConfig = z.infer<typeof cliConfigSchema>;
@@ -248,8 +248,8 @@ export type DeepPartialConfig = {
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
   fulltext?: Partial<FulltextConfig>;
-  cli?: Partial<Omit<CliConfig, "interactive" | "edit">> & {
-    interactive?: Partial<InteractiveConfig>;
+  cli?: Partial<Omit<CliConfig, "tui" | "edit">> & {
+    tui?: Partial<TuiConfig>;
     edit?: Partial<EditConfig>;
   };
   mcp?: Partial<McpConfig>;
@@ -490,20 +490,20 @@ function normalizeFulltextConfig(fulltext: {
 }
 
 /**
- * Normalize interactive config subsection
+ * Normalize TUI config subsection
  */
-function normalizeInteractiveSection(
-  interactive: Partial<{
+function normalizeTuiSection(
+  tui: Partial<{
     limit?: number;
     debounceMs?: number;
     debounce_ms?: number;
   }>
-): Partial<InteractiveConfig> | undefined {
-  const normalized: Partial<InteractiveConfig> = {};
-  if (interactive.limit !== undefined) {
-    normalized.limit = interactive.limit;
+): Partial<TuiConfig> | undefined {
+  const normalized: Partial<TuiConfig> = {};
+  if (tui.limit !== undefined) {
+    normalized.limit = tui.limit;
   }
-  const debounceMs = interactive.debounceMs ?? interactive.debounce_ms;
+  const debounceMs = tui.debounceMs ?? tui.debounce_ms;
   if (debounceMs !== undefined) {
     normalized.debounceMs = debounceMs;
   }
@@ -538,7 +538,7 @@ function normalizeCliConfig(
     default_sort?: CliConfig["defaultSort"];
     defaultOrder?: CliConfig["defaultOrder"];
     default_order?: CliConfig["defaultOrder"];
-    interactive?: Partial<{
+    tui?: Partial<{
       limit?: number;
       debounceMs?: number;
       debounce_ms?: number;
@@ -566,10 +566,10 @@ function normalizeCliConfig(
     normalized.defaultOrder = defaultOrder;
   }
 
-  if (cli.interactive !== undefined) {
-    const interactive = normalizeInteractiveSection(cli.interactive);
-    if (interactive) {
-      normalized.interactive = interactive as InteractiveConfig;
+  if (cli.tui !== undefined) {
+    const tui = normalizeTuiSection(cli.tui);
+    if (tui) {
+      normalized.tui = tui as TuiConfig;
     }
   }
 

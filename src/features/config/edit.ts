@@ -97,7 +97,7 @@ export function createConfigTemplate(): string {
 # default_sort = "updated"  # created, updated, published, author, title
 # default_order = "desc"  # asc, desc
 
-[cli.interactive]
+[cli.tui]
 # limit = 20
 # debounce_ms = 200
 

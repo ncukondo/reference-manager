@@ -185,8 +185,8 @@ describe("Config Command E2E", () => {
       expect((config.citation as ParsedConfig)?.default_style).toBe("ieee");
     });
 
-    it("should create deeply nested section for cli.interactive.limit", async () => {
-      const result = await runCli(["config", "set", "--local", "cli.interactive.limit", "50"]);
+    it("should create deeply nested section for cli.tui.limit", async () => {
+      const result = await runCli(["config", "set", "--local", "cli.tui.limit", "50"]);
       expect(result.exitCode).toBe(0);
 
       const config = await readLocalConfig();

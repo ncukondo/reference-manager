@@ -256,7 +256,7 @@ async function executeInteractiveEdit(
   const identifiers = await selectReferencesOrExit(
     allReferences,
     { multiSelect: true },
-    config.cli.interactive
+    config.cli.tui
   );
 
   const format = options.format ?? config.cli.edit.defaultFormat;

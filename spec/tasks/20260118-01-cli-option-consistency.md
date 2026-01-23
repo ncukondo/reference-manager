@@ -110,12 +110,12 @@ For each step:
 
 ### Step 8: Update config schema (`cli.interactive` → `cli.tui`)
 
-- [ ] Update: `src/config/schema.ts` - rename `interactive` to `tui`
-- [ ] Update: `src/config/defaults.ts`
-- [ ] Update: any references in `src/features/interactive/`
-- [ ] Update tests that reference `cli.interactive`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check
+- [x] Update: `src/config/schema.ts` - rename `interactive` to `tui` (already done)
+- [x] Update: `src/config/defaults.ts` (already done)
+- [x] Update: any references in `src/features/interactive/` (already done)
+- [x] Update tests that reference `cli.interactive`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
 
 ### Step 9: Update shell completion
 

@@ -47,11 +47,11 @@ describe("setConfigValue", () => {
     });
 
     it("sets a deeply nested integer value", async () => {
-      const result = await setConfigValue(configPath, "cli.interactive.limit", 50);
+      const result = await setConfigValue(configPath, "cli.tui.limit", 50);
 
       expect(result.success).toBe(true);
       const content = await readFile(configPath, "utf-8");
-      expect(content).toContain("[cli.interactive]");
+      expect(content).toContain("[cli.tui]");
       expect(content).toContain("limit = 50");
     });
   });

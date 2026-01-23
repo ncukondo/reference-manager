@@ -96,14 +96,14 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     enumValues: ["asc", "desc"],
   },
 
-  // cli.interactive section
+  // cli.tui section
   {
-    key: "cli.interactive.limit",
+    key: "cli.tui.limit",
     type: "integer",
-    description: "Result limit in interactive mode",
+    description: "Result limit in TUI mode",
   },
   {
-    key: "cli.interactive.debounce_ms",
+    key: "cli.tui.debounce_ms",
     type: "integer",
     description: "Search debounce delay (ms)",
   },
@@ -170,7 +170,7 @@ export function getAllConfigKeys(section?: string): string[] {
 
 /**
  * Convert a snake_case key to the internal camelCase path for accessing config values.
- * e.g., "cli.interactive.debounce_ms" -> ["cli", "interactive", "debounceMs"]
+ * e.g., "cli.tui.debounce_ms" -> ["cli", "tui", "debounceMs"]
  */
 export function toInternalPath(key: string): string[] {
   const segments = parseConfigKey(key);

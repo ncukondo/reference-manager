@@ -260,7 +260,7 @@ async function executeInteractiveSelect(
   const identifiers = await selectReferencesOrExit(
     allReferences,
     { multiSelect: false },
-    config.cli.interactive
+    config.cli.tui
   );
 
   // Type assertion is safe: selectReferencesOrExit guarantees non-empty array

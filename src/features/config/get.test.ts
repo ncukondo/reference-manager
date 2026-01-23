@@ -38,7 +38,7 @@ const mockConfig: Config = {
     defaultLimit: 0,
     defaultSort: "updated",
     defaultOrder: "desc",
-    interactive: {
+    tui: {
       limit: 20,
       debounceMs: 200,
     },
@@ -94,7 +94,7 @@ describe("getConfigValue", () => {
 
   describe("deeply nested values", () => {
     it("gets deeply nested value", () => {
-      const result = getConfigValue(mockConfig, "cli.interactive.limit", {});
+      const result = getConfigValue(mockConfig, "cli.tui.limit", {});
       expect(result.found).toBe(true);
       expect(result.value).toBe(20);
     });

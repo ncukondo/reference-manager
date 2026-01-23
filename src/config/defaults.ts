@@ -92,7 +92,7 @@ export const defaultConfig: Config = {
     defaultLimit: 0,
     defaultSort: "updated",
     defaultOrder: "desc",
-    interactive: {
+    tui: {
       limit: 20,
       debounceMs: 200,
     },

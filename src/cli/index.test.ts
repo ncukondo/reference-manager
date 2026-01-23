@@ -72,7 +72,7 @@ describe("CLI Entry", () => {
       expect(options).toContain("--style");
       expect(options).toContain("--csl-file");
       expect(options).toContain("--locale");
-      expect(options).toContain("--format");
+      expect(options).toContain("--output");
       expect(options).toContain("--in-text");
     });
 

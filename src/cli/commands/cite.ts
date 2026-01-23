@@ -136,7 +136,7 @@ async function executeInteractiveCite(
   const identifiers = await selectReferencesOrExit(
     allReferences,
     { multiSelect: true },
-    config.cli.interactive
+    config.cli.tui
   );
 
   let style = options.style;

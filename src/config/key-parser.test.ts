@@ -19,7 +19,7 @@ describe("key-parser", () => {
     });
 
     it("parses deeply nested keys", () => {
-      expect(parseConfigKey("cli.interactive.limit")).toEqual(["cli", "interactive", "limit"]);
+      expect(parseConfigKey("cli.tui.limit")).toEqual(["cli", "tui", "limit"]);
       expect(parseConfigKey("cli.edit.default_format")).toEqual(["cli", "edit", "default_format"]);
     });
   });
@@ -38,21 +38,21 @@ describe("key-parser", () => {
     });
 
     it("returns true for valid deeply nested keys", () => {
-      expect(isValidConfigKey("cli.interactive.limit")).toBe(true);
-      expect(isValidConfigKey("cli.interactive.debounce_ms")).toBe(true);
+      expect(isValidConfigKey("cli.tui.limit")).toBe(true);
+      expect(isValidConfigKey("cli.tui.debounce_ms")).toBe(true);
       expect(isValidConfigKey("cli.edit.default_format")).toBe(true);
     });
 
     it("returns false for invalid keys", () => {
       expect(isValidConfigKey("invalid")).toBe(false);
       expect(isValidConfigKey("citation.invalid")).toBe(false);
-      expect(isValidConfigKey("cli.interactive.invalid")).toBe(false);
+      expect(isValidConfigKey("cli.tui.invalid")).toBe(false);
     });
 
     it("returns false for partial paths", () => {
       expect(isValidConfigKey("citation")).toBe(false);
       expect(isValidConfigKey("cli")).toBe(false);
-      expect(isValidConfigKey("cli.interactive")).toBe(false);
+      expect(isValidConfigKey("cli.tui")).toBe(false);
     });
 
     it("returns false for empty string", () => {
@@ -96,7 +96,7 @@ describe("key-parser", () => {
     });
 
     it("returns info for nested keys", () => {
-      const info = getConfigKeyInfo("cli.interactive.limit");
+      const info = getConfigKeyInfo("cli.tui.limit");
       expect(info).not.toBeNull();
       expect(info?.type).toBe("integer");
     });
@@ -115,7 +115,7 @@ describe("key-parser", () => {
       expect(keys).toContain("library");
       expect(keys).toContain("log_level");
       expect(keys).toContain("citation.default_style");
-      expect(keys).toContain("cli.interactive.limit");
+      expect(keys).toContain("cli.tui.limit");
       expect(keys).toContain("server.auto_start");
     });
 
@@ -125,7 +125,7 @@ describe("key-parser", () => {
       // These are sections, not leaf values
       expect(keys).not.toContain("citation");
       expect(keys).not.toContain("cli");
-      expect(keys).not.toContain("cli.interactive");
+      expect(keys).not.toContain("cli.tui");
     });
 
     it("returns keys sorted alphabetically", () => {
@@ -140,7 +140,7 @@ describe("key-parser", () => {
       expect(citationKeys).toContain("citation.default_style");
       expect(citationKeys).toContain("citation.csl_directory");
       expect(citationKeys).not.toContain("library");
-      expect(citationKeys).not.toContain("cli.interactive.limit");
+      expect(citationKeys).not.toContain("cli.tui.limit");
     });
   });
 });

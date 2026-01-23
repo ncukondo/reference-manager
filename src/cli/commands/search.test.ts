@@ -231,7 +231,7 @@ describe("search command", () => {
 
     const mockConfig = {
       cli: {
-        interactive: {
+        tui: {
           limit: 20,
           debounceMs: 200,
         },

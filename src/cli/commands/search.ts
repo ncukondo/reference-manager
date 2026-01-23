@@ -244,16 +244,16 @@ export async function executeInteractiveSearch(
     return search(allReferences, tokens);
   };
 
-  // Get interactive config from config
-  const interactiveConfig = config.cli.interactive;
+  // Get TUI config from config
+  const tuiConfig = config.cli.tui;
 
   // Run search prompt
   const searchResult = await runSearchPrompt(
     allReferences,
     searchFn,
     {
-      limit: interactiveConfig.limit,
-      debounceMs: interactiveConfig.debounceMs,
+      limit: tuiConfig.limit,
+      debounceMs: tuiConfig.debounceMs,
     },
     options.query || ""
   );

@@ -44,9 +44,9 @@ describe("unsetConfigValue", () => {
     });
 
     it("removes a deeply nested key", async () => {
-      await writeFile(configPath, "[cli.interactive]\nlimit = 50\ndebounce_ms = 200\n");
+      await writeFile(configPath, "[cli.tui]\nlimit = 50\ndebounce_ms = 200\n");
 
-      const result = await unsetConfigValue(configPath, "cli.interactive.limit");
+      const result = await unsetConfigValue(configPath, "cli.tui.limit");
 
       expect(result.success).toBe(true);
       const content = await readFile(configPath, "utf-8");

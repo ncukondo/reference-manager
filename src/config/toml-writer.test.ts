@@ -43,13 +43,13 @@ describe("toml-writer", () => {
     it("serializes deeply nested sections", () => {
       const result = serializeToTOML({
         cli: {
-          interactive: {
+          tui: {
             limit: 50,
             debounce_ms: 200,
           },
         },
       });
-      expect(result).toContain("[cli.interactive]");
+      expect(result).toContain("[cli.tui]");
       expect(result).toContain("limit = 50");
       expect(result).toContain("debounce_ms = 200");
     });
@@ -90,10 +90,10 @@ describe("toml-writer", () => {
     it("writes a deeply nested key to a new file", async () => {
       const filePath = join(testDir, "config.toml");
 
-      await writeTOMLValue(filePath, "cli.interactive.limit", 50);
+      await writeTOMLValue(filePath, "cli.tui.limit", 50);
 
       const content = await readFile(filePath, "utf-8");
-      expect(content).toContain("[cli.interactive]");
+      expect(content).toContain("[cli.tui]");
       expect(content).toContain("limit = 50");
     });
 
@@ -238,7 +238,7 @@ describe("toml-writer", () => {
       expect(template).toContain("[pubmed]");
       expect(template).toContain("[fulltext]");
       expect(template).toContain("[cli]");
-      expect(template).toContain("[cli.interactive]");
+      expect(template).toContain("[cli.tui]");
       expect(template).toContain("[cli.edit]");
       expect(template).toContain("[mcp]");
     });

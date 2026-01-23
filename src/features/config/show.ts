@@ -63,9 +63,9 @@ function toSnakeCaseConfig(config: Config): Record<string, unknown> {
     default_limit: config.cli.defaultLimit,
     default_sort: config.cli.defaultSort,
     default_order: config.cli.defaultOrder,
-    interactive: {
-      limit: config.cli.interactive.limit,
-      debounce_ms: config.cli.interactive.debounceMs,
+    tui: {
+      limit: config.cli.tui.limit,
+      debounce_ms: config.cli.tui.debounceMs,
     },
     edit: {
       default_format: config.cli.edit.defaultFormat,
