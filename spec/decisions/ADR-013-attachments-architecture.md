@@ -52,11 +52,11 @@ Replace the `fulltext` data model with a comprehensive `attachments` system feat
   "attachments": {
     "directory": "Smith-2024-PMID12345678-123e4567",
     "files": [
-      { "filename": "fulltext.pdf", "role": "fulltext", "format": "pdf" },
-      { "filename": "fulltext.md", "role": "fulltext", "format": "markdown" },
-      { "filename": "supplement-table-s1.xlsx", "role": "supplement", "format": "xlsx", "label": "Table S1" },
-      { "filename": "notes.md", "role": "notes", "format": "markdown" },
-      { "filename": "slides-conference.pdf", "role": "slides", "format": "pdf", "label": "Conference 2024" }
+      { "filename": "fulltext.pdf", "role": "fulltext" },
+      { "filename": "fulltext.md", "role": "fulltext" },
+      { "filename": "supplement-table-s1.xlsx", "role": "supplement", "label": "Table S1" },
+      { "filename": "notes.md", "role": "notes" },
+      { "filename": "slides-conference.pdf", "role": "slides", "label": "Conference 2024" }
     ]
   }
 }

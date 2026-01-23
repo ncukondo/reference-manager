@@ -47,7 +47,7 @@ Define TypeScript types for the new attachments data model.
   - Test attachments container interface
   - Test role validation (reserved vs custom)
 - [ ] Implement: `src/features/attachments/types.ts`
-  - `AttachmentFile` interface (filename, role, format, label?)
+  - `AttachmentFile` interface (filename, role, label?)
   - `Attachments` interface (directory, files)
   - `ReservedRole` type and validation
 - [ ] Verify: `npm run test:unit`
@@ -73,11 +73,11 @@ Generate and parse filenames following `{role}[-{label}].{ext}` convention.
 
 - [ ] Write test: `src/features/attachments/filename.test.ts`
   - Test generation: `fulltext.pdf`, `supplement-table-s1.xlsx`
-  - Test parsing: extract role, label, format from filename
+  - Test parsing: extract role, label from filename
   - Test label slugification (filesystem-safe)
 - [ ] Implement: `src/features/attachments/filename.ts`
-  - `generateFilename(role, format, label?): string`
-  - `parseFilename(filename): { role, format, label? }`
+  - `generateFilename(role, ext, label?): string`
+  - `parseFilename(filename): { role, ext, label? }`
   - `slugifyLabel(label): string`
 - [ ] Verify: `npm run test:unit`
 - [ ] Lint/Type check: `npm run lint && npm run typecheck`
