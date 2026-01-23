@@ -157,7 +157,7 @@ describe("search command", () => {
       expect(output).toBe("ref1\nref2");
     });
 
-    it("should format items as UUIDs when uuid option is true", () => {
+    it("should format items as UUIDs when uuidOnly option is true", () => {
       const result: SearchCommandResult = {
         items: mockItems,
         total: 2,
@@ -166,7 +166,7 @@ describe("search command", () => {
         nextOffset: null,
       };
 
-      const output = formatSearchOutput(result, { query: "", uuid: true });
+      const output = formatSearchOutput(result, { query: "", uuidOnly: true });
 
       expect(output).toBe("uuid-1\nuuid-2");
     });
@@ -260,9 +260,9 @@ describe("search command", () => {
         executeInteractiveSearch({ query: "", tui: true, idsOnly: true }, context, mockConfig)
       ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
-      // Test with --uuid
+      // Test with --uuid-only
       await expect(
-        executeInteractiveSearch({ query: "", tui: true, uuid: true }, context, mockConfig)
+        executeInteractiveSearch({ query: "", tui: true, uuidOnly: true }, context, mockConfig)
       ).rejects.toThrow("TUI mode cannot be combined with output format options");
     });
   });

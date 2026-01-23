@@ -26,9 +26,10 @@ const VALID_LIST_SORT_FIELDS = new Set([
  * Options for the list command.
  */
 export interface ListCommandOptions {
+  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid";
   json?: boolean;
   idsOnly?: boolean;
-  uuid?: boolean;
+  uuidOnly?: boolean;
   bibtex?: boolean;
   sort?: SortField;
   order?: SortOrder;
@@ -43,11 +44,18 @@ export type ListCommandResult = ListResult;
 
 /**
  * Convert CLI options to ItemFormat.
+ * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
 function getOutputFormat(options: ListCommandOptions): ItemFormat {
+  // --output takes precedence
+  if (options.output) {
+    if (options.output === "ids") return "ids-only";
+    return options.output;
+  }
+  // Convenience flags as fallback
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
-  if (options.uuid) return "uuid";
+  if (options.uuidOnly) return "uuid";
   if (options.bibtex) return "bibtex";
   return "pretty";
 }
@@ -58,14 +66,19 @@ function getOutputFormat(options: ListCommandOptions): ItemFormat {
  */
 function validateOptions(options: ListCommandOptions): void {
   // Validate output format
-  const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
+  const outputOptions = [options.json, options.idsOnly, options.uuidOnly, options.bibtex].filter(
     Boolean
   );
 
   if (outputOptions.length > 1) {
     throw new Error(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
+      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex can be used."
     );
+  }
+
+  // Warn if --output is combined with convenience flags
+  if (options.output && outputOptions.length > 0) {
+    throw new Error("Cannot combine --output with convenience flags (--json, --ids-only, etc.)");
   }
 
   // Validate sort field (if provided)

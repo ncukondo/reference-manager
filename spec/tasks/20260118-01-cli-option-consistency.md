@@ -67,13 +67,13 @@ For each step:
 
 ### Step 3: Update list/search output options (`--uuid` → `--uuid-only`)
 
-- [ ] Update test: `src/cli/commands/list.test.ts`
-- [ ] Update test: `src/cli/commands/search.test.ts`
-- [ ] Update: `src/cli/index.ts` - add `--uuid-only`, add `--output` option
-- [ ] Update: `src/cli/commands/list.ts`
-- [ ] Update: `src/cli/commands/search.ts`
-- [ ] Verify: `npm run test:unit -- list search`
-- [ ] Lint/Type check
+- [x] Update test: `src/cli/commands/list.test.ts`
+- [x] Update test: `src/cli/commands/search.test.ts`
+- [x] Update: `src/cli/index.ts` - add `--uuid-only`, add `--output` option
+- [x] Update: `src/cli/commands/list.ts`
+- [x] Update: `src/cli/commands/search.ts`
+- [x] Verify: `npm run test:unit -- list search`
+- [x] Lint/Type check
 
 ### Step 4: Update export command (`-f, --format` → `-o, --output`)
 
