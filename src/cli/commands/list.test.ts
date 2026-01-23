@@ -154,7 +154,7 @@ describe("list command", () => {
       expect(output).toBe("ref1\nref2");
     });
 
-    it("should format items as UUIDs when uuid option is true", () => {
+    it("should format items as UUIDs when uuidOnly option is true", () => {
       const result: ListCommandResult = {
         items: mockItems,
         total: 2,
@@ -163,7 +163,7 @@ describe("list command", () => {
         nextOffset: null,
       };
 
-      const output = formatListOutput(result, { uuid: true });
+      const output = formatListOutput(result, { uuidOnly: true });
 
       expect(output).toBe("uuid-1\nuuid-2");
     });

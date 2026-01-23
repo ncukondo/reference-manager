@@ -60,7 +60,7 @@ describe("cite command", () => {
         uuid: true,
         style: "vancouver",
         locale: "ja-JP",
-        format: "html",
+        output: "html",
         inText: true,
       };
       const context = createContext();
@@ -85,7 +85,7 @@ describe("cite command", () => {
 
       const options: CiteCommandOptions = {
         identifiers: ["Smith-2023"],
-        format: "rtf",
+        output: "rtf",
       };
       const context = createContext();
 
@@ -98,15 +98,17 @@ describe("cite command", () => {
     });
 
     describe("option validation", () => {
-      it("should throw error for invalid format", async () => {
+      it("should throw error for invalid output format", async () => {
         const options: CiteCommandOptions = {
           identifiers: ["Smith-2023"],
-          // @ts-expect-error - testing invalid format
-          format: "invalid",
+          // @ts-expect-error - testing invalid output format
+          output: "invalid",
         };
         const context = createContext();
 
-        await expect(executeCite(options, context)).rejects.toThrow("Invalid format 'invalid'");
+        await expect(executeCite(options, context)).rejects.toThrow(
+          "Invalid output format 'invalid'"
+        );
       });
 
       it("should throw error when CSL file does not exist", async () => {

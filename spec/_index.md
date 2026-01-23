@@ -96,7 +96,7 @@ spec/
 | `config` | `features/config-command.md` |
 | `fulltext` | `features/fulltext.md` |
 | `search` / `list` | `features/search.md`, `features/pagination.md` |
-| `search -i` | `features/interactive-search.md` |
+| `search -t` | `features/interactive-search.md` |
 | ID-less invocation (cite, edit, etc.) | `features/interactive-id-selection.md` |
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |

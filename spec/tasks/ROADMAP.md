@@ -69,6 +69,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 20**: Update Command --set Option (inline field updates for update command)
 - **Phase 21**: Search & Export Enhancements (search ID field, export command, edit command)
 - **Phase 22**: Interactive ID Selection (fallback to interactive search for ID selection)
+- **Phase 23**: Config Command (show/get/set/unset/list-keys/path/edit subcommands)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -76,14 +77,26 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 23: Config Command
+### Phase 24: CLI Option Consistency
 
-- **Task 1**: Config command (`20260117-01-config-command.md`)
-  - New `config` command for managing configuration via CLI
-  - Subcommands: `show`, `get`, `set`, `unset`, `list-keys`, `path`, `edit`
-  - Zod schema validation for all values
-  - Environment variable override warnings
-  - Support for user config and local (project) config
+- **Task 1**: CLI option consistency (`20260118-01-cli-option-consistency.md`)
+  - Unify input/output format options across all commands
+  - `--input` / `-i` for input format (add command)
+  - `--output` / `-o` for output format (all commands)
+  - `-f` exclusively for `--force` (resolves conflict with `--format`)
+  - `--tui` / `-t` replaces `--interactive` / `-i` (search command)
+  - `--uuid-only` replaces `--uuid` for output mode (list/search)
+  - `config list-keys` → `config keys`
+  - `[cli.interactive]` → `[cli.tui]` in config
+
+**Breaking Changes** (acceptable in pre-release):
+- `add --format` → `add --input`
+- `search -i` → `search -t`
+- `export -f` → `export -o`
+- `cite --format` → `cite --output`
+- `edit -f` → `edit --format` (no short option)
+- `list/search --uuid` → `list/search --uuid-only`
+- `config list-keys` → `config keys`
 
 ---
 
@@ -102,7 +115,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 24: Citation Enhancements
+### Phase 25: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -111,7 +124,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 25: Advanced Features
+### Phase 26: Advanced Features
 
 Additional features beyond core functionality:
 

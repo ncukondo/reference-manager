@@ -30,15 +30,16 @@ const VALID_SEARCH_SORT_FIELDS = new Set([
  */
 export interface SearchCommandOptions {
   query: string;
+  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid";
   json?: boolean;
   idsOnly?: boolean;
-  uuid?: boolean;
+  uuidOnly?: boolean;
   bibtex?: boolean;
   sort?: SearchSortField;
   order?: SortOrder;
   limit?: number;
   offset?: number;
-  interactive?: boolean;
+  tui?: boolean;
 }
 
 /**
@@ -48,11 +49,18 @@ export type SearchCommandResult = SearchResult;
 
 /**
  * Convert CLI options to ItemFormat.
+ * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
 function getOutputFormat(options: SearchCommandOptions): ItemFormat {
+  // --output takes precedence
+  if (options.output) {
+    if (options.output === "ids") return "ids-only";
+    return options.output;
+  }
+  // Convenience flags as fallback
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
-  if (options.uuid) return "uuid";
+  if (options.uuidOnly) return "uuid";
   if (options.bibtex) return "bibtex";
   return "pretty";
 }
@@ -63,14 +71,19 @@ function getOutputFormat(options: SearchCommandOptions): ItemFormat {
  */
 function validateOptions(options: SearchCommandOptions): void {
   // Validate output format
-  const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
+  const outputOptions = [options.json, options.idsOnly, options.uuidOnly, options.bibtex].filter(
     Boolean
   );
 
   if (outputOptions.length > 1) {
     throw new Error(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid, --bibtex can be used."
+      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex can be used."
     );
+  }
+
+  // Warn if --output is combined with convenience flags
+  if (options.output && outputOptions.length > 0) {
+    throw new Error("Cannot combine --output with convenience flags (--json, --ids-only, etc.)");
   }
 
   // Validate sort field (if provided)
@@ -181,13 +194,17 @@ export interface InteractiveSearchResult {
  * @throws Error if interactive mode is combined with incompatible options
  */
 function validateInteractiveOptions(options: SearchCommandOptions): void {
-  const outputOptions = [options.json, options.idsOnly, options.uuid, options.bibtex].filter(
-    Boolean
-  );
+  const outputOptions = [
+    options.output,
+    options.json,
+    options.idsOnly,
+    options.uuidOnly,
+    options.bibtex,
+  ].filter(Boolean);
 
   if (outputOptions.length > 0) {
     throw new Error(
-      "Interactive mode cannot be combined with output format options (--json, --ids-only, --uuid, --bibtex)"
+      "TUI mode cannot be combined with output format options (--output, --json, --ids-only, --uuid-only, --bibtex)"
     );
   }
 }
@@ -227,16 +244,16 @@ export async function executeInteractiveSearch(
     return search(allReferences, tokens);
   };
 
-  // Get interactive config from config
-  const interactiveConfig = config.cli.interactive;
+  // Get TUI config from config
+  const tuiConfig = config.cli.tui;
 
   // Run search prompt
   const searchResult = await runSearchPrompt(
     allReferences,
     searchFn,
     {
-      limit: interactiveConfig.limit,
-      debounceMs: interactiveConfig.debounceMs,
+      limit: tuiConfig.limit,
+      debounceMs: tuiConfig.debounceMs,
     },
     options.query || ""
   );

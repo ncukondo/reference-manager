@@ -30,14 +30,14 @@ export function registerConfigCommand(program: Command): void {
   configCmd
     .command("show")
     .description("Display effective configuration")
-    .option("--json", "Output in JSON format")
+    .option("-o, --output <format>", "Output format: text|json")
     .option("--section <name>", "Show only a specific section")
     .option("--sources", "Include source information for each value")
     .action(async (options) => {
       try {
         const config = loadConfig();
         const output = showConfig(config, {
-          json: options.json,
+          json: options.output === "json",
           section: options.section,
           sources: options.sources,
         });
@@ -152,9 +152,9 @@ export function registerConfigCommand(program: Command): void {
       }
     });
 
-  // config list-keys
+  // config keys
   configCmd
-    .command("list-keys")
+    .command("keys")
     .description("List all available configuration keys")
     .option("--section <name>", "List keys only in a specific section")
     .action(async (options) => {

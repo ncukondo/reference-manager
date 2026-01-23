@@ -113,10 +113,11 @@ function registerListCommand(program: Command): void {
   program
     .command("list")
     .description("List all references in the library")
-    .option("--json", "Output in JSON format")
-    .option("--ids-only", "Output only citation keys")
-    .option("--uuid", "Output only UUIDs")
-    .option("--bibtex", "Output in BibTeX format")
+    .option("-o, --output <format>", "Output format: pretty|json|bibtex|ids|uuid")
+    .option("--json", "Alias for --output json")
+    .option("--bibtex", "Alias for --output bibtex")
+    .option("--ids-only", "Alias for --output ids")
+    .option("--uuid-only", "Alias for --output uuid")
     .option("--sort <field>", "Sort by field: created|updated|published|author|title")
     .option("--order <order>", "Sort order: asc|desc")
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
@@ -170,7 +171,7 @@ function registerExportCommand(program: Command): void {
     .option("--uuid", "Interpret identifiers as UUIDs")
     .option("--all", "Export all references")
     .option("--search <query>", "Export references matching search query")
-    .option("-f, --format <fmt>", "Output format: json (default), yaml, bibtex")
+    .option("-o, --output <format>", "Output format: json (default), yaml, bibtex")
     .action(async (ids, options) => {
       await handleExportAction(ids, options, program);
     });
@@ -190,8 +191,8 @@ async function handleSearchAction(
 
     const context = await createExecutionContext(config, Library.load);
 
-    // Handle interactive mode
-    if (options.interactive) {
+    // Handle TUI mode
+    if (options.tui) {
       const result = await executeInteractiveSearch({ ...options, query }, context, config);
       if (result.output) {
         process.stdout.write(`${result.output}\n`);
@@ -221,20 +222,21 @@ function registerSearchCommand(program: Command): void {
   program
     .command("search")
     .description("Search references")
-    .argument("[query]", "Search query (required unless using --interactive)")
-    .option("-i, --interactive", "Enable interactive search mode")
-    .option("--json", "Output in JSON format")
-    .option("--ids-only", "Output only citation keys")
-    .option("--uuid", "Output only UUIDs")
-    .option("--bibtex", "Output in BibTeX format")
+    .argument("[query]", "Search query (required unless using --tui)")
+    .option("-t, --tui", "Enable TUI (interactive) search mode")
+    .option("-o, --output <format>", "Output format: pretty|json|bibtex|ids|uuid")
+    .option("--json", "Alias for --output json")
+    .option("--bibtex", "Alias for --output bibtex")
+    .option("--ids-only", "Alias for --output ids")
+    .option("--uuid-only", "Alias for --output uuid")
     .option("--sort <field>", "Sort by field: created|updated|published|author|title|relevance")
     .option("--order <order>", "Sort order: asc|desc")
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
     .option("--offset <n>", "Number of results to skip", Number.parseInt)
     .action(async (query: string | undefined, options) => {
-      // Validate: query is required unless interactive mode
-      if (!options.interactive && !query) {
-        process.stderr.write("Error: Search query is required unless using --interactive\n");
+      // Validate: query is required unless TUI mode
+      if (!options.tui && !query) {
+        process.stderr.write("Error: Search query is required unless using --tui\n");
         process.exit(1);
       }
       await handleSearchAction(query ?? "", options, program);
@@ -246,7 +248,7 @@ function registerSearchCommand(program: Command): void {
  */
 interface AddCommandOptions extends CliOptions {
   force?: boolean;
-  format?: string;
+  input?: string;
   verbose?: boolean;
   output?: "json" | "text";
   full?: boolean;
@@ -262,8 +264,8 @@ function buildAddOptions(
     inputs,
     force: options.force ?? false,
   };
-  if (options.format !== undefined) {
-    addOptions.format = options.format;
+  if (options.input !== undefined) {
+    addOptions.format = options.input;
   }
   if (options.verbose !== undefined) {
     addOptions.verbose = options.verbose;
@@ -357,11 +359,7 @@ function registerAddCommand(program: Command): void {
     .description("Add new reference(s) to the library")
     .argument("[input...]", "File paths or identifiers (PMID/DOI/ISBN), or use stdin")
     .option("-f, --force", "Skip duplicate detection")
-    .option(
-      "--format <format>",
-      "Explicit input format: json|bibtex|ris|pmid|doi|isbn|auto",
-      "auto"
-    )
+    .option("-i, --input <format>", "Input format: json|bibtex|ris|pmid|doi|isbn|auto", "auto")
     .option("--verbose", "Show detailed error information")
     .option("-o, --output <format>", "Output format: json|text", "text")
     .option("--full", "Include full CSL-JSON data in JSON output")
@@ -414,7 +412,7 @@ function registerEditCommand(program: Command): void {
       "Citation keys or UUIDs to edit (interactive selection if omitted)"
     )
     .option("--uuid", "Interpret identifiers as UUIDs")
-    .option("-f, --format <format>", "Edit format: yaml (default), json")
+    .option("--format <format>", "Edit format: yaml (default), json")
     .option("--editor <editor>", "Editor command (overrides $VISUAL/$EDITOR)")
     .action(async (identifiers: string[], options) => {
       await handleEditAction(identifiers, options, program.opts());
@@ -436,7 +434,7 @@ function registerCiteCommand(program: Command): void {
     .option("--style <style>", "CSL style name")
     .option("--csl-file <path>", "Path to custom CSL file")
     .option("--locale <locale>", "Locale code (e.g., en-US, ja-JP)")
-    .option("--format <format>", "Output format: text|html|rtf")
+    .option("-o, --output <format>", "Output format: text|html|rtf")
     .option("--in-text", "Generate in-text citations instead of bibliography entries")
     .action(async (identifiers: string[], options) => {
       await handleCiteAction(identifiers, options, program.opts());

@@ -73,7 +73,7 @@ describe("config edit", () => {
       expect(template).toContain("[pubmed]");
       expect(template).toContain("[fulltext]");
       expect(template).toContain("[cli]");
-      expect(template).toContain("[cli.interactive]");
+      expect(template).toContain("[cli.tui]");
       expect(template).toContain("[cli.edit]");
       expect(template).toContain("[mcp]");
     });
@@ -94,7 +94,7 @@ describe("config edit", () => {
       expect(template).toContain("# default_limit");
       expect(template).toContain("# default_sort");
 
-      // cli.interactive section
+      // cli.tui section
       expect(template).toContain("# limit");
       expect(template).toContain("# debounce_ms");
     });

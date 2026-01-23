@@ -157,7 +157,7 @@ describe("search command", () => {
       expect(output).toBe("ref1\nref2");
     });
 
-    it("should format items as UUIDs when uuid option is true", () => {
+    it("should format items as UUIDs when uuidOnly option is true", () => {
       const result: SearchCommandResult = {
         items: mockItems,
         total: 2,
@@ -166,7 +166,7 @@ describe("search command", () => {
         nextOffset: null,
       };
 
-      const output = formatSearchOutput(result, { query: "", uuid: true });
+      const output = formatSearchOutput(result, { query: "", uuidOnly: true });
 
       expect(output).toBe("uuid-1\nuuid-2");
     });
@@ -231,7 +231,7 @@ describe("search command", () => {
 
     const mockConfig = {
       cli: {
-        interactive: {
+        tui: {
           limit: 20,
           debounceMs: 200,
         },
@@ -242,36 +242,28 @@ describe("search command", () => {
       vi.clearAllMocks();
     });
 
-    it("should throw error when interactive option conflicts with output format options", async () => {
+    it("should throw error when tui option conflicts with output format options", async () => {
       const context = createContext();
 
       // Test with --json
       await expect(
-        executeInteractiveSearch({ query: "", interactive: true, json: true }, context, mockConfig)
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, json: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
       // Test with --bibtex
       await expect(
-        executeInteractiveSearch(
-          { query: "", interactive: true, bibtex: true },
-          context,
-          mockConfig
-        )
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, bibtex: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
       // Test with --ids-only
       await expect(
-        executeInteractiveSearch(
-          { query: "", interactive: true, idsOnly: true },
-          context,
-          mockConfig
-        )
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, idsOnly: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
 
-      // Test with --uuid
+      // Test with --uuid-only
       await expect(
-        executeInteractiveSearch({ query: "", interactive: true, uuid: true }, context, mockConfig)
-      ).rejects.toThrow("Interactive mode cannot be combined with output format options");
+        executeInteractiveSearch({ query: "", tui: true, uuidOnly: true }, context, mockConfig)
+      ).rejects.toThrow("TUI mode cannot be combined with output format options");
     });
   });
 });

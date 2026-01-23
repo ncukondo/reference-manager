@@ -175,7 +175,7 @@ export function createConfigTemplate(): string {
 # default_sort = "updated"
 # default_order = "desc"
 
-[cli.interactive]
+[cli.tui]
 # limit = 20
 # debounce_ms = 200
 

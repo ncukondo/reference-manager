@@ -15,7 +15,7 @@ describe("listConfigKeys", () => {
       expect(result).toContain("library");
       expect(result).toContain("log_level");
       expect(result).toContain("citation.default_style");
-      expect(result).toContain("cli.interactive.limit");
+      expect(result).toContain("cli.tui.limit");
 
       // Should have multiple keys
       expect(lines.length).toBeGreaterThan(10);
@@ -78,8 +78,8 @@ describe("listConfigKeys", () => {
       expect(result).toContain("cli.default_limit");
       expect(result).toContain("cli.default_sort");
       expect(result).toContain("cli.default_order");
-      expect(result).toContain("cli.interactive.limit");
-      expect(result).toContain("cli.interactive.debounce_ms");
+      expect(result).toContain("cli.tui.limit");
+      expect(result).toContain("cli.tui.debounce_ms");
       expect(result).toContain("cli.edit.default_format");
 
       // Should NOT include other sections

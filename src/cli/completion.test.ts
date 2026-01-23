@@ -86,9 +86,11 @@ describe("completion", () => {
       expect(OPTION_VALUES["--order"]).toContain("desc");
     });
 
-    it("has values for --format option", () => {
-      expect(OPTION_VALUES["--format"]).toBeDefined();
-      expect(OPTION_VALUES["--format"]).toContain("text");
+    it("has values for --input option", () => {
+      expect(OPTION_VALUES["--input"]).toBeDefined();
+      expect(OPTION_VALUES["--input"]).toContain("json");
+      expect(OPTION_VALUES["--input"]).toContain("bibtex");
+      expect(OPTION_VALUES["--input"]).toContain("auto");
     });
 
     it("has values for --style option", () => {
@@ -157,12 +159,62 @@ describe("completion", () => {
       expect(names).toContain("desc");
     });
 
-    it("returns option values for --format", () => {
-      const env = createEnv({ line: "ref cite --format ", prev: "--format", last: "" });
+    it("returns citation output formats for cite --output", () => {
+      const env = createEnv({ line: "ref cite --output ", prev: "--output", last: "" });
       const completions = getCompletions(env, program);
       const names = completions.map((c) => c.name);
 
-      expect(names).toEqual(expect.arrayContaining(OPTION_VALUES["--format"] as string[]));
+      // cite command uses text|html|rtf
+      expect(names).toContain("text");
+      expect(names).toContain("html");
+      expect(names).toContain("rtf");
+      expect(names).not.toContain("bibtex");
+    });
+
+    it("returns export output formats for export --output", () => {
+      const env = createEnv({ line: "ref export --output ", prev: "--output", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // export command uses json|yaml|bibtex
+      expect(names).toContain("json");
+      expect(names).toContain("yaml");
+      expect(names).toContain("bibtex");
+      expect(names).not.toContain("html");
+    });
+
+    it("returns list output formats for list --output", () => {
+      const env = createEnv({ line: "ref list --output ", prev: "--output", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // list command uses pretty|json|bibtex|ids|uuid
+      expect(names).toContain("pretty");
+      expect(names).toContain("json");
+      expect(names).toContain("ids");
+      expect(names).toContain("uuid");
+    });
+
+    it("returns mutation output formats for add -o", () => {
+      const env = createEnv({ line: "ref add -o ", prev: "-o", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // add command uses json|text
+      expect(names).toContain("json");
+      expect(names).toContain("text");
+      expect(names).not.toContain("bibtex");
+    });
+
+    it("returns config output formats for config show --output", () => {
+      const env = createEnv({ line: "ref config show --output ", prev: "--output", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // config show uses text|json
+      expect(names).toContain("text");
+      expect(names).toContain("json");
+      expect(names).not.toContain("bibtex");
     });
 
     it("returns option values for --style", () => {

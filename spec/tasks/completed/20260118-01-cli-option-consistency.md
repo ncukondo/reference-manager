@@ -1,0 +1,141 @@
+# Task: CLI Option Consistency
+
+## Purpose
+
+Improve CLI option consistency by unifying input/output format options and short option conventions across all commands. This is a breaking change (acceptable in pre-release phase).
+
+## References
+
+- Spec: `spec/architecture/cli.md`
+- Spec: `spec/features/add.md`
+- Spec: `spec/features/search.md`
+- Spec: `spec/features/citation.md`
+- Spec: `spec/features/interactive-search.md`
+- Spec: `spec/features/config-command.md`
+- Related: `src/cli/index.ts`, `src/cli/commands/`
+
+## Summary of Changes
+
+### Short Option Conventions
+
+| Short | Long | Meaning | Commands |
+|-------|------|---------|----------|
+| `-i` | `--input` | Input format | `add` |
+| `-o` | `--output` | Output format | all |
+| `-f` | `--force` | Skip confirmation | `add`, `remove`, `fulltext` |
+| `-t` | `--tui` | TUI mode | `search` |
+| `-n` | `--limit` | Result limit | `list`, `search` |
+
+### Specific Changes
+
+| Before | After | Commands |
+|--------|-------|----------|
+| `--format` (input) | `--input` / `-i` | `add` |
+| `-f, --format` (output) | `--output` / `-o` | `export` |
+| `--format` (output) | `--output` / `-o` | `cite` |
+| `-f, --format` (edit format) | `--format` (no short) | `edit` |
+| `-i, --interactive` | `-t, --tui` | `search` |
+| `--uuid` (output mode) | `--uuid-only` | `list`, `search` |
+| `--json` (config) | `--output json` / `-o json` | `config show` |
+| `config list-keys` | `config keys` | `config` |
+| `[cli.interactive]` | `[cli.tui]` | config |
+
+## TDD Workflow
+
+For each step:
+1. Write failing test
+2. Write minimal implementation to pass
+3. Clean up, pass lint/typecheck, verify tests still pass
+
+## Steps
+
+### Step 1: Update add command (`--format` → `--input`)
+
+- [x] Update test: `src/cli/commands/add.test.ts` - change `--format` to `--input` (N/A - test uses internal option name)
+- [x] Update: `src/cli/index.ts` - change option registration
+- [x] Update: `src/cli/commands/add.ts` - update option handling (N/A - internal name unchanged)
+- [x] Verify: `npm run test:unit -- add`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 2: Update search command (`--interactive` → `--tui`)
+
+- [x] Update test: `src/cli/commands/search.test.ts`
+- [x] Update: `src/cli/index.ts` - change `-i, --interactive` to `-t, --tui`
+- [x] Update: `src/cli/commands/search.ts` - rename option
+- [x] Verify: `npm run test:unit -- search`
+- [x] Lint/Type check
+
+### Step 3: Update list/search output options (`--uuid` → `--uuid-only`)
+
+- [x] Update test: `src/cli/commands/list.test.ts`
+- [x] Update test: `src/cli/commands/search.test.ts`
+- [x] Update: `src/cli/index.ts` - add `--uuid-only`, add `--output` option
+- [x] Update: `src/cli/commands/list.ts`
+- [x] Update: `src/cli/commands/search.ts`
+- [x] Verify: `npm run test:unit -- list search`
+- [x] Lint/Type check
+
+### Step 4: Update export command (`-f, --format` → `-o, --output`)
+
+- [x] Update test: `src/cli/commands/export.test.ts`
+- [x] Update: `src/cli/index.ts`
+- [x] Update: `src/cli/commands/export.ts`
+- [x] Verify: `npm run test:unit -- export`
+- [x] Lint/Type check
+
+### Step 5: Update cite command (`--format` → `-o, --output`)
+
+- [x] Update test: `src/cli/commands/cite.test.ts`
+- [x] Update: `src/cli/index.ts`
+- [x] Update: `src/cli/commands/cite.ts`
+- [x] Verify: `npm run test:unit -- cite`
+- [x] Lint/Type check
+
+### Step 6: Update edit command (remove `-f` short option for `--format`)
+
+- [x] Update test: `src/cli/commands/edit.test.ts` (N/A - no tests for short option)
+- [x] Update: `src/cli/index.ts` - remove `-f` from `--format`
+- [x] Verify: `npm run test:unit -- edit`
+- [x] Lint/Type check
+
+### Step 7: Update config command
+
+- [x] Update test: `src/cli/commands/config.test.ts`
+  - Rename `list-keys` to `keys`
+  - Change `--json` to `--output json`
+- [x] Update: `src/cli/commands/config.ts`
+- [x] Update: `src/features/config/list-keys.ts` (N/A - filename unchanged, only CLI command name changed)
+- [x] Verify: `npm run test:unit -- config`
+- [x] Lint/Type check
+
+### Step 8: Update config schema (`cli.interactive` → `cli.tui`)
+
+- [x] Update: `src/config/schema.ts` - rename `interactive` to `tui` (already done)
+- [x] Update: `src/config/defaults.ts` (already done)
+- [x] Update: any references in `src/features/interactive/` (already done)
+- [x] Update tests that reference `cli.interactive`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check
+
+### Step 9: Update shell completion
+
+- [x] Update: `src/cli/completion.ts` - update option definitions
+  - Added command-context-aware --output completion
+  - Different output formats for each command (cite, export, list, add, config)
+  - Added --input completion for add command
+- [x] Update: `src/cli/completion.test.ts` - update tests
+- [x] Verify: tests pass
+
+### Step 10: Integration testing
+
+- [x] Run full test suite: `npm run test`
+- [ ] Manual verification of key commands (skipped - already tested via unit/e2e tests)
+
+## Completion Checklist
+
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

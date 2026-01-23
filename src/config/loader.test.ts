@@ -730,11 +730,11 @@ directory = ""
     });
   });
 
-  describe("cli.interactive configuration", () => {
+  describe("cli.tui configuration", () => {
     it("should use default interactive config when not specified", () => {
       const config = loadConfig({ cwd: testDir });
-      expect(config.cli.interactive.limit).toBe(20);
-      expect(config.cli.interactive.debounceMs).toBe(200);
+      expect(config.cli.tui.limit).toBe(20);
+      expect(config.cli.tui.debounceMs).toBe(200);
     });
 
     it("should load interactive config from TOML with camelCase", () => {
@@ -742,15 +742,15 @@ directory = ""
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 limit = 30
 debounceMs = 300
 `
       );
 
       const config = loadConfig({ cwd: testDir });
-      expect(config.cli.interactive.limit).toBe(30);
-      expect(config.cli.interactive.debounceMs).toBe(300);
+      expect(config.cli.tui.limit).toBe(30);
+      expect(config.cli.tui.debounceMs).toBe(300);
     });
 
     it("should load interactive config from TOML with snake_case", () => {
@@ -758,15 +758,15 @@ debounceMs = 300
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 limit = 25
 debounce_ms = 250
 `
       );
 
       const config = loadConfig({ cwd: testDir });
-      expect(config.cli.interactive.limit).toBe(25);
-      expect(config.cli.interactive.debounceMs).toBe(250);
+      expect(config.cli.tui.limit).toBe(25);
+      expect(config.cli.tui.debounceMs).toBe(250);
     });
 
     it("should merge partial interactive config with defaults", () => {
@@ -774,14 +774,14 @@ debounce_ms = 250
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 limit = 50
 `
       );
 
       const config = loadConfig({ cwd: testDir });
-      expect(config.cli.interactive.limit).toBe(50);
-      expect(config.cli.interactive.debounceMs).toBe(200); // default
+      expect(config.cli.tui.limit).toBe(50);
+      expect(config.cli.tui.debounceMs).toBe(200); // default
     });
 
     it("should reject negative limit", () => {
@@ -789,7 +789,7 @@ limit = 50
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 limit = -1
 `
       );
@@ -802,7 +802,7 @@ limit = -1
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 debounce_ms = -1
 `
       );
@@ -815,13 +815,13 @@ debounce_ms = -1
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 limit = 0
 `
       );
 
       const config = loadConfig({ cwd: testDir });
-      expect(config.cli.interactive.limit).toBe(0);
+      expect(config.cli.tui.limit).toBe(0);
     });
 
     it("should accept zero debounce_ms", () => {
@@ -829,13 +829,13 @@ limit = 0
       writeFileSync(
         configPath,
         `
-[cli.interactive]
+[cli.tui]
 debounce_ms = 0
 `
       );
 
       const config = loadConfig({ cwd: testDir });
-      expect(config.cli.interactive.debounceMs).toBe(0);
+      expect(config.cli.tui.debounceMs).toBe(0);
     });
   });
 });

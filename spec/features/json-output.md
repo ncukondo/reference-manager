@@ -7,29 +7,26 @@ Provide machine-readable JSON output for external tool integration.
 ## Common Options
 
 ```
---output <format>    Output format: json|text (default: text)
--o <format>          Short for --output
---full               Include full CSL-JSON data in JSON output
+-o, --output <format>  Output format: json|text (default: text)
+--full                 Include full CSL-JSON data in JSON output
 ```
 
 ## Supported Commands
 
-| Command | `--output json` | `--full` |
-|---------|-----------------|----------|
+| Command | `-o json` | `--full` |
+|---------|-----------|----------|
 | `add` | Yes | Yes |
 | `remove` | Yes | Yes |
 | `update` | Yes | Yes |
-| `list` | Use `--json` | N/A (always full) |
-| `search` | Use `--json` | N/A (always full) |
-
-**Note**: `list` and `search` use `--json` flag for backward compatibility.
+| `list` | Use `-o json` or `--json` | N/A (always full) |
+| `search` | Use `-o json` or `--json` | N/A (always full) |
 
 ## Output Destination
 
 | Mode | stdout | stderr |
 |------|--------|--------|
-| `--output text` | (none) | Human-readable messages |
-| `--output json` | JSON | (none, except fatal errors) |
+| `-o text` | (none) | Human-readable messages |
+| `-o json` | JSON | (none, except fatal errors) |
 
 ## Types
 
@@ -262,4 +259,11 @@ ref add 12345678 -o json | jq -r '.added[].id' | xargs ref cite
 
 # Remove with confirmation data
 ref remove smith-2024 -o json --full > removed.json
+
+# List in JSON format
+ref list -o json
+ref list --json
+
+# Search with JSON output
+ref search "machine learning" -o json
 ```

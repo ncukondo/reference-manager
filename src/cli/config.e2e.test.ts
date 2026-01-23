@@ -97,8 +97,8 @@ describe("Config Command E2E", () => {
       expect(result.stdout).toContain("log_level");
     });
 
-    it("should output valid JSON with --json", async () => {
-      const result = await runCli(["config", "show", "--json"]);
+    it("should output valid JSON with -o json", async () => {
+      const result = await runCli(["config", "show", "-o", "json"]);
 
       expect(result.exitCode).toBe(0);
       expect(() => JSON.parse(result.stdout)).not.toThrow();
@@ -185,14 +185,14 @@ describe("Config Command E2E", () => {
       expect((config.citation as ParsedConfig)?.default_style).toBe("ieee");
     });
 
-    it("should create deeply nested section for cli.interactive.limit", async () => {
-      const result = await runCli(["config", "set", "--local", "cli.interactive.limit", "50"]);
+    it("should create deeply nested section for cli.tui.limit", async () => {
+      const result = await runCli(["config", "set", "--local", "cli.tui.limit", "50"]);
       expect(result.exitCode).toBe(0);
 
       const config = await readLocalConfig();
       const cli = config.cli as ParsedConfig;
-      const interactive = cli?.interactive as ParsedConfig;
-      expect(interactive?.limit).toBe(50);
+      const tui = cli?.tui as ParsedConfig;
+      expect(tui?.limit).toBe(50);
     });
 
     it("should preserve existing values across multiple set commands", async () => {
@@ -374,9 +374,9 @@ describe("Config Command E2E", () => {
     });
   });
 
-  describe("config list-keys", () => {
+  describe("config keys", () => {
     it("should output all available keys", async () => {
-      const result = await runCli(["config", "list-keys"]);
+      const result = await runCli(["config", "keys"]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("log_level");
@@ -385,7 +385,7 @@ describe("Config Command E2E", () => {
     });
 
     it("should filter by section with --section", async () => {
-      const result = await runCli(["config", "list-keys", "--section", "citation"]);
+      const result = await runCli(["config", "keys", "--section", "citation"]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("default_style");

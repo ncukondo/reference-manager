@@ -201,8 +201,8 @@ describe("export command E2E", () => {
   });
 
   describe("output formats", () => {
-    it("should output YAML with --format yaml", async () => {
-      const result = await runCli(["export", "smith-2024", "--format", "yaml"]);
+    it("should output YAML with -o yaml", async () => {
+      const result = await runCli(["export", "smith-2024", "-o", "yaml"]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("id: smith-2024");
@@ -211,16 +211,16 @@ describe("export command E2E", () => {
       expect(result.stdout).not.toMatch(/^\s*{/);
     });
 
-    it("should output BibTeX with --format bibtex", async () => {
-      const result = await runCli(["export", "smith-2024", "--format", "bibtex"]);
+    it("should output BibTeX with -o bibtex", async () => {
+      const result = await runCli(["export", "smith-2024", "-o", "bibtex"]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("@article{smith-2024");
       expect(result.stdout).toContain("title = {Test Article by Smith}");
     });
 
-    it("should output BibTeX for all with --format bibtex", async () => {
-      const result = await runCli(["export", "--all", "--format", "bibtex"]);
+    it("should output BibTeX for all with -o bibtex", async () => {
+      const result = await runCli(["export", "--all", "-o", "bibtex"]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("@article{smith-2024");

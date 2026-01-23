@@ -43,7 +43,7 @@ ref list --format json > references.json
 
 ```bash
 # インタラクティブに文献を検索・選択
-ref search -i "machine learning"
+ref search -t "machine learning"
 # → Spaceキーで文献を選択し、BibTeX出力や引用生成
 
 # 引用を生成
@@ -271,16 +271,16 @@ ref search "author:jones year:2024"
 ref search "title:\"deep learning\""
 
 # インタラクティブ検索（リアルタイムフィルタリング）
-ref search -i                         # インタラクティブモード開始
-ref search -i "machine learning"      # クエリをプリフィル
+ref search -t                         # インタラクティブモード開始
+ref search -t "machine learning"      # クエリをプリフィル
 
 # 生のCSL-JSONをエクスポート（pandoc、jq等向け）
 ref export smith2024                          # 単一文献（オブジェクトとして）
 ref export smith2024 jones2023                # 複数文献（配列として）
 ref export --all                              # 全文献
 ref export --search "author:smith"            # 検索結果
-ref export smith2024 --format yaml            # YAML形式
-ref export --all --format bibtex              # BibTeX形式
+ref export smith2024 -o yaml                  # YAML形式
+ref export --all -o bibtex                    # BibTeX形式
 
 # 文献を追加
 ref add paper.json                    # CSL-JSONファイルから
@@ -291,8 +291,8 @@ ref add pmid:25056061                 # PubMed IDから
 ref add "ISBN:978-4-00-000000-0"      # ISBNから
 cat references.json | ref add         # 標準入力から（ファイル内容）
 echo "10.1038/nature12373" | ref add  # 標準入力から（DOI自動検出）
-echo "12345678" | ref add --format pmid  # 標準入力から（PMID）
-echo "ISBN:978-4-00-000000-0" | ref add --format isbn  # 標準入力から（ISBN）
+echo "12345678" | ref add -i pmid     # 標準入力から（PMID）
+echo "ISBN:978-4-00-000000-0" | ref add -i isbn  # 標準入力から（ISBN）
 
 # 文献を削除
 ref remove smith2024
@@ -326,7 +326,7 @@ ref update smith2024 --set "abstract="
 # 引用を生成
 ref cite smith2024
 ref cite smith2024 jones2023 --style apa
-ref cite smith2024 --style chicago-author-date --format html
+ref cite smith2024 --style chicago-author-date -o html
 
 # インタラクティブ選択（ID引数なし）
 ref cite
@@ -458,8 +458,8 @@ ref add paper.bib -o json | jq -e '.summary.failed == 0'  # 失敗をチェッ�
 リアルタイムフィルタリングでインタラクティブな検索セッションを開始：
 
 ```bash
-ref search -i                    # 空のクエリで開始
-ref search -i "machine learning" # 検索クエリをプリフィル
+ref search -t                    # 空のクエリで開始
+ref search -t "machine learning" # 検索クエリをプリフィル
 ```
 
 **機能：**
@@ -557,7 +557,7 @@ TOMLファイルを直接編集せずにCLIで設定を管理：
 ```bash
 # すべての設定を表示
 ref config show
-ref config show --json            # JSON形式
+ref config show -o json           # JSON形式
 ref config show --sources         # 各値のソースを表示
 
 # 個別の値を取得/設定
@@ -569,7 +569,7 @@ ref config set --local citation.default_style ieee  # プロジェクトロー�
 ref config unset citation.default_style
 
 # 利用可能なキーを一覧表示
-ref config list-keys
+ref config keys
 
 # 設定ファイルの場所を表示
 ref config path
@@ -586,7 +586,7 @@ ref config edit --local           # プロジェクトローカル設定を編�
 - `citation.*` — 引用のデフォルト（スタイル、ロケール、フォーマット）
 - `pubmed.*` — PubMed API認証情報
 - `fulltext.*` — フルテキスト保存先
-- `cli.*` — CLI動作（制限、ソート、インタラクティブモード）
+- `cli.*` — CLI動作（制限、ソート、TUIモード）
 - `mcp.*` — MCPサーバー設定
 
 ## データ形式

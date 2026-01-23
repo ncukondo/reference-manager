@@ -142,7 +142,7 @@ For style selection prompt:
 Uses existing config:
 
 ```toml
-[cli.interactive]
+[cli.tui]
 limit = 20              # Maximum displayed results
 debounce_ms = 200       # Debounce delay
 

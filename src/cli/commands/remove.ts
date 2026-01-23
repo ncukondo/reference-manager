@@ -158,7 +158,7 @@ async function executeInteractiveRemove(
   const selectedItems = await selectReferenceItemsOrExit(
     allReferences,
     { multiSelect: false },
-    config.cli.interactive
+    config.cli.tui
   );
 
   // Type assertion is safe: selectReferenceItemsOrExit guarantees non-empty array
