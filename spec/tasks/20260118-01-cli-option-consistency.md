@@ -93,10 +93,10 @@ For each step:
 
 ### Step 6: Update edit command (remove `-f` short option for `--format`)
 
-- [ ] Update test: `src/cli/commands/edit.test.ts`
-- [ ] Update: `src/cli/index.ts` - remove `-f` from `--format`
-- [ ] Verify: `npm run test:unit -- edit`
-- [ ] Lint/Type check
+- [x] Update test: `src/cli/commands/edit.test.ts` (N/A - no tests for short option)
+- [x] Update: `src/cli/index.ts` - remove `-f` from `--format`
+- [x] Verify: `npm run test:unit -- edit`
+- [x] Lint/Type check
 
 ### Step 7: Update config command
 

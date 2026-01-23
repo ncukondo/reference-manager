@@ -412,7 +412,7 @@ function registerEditCommand(program: Command): void {
       "Citation keys or UUIDs to edit (interactive selection if omitted)"
     )
     .option("--uuid", "Interpret identifiers as UUIDs")
-    .option("-f, --format <format>", "Edit format: yaml (default), json")
+    .option("--format <format>", "Edit format: yaml (default), json")
     .option("--editor <editor>", "Editor command (overrides $VISUAL/$EDITOR)")
     .action(async (identifiers: string[], options) => {
       await handleEditAction(identifiers, options, program.opts());
