@@ -21,7 +21,7 @@ describe("fulltextOpen", () => {
     find: vi.fn(),
   } as unknown as ILibrary;
 
-  const fulltextDirectory = "/home/user/.reference-manager/fulltext";
+  const fulltextDirectory = "/home/user/.reference-manager/attachments";
 
   const itemWithBoth: CslItem = {
     id: "Smith-2024",
@@ -31,9 +31,12 @@ describe("fulltextOpen", () => {
       uuid: "123e4567-e89b-12d3-a456-426614174000",
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
-      fulltext: {
-        pdf: "Smith-2024-uuid.pdf",
-        markdown: "Smith-2024-uuid.md",
+      attachments: {
+        directory: "Smith-2024-12345678",
+        files: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "fulltext.md", role: "fulltext" },
+        ],
       },
     },
   };
@@ -46,8 +49,9 @@ describe("fulltextOpen", () => {
       uuid: "223e4567-e89b-12d3-a456-426614174000",
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
-      fulltext: {
-        pdf: "Jones-2024-uuid.pdf",
+      attachments: {
+        directory: "Jones-2024-22345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
       },
     },
   };
@@ -60,8 +64,9 @@ describe("fulltextOpen", () => {
       uuid: "323e4567-e89b-12d3-a456-426614174000",
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
-      fulltext: {
-        markdown: "Brown-2024-uuid.md",
+      attachments: {
+        directory: "Brown-2024-32345678",
+        files: [{ filename: "fulltext.md", role: "fulltext" }],
       },
     },
   };
@@ -74,6 +79,21 @@ describe("fulltextOpen", () => {
       uuid: "423e4567-e89b-12d3-a456-426614174000",
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
+    },
+  };
+
+  const itemWithOnlySupplement: CslItem = {
+    id: "Green-2024",
+    type: "article-journal",
+    title: "Supplement Only",
+    custom: {
+      uuid: "523e4567-e89b-12d3-a456-426614174000",
+      created_at: "2024-01-01T00:00:00.000Z",
+      timestamp: "2024-01-01T00:00:00.000Z",
+      attachments: {
+        directory: "Green-2024-52345678",
+        files: [{ filename: "supplement.pdf", role: "supplement" }],
+      },
     },
   };
 
@@ -95,7 +115,7 @@ describe("fulltextOpen", () => {
       expect(result.success).toBe(true);
       expect(result.openedType).toBe("pdf");
       expect(openWithSystemApp).toHaveBeenCalledWith(
-        join(fulltextDirectory, "Smith-2024-uuid.pdf")
+        join(fulltextDirectory, "Smith-2024-12345678", "fulltext.pdf")
       );
     });
 
@@ -137,7 +157,7 @@ describe("fulltextOpen", () => {
       expect(result.success).toBe(true);
       expect(result.openedType).toBe("pdf");
       expect(openWithSystemApp).toHaveBeenCalledWith(
-        join(fulltextDirectory, "Smith-2024-uuid.pdf")
+        join(fulltextDirectory, "Smith-2024-12345678", "fulltext.pdf")
       );
     });
 
@@ -152,7 +172,9 @@ describe("fulltextOpen", () => {
 
       expect(result.success).toBe(true);
       expect(result.openedType).toBe("markdown");
-      expect(openWithSystemApp).toHaveBeenCalledWith(join(fulltextDirectory, "Smith-2024-uuid.md"));
+      expect(openWithSystemApp).toHaveBeenCalledWith(
+        join(fulltextDirectory, "Smith-2024-12345678", "fulltext.md")
+      );
     });
   });
 
@@ -174,6 +196,18 @@ describe("fulltextOpen", () => {
 
       const result = await fulltextOpen(mockLibrary, {
         identifier: "White-2024",
+        fulltextDirectory,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("No fulltext attached");
+    });
+
+    it("should return error when only non-fulltext attachments exist", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithOnlySupplement);
+
+      const result = await fulltextOpen(mockLibrary, {
+        identifier: "Green-2024",
         fulltextDirectory,
       });
 

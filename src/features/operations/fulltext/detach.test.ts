@@ -3,39 +3,25 @@ import type { CslItem } from "../../../core/csl-json/types.js";
 import type { Library } from "../../../core/library.js";
 import { fulltextDetach } from "./detach.js";
 
-// Mock the FulltextManager
-vi.mock("../../fulltext/index.js", () => ({
-  FulltextManager: vi.fn(),
-  FulltextNotAttachedError: class extends Error {
-    name = "FulltextNotAttachedError";
-  },
-  FulltextIOError: class extends Error {
-    name = "FulltextIOError";
-  },
+// Mock the detachAttachment operation
+vi.mock("../attachments/detach.js", () => ({
+  detachAttachment: vi.fn(),
 }));
 
-// Mock the update operation
-vi.mock("../update.js", () => ({
-  updateReference: vi.fn(),
-}));
+import { detachAttachment } from "../attachments/detach.js";
 
-import {
-  FulltextIOError,
-  FulltextManager,
-  FulltextNotAttachedError,
-} from "../../fulltext/index.js";
-import { updateReference } from "../update.js";
-
-const mockedUpdateReference = vi.mocked(updateReference);
+const mockedDetachAttachment = vi.mocked(detachAttachment);
 
 describe("fulltextDetach", () => {
   let mockLibrary: Library;
-  let mockManager: {
-    detachFile: ReturnType<typeof vi.fn>;
-    getAttachedTypes: ReturnType<typeof vi.fn>;
-  };
 
-  const createItem = (id: string, fulltext?: { pdf?: string; markdown?: string }): CslItem => ({
+  const createItem = (
+    id: string,
+    attachments?: {
+      directory?: string;
+      files?: Array<{ filename: string; role: string; label?: string }>;
+    }
+  ): CslItem => ({
     id,
     type: "article",
     title: "Test Article",
@@ -43,19 +29,12 @@ describe("fulltextDetach", () => {
       uuid: `${id}-uuid`,
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
-      ...(fulltext && { fulltext }),
+      ...(attachments && { attachments }),
     },
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockManager = {
-      detachFile: vi.fn(),
-      getAttachedTypes: vi.fn(),
-    };
-
-    vi.mocked(FulltextManager).mockImplementation(() => mockManager as unknown as FulltextManager);
 
     mockLibrary = {
       find: vi.fn(),
@@ -66,10 +45,16 @@ describe("fulltextDetach", () => {
 
   describe("reference lookup", () => {
     it("should find reference by id when idType is 'id'", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: [],
+      });
 
       await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -80,10 +65,16 @@ describe("fulltextDetach", () => {
     });
 
     it("should find reference by uuid when idType is 'uuid'", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: [],
+      });
 
       await fulltextDetach(mockLibrary, {
         identifier: "test-uuid",
@@ -109,10 +100,16 @@ describe("fulltextDetach", () => {
 
   describe("detach operations", () => {
     it("should detach pdf successfully", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: [],
+      });
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -125,9 +122,19 @@ describe("fulltextDetach", () => {
     });
 
     it("should detach specific type when type option is provided", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "fulltext.md", role: "fulltext" },
+        ],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: [],
+      });
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -137,14 +144,29 @@ describe("fulltextDetach", () => {
 
       expect(result.success).toBe(true);
       expect(result.detached).toEqual(["pdf"]);
-      expect(mockManager.detachFile).toHaveBeenCalledTimes(1);
+      expect(mockedDetachAttachment).toHaveBeenCalledTimes(1);
+      expect(mockedDetachAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          filename: "fulltext.pdf",
+        })
+      );
     });
 
     it("should detach all types when no type specified", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "fulltext.md", role: "fulltext" },
+        ],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf", "markdown"]);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: [],
+      });
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -153,14 +175,20 @@ describe("fulltextDetach", () => {
 
       expect(result.success).toBe(true);
       expect(result.detached).toEqual(["pdf", "markdown"]);
-      expect(mockManager.detachFile).toHaveBeenCalledTimes(2);
+      expect(mockedDetachAttachment).toHaveBeenCalledTimes(2);
     });
 
     it("should delete files when delete option is true", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockResolvedValue({ deleted: true });
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: ["fulltext.pdf"],
+      });
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -171,13 +199,17 @@ describe("fulltextDetach", () => {
       expect(result.success).toBe(true);
       expect(result.detached).toEqual(["pdf"]);
       expect(result.deleted).toEqual(["pdf"]);
-      expect(mockManager.detachFile).toHaveBeenCalledWith(item, "pdf", { delete: true });
+      expect(mockedDetachAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          delete: true,
+        })
+      );
     });
 
     it("should return error when no fulltext attached", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue([]);
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -187,56 +219,13 @@ describe("fulltextDetach", () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain("No fulltext attached");
     });
-  });
 
-  describe("metadata update", () => {
-    it("should update metadata after detaching", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+    it("should return error when only non-fulltext attachments exist", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "supplement.pdf", role: "supplement" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
-
-      await fulltextDetach(mockLibrary, {
-        identifier: "test-id",
-        fulltextDirectory: "/fulltext",
-      });
-
-      expect(mockedUpdateReference).toHaveBeenCalledWith(mockLibrary, {
-        identifier: "test-id",
-        updates: {
-          custom: { fulltext: undefined },
-        },
-        idType: "id",
-      });
-    });
-
-    it("should preserve remaining fulltext entries", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf", markdown: "test.md" });
-      vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.detachFile.mockResolvedValue({ deleted: false });
-
-      await fulltextDetach(mockLibrary, {
-        identifier: "test-id",
-        type: "pdf",
-        fulltextDirectory: "/fulltext",
-      });
-
-      expect(mockedUpdateReference).toHaveBeenCalledWith(mockLibrary, {
-        identifier: "test-id",
-        updates: {
-          custom: { fulltext: { markdown: "test.md" } },
-        },
-        idType: "id",
-      });
-    });
-  });
-
-  describe("error handling", () => {
-    it("should handle FulltextNotAttachedError", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
-      vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockRejectedValue(new FulltextNotAttachedError("File not attached"));
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
@@ -244,36 +233,54 @@ describe("fulltextDetach", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("File not attached");
+      expect(result.error).toContain("No fulltext attached");
     });
 
-    it("should handle FulltextIOError", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+    it("should return error when specified type is not attached", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockRejectedValue(new FulltextIOError("Delete failed"));
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
+        type: "markdown",
         fulltextDirectory: "/fulltext",
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Delete failed");
+      expect(result.error).toContain("No markdown fulltext attached");
     });
+  });
 
-    it("should rethrow unexpected errors", async () => {
-      const item = createItem("test-id", { pdf: "test.pdf" });
+  describe("attachments system integration", () => {
+    it("should call detachAttachment with correct parameters", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.getAttachedTypes.mockReturnValue(["pdf"]);
-      mockManager.detachFile.mockRejectedValue(new Error("Unexpected error"));
+      mockedDetachAttachment.mockResolvedValue({
+        success: true,
+        detached: ["fulltext.pdf"],
+        deleted: [],
+      });
 
-      await expect(
-        fulltextDetach(mockLibrary, {
-          identifier: "test-id",
-          fulltextDirectory: "/fulltext",
-        })
-      ).rejects.toThrow("Unexpected error");
+      await fulltextDetach(mockLibrary, {
+        identifier: "test-id",
+        delete: true,
+        fulltextDirectory: "/attachments",
+        idType: "id",
+      });
+
+      expect(mockedDetachAttachment).toHaveBeenCalledWith(mockLibrary, {
+        identifier: "test-id",
+        filename: "fulltext.pdf",
+        delete: true,
+        idType: "id",
+        attachmentsDirectory: "/attachments",
+      });
     });
   });
 });

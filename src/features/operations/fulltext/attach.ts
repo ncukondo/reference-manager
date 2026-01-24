@@ -1,15 +1,25 @@
 /**
  * Fulltext attach operation
+ *
+ * Uses attachments system internally with role='fulltext'.
  */
 
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
-import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
-import { FulltextIOError, FulltextManager, type FulltextType } from "../../fulltext/index.js";
-import { updateReference } from "../update.js";
+import { type AddAttachmentResult, addAttachment } from "../attachments/add.js";
+import {
+  FULLTEXT_ROLE,
+  type FulltextFormat,
+  formatToExtension,
+} from "../fulltext-adapter/index.js";
+
+/**
+ * Fulltext type (matches existing FulltextType for backward compatibility)
+ */
+export type FulltextType = FulltextFormat;
 
 /**
  * Options for fulltextAttach operation
@@ -27,7 +37,7 @@ export interface FulltextAttachOptions {
   force?: boolean | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
   idType?: IdentifierType | undefined;
-  /** Directory for fulltext files */
+  /** Directory for attachments (replaces fulltextDirectory) */
   fulltextDirectory: string;
   /** Content from stdin */
   stdinContent?: Buffer | undefined;
@@ -91,8 +101,8 @@ function prepareStdinSource(
 ): { sourcePath: string; tempDir: string } | { error: string } {
   try {
     const tempDir = mkdtempSync(join(tmpdir(), "refmgr-"));
-    const ext = fileType === "pdf" ? ".pdf" : ".md";
-    const sourcePath = join(tempDir, `stdin${ext}`);
+    const ext = formatToExtension(fileType);
+    const sourcePath = join(tempDir, `stdin.${ext}`);
     writeFileSync(sourcePath, stdinContent);
     return { sourcePath, tempDir };
   } catch (error) {
@@ -109,21 +119,6 @@ async function cleanupTempDir(tempDir: string | undefined): Promise<void> {
   if (tempDir) {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
-}
-
-/**
- * Build new fulltext metadata
- */
-function buildNewFulltext(
-  currentFulltext: { pdf?: string | undefined; markdown?: string | undefined },
-  fileType: FulltextType,
-  filename: string
-): { pdf?: string; markdown?: string } {
-  const newFulltext: { pdf?: string; markdown?: string } = {};
-  if (currentFulltext.pdf) newFulltext.pdf = currentFulltext.pdf;
-  if (currentFulltext.markdown) newFulltext.markdown = currentFulltext.markdown;
-  newFulltext[fileType] = filename;
-  return newFulltext;
 }
 
 /**
@@ -146,21 +141,30 @@ function prepareSourcePath(
 }
 
 /**
- * Perform the file attach operation
+ * Convert AddAttachmentResult to FulltextAttachResult
  */
-async function performAttach(
-  manager: FulltextManager,
-  item: CslItem,
-  sourcePath: string,
-  fileType: FulltextType,
-  move: boolean | undefined,
-  force: boolean | undefined
-): Promise<{ filename: string; overwritten?: boolean; existingFile?: string }> {
-  const attachOptions = {
-    ...(move !== undefined && { move }),
-    ...(force !== undefined && { force }),
+function convertResult(result: AddAttachmentResult, fileType: FulltextType): FulltextAttachResult {
+  if (result.success) {
+    return {
+      success: true,
+      filename: result.filename,
+      type: fileType,
+      overwritten: result.overwritten,
+    };
+  }
+
+  if (result.requiresConfirmation) {
+    return {
+      success: false,
+      existingFile: result.existingFile,
+      requiresConfirmation: true,
+    };
+  }
+
+  return {
+    success: false,
+    error: result.error,
   };
-  return manager.attachFile(item, sourcePath, fileType, attachOptions);
 }
 
 /**
@@ -185,16 +189,14 @@ export async function fulltextAttach(
     stdinContent,
   } = options;
 
-  // Find reference (returns CslItem directly)
-  const item = await library.find(identifier, { idType });
-
-  if (!item) {
-    return { success: false, error: `Reference '${identifier}' not found` };
-  }
-
-  // Resolve file type
+  // Resolve file type first
   const fileTypeResult = resolveFileType(explicitType, filePath, stdinContent);
   if (typeof fileTypeResult === "object" && "error" in fileTypeResult) {
+    // Check if reference exists (for consistent error messages)
+    const item = await library.find(identifier, { idType });
+    if (!item) {
+      return { success: false, error: `Reference '${identifier}' not found` };
+    }
     return { success: false, error: fileTypeResult.error };
   }
   const fileType = fileTypeResult;
@@ -202,44 +204,32 @@ export async function fulltextAttach(
   // Prepare source path
   const sourceResult = prepareSourcePath(filePath, stdinContent, fileType);
   if ("error" in sourceResult) {
+    // Check if reference exists (for consistent error messages)
+    const item = await library.find(identifier, { idType });
+    if (!item) {
+      return { success: false, error: `Reference '${identifier}' not found` };
+    }
     return { success: false, error: sourceResult.error };
   }
   const { sourcePath, tempDir } = sourceResult;
 
-  // Attach file
-  const manager = new FulltextManager(fulltextDirectory);
-
   try {
-    const result = await performAttach(manager, item, sourcePath, fileType, move, force);
-
-    // If existing file and not force, return confirmation required
-    if (result.existingFile && !result.overwritten) {
-      await cleanupTempDir(tempDir);
-      return { success: false, existingFile: result.existingFile, requiresConfirmation: true };
-    }
-
-    // Update metadata
-    const newFulltext = buildNewFulltext(item.custom?.fulltext ?? {}, fileType, result.filename);
-    await updateReference(library, {
+    // Use attachments system with fulltext role
+    const result = await addAttachment(library, {
       identifier,
-      updates: {
-        custom: { fulltext: newFulltext },
-      } as Partial<CslItem>,
+      filePath: sourcePath,
+      role: FULLTEXT_ROLE,
+      move: move ?? false,
+      force: force ?? false,
       idType,
+      attachmentsDirectory: fulltextDirectory,
     });
+
     await cleanupTempDir(tempDir);
 
-    return {
-      success: true,
-      filename: result.filename,
-      type: fileType,
-      overwritten: result.overwritten,
-    };
+    return convertResult(result, fileType);
   } catch (error) {
     await cleanupTempDir(tempDir);
-    if (error instanceof FulltextIOError) {
-      return { success: false, error: error.message };
-    }
     throw error;
   }
 }

@@ -1,5 +1,7 @@
 /**
  * Fulltext open operation
+ *
+ * Uses attachments system internally with role='fulltext'.
  */
 
 import { existsSync } from "node:fs";
@@ -7,7 +9,17 @@ import { join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { openWithSystemApp } from "../../../utils/opener.js";
-import type { FulltextType } from "../../fulltext/index.js";
+import type { Attachments } from "../../attachments/types.js";
+import {
+  type FulltextFormat,
+  findFulltextFile,
+  findFulltextFiles,
+} from "../fulltext-adapter/index.js";
+
+/**
+ * Fulltext type (matches existing FulltextType for backward compatibility)
+ */
+export type FulltextType = FulltextFormat;
 
 /**
  * Options for fulltextOpen operation
@@ -19,7 +31,7 @@ export interface FulltextOpenOptions {
   type?: FulltextType | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
   idType?: IdentifierType | undefined;
-  /** Directory for fulltext files */
+  /** Directory for attachments (replaces fulltextDirectory) */
   fulltextDirectory: string;
 }
 
@@ -34,32 +46,28 @@ export interface FulltextOpenResult {
 }
 
 /**
- * Get the fulltext file path from CSL item
+ * Build file path from attachments metadata
  */
-function getFulltextPath(
-  item: CslItem,
-  type: FulltextType,
-  fulltextDirectory: string
-): string | undefined {
-  const fulltext = item.custom?.fulltext;
-  if (!fulltext) return undefined;
-
-  const filename = type === "pdf" ? fulltext.pdf : fulltext.markdown;
-  if (!filename) return undefined;
-
-  return join(fulltextDirectory, filename);
+function buildFilePath(attachmentsDirectory: string, directory: string, filename: string): string {
+  return join(attachmentsDirectory, directory, filename);
 }
 
 /**
  * Determine which type to open based on priority
  * Priority: PDF > Markdown when both exist
  */
-function determineTypeToOpen(item: CslItem): FulltextType | undefined {
-  const fulltext = item.custom?.fulltext;
-  if (!fulltext) return undefined;
+function determineTypeToOpen(attachments: Attachments | undefined): FulltextType | undefined {
+  const files = findFulltextFiles(attachments);
+  if (files.length === 0) return undefined;
 
-  if (fulltext.pdf) return "pdf";
-  if (fulltext.markdown) return "markdown";
+  // Check for PDF first (priority)
+  const pdfFile = files.find((f) => f.filename.endsWith(".pdf"));
+  if (pdfFile) return "pdf";
+
+  // Then markdown
+  const mdFile = files.find((f) => f.filename.endsWith(".md"));
+  if (mdFile) return "markdown";
+
   return undefined;
 }
 
@@ -83,19 +91,25 @@ export async function fulltextOpen(
     return { success: false, error: `Reference not found: ${identifier}` };
   }
 
+  // Get attachments metadata
+  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+
   // Determine which type to open
-  const typeToOpen = type ?? determineTypeToOpen(item);
+  const typeToOpen = type ?? determineTypeToOpen(attachments);
 
   if (!typeToOpen) {
     return { success: false, error: `No fulltext attached to reference: ${identifier}` };
   }
 
-  // Get file path
-  const filePath = getFulltextPath(item, typeToOpen, fulltextDirectory);
+  // Find the specific fulltext file
+  const file = findFulltextFile(attachments, typeToOpen);
 
-  if (!filePath) {
+  if (!file || !attachments?.directory) {
     return { success: false, error: `No ${typeToOpen} attached to reference: ${identifier}` };
   }
+
+  // Get file path
+  const filePath = buildFilePath(fulltextDirectory, attachments.directory, file.filename);
 
   // Check file exists on disk
   if (!existsSync(filePath)) {

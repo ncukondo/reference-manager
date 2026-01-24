@@ -240,33 +240,33 @@ Update `fulltext` command to use attachments backend.
 - [ ] Handle stdin content via temp file approach (reuse from current impl) - deferred to 13b
 
 #### Step 13b: Migrate attach operation
-- [ ] Update `src/features/operations/fulltext/attach.ts`
+- [x] Update `src/features/operations/fulltext/attach.ts`
   - Use `addAttachment` with `role: 'fulltext'`
   - Map pdf/markdown type to filename convention (`fulltext.pdf`, `fulltext.md`)
   - Handle stdin content
 
 #### Step 13c: Migrate get operation
-- [ ] Update `src/features/operations/fulltext/get.ts`
+- [x] Update `src/features/operations/fulltext/get.ts`
   - Use `getAttachment` or `listAttachments` filtered by role
   - Map result format to existing FulltextGetResult interface
 
 #### Step 13d: Migrate detach operation
-- [ ] Update `src/features/operations/fulltext/detach.ts`
+- [x] Update `src/features/operations/fulltext/detach.ts`
   - Use `detachAttachment` with role filter
   - Handle --delete option
 
 #### Step 13e: Migrate open operation
-- [ ] Update `src/features/operations/fulltext/open.ts`
+- [x] Update `src/features/operations/fulltext/open.ts`
   - Use `openAttachment` with role filter
   - Maintain PDF priority over Markdown
 
 #### Step 13f: Update tests
-- [ ] Update `src/features/operations/fulltext/*.test.ts`
+- [x] Update `src/features/operations/fulltext/*.test.ts`
   - Ensure all existing tests pass with new backend
   - Verify attachments data structure is used
 
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 14: ILibraryOperations Integration
 
