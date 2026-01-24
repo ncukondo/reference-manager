@@ -230,9 +230,14 @@ Update `fulltext` command to use attachments backend.
 **Substeps**:
 
 #### Step 13a: Create fulltext-to-attachments adapter
-- [ ] Create `src/features/operations/fulltext-adapter/` module
-- [ ] Implement wrapper functions that map fulltext options to attachments options
-- [ ] Handle stdin content via temp file approach (reuse from current impl)
+- [x] Create `src/features/operations/fulltext-adapter/` module
+- [x] Implement utility functions:
+  - `formatToExtension()`: pdf → "pdf", markdown → "md"
+  - `extensionToFormat()`: ext → FulltextFormat | undefined
+  - `getFulltextFilename()`: format → "fulltext.{ext}"
+  - `findFulltextFile()`: find file by format in attachments
+  - `findFulltextFiles()`: find all fulltext files
+- [ ] Handle stdin content via temp file approach (reuse from current impl) - deferred to 13b
 
 #### Step 13b: Migrate attach operation
 - [ ] Update `src/features/operations/fulltext/attach.ts`
