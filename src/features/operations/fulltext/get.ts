@@ -54,7 +54,8 @@ export interface FulltextGetResult {
  * Build file path from attachments metadata
  */
 function buildFilePath(attachmentsDirectory: string, directory: string, filename: string): string {
-  return join(attachmentsDirectory, directory, filename);
+  // Normalize to forward slashes for consistent cross-platform output
+  return join(attachmentsDirectory, directory, filename).replace(/\\/g, "/");
 }
 
 /**
