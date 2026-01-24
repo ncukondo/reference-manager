@@ -146,15 +146,15 @@ List and retrieve attachments.
 
 Remove file from reference attachments.
 
-- [ ] Write test: `src/features/operations/attachments/detach.test.ts`
+- [x] Write test: `src/features/operations/attachments/detach.test.ts`
   - Test remove from metadata only
   - Test delete file with --delete
   - Test remove all files of role with --all
   - Test directory cleanup when last file removed
-- [ ] Implement: `src/features/operations/attachments/detach.ts`
+- [x] Implement: `src/features/operations/attachments/detach.ts`
   - `detachAttachment(library, refId, filename, options): Promise<DetachResult>`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 9: Attachment Operations - Sync
 
