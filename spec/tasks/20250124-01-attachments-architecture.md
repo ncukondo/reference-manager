@@ -71,16 +71,16 @@ Generate per-reference directory names.
 
 Generate and parse filenames following `{role}[-{label}].{ext}` convention.
 
-- [ ] Write test: `src/features/attachments/filename.test.ts`
+- [x] Write test: `src/features/attachments/filename.test.ts`
   - Test generation: `fulltext.pdf`, `supplement-table-s1.xlsx`
   - Test parsing: extract role, label from filename
   - Test label slugification (filesystem-safe)
-- [ ] Implement: `src/features/attachments/filename.ts`
+- [x] Implement: `src/features/attachments/filename.ts`
   - `generateFilename(role, ext, label?): string`
   - `parseFilename(filename): { role, ext, label? }`
   - `slugifyLabel(label): string`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: WSL Detection & Opener Enhancement
 
