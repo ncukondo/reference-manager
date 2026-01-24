@@ -131,16 +131,16 @@ Add file to reference attachments.
 
 List and retrieve attachments.
 
-- [ ] Write test: `src/features/operations/attachments/list.test.ts`
+- [x] Write test: `src/features/operations/attachments/list.test.ts`
   - Test list all attachments
   - Test filter by role
-- [ ] Write test: `src/features/operations/attachments/get.test.ts`
+- [x] Write test: `src/features/operations/attachments/get.test.ts`
   - Test get file path
   - Test get file content (stdout)
-- [ ] Implement: `src/features/operations/attachments/list.ts`
-- [ ] Implement: `src/features/operations/attachments/get.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `src/features/operations/attachments/list.ts`
+- [x] Implement: `src/features/operations/attachments/get.ts`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 8: Attachment Operations - Detach
 
