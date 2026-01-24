@@ -221,14 +221,45 @@ Implement TTY interactive mode for `attach open`.
 
 Update `fulltext` command to use attachments backend.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts`
-  - Ensure existing tests still pass
-  - Test fulltext uses attachments storage
-- [ ] Implement: Update `src/cli/commands/fulltext.ts`
+**Migration Strategy**:
+- Current fulltext uses `custom.fulltext.pdf/markdown` (flat files)
+- New attachments uses `custom.attachments.directory/files[]` (per-reference dirs)
+- Fulltext operations will internally use attachments operations with `role: 'fulltext'`
+- CLI interface remains unchanged for backward compatibility
+
+**Substeps**:
+
+#### Step 13a: Create fulltext-to-attachments adapter
+- [ ] Create `src/features/operations/fulltext-adapter/` module
+- [ ] Implement wrapper functions that map fulltext options to attachments options
+- [ ] Handle stdin content via temp file approach (reuse from current impl)
+
+#### Step 13b: Migrate attach operation
+- [ ] Update `src/features/operations/fulltext/attach.ts`
   - Use `addAttachment` with `role: 'fulltext'`
-  - Use `openAttachment` for open
-  - Use `detachAttachment` for detach
-  - Update get to use new paths
+  - Map pdf/markdown type to filename convention (`fulltext.pdf`, `fulltext.md`)
+  - Handle stdin content
+
+#### Step 13c: Migrate get operation
+- [ ] Update `src/features/operations/fulltext/get.ts`
+  - Use `getAttachment` or `listAttachments` filtered by role
+  - Map result format to existing FulltextGetResult interface
+
+#### Step 13d: Migrate detach operation
+- [ ] Update `src/features/operations/fulltext/detach.ts`
+  - Use `detachAttachment` with role filter
+  - Handle --delete option
+
+#### Step 13e: Migrate open operation
+- [ ] Update `src/features/operations/fulltext/open.ts`
+  - Use `openAttachment` with role filter
+  - Maintain PDF priority over Markdown
+
+#### Step 13f: Update tests
+- [ ] Update `src/features/operations/fulltext/*.test.ts`
+  - Ensure all existing tests pass with new backend
+  - Verify attachments data structure is used
+
 - [ ] Verify: `npm run test:unit`
 - [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
