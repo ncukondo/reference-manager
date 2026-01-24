@@ -265,6 +265,16 @@ Update `fulltext` command to use attachments backend.
   - Ensure all existing tests pass with new backend
   - Verify attachments data structure is used
 
+#### Step 13g: Update MCP tools and CLI tests for attachments format
+- [x] Update `src/mcp/tools/fulltext.ts`
+  - Change `config.fulltext.directory` to `config.attachments.directory`
+- [x] Update `src/mcp/tools/fulltext.test.ts`
+  - Migrate test data to new attachments format
+- [x] Update `src/cli/commands/fulltext.test.ts`
+  - Migrate test data to new attachments format
+  - Update expected paths and filenames
+  - Add required fs/promises mocks
+
 - [x] Verify: `npm run test:unit`
 - [x] Lint/Type check: `npm run lint && npm run typecheck`
 
