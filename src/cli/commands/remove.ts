@@ -287,7 +287,7 @@ export async function handleRemoveAction(
     const removeOptions: RemoveCommandOptions = {
       identifier,
       idType: useUuid ? "uuid" : "id",
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       deleteFulltext: force && hasFulltext,
     };
 

@@ -337,7 +337,7 @@ export async function handleFulltextAttachAction(
 
     const attachOptions: FulltextAttachOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(filePath && { filePath }),
       ...(type && { type }),
       ...(options.move && { move: options.move }),
@@ -415,7 +415,7 @@ export async function handleFulltextGetAction(
 
     const getOptions: FulltextGetOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.stdout && { stdout: options.stdout }),
@@ -474,7 +474,7 @@ export async function handleFulltextDetachAction(
 
     const detachOptions: FulltextDetachOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.delete && { delete: options.delete }),
@@ -534,7 +534,7 @@ export async function handleFulltextOpenAction(
 
     const openOptions: FulltextOpenOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.uuid && { idType: "uuid" as const }),

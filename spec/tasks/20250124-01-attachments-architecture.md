@@ -371,7 +371,7 @@ enabling sync to work correctly for manually added files.
 
 End-to-end tests for fulltext command migration. **No mocks allowed.**
 
-- [ ] Write test: `src/cli/fulltext.e2e.test.ts` (update existing)
+- [x] Write test: `src/cli/fulltext.e2e.test.ts` (update existing)
   - **Scenario: Fulltext uses new storage**
     1. Run `ref fulltext attach <id> paper.pdf`
     2. Verify file in new directory structure
@@ -385,7 +385,14 @@ End-to-end tests for fulltext command migration. **No mocks allowed.**
     2. Add supplement via `ref attach add --role supplement`
     3. Verify both in same directory
     4. Verify both listed correctly
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
+
+Note: During Step 18 implementation, unified environment variables by:
+- `REFERENCE_MANAGER_ATTACHMENTS_DIR` is now the primary setting
+- `REFERENCE_MANAGER_FULLTEXT_DIR` is deprecated (still works for backward compatibility)
+- CLI `fulltext` and `attach` commands now share the same directory
+- `getDefaultFulltextDirectory()` now returns attachments directory
+- `remove` command now detects fulltext in new attachments format
 
 ### Step 19: Shell Completion
 

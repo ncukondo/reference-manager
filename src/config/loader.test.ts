@@ -669,9 +669,10 @@ apiKey = "my-api-key"
   });
 
   describe("Fulltext configuration", () => {
-    it("should use default fulltext settings when not specified", () => {
+    it("should use attachments directory as default fulltext directory", () => {
       const config = loadConfig({ cwd: testDir });
-      expect(config.fulltext.directory).toBe(join(getPaths().data, "fulltext"));
+      // Fulltext now uses attachments directory by default
+      expect(config.fulltext.directory).toBe(join(getPaths().data, "attachments"));
     });
 
     it("should load fulltext.directory from config", () => {

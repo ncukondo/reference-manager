@@ -87,11 +87,16 @@ describe("Fulltext Command E2E", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Attached pdf:");
 
-      // Verify the file was copied to fulltext directory
-      const files = await fs.readdir(fulltextDir);
+      // Verify the directory was created in fulltext directory (new structure)
+      const dirs = await fs.readdir(fulltextDir);
+      expect(dirs.length).toBe(1);
+      expect(dirs[0]).toContain("Smith-2024");
+
+      // Verify the file is inside the directory
+      const refDir = path.join(fulltextDir, dirs[0]);
+      const files = await fs.readdir(refDir);
       expect(files.length).toBe(1);
-      expect(files[0]).toContain("Smith-2024");
-      expect(files[0]).toContain(".pdf");
+      expect(files[0]).toBe("fulltext.pdf");
     });
 
     it("should attach a Markdown file to a reference", async () => {
@@ -110,10 +115,15 @@ describe("Fulltext Command E2E", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Attached markdown:");
 
-      // Verify the file was copied
-      const files = await fs.readdir(fulltextDir);
+      // Verify the directory was created (new structure)
+      const dirs = await fs.readdir(fulltextDir);
+      expect(dirs.length).toBe(1);
+
+      // Verify the file is inside the directory
+      const refDir = path.join(fulltextDir, dirs[0]);
+      const files = await fs.readdir(refDir);
       expect(files.length).toBe(1);
-      expect(files[0]).toContain(".md");
+      expect(files[0]).toBe("fulltext.md");
     });
 
     it("should attach with explicit --pdf flag", async () => {
@@ -214,7 +224,7 @@ describe("Fulltext Command E2E", () => {
       ]);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain("already attached");
+      expect(result.stderr).toContain("already exists");
       expect(result.stderr).toContain("--force");
     });
 
@@ -350,7 +360,7 @@ describe("Fulltext Command E2E", () => {
       ]);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain("No fulltext");
+      expect(result.stderr).toContain("No markdown fulltext attached");
     });
   });
 
@@ -386,8 +396,11 @@ describe("Fulltext Command E2E", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("Detached pdf");
 
-      // Verify file still exists on disk (not deleted)
-      const files = await fs.readdir(fulltextDir);
+      // Verify file still exists on disk (not deleted) - check inside directory
+      const dirs = await fs.readdir(fulltextDir);
+      expect(dirs.length).toBe(1);
+      const refDir = path.join(fulltextDir, dirs[0]);
+      const files = await fs.readdir(refDir);
       expect(files.length).toBe(2); // Both files still exist
     });
 
@@ -405,10 +418,13 @@ describe("Fulltext Command E2E", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toContain("deleted");
 
-      // Verify PDF was deleted
-      const files = await fs.readdir(fulltextDir);
+      // Verify PDF was deleted - check inside directory
+      const dirs = await fs.readdir(fulltextDir);
+      expect(dirs.length).toBe(1);
+      const refDir = path.join(fulltextDir, dirs[0]);
+      const files = await fs.readdir(refDir);
       expect(files.length).toBe(1); // Only markdown remains
-      expect(files[0]).toContain(".md");
+      expect(files[0]).toBe("fulltext.md");
     });
 
     it("should detach all attached files", async () => {
@@ -647,6 +663,228 @@ describe("Fulltext Command E2E", () => {
     });
   });
 
+  describe("Fulltext uses new attachments storage (Step 18)", () => {
+    it("should store fulltext in new per-reference directory structure", async () => {
+      // 1. Run `ref fulltext attach <id> paper.pdf`
+      const pdfPath = path.join(testDir, "paper.pdf");
+      await fs.writeFile(pdfPath, "PDF content for storage test", "utf-8");
+
+      const attachResult = await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
+      expect(attachResult.exitCode).toBe(0);
+
+      // 2. Verify file in new directory structure
+      // Directory should be named: {id}[-PMID{pmid}]-{uuid-prefix}/
+      // For Smith-2024 with uuid 123e4567-..., it should be: Smith-2024-123e4567/
+      const dirs = await fs.readdir(fulltextDir);
+      expect(dirs.length).toBe(1);
+      expect(dirs[0]).toMatch(/^Smith-2024-[a-f0-9]{8}$/);
+
+      const refDir = path.join(fulltextDir, dirs[0]);
+      const files = await fs.readdir(refDir);
+      expect(files.length).toBe(1);
+      expect(files[0]).toBe("fulltext.pdf");
+
+      // 3. Run `ref fulltext open <id>` - verify path resolution works
+      // (We can't actually open, but we can verify the path is found)
+      const openResult = await runWithFulltext([
+        "fulltext",
+        "open",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+      // Opener may fail in CI, but path should be found
+      if (openResult.exitCode !== 0) {
+        // Should NOT be "not found" or "no fulltext" error
+        expect(openResult.stderr).not.toContain("Reference not found");
+        expect(openResult.stderr).not.toContain("No fulltext attached");
+      }
+
+      // 4. Run `ref fulltext get <id> --pdf`
+      const getResult = await runWithFulltext([
+        "fulltext",
+        "get",
+        "Smith-2024",
+        "--pdf",
+        "--library",
+        libraryPath,
+      ]);
+      expect(getResult.exitCode).toBe(0);
+      // 5. Verify correct path returned - should be in new directory structure
+      expect(getResult.stdout).toContain(dirs[0]);
+      expect(getResult.stdout).toContain("fulltext.pdf");
+
+      // 6. Run `ref attach list <id>` - using fulltext dir as attachments dir
+      const listResult = await runCli(
+        ["attach", "list", "Smith-2024", "--library", libraryPath],
+        undefined,
+        fulltextDir // Use same dir for both fulltext and attachments
+      );
+      expect(listResult.exitCode).toBe(0);
+      // 7. Verify fulltext appears with role=fulltext
+      expect(listResult.stdout).toContain("fulltext");
+      expect(listResult.stdout).toContain("fulltext.pdf");
+    });
+
+    it("should verify fulltext get --stdout returns correct content", async () => {
+      const pdfPath = path.join(testDir, "paper.pdf");
+      await fs.writeFile(pdfPath, "PDF content verification", "utf-8");
+
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
+
+      const result = await runWithFulltext([
+        "fulltext",
+        "get",
+        "Smith-2024",
+        "--pdf",
+        "--stdout",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("PDF content verification");
+    });
+  });
+
+  describe("Mixed attachments (Step 18)", () => {
+    it("should store fulltext and supplement in same directory", async () => {
+      // 1. Add fulltext via `ref fulltext attach`
+      const pdfPath = path.join(testDir, "paper.pdf");
+      await fs.writeFile(pdfPath, "PDF content", "utf-8");
+
+      const fulltextResult = await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
+      expect(fulltextResult.exitCode).toBe(0);
+
+      // Get directory name
+      const dirs = await fs.readdir(fulltextDir);
+      expect(dirs.length).toBe(1);
+      const refDir = path.join(fulltextDir, dirs[0]);
+
+      // 2. Add supplement via `ref attach add --role supplement`
+      // Using the same directory (fulltextDir) as attachments dir
+      const suppPath = path.join(testDir, "table.xlsx");
+      await fs.writeFile(suppPath, "Excel data", "utf-8");
+
+      const suppResult = await runCli(
+        [
+          "attach",
+          "add",
+          "Smith-2024",
+          suppPath,
+          "--role",
+          "supplement",
+          "--label",
+          "Table S1",
+          "--library",
+          libraryPath,
+        ],
+        undefined,
+        fulltextDir // Use same dir for attachments
+      );
+      expect(suppResult.exitCode).toBe(0);
+
+      // 3. Verify both in same directory
+      const files = await fs.readdir(refDir);
+      expect(files.length).toBe(2);
+      expect(files).toContain("fulltext.pdf");
+      expect(files).toContain("supplement-table-s1.xlsx");
+
+      // 4. Verify both listed correctly via attach list
+      const listResult = await runCli(
+        ["attach", "list", "Smith-2024", "--library", libraryPath],
+        undefined,
+        fulltextDir
+      );
+      expect(listResult.exitCode).toBe(0);
+      expect(listResult.stdout).toContain("fulltext");
+      expect(listResult.stdout).toContain("fulltext.pdf");
+      expect(listResult.stdout).toContain("supplement");
+      expect(listResult.stdout).toContain("supplement-table-s1.xlsx");
+      expect(listResult.stdout).toContain("Table S1");
+    });
+
+    it("should handle both fulltext formats with supplements", async () => {
+      // Add PDF fulltext
+      const pdfPath = path.join(testDir, "paper.pdf");
+      await fs.writeFile(pdfPath, "PDF content", "utf-8");
+      await runWithFulltext([
+        "fulltext",
+        "attach",
+        "Smith-2024",
+        pdfPath,
+        "--library",
+        libraryPath,
+      ]);
+
+      // Add Markdown fulltext
+      const mdPath = path.join(testDir, "paper.md");
+      await fs.writeFile(mdPath, "# Paper\nContent here", "utf-8");
+      await runWithFulltext(["fulltext", "attach", "Smith-2024", mdPath, "--library", libraryPath]);
+
+      // Add supplements
+      const dirs = await fs.readdir(fulltextDir);
+      const suppPath = path.join(testDir, "data.csv");
+      await fs.writeFile(suppPath, "col1,col2", "utf-8");
+      await runCli(
+        ["attach", "add", "Smith-2024", suppPath, "--role", "supplement", "--library", libraryPath],
+        undefined,
+        fulltextDir
+      );
+
+      // Verify directory structure
+      const refDir = path.join(fulltextDir, dirs[0]);
+      const files = await fs.readdir(refDir);
+      expect(files.length).toBe(3);
+      expect(files).toContain("fulltext.pdf");
+      expect(files).toContain("fulltext.md");
+      expect(files).toContain("supplement.csv");
+
+      // Verify fulltext get returns both
+      const getResult = await runWithFulltext([
+        "fulltext",
+        "get",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+      expect(getResult.exitCode).toBe(0);
+      expect(getResult.stdout).toContain("pdf:");
+      expect(getResult.stdout).toContain("markdown:");
+
+      // Verify attach list shows all
+      const listResult = await runCli(
+        ["attach", "list", "Smith-2024", "--library", libraryPath],
+        undefined,
+        fulltextDir
+      );
+      expect(listResult.exitCode).toBe(0);
+      expect(listResult.stdout).toContain("fulltext");
+      expect(listResult.stdout).toContain("supplement");
+    });
+  });
+
   describe("remove command integration", () => {
     it("should warn when removing reference with fulltext attached", async () => {
       // First attach a PDF
@@ -710,7 +948,7 @@ const CLI_PATH = path.resolve("bin/reference-manager.js");
  * Run CLI command with optional stdin input
  * @param args CLI arguments
  * @param stdinData Optional stdin input
- * @param fulltextDir Optional fulltext directory to use via environment variable
+ * @param fulltextDir Optional fulltext/attachments directory to use via environment variable
  */
 function runCli(
   args: string[],
@@ -718,11 +956,15 @@ function runCli(
   fulltextDir?: string
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    // Set fulltext directory via environment variable for testing
+    // Set both fulltext and attachments directory via environment variable for testing
+    // Fulltext now uses attachments directory, so we set both for consistency
     const env = {
       ...process.env,
       NODE_ENV: "test",
-      ...(fulltextDir && { REFERENCE_MANAGER_FULLTEXT_DIR: fulltextDir }),
+      ...(fulltextDir && {
+        REFERENCE_MANAGER_ATTACHMENTS_DIR: fulltextDir,
+        REFERENCE_MANAGER_FULLTEXT_DIR: fulltextDir,
+      }),
     };
 
     const proc = spawn("node", [CLI_PATH, ...args], { env });

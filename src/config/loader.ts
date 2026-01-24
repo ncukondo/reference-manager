@@ -194,14 +194,18 @@ function expandTilde(path: string): string {
 /**
  * Fill fulltext config with defaults
  *
+ * @deprecated Fulltext now uses attachments directory.
  * Priority:
- * 1. Environment variable REFERENCE_MANAGER_FULLTEXT_DIR
- * 2. Config file setting
- * 3. Default value
+ * 1. Environment variable REFERENCE_MANAGER_ATTACHMENTS_DIR (preferred)
+ * 2. Environment variable REFERENCE_MANAGER_FULLTEXT_DIR (deprecated, for backward compatibility)
+ * 3. Config file setting
+ * 4. Default value (same as attachments.directory)
  */
 function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
-  const envDir = process.env.REFERENCE_MANAGER_FULLTEXT_DIR;
-  const directory = envDir ?? partial?.directory ?? defaultConfig.fulltext.directory;
+  const envAttachmentsDir = process.env.REFERENCE_MANAGER_ATTACHMENTS_DIR;
+  const envFulltextDir = process.env.REFERENCE_MANAGER_FULLTEXT_DIR;
+  const directory =
+    envAttachmentsDir ?? envFulltextDir ?? partial?.directory ?? defaultConfig.fulltext.directory;
   return {
     directory: expandTilde(directory),
   };
@@ -211,13 +215,19 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
  * Fill attachments config with defaults
  *
  * Priority:
- * 1. Environment variable REFERENCE_MANAGER_ATTACHMENTS_DIR
- * 2. Config file setting
- * 3. Default value
+ * 1. Environment variable REFERENCE_MANAGER_ATTACHMENTS_DIR (preferred)
+ * 2. Environment variable REFERENCE_MANAGER_FULLTEXT_DIR (deprecated, for backward compatibility)
+ * 3. Config file setting
+ * 4. Default value
  */
 function fillAttachmentsDefaults(partial: DeepPartialConfig["attachments"]): Config["attachments"] {
-  const envDir = process.env.REFERENCE_MANAGER_ATTACHMENTS_DIR;
-  const directory = envDir ?? partial?.directory ?? defaultConfig.attachments.directory;
+  const envAttachmentsDir = process.env.REFERENCE_MANAGER_ATTACHMENTS_DIR;
+  const envFulltextDir = process.env.REFERENCE_MANAGER_FULLTEXT_DIR;
+  const directory =
+    envAttachmentsDir ??
+    envFulltextDir ??
+    partial?.directory ??
+    defaultConfig.attachments.directory;
   return {
     directory: expandTilde(directory),
   };
