@@ -15,6 +15,9 @@ vi.mock("../../../utils/opener.js", () => ({
   openWithSystemApp: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Helper to normalize paths (output uses forward slashes)
+const normalizePath = (p: string) => p.replace(/\\/g, "/");
+
 describe("openAttachment", () => {
   let tempDir: string;
   let attachmentsBaseDir: string;
@@ -88,7 +91,7 @@ describe("openAttachment", () => {
       const result = await openAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(attachDir);
+      expect(result.path).toBe(normalizePath(attachDir));
       expect(openWithSystemApp).toHaveBeenCalledWith(attachDir);
     });
 
@@ -104,7 +107,7 @@ describe("openAttachment", () => {
       const result = await openAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(attachDir);
+      expect(result.path).toBe(normalizePath(attachDir));
       expect(openWithSystemApp).not.toHaveBeenCalled();
     });
   });
@@ -122,7 +125,7 @@ describe("openAttachment", () => {
       const result = await openAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(join(attachDir, "fulltext.pdf"));
+      expect(result.path).toBe(normalizePath(join(attachDir, "fulltext.pdf")));
       expect(openWithSystemApp).toHaveBeenCalledWith(join(attachDir, "fulltext.pdf"));
     });
 
@@ -153,7 +156,7 @@ describe("openAttachment", () => {
       const result = await openAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(join(attachDir, "notes.md"));
+      expect(result.path).toBe(normalizePath(join(attachDir, "notes.md")));
       expect(openWithSystemApp).toHaveBeenCalledWith(join(attachDir, "notes.md"));
     });
 
@@ -248,7 +251,7 @@ describe("openAttachment", () => {
       const result = await openAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(attachDir);
+      expect(result.path).toBe(normalizePath(attachDir));
       expect(openWithSystemApp).not.toHaveBeenCalled();
     });
 
@@ -265,7 +268,7 @@ describe("openAttachment", () => {
       const result = await openAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(join(attachDir, "fulltext.pdf"));
+      expect(result.path).toBe(normalizePath(join(attachDir, "fulltext.pdf")));
       expect(openWithSystemApp).not.toHaveBeenCalled();
     });
   });

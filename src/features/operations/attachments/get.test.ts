@@ -10,6 +10,9 @@ import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary } from "../../../core/library-interface.js";
 import { type GetAttachmentOptions, getAttachment } from "./get.js";
 
+// Helper to normalize paths (output uses forward slashes)
+const normalizePath = (p: string) => p.replace(/\\/g, "/");
+
 describe("getAttachment", () => {
   let tempDir: string;
   let attachmentsBaseDir: string;
@@ -71,7 +74,9 @@ describe("getAttachment", () => {
       const result = await getAttachment(mockLibrary, options);
 
       expect(result.success).toBe(true);
-      expect(result.path).toBe(join(attachmentsBaseDir, "Smith-2024-123e4567", "fulltext.pdf"));
+      expect(result.path).toBe(
+        normalizePath(join(attachmentsBaseDir, "Smith-2024-123e4567", "fulltext.pdf"))
+      );
     });
 
     it("should return error when file not in metadata", async () => {
