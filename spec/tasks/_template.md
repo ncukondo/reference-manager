@@ -11,25 +11,33 @@
 
 ## TDD Workflow
 
-For each step:
-1. Write failing test
-2. Write minimal implementation to pass
-3. Clean up, pass lint/typecheck, verify tests still pass
+For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing.md`):
+
+1. **Write test**: Create test file with comprehensive test cases
+2. **Create stub**: Create implementation file with empty functions (`throw new Error("Not implemented")`)
+3. **Verify Red**: Run tests, confirm they fail with "Not implemented"
+4. **Implement**: Write actual logic until tests pass (Green)
+5. **Refactor**: Clean up code while keeping tests green
+6. **Quality checks**: Pass lint/typecheck
 
 ## Steps
 
 ### Step 1: [Description]
 
 - [ ] Write test: `src/xxx/xxx.test.ts`
-- [ ] Implement: `src/xxx/xxx.ts`
-- [ ] Verify: `npm run test:unit`
+- [ ] Create stub: `src/xxx/xxx.ts` (export interfaces and functions with `throw new Error("Not implemented")`)
+- [ ] Verify Red: `npm run test:unit -- xxx.test.ts` (tests fail with "Not implemented")
+- [ ] Implement: Write actual logic
+- [ ] Verify Green: `npm run test:unit -- xxx.test.ts` (all tests pass)
 - [ ] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: [Description]
 
 - [ ] Write test
+- [ ] Create stub
+- [ ] Verify Red
 - [ ] Implement
-- [ ] Verify
+- [ ] Verify Green
 - [ ] Lint/Type check
 
 ## Completion Checklist
