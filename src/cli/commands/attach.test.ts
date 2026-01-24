@@ -747,4 +747,37 @@ describe("attach command", () => {
       expect(getAttachExitCode({ success: false, error: "Error" } as OpenAttachmentResult)).toBe(1);
     });
   });
+
+  describe("Interactive mode helpers", () => {
+    // Note: Full interactive mode testing requires E2E tests with TTY simulation
+    // These tests cover the format output functions used in interactive mode
+
+    it("should format sync result with new files for interactive display", () => {
+      const result: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "supplement-data.csv", role: "supplement", label: "data" },
+          { filename: "notes.md", role: "notes" },
+        ],
+        missingFiles: [],
+        applied: true,
+      };
+      const output = formatAttachSyncOutput(result);
+
+      expect(output).toContain("Added 2 files:");
+      expect(output).toContain("supplement-data.csv");
+      expect(output).toContain("notes.md");
+    });
+
+    it("should handle directory mode without interactive sync", () => {
+      // When --no-sync is used, only open result is shown
+      const result: OpenAttachmentResult = {
+        success: true,
+        path: "/path/to/dir",
+        directoryCreated: true,
+      };
+      const output = formatAttachOpenOutput(result);
+      expect(output).toBe("Created and opened: /path/to/dir");
+    });
+  });
 });

@@ -502,6 +502,106 @@ export interface AttachOpenActionOptions {
 }
 
 /**
+ * Display naming convention for interactive mode
+ */
+function displayNamingConvention(identifier: string, dirPath: string): void {
+  process.stderr.write(`\nOpening attachments directory for ${identifier}...\n\n`);
+  process.stderr.write("File naming convention:\n");
+  process.stderr.write("  fulltext.pdf / fulltext.md    - Paper body\n");
+  process.stderr.write("  supplement-{label}.ext        - Supplementary materials\n");
+  process.stderr.write("  notes-{label}.ext             - Your notes\n");
+  process.stderr.write("  draft-{label}.ext             - Draft versions\n");
+  process.stderr.write("  {custom}-{label}.ext          - Custom role\n\n");
+  process.stderr.write(`Directory: ${dirPath}/\n\n`);
+}
+
+/**
+ * Wait for user to press Enter
+ */
+async function waitForEnter(): Promise<void> {
+  return new Promise((resolve) => {
+    process.stderr.write("Press Enter when done editing...");
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.once("data", () => {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      process.stderr.write("\n\n");
+      resolve();
+    });
+  });
+}
+
+/**
+ * Format and display sync result in interactive mode
+ */
+function displayInteractiveSyncResult(result: SyncAttachmentResult, identifier: string): void {
+  if (result.newFiles.length === 0) {
+    process.stderr.write("No new files detected.\n");
+    return;
+  }
+
+  process.stderr.write("Scanning directory...\n\n");
+  process.stderr.write(
+    `Found ${result.newFiles.length} new file${result.newFiles.length > 1 ? "s" : ""}:\n`
+  );
+  for (const file of result.newFiles) {
+    const labelPart = file.label ? `, label: "${file.label}"` : "";
+    process.stderr.write(`  \u2713 ${file.filename} \u2192 role: ${file.role}${labelPart}\n`);
+  }
+  process.stderr.write(`\nUpdated metadata for ${identifier}.\n`);
+}
+
+/**
+ * Run interactive mode: show convention, wait for Enter, auto-sync
+ */
+async function runInteractiveMode(
+  identifier: string,
+  dirPath: string,
+  attachmentsDirectory: string,
+  idType: "uuid" | undefined,
+  context: ExecutionContext
+): Promise<void> {
+  displayNamingConvention(identifier, dirPath);
+  await waitForEnter();
+
+  const syncResult = await executeAttachSync(
+    {
+      identifier,
+      attachmentsDirectory,
+      yes: true,
+      ...(idType && { idType }),
+    },
+    context
+  );
+
+  if (syncResult.success) {
+    displayInteractiveSyncResult(syncResult, identifier);
+  } else {
+    process.stderr.write(`Sync error: ${syncResult.error}\n`);
+  }
+}
+
+/**
+ * Build open options from action options
+ */
+function buildOpenOptions(
+  identifier: string,
+  filenameArg: string | undefined,
+  options: AttachOpenActionOptions,
+  attachmentsDirectory: string
+): AttachOpenOptions {
+  return {
+    identifier,
+    attachmentsDirectory,
+    ...(filenameArg && { filename: filenameArg }),
+    ...(options.print && { print: options.print }),
+    ...(options.role && { role: options.role }),
+    ...(options.uuid && { idType: "uuid" as const }),
+  };
+}
+
+/**
  * Handle 'attach open' command action.
  */
 export async function handleAttachOpenAction(
@@ -513,28 +613,41 @@ export async function handleAttachOpenAction(
   try {
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
-
     const identifier = await resolveIdentifier(identifierArg, context, config);
 
-    const openOptions: AttachOpenOptions = {
+    const isDirectoryMode = !filenameArg && !options.role;
+    const shouldUseInteractive = isTTY() && isDirectoryMode && !options.print && !options.noSync;
+    const openOptions = buildOpenOptions(
       identifier,
-      attachmentsDirectory: config.attachments.directory,
-      ...(filenameArg && { filename: filenameArg }),
-      ...(options.print && { print: options.print }),
-      ...(options.role && { role: options.role }),
-      ...(options.uuid && { idType: "uuid" as const }),
-    };
-
+      filenameArg,
+      options,
+      config.attachments.directory
+    );
     const result = await executeAttachOpen(openOptions, context);
 
-    if (options.print && result.success) {
-      process.stdout.write(`${result.path}\n`);
-    } else {
-      const output = formatAttachOpenOutput(result);
-      process.stderr.write(`${output}\n`);
+    if (!result.success) {
+      process.stderr.write(`Error: ${result.error}\n`);
+      process.exit(1);
     }
 
-    process.exit(getAttachExitCode(result));
+    if (options.print) {
+      process.stdout.write(`${result.path}\n`);
+      process.exit(0);
+    }
+
+    if (shouldUseInteractive) {
+      await runInteractiveMode(
+        identifier,
+        result.path ?? "",
+        config.attachments.directory,
+        options.uuid ? "uuid" : undefined,
+        context
+      );
+    } else {
+      process.stderr.write(`${formatAttachOpenOutput(result)}\n`);
+    }
+
+    process.exit(0);
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(4);

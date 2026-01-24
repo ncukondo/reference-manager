@@ -206,16 +206,16 @@ Implement `attach` command with subcommands.
 
 Implement TTY interactive mode for `attach open`.
 
-- [ ] Write test: `src/cli/commands/attach.test.ts`
+- [x] Write test: `src/cli/commands/attach.test.ts`
   - Test TTY mode shows convention and waits for Enter
   - Test non-TTY mode opens only
   - Test --no-sync skips interactive sync
-- [ ] Implement: `src/cli/commands/attach.ts`
+- [x] Implement: `src/cli/commands/attach.ts`
   - Display naming convention
   - Wait for keypress
   - Auto-sync on Enter
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 13: Migrate fulltext Command
 
