@@ -70,10 +70,43 @@ vi.mock("../../features/operations/update.js", () => ({
 // Mock fs/promises for stdout support and temp cleanup
 const mockReadFile = vi.fn();
 const mockRm = vi.fn().mockResolvedValue(undefined);
-vi.mock("node:fs/promises", () => ({
-  readFile: (...args: unknown[]) => mockReadFile(...args),
-  rm: (...args: unknown[]) => mockRm(...args),
-}));
+const mockStat = vi.fn();
+const mockUnlink = vi.fn().mockResolvedValue(undefined);
+const mockMkdir = vi.fn().mockResolvedValue(undefined);
+const mockReaddir = vi.fn().mockResolvedValue([]);
+const mockRmdir = vi.fn().mockResolvedValue(undefined);
+const mockCopyFile = vi.fn().mockResolvedValue(undefined);
+const mockRename = vi.fn().mockResolvedValue(undefined);
+const mockAccess = vi.fn().mockResolvedValue(undefined);
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const original = await importOriginal<typeof import("node:fs/promises")>();
+  return {
+    ...original,
+    readFile: (...args: unknown[]) => mockReadFile(...args),
+    rm: (...args: unknown[]) => mockRm(...args),
+    stat: (...args: unknown[]) => mockStat(...args),
+    unlink: (...args: unknown[]) => mockUnlink(...args),
+    mkdir: (...args: unknown[]) => mockMkdir(...args),
+    readdir: (...args: unknown[]) => mockReaddir(...args),
+    rmdir: (...args: unknown[]) => mockRmdir(...args),
+    copyFile: (...args: unknown[]) => mockCopyFile(...args),
+    rename: (...args: unknown[]) => mockRename(...args),
+    access: (...args: unknown[]) => mockAccess(...args),
+    default: {
+      ...original,
+      readFile: (...args: unknown[]) => mockReadFile(...args),
+      rm: (...args: unknown[]) => mockRm(...args),
+      stat: (...args: unknown[]) => mockStat(...args),
+      unlink: (...args: unknown[]) => mockUnlink(...args),
+      mkdir: (...args: unknown[]) => mockMkdir(...args),
+      readdir: (...args: unknown[]) => mockReaddir(...args),
+      rmdir: (...args: unknown[]) => mockRmdir(...args),
+      copyFile: (...args: unknown[]) => mockCopyFile(...args),
+      rename: (...args: unknown[]) => mockRename(...args),
+      access: (...args: unknown[]) => mockAccess(...args),
+    },
+  };
+});
 
 // Mock node:fs for existsSync (partial mock to preserve other functions)
 const mockExistsSync = vi.fn();
@@ -101,6 +134,8 @@ describe("fulltext command", () => {
     find: vi.fn(),
     findById: vi.fn(),
     findByUuid: vi.fn(),
+    update: vi.fn(),
+    save: vi.fn(),
   } as unknown as Library;
 
   const mockServerClient = {
@@ -136,6 +171,12 @@ describe("fulltext command", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReference.getItem.mockReturnValue(mockItem);
+    // Setup default mock behavior for library methods
+    vi.mocked(mockLibrary.update).mockResolvedValue(undefined);
+    vi.mocked(mockLibrary.save).mockResolvedValue(undefined);
+    // Setup default mock behavior for fs operations
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReaddir.mockResolvedValue([]);
   });
 
   describe("executeFulltextAttach", () => {
@@ -158,7 +199,8 @@ describe("fulltext command", () => {
         const result = await executeFulltextAttach(options, localContext);
 
         expect(result.success).toBe(true);
-        expect(result.filename).toBe("Smith-2024-123e4567-e89b-12d3-a456-426614174000.pdf");
+        // New attachments format uses fulltext.{ext}
+        expect(result.filename).toBe("fulltext.pdf");
         expect(result.type).toBe("pdf");
       });
 
@@ -237,11 +279,7 @@ describe("fulltext command", () => {
 
       it("should use move option when specified", async () => {
         vi.mocked(mockLibrary.find).mockResolvedValue(mockItem);
-        mockAttachFile.mockResolvedValue({
-          filename: "test.pdf",
-          overwritten: false,
-        });
-        mockUpdateReference.mockResolvedValue({ updated: true, item: mockItem });
+        mockStat.mockResolvedValue({ isFile: () => true });
 
         const options: FulltextAttachOptions = {
           identifier: "Smith-2024",
@@ -250,36 +288,43 @@ describe("fulltext command", () => {
           fulltextDirectory,
         };
 
-        await executeFulltextAttach(options, localContext);
+        const result = await executeFulltextAttach(options, localContext);
 
-        expect(mockAttachFile).toHaveBeenCalledWith(
-          expect.any(Object),
-          "/path/to/paper.pdf",
-          "pdf",
-          expect.objectContaining({ move: true })
-        );
+        // With move=true, rename should be called instead of copyFile
+        expect(result.success).toBe(true);
+        expect(mockRename).toHaveBeenCalled();
+        expect(mockCopyFile).not.toHaveBeenCalled();
       });
 
       it("should return existing file info when not forced", async () => {
-        vi.mocked(mockLibrary.find).mockResolvedValue(mockItem);
-        const mockAttachResult: AttachResult = {
-          filename: "new-file.pdf",
-          existingFile: "existing-file.pdf",
-          overwritten: false,
+        // Create item with existing fulltext attachment
+        const itemWithExistingFulltext: CslItem = {
+          ...mockItem,
+          custom: {
+            uuid: "123e4567-e89b-12d3-a456-426614174000",
+            created_at: "2024-01-01T00:00:00.000Z",
+            timestamp: "2024-01-01T00:00:00.000Z",
+            attachments: {
+              directory: "Smith-2024-123e4567",
+              files: [{ filename: "fulltext.pdf", role: "fulltext", format: "pdf" }],
+            },
+          },
         };
-        mockAttachFile.mockResolvedValue(mockAttachResult);
+        vi.mocked(mockLibrary.find).mockResolvedValue(itemWithExistingFulltext);
+        mockStat.mockResolvedValue({ isFile: () => true });
 
         const options: FulltextAttachOptions = {
           identifier: "Smith-2024",
           filePath: "/path/to/paper.pdf",
+          // force: false (default)
           fulltextDirectory,
         };
 
         const result = await executeFulltextAttach(options, localContext);
 
         expect(result.success).toBe(false);
-        expect(result.existingFile).toBe("existing-file.pdf");
-        expect(result.requiresConfirmation).toBe(true);
+        // New implementation returns error message instead of existingFile for fulltext conflicts
+        expect(result.error).toContain("fulltext PDF already exists");
       });
 
       it("should attach from stdin content with explicit type", async () => {
@@ -365,9 +410,12 @@ describe("fulltext command", () => {
         uuid: "123e4567-e89b-12d3-a456-426614174000",
         created_at: "2024-01-01T00:00:00.000Z",
         timestamp: "2024-01-01T00:00:00.000Z",
-        fulltext: {
-          pdf: "Smith-2024-uuid.pdf",
-          markdown: "Smith-2024-uuid.md",
+        attachments: {
+          directory: "Smith-2024-123e4567",
+          files: [
+            { filename: "fulltext.pdf", role: "fulltext", format: "pdf" },
+            { filename: "fulltext.md", role: "fulltext", format: "markdown" },
+          ],
         },
       },
     };
@@ -375,10 +423,6 @@ describe("fulltext command", () => {
     describe("via local context", () => {
       it("should return both paths when no type specified", async () => {
         vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
-        mockGetAttachedTypes.mockReturnValue(["pdf", "markdown"]);
-        mockGetFilePath
-          .mockReturnValueOnce("/path/to/fulltext/Smith-2024-uuid.pdf")
-          .mockReturnValueOnce("/path/to/fulltext/Smith-2024-uuid.md");
 
         const options: FulltextGetOptions = {
           identifier: "Smith-2024",
@@ -388,13 +432,13 @@ describe("fulltext command", () => {
         const result = await executeFulltextGet(options, localContext);
 
         expect(result.success).toBe(true);
-        expect(result.paths?.pdf).toBe("/path/to/fulltext/Smith-2024-uuid.pdf");
-        expect(result.paths?.markdown).toBe("/path/to/fulltext/Smith-2024-uuid.md");
+        // New attachments format uses {fulltextDirectory}/{directory}/{filename}
+        expect(result.paths?.pdf).toBe(`${fulltextDirectory}/Smith-2024-123e4567/fulltext.pdf`);
+        expect(result.paths?.markdown).toBe(`${fulltextDirectory}/Smith-2024-123e4567/fulltext.md`);
       });
 
       it("should return only PDF path when pdf type specified", async () => {
         vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
-        mockGetFilePath.mockReturnValue("/path/to/fulltext/Smith-2024-uuid.pdf");
 
         const options: FulltextGetOptions = {
           identifier: "Smith-2024",
@@ -405,7 +449,7 @@ describe("fulltext command", () => {
         const result = await executeFulltextGet(options, localContext);
 
         expect(result.success).toBe(true);
-        expect(result.paths?.pdf).toBe("/path/to/fulltext/Smith-2024-uuid.pdf");
+        expect(result.paths?.pdf).toBe(`${fulltextDirectory}/Smith-2024-123e4567/fulltext.pdf`);
         expect(result.paths?.markdown).toBeUndefined();
       });
 
@@ -441,7 +485,7 @@ describe("fulltext command", () => {
 
       it("should return file content with stdout option", async () => {
         vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
-        mockGetFilePath.mockReturnValue("/path/to/fulltext/Smith-2024-uuid.md");
+        // Mock readFile for the actual file path that will be used
         mockReadFile.mockResolvedValue(Buffer.from("# Test Content"));
 
         const options: FulltextGetOptions = {
@@ -466,8 +510,9 @@ describe("fulltext command", () => {
         uuid: "123e4567-e89b-12d3-a456-426614174000",
         created_at: "2024-01-01T00:00:00.000Z",
         timestamp: "2024-01-01T00:00:00.000Z",
-        fulltext: {
-          pdf: "Smith-2024-uuid.pdf",
+        attachments: {
+          directory: "Smith-2024-123e4567",
+          files: [{ filename: "fulltext.pdf", role: "fulltext", format: "pdf" }],
         },
       },
     };
@@ -662,9 +707,12 @@ describe("fulltext command", () => {
         uuid: "123e4567-e89b-12d3-a456-426614174000",
         created_at: "2024-01-01T00:00:00.000Z",
         timestamp: "2024-01-01T00:00:00.000Z",
-        fulltext: {
-          pdf: "Smith-2024-uuid.pdf",
-          markdown: "Smith-2024-uuid.md",
+        attachments: {
+          directory: "Smith-2024-123e4567",
+          files: [
+            { filename: "fulltext.pdf", role: "fulltext", format: "pdf" },
+            { filename: "fulltext.md", role: "fulltext", format: "markdown" },
+          ],
         },
       },
     };
