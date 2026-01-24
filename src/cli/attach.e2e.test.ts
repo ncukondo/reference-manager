@@ -126,7 +126,8 @@ describe("Attach Command E2E", () => {
       ]);
 
       expect(getResult.exitCode).toBe(0);
-      expect(getResult.stdout).toContain(attachmentsDir);
+      // Output uses forward slashes for cross-platform consistency
+      expect(getResult.stdout).toContain(attachmentsDir.replace(/\\/g, "/"));
       expect(getResult.stdout).toContain("supplement.csv");
     });
 
@@ -719,7 +720,8 @@ describe("Attach Command E2E", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain(attachmentsDir);
+      // Output uses forward slashes for cross-platform consistency
+      expect(result.stdout).toContain(attachmentsDir.replace(/\\/g, "/"));
       expect(result.stdout).toContain("Smith-2024");
 
       // Directory should be created
