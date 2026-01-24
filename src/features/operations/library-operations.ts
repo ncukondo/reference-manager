@@ -10,6 +10,20 @@
 
 import type { ILibrary } from "../../core/library-interface.js";
 import type { AddReferencesOptions, AddReferencesResult } from "./add.js";
+import type {
+  AddAttachmentOptions,
+  AddAttachmentResult,
+  DetachAttachmentOptions,
+  DetachAttachmentResult,
+  GetAttachmentOptions,
+  GetAttachmentResult,
+  ListAttachmentsOptions,
+  ListAttachmentsResult,
+  OpenAttachmentOptions,
+  OpenAttachmentResult,
+  SyncAttachmentOptions,
+  SyncAttachmentResult,
+} from "./attachments/index.js";
 import type { CiteOperationOptions, CiteResult } from "./cite.js";
 import type { ListOptions, ListResult } from "./list.js";
 import type { SearchOperationOptions, SearchResult } from "./search.js";
@@ -67,4 +81,54 @@ export interface ILibraryOperations extends ILibrary {
    * @returns Import results with added, failed, and skipped items
    */
   import(inputs: string[], options?: ImportOptions): Promise<ImportResult>;
+
+  // Attachment operations
+
+  /**
+   * Add attachment to a reference
+   *
+   * @param options - Add attachment options
+   * @returns Result of the add operation
+   */
+  attachAdd(options: AddAttachmentOptions): Promise<AddAttachmentResult>;
+
+  /**
+   * List attachments for a reference
+   *
+   * @param options - List attachments options
+   * @returns List of attachments
+   */
+  attachList(options: ListAttachmentsOptions): Promise<ListAttachmentsResult>;
+
+  /**
+   * Get attachment file path or content
+   *
+   * @param options - Get attachment options
+   * @returns Attachment file path or content
+   */
+  attachGet(options: GetAttachmentOptions): Promise<GetAttachmentResult>;
+
+  /**
+   * Detach attachment from a reference
+   *
+   * @param options - Detach attachment options
+   * @returns Result of the detach operation
+   */
+  attachDetach(options: DetachAttachmentOptions): Promise<DetachAttachmentResult>;
+
+  /**
+   * Sync attachments with files on disk
+   *
+   * @param options - Sync attachment options
+   * @returns Sync result
+   */
+  attachSync(options: SyncAttachmentOptions): Promise<SyncAttachmentResult>;
+
+  /**
+   * Open attachment directory or file
+   *
+   * @param options - Open attachment options
+   * @returns Result of the open operation
+   */
+  attachOpen(options: OpenAttachmentOptions): Promise<OpenAttachmentResult>;
 }

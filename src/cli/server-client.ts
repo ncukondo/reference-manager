@@ -7,14 +7,26 @@ import type {
   UpdateResult,
 } from "../core/library-interface.js";
 import type {
+  AddAttachmentOptions,
+  AddAttachmentResult,
   AddReferencesResult,
   CiteResult,
+  DetachAttachmentOptions,
+  DetachAttachmentResult,
+  GetAttachmentOptions,
+  GetAttachmentResult,
   ILibraryOperations,
   ImportOptions,
+  ListAttachmentsOptions,
+  ListAttachmentsResult,
   ListOptions,
   ListResult,
+  OpenAttachmentOptions,
+  OpenAttachmentResult,
   SearchOperationOptions,
   SearchResult,
+  SyncAttachmentOptions,
+  SyncAttachmentResult,
 } from "../features/operations/index.js";
 import type { RemoveResult } from "../features/operations/remove.js";
 import type { UpdateOperationResult } from "../features/operations/update.js";
@@ -269,5 +281,129 @@ export class ServerClient implements ILibraryOperations {
     }
 
     return (await response.json()) as SearchResult;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Attachment operations
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Add attachment to a reference.
+   * @param options - Add attachment options
+   * @returns Result of the add operation
+   */
+  async attachAdd(options: AddAttachmentOptions): Promise<AddAttachmentResult> {
+    const url = `${this.baseUrl}/api/attachments/add`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as AddAttachmentResult;
+  }
+
+  /**
+   * List attachments for a reference.
+   * @param options - List attachments options
+   * @returns List of attachments
+   */
+  async attachList(options: ListAttachmentsOptions): Promise<ListAttachmentsResult> {
+    const url = `${this.baseUrl}/api/attachments/list`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as ListAttachmentsResult;
+  }
+
+  /**
+   * Get attachment file path or content.
+   * @param options - Get attachment options
+   * @returns Attachment file path or content
+   */
+  async attachGet(options: GetAttachmentOptions): Promise<GetAttachmentResult> {
+    const url = `${this.baseUrl}/api/attachments/get`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as GetAttachmentResult;
+  }
+
+  /**
+   * Detach attachment from a reference.
+   * @param options - Detach attachment options
+   * @returns Result of the detach operation
+   */
+  async attachDetach(options: DetachAttachmentOptions): Promise<DetachAttachmentResult> {
+    const url = `${this.baseUrl}/api/attachments/detach`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as DetachAttachmentResult;
+  }
+
+  /**
+   * Sync attachments with files on disk.
+   * @param options - Sync attachment options
+   * @returns Sync result
+   */
+  async attachSync(options: SyncAttachmentOptions): Promise<SyncAttachmentResult> {
+    const url = `${this.baseUrl}/api/attachments/sync`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as SyncAttachmentResult;
+  }
+
+  /**
+   * Open attachment directory or file.
+   * @param options - Open attachment options
+   * @returns Result of the open operation
+   */
+  async attachOpen(options: OpenAttachmentOptions): Promise<OpenAttachmentResult> {
+    const url = `${this.baseUrl}/api/attachments/open`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as OpenAttachmentResult;
   }
 }
