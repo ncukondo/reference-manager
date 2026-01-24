@@ -868,7 +868,7 @@ export async function handleAttachSyncAction(
 
     const result = await executeAttachSync(syncOptions, context);
     const output = formatAttachSyncOutput(result);
-    process.stdout.write(`${output}\n`);
+    process.stderr.write(`${output}\n`);
     process.exit(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);

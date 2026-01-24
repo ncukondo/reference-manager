@@ -345,7 +345,7 @@ End-to-end tests for core attachment operations. **No mocks allowed.**
 
 End-to-end tests for manual file addition. **No mocks allowed.**
 
-- [ ] Write test: `src/cli/attach.e2e.test.ts`
+- [x] Write test: `src/cli/attach.e2e.test.ts`
   - **Scenario: Manual file addition and sync**
     1. Run `ref attach open <id> --no-sync` to create directory
     2. Copy files directly to directory (simulating user drag-drop)
@@ -362,7 +362,10 @@ End-to-end tests for manual file addition. **No mocks allowed.**
     4. Verify missing file reported
     5. Run `ref attach sync <id> --fix`
     6. Verify metadata cleaned up
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e`
+
+Note: `attach open` now updates metadata when creating a new directory,
+enabling sync to work correctly for manually added files.
 
 ### Step 18: E2E Tests - Fulltext Compatibility
 

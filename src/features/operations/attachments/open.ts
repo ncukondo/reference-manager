@@ -5,7 +5,8 @@
  */
 
 import { stat } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
+import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { openWithSystemApp } from "../../../utils/opener.js";
 import { ensureDirectory } from "../../attachments/directory-manager.js";
@@ -54,6 +55,14 @@ interface ReferenceForAttachments {
 }
 
 /**
+ * Directory resolution result
+ */
+interface DirectoryResult {
+  dirPath: string;
+  directoryCreated: boolean;
+}
+
+/**
  * Check if a path exists
  */
 async function pathExists(path: string): Promise<boolean> {
@@ -74,6 +83,87 @@ function findFileByRole(attachments: Attachments | undefined, role: string): str
   }
   const file = attachments.files.find((f) => f.role === role);
   return file?.filename ?? null;
+}
+
+/**
+ * Get or create attachment directory
+ */
+async function resolveDirectory(
+  ref: ReferenceForAttachments,
+  attachmentsDirectory: string
+): Promise<DirectoryResult> {
+  const attachments = ref.custom?.attachments;
+  let dirPath: string;
+  let directoryCreated = false;
+
+  if (attachments?.directory) {
+    dirPath = join(attachmentsDirectory, attachments.directory);
+  } else {
+    dirPath = await ensureDirectory(ref, attachmentsDirectory);
+    directoryCreated = true;
+  }
+
+  // Ensure directory exists on disk
+  if (!(await pathExists(dirPath))) {
+    dirPath = await ensureDirectory(ref, attachmentsDirectory);
+    directoryCreated = true;
+  }
+
+  return { dirPath, directoryCreated };
+}
+
+/**
+ * Update metadata with new directory information
+ */
+async function updateDirectoryMetadata(
+  library: ILibrary,
+  ref: ReferenceForAttachments,
+  dirPath: string
+): Promise<void> {
+  const dirName = basename(dirPath);
+  const item = ref as CslItem;
+  await library.update(ref.id, {
+    custom: {
+      ...item.custom,
+      attachments: {
+        directory: dirName,
+        files: [],
+      },
+    },
+  } as Partial<CslItem>);
+  await library.save();
+}
+
+/**
+ * Resolve target path for file or role
+ */
+async function resolveTargetPath(
+  dirPath: string,
+  filename: string | undefined,
+  role: string | undefined,
+  attachments: Attachments | undefined
+): Promise<{ path: string } | { error: string }> {
+  if (filename) {
+    const targetPath = join(dirPath, filename);
+    if (!(await pathExists(targetPath))) {
+      return { error: `Attachment file not found: ${filename}` };
+    }
+    return { path: targetPath };
+  }
+
+  if (role) {
+    const foundFilename = findFileByRole(attachments, role);
+    if (!foundFilename) {
+      return { error: `No ${role} attachment found` };
+    }
+    const targetPath = join(dirPath, foundFilename);
+    if (!(await pathExists(targetPath))) {
+      return { error: `Attachment file not found: ${foundFilename}` };
+    }
+    return { path: targetPath };
+  }
+
+  return { path: dirPath };
 }
 
 /**
@@ -99,67 +189,38 @@ export async function openAttachment(
   }
 
   const ref = item as ReferenceForAttachments;
-  const uuid = ref.custom?.uuid;
 
   // Check UUID exists
-  if (!uuid) {
+  if (!ref.custom?.uuid) {
     return {
       success: false,
       error: "Reference has no UUID. Cannot determine attachment directory.",
     };
   }
 
-  // Get or create directory
+  // Resolve directory
   const attachments = ref.custom?.attachments;
-  let dirPath: string;
-  let directoryCreated = false;
+  const { dirPath, directoryCreated } = await resolveDirectory(ref, attachmentsDirectory);
 
-  if (attachments?.directory) {
-    dirPath = join(attachmentsDirectory, attachments.directory);
-  } else {
-    // Need to create directory
-    dirPath = await ensureDirectory(ref, attachmentsDirectory);
-    directoryCreated = true;
+  // Update metadata if directory was created and no attachments metadata exists yet
+  if (directoryCreated && !attachments?.directory) {
+    await updateDirectoryMetadata(library, ref, dirPath);
   }
 
-  // Ensure directory exists
-  if (!(await pathExists(dirPath))) {
-    dirPath = await ensureDirectory(ref, attachmentsDirectory);
-    directoryCreated = true;
-  }
-
-  // Determine what to open
-  let targetPath: string;
-
-  if (filename) {
-    // Open specific file
-    targetPath = join(dirPath, filename);
-    if (!(await pathExists(targetPath))) {
-      return { success: false, error: `Attachment file not found: ${filename}` };
-    }
-  } else if (role) {
-    // Open file by role
-    const foundFilename = findFileByRole(attachments, role);
-    if (!foundFilename) {
-      return { success: false, error: `No ${role} attachment found` };
-    }
-    targetPath = join(dirPath, foundFilename);
-    if (!(await pathExists(targetPath))) {
-      return { success: false, error: `Attachment file not found: ${foundFilename}` };
-    }
-  } else {
-    // Open directory
-    targetPath = dirPath;
+  // Resolve target path
+  const targetResult = await resolveTargetPath(dirPath, filename, role, attachments);
+  if ("error" in targetResult) {
+    return { success: false, error: targetResult.error };
   }
 
   // Open or return path
   if (!print) {
-    await openWithSystemApp(targetPath);
+    await openWithSystemApp(targetResult.path);
   }
 
   return {
     success: true,
-    path: targetPath,
+    path: targetResult.path,
     directoryCreated,
   };
 }

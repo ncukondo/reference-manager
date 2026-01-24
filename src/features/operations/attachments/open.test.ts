@@ -58,6 +58,7 @@ describe("openAttachment", () => {
         updatedItem = { ...mockReference, ...updates };
         return updatedItem;
       }),
+      save: vi.fn().mockResolvedValue(undefined),
       getPath: vi.fn(),
       list: vi.fn(),
       add: vi.fn(),

@@ -771,6 +771,288 @@ describe("Attach Command E2E", () => {
       expect(result.stdout).toContain("notes.md");
     });
   });
+
+  describe("Scenario: Manual file addition and sync", () => {
+    it("should detect manually added files and sync metadata", async () => {
+      // 1. Run `ref attach open <id> --no-sync` to create directory
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(openResult.exitCode).toBe(0);
+
+      // Get the created directory path
+      const refDirs = await fs.readdir(attachmentsDir);
+      expect(refDirs.length).toBe(1);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Copy files directly to directory (simulating user drag-drop)
+      await fs.writeFile(path.join(refDir, "supplement-table-s1.xlsx"), "excel data", "utf-8");
+      await fs.writeFile(path.join(refDir, "notes.md"), "# Notes\nSome notes", "utf-8");
+
+      // 3. Run `ref attach sync <id>` (dry-run)
+      const dryRunResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(dryRunResult.exitCode).toBe(0);
+      // Should report new files detected
+      expect(dryRunResult.stderr).toContain("supplement-table-s1.xlsx");
+      expect(dryRunResult.stderr).toContain("notes.md");
+      // Should not apply changes (dry run)
+      expect(dryRunResult.stderr).toContain("2 new file");
+
+      // Verify metadata NOT updated yet (dry run)
+      const listBeforeSync = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+      // Should fail or show no files since we didn't add any via CLI
+      expect(listBeforeSync.exitCode).toBe(1);
+
+      // 5. Run `ref attach sync <id> --yes`
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+      expect(syncResult.stderr).toContain("Added");
+
+      // 6. Verify metadata updated
+      // 7. Run `ref attach list <id>`
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      // 8. Verify all files listed
+      expect(listResult.stdout).toContain("supplement-table-s1.xlsx");
+      expect(listResult.stdout).toContain("notes.md");
+      expect(listResult.stdout).toContain("supplement");
+      expect(listResult.stdout).toContain("notes");
+    });
+
+    it("should infer role correctly from filename patterns", async () => {
+      // Create directory by adding a file first
+      const testFile = path.join(testDir, "initial.csv");
+      await fs.writeFile(testFile, "data", "utf-8");
+
+      await runWithAttachments([
+        "attach",
+        "add",
+        "Smith-2024",
+        testFile,
+        "--role",
+        "supplement",
+        "--label",
+        "initial",
+        "--library",
+        libraryPath,
+      ]);
+
+      // Get the directory
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // Add files with different naming patterns
+      await fs.writeFile(path.join(refDir, "fulltext.pdf"), "pdf content", "utf-8");
+      await fs.writeFile(path.join(refDir, "fulltext.md"), "markdown content", "utf-8");
+      await fs.writeFile(path.join(refDir, "draft-v1.docx"), "draft content", "utf-8");
+      await fs.writeFile(path.join(refDir, "random-file.txt"), "random", "utf-8");
+
+      // Sync with --yes
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+
+      // List and verify roles are inferred correctly
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      // fulltext.pdf and fulltext.md should have role "fulltext"
+      expect(listResult.stdout).toContain("fulltext");
+      // draft-v1.docx should have role "draft"
+      expect(listResult.stdout).toContain("draft");
+    });
+  });
+
+  describe("Scenario: Missing file detection", () => {
+    it("should detect and report missing files", async () => {
+      // 1. Add attachment via CLI
+      const testFile = path.join(testDir, "data.csv");
+      await fs.writeFile(testFile, "data", "utf-8");
+
+      await runWithAttachments([
+        "attach",
+        "add",
+        "Smith-2024",
+        testFile,
+        "--role",
+        "supplement",
+        "--library",
+        libraryPath,
+      ]);
+
+      // Get directory path
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Delete file directly from filesystem
+      await fs.unlink(path.join(refDir, "supplement.csv"));
+
+      // 3. Run `ref attach sync <id>`
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+      // 4. Verify missing file reported
+      expect(syncResult.stderr).toContain("missing");
+      expect(syncResult.stderr).toContain("supplement.csv");
+    });
+
+    it("should clean up missing files from metadata with --fix", async () => {
+      // Add attachment via CLI
+      const testFile = path.join(testDir, "data.csv");
+      await fs.writeFile(testFile, "data", "utf-8");
+
+      await runWithAttachments([
+        "attach",
+        "add",
+        "Smith-2024",
+        testFile,
+        "--role",
+        "supplement",
+        "--library",
+        libraryPath,
+      ]);
+
+      // Get directory path
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // Delete file directly from filesystem
+      await fs.unlink(path.join(refDir, "supplement.csv"));
+
+      // 5. Run `ref attach sync <id> --fix`
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--fix",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+      // 6. Verify metadata cleaned up
+      expect(syncResult.stderr).toContain("Removed");
+
+      // Verify the file is no longer in metadata
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      // Should fail because no attachments remain
+      expect(listResult.exitCode).toBe(1);
+    });
+
+    it("should handle both new and missing files together", async () => {
+      // Add initial attachment
+      const testFile = path.join(testDir, "data.csv");
+      await fs.writeFile(testFile, "data", "utf-8");
+
+      await runWithAttachments([
+        "attach",
+        "add",
+        "Smith-2024",
+        testFile,
+        "--role",
+        "supplement",
+        "--library",
+        libraryPath,
+      ]);
+
+      // Get directory path
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // Delete original file and add new file
+      await fs.unlink(path.join(refDir, "supplement.csv"));
+      await fs.writeFile(path.join(refDir, "notes.md"), "new notes", "utf-8");
+
+      // Sync with both --yes and --fix
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--fix",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+      expect(syncResult.stderr).toContain("Added");
+      expect(syncResult.stderr).toContain("Removed");
+
+      // Verify result: old file gone, new file added
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      expect(listResult.stdout).toContain("notes.md");
+      expect(listResult.stdout).not.toContain("supplement.csv");
+    });
+  });
 });
 
 const CLI_PATH = path.resolve("bin/reference-manager.js");
