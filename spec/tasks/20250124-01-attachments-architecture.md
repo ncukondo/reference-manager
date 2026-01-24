@@ -99,18 +99,18 @@ Add WSL support to the file opener utility.
 
 Core directory operations (create, delete, rename, open).
 
-- [ ] Write test: `src/features/attachments/directory-manager.test.ts`
+- [x] Write test: `src/features/attachments/directory-manager.test.ts`
   - Test directory creation
   - Test directory deletion (when empty)
   - Test directory rename (on id/PMID change)
   - Test getDirectoryPath
-- [ ] Implement: `src/features/attachments/directory-manager.ts`
+- [x] Implement: `src/features/attachments/directory-manager.ts`
   - `ensureDirectory(reference): Promise<string>`
   - `deleteDirectoryIfEmpty(reference): Promise<void>`
   - `renameDirectory(oldRef, newRef): Promise<void>`
   - `getDirectoryPath(reference): string`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Attachment Operations - Add
 
