@@ -284,7 +284,12 @@ describe("FulltextManager", () => {
 
       const path = manager.getFilePath(item, "pdf");
 
-      expect(path).toBe(join(fulltextDir, "Smith-2024-123e4567-e89b-12d3-a456-426614174000.pdf"));
+      // Path is normalized to forward slashes for cross-platform consistency
+      const expected = join(
+        fulltextDir,
+        "Smith-2024-123e4567-e89b-12d3-a456-426614174000.pdf"
+      ).replace(/\\/g, "/");
+      expect(path).toBe(expected);
     });
 
     it("returns full path for attached Markdown", () => {
@@ -301,7 +306,12 @@ describe("FulltextManager", () => {
 
       const path = manager.getFilePath(item, "markdown");
 
-      expect(path).toBe(join(fulltextDir, "Smith-2024-123e4567-e89b-12d3-a456-426614174000.md"));
+      // Path is normalized to forward slashes for cross-platform consistency
+      const expected = join(
+        fulltextDir,
+        "Smith-2024-123e4567-e89b-12d3-a456-426614174000.md"
+      ).replace(/\\/g, "/");
+      expect(path).toBe(expected);
     });
 
     it("returns null if fulltext not attached", () => {

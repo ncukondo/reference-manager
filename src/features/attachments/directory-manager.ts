@@ -24,12 +24,14 @@ interface ReferenceForAttachments {
 export function getDirectoryPath(ref: ReferenceForAttachments, baseDir: string): string {
   const existingDir = ref.custom?.attachments?.directory;
   if (existingDir) {
-    return path.join(baseDir, existingDir);
+    // Normalize to forward slashes for consistent cross-platform output
+    return path.join(baseDir, existingDir).replace(/\\/g, "/");
   }
 
   // Generate new directory name
   const dirName = generateDirectoryName(ref as Parameters<typeof generateDirectoryName>[0]);
-  return path.join(baseDir, dirName);
+  // Normalize to forward slashes for consistent cross-platform output
+  return path.join(baseDir, dirName).replace(/\\/g, "/");
 }
 
 /**
