@@ -282,14 +282,21 @@ Update `fulltext` command to use attachments backend.
 
 Add attachment operations to ILibraryOperations interface.
 
-- [ ] Write test: Update `src/features/operations/library-operations.test.ts`
-- [ ] Implement: Update `src/features/operations/library-operations.ts`
+- [x] Write test: Update `src/features/operations/operations-library.test.ts`
+  - Add tests for attachment operations (attachAdd, attachList, attachGet, attachDetach, attachSync, attachOpen)
+- [x] Implement: Update `src/features/operations/library-operations.ts`
   - Add attachment methods to interface
-  - Implement in OperationsLibrary
-- [ ] Implement: Update `src/cli/server-client.ts`
+- [x] Implement: Update `src/features/operations/operations-library.ts`
+  - Implement attachment methods in OperationsLibrary
+- [x] Implement: Update `src/cli/server-client.ts`
   - Add HTTP endpoints for attachments
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Export types: Update `src/features/operations/index.ts`
+  - Export attachment operation types
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
+
+Note: HTTP server routes for attachments are not yet implemented. ServerClient methods
+are ready but will fail until server-side routes are added (optional future step).
 
 ### Step 15: Configuration
 
