@@ -377,7 +377,7 @@ ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 ```bash
 # 文献の添付ファイルフォルダを開く（ドラッグ＆ドロップでファイル管理）
 ref attach open smith2024                # ファイルマネージャでフォルダを開く
-ref attach open smith2024 -p             # パスのみ表示（スクリプト用）
+ref attach open smith2024 --print        # パスのみ表示（スクリプト用）
 
 # プログラムで添付ファイルを追加
 ref attach add smith2024 supplement.xlsx --role supplement

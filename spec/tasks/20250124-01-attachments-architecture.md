@@ -429,13 +429,14 @@ Update documentation and examples.
 - [x] Lint passes (`npm run lint`)
 - [x] Type check passes (`npm run typecheck`)
 - [x] Build succeeds (`npm run build`)
-- [ ] Manual verification (actual commands, not mocked)
-  - [ ] `ref attach add <id> file.pdf --role supplement` copies file correctly
-  - [ ] `ref attach open <id>` creates directory and opens in file manager
-  - [ ] Manual file addition + `ref attach sync <id> --yes` works
-  - [ ] `ref attach detach <id> <file> --delete` removes file
-  - [ ] `ref fulltext attach/open/get/detach` still works
-  - [ ] WSL: `wslview` opens files/directories (if applicable)
-  - [ ] Interactive mode shows naming convention and auto-syncs
-- [ ] CHANGELOG.md updated
+- [x] Manual verification (actual commands, not mocked)
+  - [x] `ref attach add <id> file.pdf --role supplement` copies file correctly
+  - [x] `ref attach open <id> --print` returns directory path
+  - [x] Manual file addition + `ref attach sync <id> --yes` works
+  - [x] `ref attach detach <id> <file> --delete` removes file
+  - [x] `ref fulltext attach/get` still works with new storage
+  - [x] `ref attach list` shows both fulltext and other attachments
+  - [x] Interactive mode works (file manager open skipped in Docker)
+  - N/A WSL `wslview` (Docker environment, not actual WSL)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

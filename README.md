@@ -375,7 +375,7 @@ A more flexible attachment system supporting multiple files per reference with r
 ```bash
 # Open reference's attachment folder (for drag-and-drop file management)
 ref attach open smith2024                # Opens folder in file manager
-ref attach open smith2024 -p             # Print path only (for scripting)
+ref attach open smith2024 --print        # Print path only (for scripting)
 
 # Add attachments programmatically
 ref attach add smith2024 supplement.xlsx --role supplement
