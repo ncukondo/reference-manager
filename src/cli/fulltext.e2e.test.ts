@@ -957,14 +957,11 @@ function runCli(
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     // Set both fulltext and attachments directory via environment variable for testing
-    // Fulltext now uses attachments directory, so we set both for consistency
+    // Set attachments directory via environment variable for testing
     const env = {
       ...process.env,
       NODE_ENV: "test",
-      ...(fulltextDir && {
-        REFERENCE_MANAGER_ATTACHMENTS_DIR: fulltextDir,
-        REFERENCE_MANAGER_FULLTEXT_DIR: fulltextDir,
-      }),
+      ...(fulltextDir && { REFERENCE_MANAGER_ATTACHMENTS_DIR: fulltextDir }),
     };
 
     const proc = spawn("node", [CLI_PATH, ...args], { env });
