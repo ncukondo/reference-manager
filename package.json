@@ -40,6 +40,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
+    "check:paths": "! grep -rn --include='*.ts' --exclude='*.test.ts' --exclude='*.d.ts' --exclude='path.ts' '\\.replace(/\\\\\\\\' src/ 2>/dev/null",
     "prepublishOnly": "npm run build",
     "prepare": "husky || true"
   },
