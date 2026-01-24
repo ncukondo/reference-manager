@@ -108,6 +108,13 @@ export const fulltextConfigSchema = z.object({
 });
 
 /**
+ * Attachments storage configuration schema
+ */
+export const attachmentsConfigSchema = z.object({
+  directory: z.string().min(1),
+});
+
+/**
  * Complete configuration schema
  */
 export const configSchema = z.object({
@@ -119,6 +126,7 @@ export const configSchema = z.object({
   citation: citationConfigSchema,
   pubmed: pubmedConfigSchema,
   fulltext: fulltextConfigSchema,
+  attachments: attachmentsConfigSchema,
   cli: cliConfigSchema,
   mcp: mcpConfigSchema,
 });
@@ -185,6 +193,11 @@ export const partialConfigSchema = z
         directory: z.string().min(1).optional(),
       })
       .optional(),
+    attachments: z
+      .object({
+        directory: z.string().min(1).optional(),
+      })
+      .optional(),
     cli: z
       .object({
         defaultLimit: z.number().int().nonnegative().optional(),
@@ -228,6 +241,7 @@ export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
+export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type TuiConfig = z.infer<typeof tuiConfigSchema>;
 export type EditConfigFormat = z.infer<typeof editFormatSchema>;
 export type EditConfig = z.infer<typeof editConfigSchema>;
@@ -248,6 +262,7 @@ export type DeepPartialConfig = {
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
   fulltext?: Partial<FulltextConfig>;
+  attachments?: Partial<AttachmentsConfig>;
   cli?: Partial<Omit<CliConfig, "tui" | "edit">> & {
     tui?: Partial<TuiConfig>;
     edit?: Partial<EditConfig>;
@@ -427,6 +442,7 @@ const sectionNormalizers = {
   citation: normalizeCitationConfig,
   pubmed: normalizePubmedConfig,
   fulltext: normalizeFulltextConfig,
+  attachments: normalizeAttachmentsConfig,
   cli: normalizeCliConfig,
   mcp: normalizeMcpConfig,
 } as const;
@@ -484,6 +500,21 @@ function normalizeFulltextConfig(fulltext: {
 
   if (fulltext.directory !== undefined) {
     normalized.directory = fulltext.directory;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
+ * Normalize attachments configuration
+ */
+function normalizeAttachmentsConfig(attachments: {
+  directory?: string | undefined;
+}): Partial<AttachmentsConfig> | undefined {
+  const normalized: Partial<AttachmentsConfig> = {};
+
+  if (attachments.directory !== undefined) {
+    normalized.directory = attachments.directory;
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

@@ -55,6 +55,14 @@ export function getDefaultFulltextDirectory(): string {
 }
 
 /**
+ * Get the default attachments directory
+ * Uses platform-specific data path + attachments/
+ */
+export function getDefaultAttachmentsDirectory(): string {
+  return join(getPaths().data, "attachments");
+}
+
+/**
  * Default configuration
  */
 export const defaultConfig: Config = {
@@ -87,6 +95,9 @@ export const defaultConfig: Config = {
   },
   fulltext: {
     directory: getDefaultFulltextDirectory(),
+  },
+  attachments: {
+    directory: getDefaultAttachmentsDirectory(),
   },
   cli: {
     defaultLimit: 0,

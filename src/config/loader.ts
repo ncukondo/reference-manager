@@ -148,6 +148,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     citation: fillCitationDefaults(partial.citation),
     pubmed: fillPubmedDefaults(partial.pubmed),
     fulltext: fillFulltextDefaults(partial.fulltext),
+    attachments: fillAttachmentsDefaults(partial.attachments),
     cli: fillCliDefaults(partial.cli),
     mcp: fillMcpDefaults(partial.mcp),
   };
@@ -201,6 +202,22 @@ function expandTilde(path: string): string {
 function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
   const envDir = process.env.REFERENCE_MANAGER_FULLTEXT_DIR;
   const directory = envDir ?? partial?.directory ?? defaultConfig.fulltext.directory;
+  return {
+    directory: expandTilde(directory),
+  };
+}
+
+/**
+ * Fill attachments config with defaults
+ *
+ * Priority:
+ * 1. Environment variable REFERENCE_MANAGER_ATTACHMENTS_DIR
+ * 2. Config file setting
+ * 3. Default value
+ */
+function fillAttachmentsDefaults(partial: DeepPartialConfig["attachments"]): Config["attachments"] {
+  const envDir = process.env.REFERENCE_MANAGER_ATTACHMENTS_DIR;
+  const directory = envDir ?? partial?.directory ?? defaultConfig.attachments.directory;
   return {
     directory: expandTilde(directory),
   };

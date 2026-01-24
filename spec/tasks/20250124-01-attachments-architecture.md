@@ -190,17 +190,17 @@ Open directory or file with system application.
 
 Implement `attach` command with subcommands.
 
-- [ ] Write test: `src/cli/commands/attach.test.ts`
+- [x] Write test: `src/cli/commands/attach.test.ts`
   - Test open subcommand (directory, file, role, print)
   - Test add subcommand
   - Test list subcommand
   - Test get subcommand
   - Test detach subcommand
   - Test sync subcommand
-- [ ] Implement: `src/cli/commands/attach.ts`
+- [x] Implement: `src/cli/commands/attach.ts`
   - Subcommands: open, add, list, get, detach, sync
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 12: CLI - Interactive Mode for attach open
 
@@ -249,13 +249,15 @@ Add attachment operations to ILibraryOperations interface.
 
 Add attachments configuration.
 
-- [ ] Write test: `src/features/config/schema.test.ts`
+- [x] Write test: `src/features/config/schema.test.ts`
   - Test attachments.directory config key
-- [ ] Implement: Update config schema
+- [x] Implement: Update config schema
   - `[attachments]` section
   - `directory` key with platform-specific default
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
+
+Note: Configuration was implemented as part of Step 11.
 
 ### Step 16: E2E Tests - Core Workflows
 
