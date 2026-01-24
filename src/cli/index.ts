@@ -13,6 +13,14 @@ import {
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
 import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
+import {
+  handleAttachAddAction,
+  handleAttachDetachAction,
+  handleAttachGetAction,
+  handleAttachListAction,
+  handleAttachOpenAction,
+  handleAttachSyncAction,
+} from "./commands/attach.js";
 import { handleCiteAction } from "./commands/cite.js";
 import { registerConfigCommand } from "./commands/config.js";
 import { handleEditAction } from "./commands/edit.js";
@@ -76,6 +84,7 @@ export function createProgram(): Command {
   registerCiteCommand(program);
   registerServerCommand(program);
   registerFulltextCommand(program);
+  registerAttachCommand(program);
   registerMcpCommand(program);
   registerConfigCommand(program);
   registerCompletionCommand(program);
@@ -567,6 +576,89 @@ function registerMcpCommand(program: Command): void {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
         process.exit(1);
       }
+    });
+}
+
+/**
+ * Register 'attach' command with subcommands
+ */
+function registerAttachCommand(program: Command): void {
+  const attachCmd = program.command("attach").description("Manage file attachments for references");
+
+  attachCmd
+    .command("open")
+    .description("Open attachments directory or specific file")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .argument("[filename]", "Specific file to open")
+    .option("--role <role>", "Open file by role")
+    .option("--print", "Output path instead of opening")
+    .option("--no-sync", "Skip interactive sync prompt")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, filename: string | undefined, options) => {
+      await handleAttachOpenAction(identifier, filename, options, program.opts());
+    });
+
+  attachCmd
+    .command("add")
+    .description("Add a file attachment to a reference")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .argument("<file-path>", "Path to the file to attach")
+    .requiredOption(
+      "--role <role>",
+      "Role for the file (fulltext, supplement, notes, draft, or custom)"
+    )
+    .option("--label <label>", "Human-readable label")
+    .option("--move", "Move file instead of copy")
+    .option("-f, --force", "Overwrite existing attachment")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, filePath: string, options) => {
+      await handleAttachAddAction(identifier, filePath, options, program.opts());
+    });
+
+  attachCmd
+    .command("list")
+    .description("List attachments for a reference")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .option("--role <role>", "Filter by role")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleAttachListAction(identifier, options, program.opts());
+    });
+
+  attachCmd
+    .command("get")
+    .description("Get attachment file path or content")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .argument("[filename]", "Specific file to get")
+    .option("--role <role>", "Get file by role")
+    .option("--stdout", "Output file content to stdout")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, filename: string | undefined, options) => {
+      await handleAttachGetAction(identifier, filename, options, program.opts());
+    });
+
+  attachCmd
+    .command("detach")
+    .description("Detach file from a reference")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .argument("[filename]", "Specific file to detach")
+    .option("--role <role>", "Detach files by role")
+    .option("--all", "Detach all files of specified role")
+    .option("--delete", "Also delete file from disk")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, filename: string | undefined, options) => {
+      await handleAttachDetachAction(identifier, filename, options, program.opts());
+    });
+
+  attachCmd
+    .command("sync")
+    .description("Synchronize metadata with files on disk")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .option("--yes", "Apply changes (add new files)")
+    .option("--fix", "Remove missing files from metadata")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleAttachSyncAction(identifier, options, program.opts());
     });
 }
 

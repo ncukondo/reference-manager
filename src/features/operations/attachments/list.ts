@@ -47,14 +47,21 @@ export async function listAttachments(
 
   // Get attachments
   const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
-  if (!attachments) {
-    return { success: true, files: [] };
+  if (!attachments || attachments.files.length === 0) {
+    return { success: false, files: [], error: `No attachments for reference '${identifier}'` };
   }
 
   // Filter by role if specified
   let files = attachments.files;
   if (role) {
     files = files.filter((f) => f.role === role);
+    if (files.length === 0) {
+      return {
+        success: false,
+        files: [],
+        error: `No ${role} attachments for reference '${identifier}'`,
+      };
+    }
   }
 
   return {

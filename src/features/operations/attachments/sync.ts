@@ -242,6 +242,7 @@ export async function syncAttachments(
       shouldApplyFix
     );
     await updateAttachmentMetadata(library, item as CslItem, attachments, updatedFiles);
+    await library.save();
   }
 
   return { success: true, newFiles, missingFiles, applied: shouldApply };

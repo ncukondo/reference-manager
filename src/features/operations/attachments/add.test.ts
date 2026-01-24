@@ -52,6 +52,7 @@ describe("addAttachment", () => {
         updatedItem = { ...mockReference, ...updates };
         return updatedItem;
       }),
+      save: vi.fn().mockResolvedValue(undefined),
       // Other required methods
       getPath: vi.fn(),
       list: vi.fn(),

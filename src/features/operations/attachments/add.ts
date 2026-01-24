@@ -256,6 +256,7 @@ export async function addAttachment(
   };
 
   await updateAttachmentMetadata(library, item as CslItem, updatedAttachments);
+  await library.save();
 
   return {
     success: true,

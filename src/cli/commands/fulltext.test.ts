@@ -143,6 +143,7 @@ describe("fulltext command", () => {
     findById: vi.fn(),
     findByUuid: vi.fn(),
     update: vi.fn(),
+    save: vi.fn(),
   } as unknown as ServerClient;
 
   const serverContext: ExecutionContext = {

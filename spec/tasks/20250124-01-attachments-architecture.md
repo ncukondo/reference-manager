@@ -316,7 +316,12 @@ Note: Configuration was implemented as part of Step 11.
 
 End-to-end tests for core attachment operations. **No mocks allowed.**
 
-- [ ] Write test: `src/cli/attach.e2e.test.ts`
+- [x] Register `attach` command in CLI: `src/cli/index.ts`
+  - Added `registerAttachCommand` function
+  - Registered all subcommands (open, add, list, get, detach, sync)
+- [x] Add `library.save()` calls to attachment operations
+  - `add.ts`, `detach.ts`, `sync.ts` now persist changes
+- [x] Write test: `src/cli/attach.e2e.test.ts`
   - **Scenario: Add and retrieve attachment**
     1. Create library with reference
     2. Run `ref attach add <id> file.pdf --role supplement`
@@ -334,7 +339,7 @@ End-to-end tests for core attachment operations. **No mocks allowed.**
     1. Verify no directory exists initially
     2. Add first attachment → directory created
     3. Detach last attachment with --delete → directory removed
-- [ ] Verify: `npm run test:e2e`
+- [x] Verify: `npm run test:e2e` (20 tests passed)
 
 ### Step 17: E2E Tests - Sync Workflow
 

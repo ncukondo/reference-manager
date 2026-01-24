@@ -68,7 +68,7 @@ describe("listAttachments", () => {
       ]);
     });
 
-    it("should return empty list when no attachments", async () => {
+    it("should return error when no attachments", async () => {
       const mockLibrary = createMockLibrary(baseReference);
       const options: ListAttachmentsOptions = {
         identifier: "Smith-2024",
@@ -77,9 +77,9 @@ describe("listAttachments", () => {
 
       const result = await listAttachments(mockLibrary, options);
 
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
       expect(result.files).toEqual([]);
-      expect(result.directory).toBeUndefined();
+      expect(result.error).toMatch(/No attachments/i);
     });
   });
 
@@ -139,8 +139,9 @@ describe("listAttachments", () => {
 
       const result = await listAttachments(mockLibrary, options);
 
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
       expect(result.files).toEqual([]);
+      expect(result.error).toMatch(/No notes attachments/i);
     });
   });
 
