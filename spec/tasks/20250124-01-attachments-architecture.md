@@ -116,16 +116,16 @@ Core directory operations (create, delete, rename, open).
 
 Add file to reference attachments.
 
-- [ ] Write test: `src/features/operations/attachments/add.test.ts`
+- [x] Write test: `src/features/operations/attachments/add.test.ts`
   - Test copy file to directory
   - Test move file option
   - Test metadata update
   - Test fulltext role constraint (max 2 files)
   - Test overwrite with --force
-- [ ] Implement: `src/features/operations/attachments/add.ts`
+- [x] Implement: `src/features/operations/attachments/add.ts`
   - `addAttachment(library, refId, filePath, options): Promise<AddResult>`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Attachment Operations - List & Get
 
