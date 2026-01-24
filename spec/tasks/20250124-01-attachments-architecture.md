@@ -86,14 +86,14 @@ Generate and parse filenames following `{role}[-{label}].{ext}` convention.
 
 Add WSL support to the file opener utility.
 
-- [ ] Write test: `src/utils/opener.test.ts`
+- [x] Write test: `src/utils/opener.test.ts`
   - Test WSL detection logic
   - Test opener command selection for WSL
-- [ ] Implement: `src/utils/opener.ts`
+- [x] Implement: `src/utils/opener.ts`
   - `isWSL(): boolean`
   - Update `getOpenerCommand()` to return `wslview` for WSL
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: Directory Management
 
