@@ -398,12 +398,16 @@ Note: During Step 18 implementation, unified environment variables by:
 
 Add completion for attach command.
 
-- [ ] Write test: `src/cli/completion.test.ts`
+- [x] Write test: `src/cli/completion.test.ts`
   - Test attach subcommand completion
   - Test role completion for --role option
-- [ ] Implement: Update `src/cli/completion.ts`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+  - Test ID completion for attach subcommands (open, add, list, get, detach, sync)
+- [x] Implement: Update `src/cli/completion.ts`
+  - Added `ID_COMPLETION_ATTACH_SUBCOMMANDS` for attach subcommand ID completion
+  - Added `ATTACHMENT_ROLES` for --role/-r option completion
+  - Added attach subcommand handling in `needsIdCompletion`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 20: Documentation
 

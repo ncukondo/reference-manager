@@ -46,6 +46,9 @@ const CONFIG_SECTIONS = [
   "watch",
 ] as const;
 
+// Attachment role values for --role/-r option
+const ATTACHMENT_ROLES = ["fulltext", "supplement", "notes", "draft"] as const;
+
 // Option values for specific options (command-independent)
 // These map option flags to their possible values
 export const OPTION_VALUES: Record<string, readonly string[]> = {
@@ -56,6 +59,8 @@ export const OPTION_VALUES: Record<string, readonly string[]> = {
   "--section": CONFIG_SECTIONS,
   "--input": ADD_INPUT_FORMATS,
   "-i": ADD_INPUT_FORMATS,
+  "--role": ATTACHMENT_ROLES,
+  "-r": ATTACHMENT_ROLES,
 };
 
 // Command-specific --output/-o values
@@ -98,6 +103,7 @@ function getOptionValuesForCommand(
 // Commands that support ID completion
 const ID_COMPLETION_COMMANDS = new Set(["cite", "remove", "update"]);
 const ID_COMPLETION_FULLTEXT_SUBCOMMANDS = new Set(["attach", "get", "detach", "open"]);
+const ID_COMPLETION_ATTACH_SUBCOMMANDS = new Set(["open", "add", "list", "get", "detach", "sync"]);
 
 /**
  * Convert option values to CompletionItem array
@@ -255,6 +261,15 @@ export function needsIdCompletion(env: TabtabEnv): {
   if (command === "fulltext" && args.length >= 2) {
     const subcommand = args[1] ?? "";
     if (ID_COMPLETION_FULLTEXT_SUBCOMMANDS.has(subcommand)) {
+      return { needs: true, command, subcommand };
+    }
+    return { needs: false };
+  }
+
+  // Check for attach subcommands
+  if (command === "attach" && args.length >= 2) {
+    const subcommand = args[1] ?? "";
+    if (ID_COMPLETION_ATTACH_SUBCOMMANDS.has(subcommand)) {
       return { needs: true, command, subcommand };
     }
     return { needs: false };
