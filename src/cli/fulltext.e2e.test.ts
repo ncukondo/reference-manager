@@ -2,8 +2,8 @@
  * End-to-end tests for fulltext commands
  * Tests actual CLI execution with file operations
  *
- * Note: Uses REFERENCE_MANAGER_FULLTEXT_DIR environment variable
- * to set the fulltext directory for testing in isolation.
+ * Note: Uses REFERENCE_MANAGER_ATTACHMENTS_DIR environment variable
+ * to set the attachments directory for testing in isolation.
  */
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";

@@ -413,17 +413,22 @@ Add completion for attach command.
 
 Update documentation and examples.
 
-- [ ] Update README.md with attach command examples
-- [ ] Update README_ja.md
-- [ ] Verify examples work by running them
+- [x] Update README.md with attach command examples
+  - Added Attachment Management section with full examples
+  - Updated Shell Completion section with attach command examples
+  - Updated Environment Variables (removed deprecated FULLTEXT_DIR)
+  - Updated Interactive ID Selection with attach commands
+- [x] Update README_ja.md
+  - Japanese translation of all new sections
+- [x] Fix outdated comment in fulltext.e2e.test.ts
 
 ## Completion Checklist
 
-- [ ] All unit tests pass (`npm run test:unit`)
-- [ ] All E2E tests pass (`npm run test:e2e`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All unit tests pass (`npm run test:unit`)
+- [x] All E2E tests pass (`npm run test:e2e`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification (actual commands, not mocked)
   - [ ] `ref attach add <id> file.pdf --role supplement` copies file correctly
   - [ ] `ref attach open <id>` creates directory and opens in file manager
