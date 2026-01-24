@@ -9,6 +9,7 @@ import { basename, join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { openWithSystemApp } from "../../../utils/opener.js";
+import { normalizePathForOutput } from "../../../utils/path.js";
 import { ensureDirectory } from "../../attachments/directory-manager.js";
 import type { Attachments } from "../../attachments/types.js";
 
@@ -135,13 +136,6 @@ async function updateDirectoryMetadata(
 }
 
 /**
- * Normalize path to forward slashes for cross-platform consistency
- */
-function normalizePath(p: string): string {
-  return p.replace(/\\/g, "/");
-}
-
-/**
  * Resolve target path for file or role
  * Returns native path for file operations
  */
@@ -229,7 +223,7 @@ export async function openAttachment(
   return {
     success: true,
     // Normalize for output (forward slashes for cross-platform consistency)
-    path: normalizePath(targetResult.path),
+    path: normalizePathForOutput(targetResult.path),
     directoryCreated,
   };
 }

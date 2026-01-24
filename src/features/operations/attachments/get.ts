@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
+import { normalizePathForOutput } from "../../../utils/path.js";
 import type { AttachmentFile, Attachments } from "../../attachments/types.js";
 
 /**
@@ -96,7 +97,7 @@ export async function getAttachment(
   // Build path (native for file operations)
   const filePath = join(attachmentsDirectory, attachments.directory, attachment.filename);
   // Normalize for output (forward slashes for cross-platform consistency)
-  const normalizedPath = filePath.replace(/\\/g, "/");
+  const normalizedPath = normalizePathForOutput(filePath);
 
   // If stdout, read and return content
   if (stdout) {

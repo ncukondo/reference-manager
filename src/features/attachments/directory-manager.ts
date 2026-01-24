@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { normalizePathForOutput } from "../../utils/path.js";
 import { generateDirectoryName } from "./directory.js";
 import type { Attachments } from "./types.js";
 
@@ -25,13 +26,13 @@ export function getDirectoryPath(ref: ReferenceForAttachments, baseDir: string):
   const existingDir = ref.custom?.attachments?.directory;
   if (existingDir) {
     // Normalize to forward slashes for consistent cross-platform output
-    return path.join(baseDir, existingDir).replace(/\\/g, "/");
+    return normalizePathForOutput(path.join(baseDir, existingDir));
   }
 
   // Generate new directory name
   const dirName = generateDirectoryName(ref as Parameters<typeof generateDirectoryName>[0]);
   // Normalize to forward slashes for consistent cross-platform output
-  return path.join(baseDir, dirName).replace(/\\/g, "/");
+  return normalizePathForOutput(path.join(baseDir, dirName));
 }
 
 /**
