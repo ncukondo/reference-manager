@@ -198,7 +198,8 @@ export class FulltextManager {
     if (!filename) {
       return null;
     }
-    return join(this.fulltextDirectory, filename);
+    // Normalize to forward slashes for consistent cross-platform output
+    return join(this.fulltextDirectory, filename).replace(/\\/g, "/");
   }
 
   /**
