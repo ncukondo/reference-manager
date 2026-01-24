@@ -20,7 +20,7 @@ describe("addAttachment", () => {
 
   beforeEach(async () => {
     // Create temp directories
-    tempDir = join(tmpdir(), `refmgr-test-${Date.now()}`);
+    tempDir = join(tmpdir(), `refmgr-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     attachmentsBaseDir = join(tempDir, "attachments");
     const sourceDir = join(tempDir, "source");
 

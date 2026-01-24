@@ -160,16 +160,16 @@ Remove file from reference attachments.
 
 Synchronize metadata with files on disk.
 
-- [ ] Write test: `src/features/operations/attachments/sync.test.ts`
+- [x] Write test: `src/features/operations/attachments/sync.test.ts`
   - Test detect new files
   - Test infer role from filename
   - Test detect missing files
   - Test apply changes with --yes
   - Test remove missing with --fix
-- [ ] Implement: `src/features/operations/attachments/sync.ts`
+- [x] Implement: `src/features/operations/attachments/sync.ts`
   - `syncAttachments(library, refId, options): Promise<SyncResult>`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 10: Attachment Operations - Open
 

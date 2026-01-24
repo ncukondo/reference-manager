@@ -19,7 +19,7 @@ describe("detachAttachment", () => {
   let updatedItem: CslItem | null;
 
   beforeEach(async () => {
-    tempDir = join(tmpdir(), `refmgr-test-${Date.now()}`);
+    tempDir = join(tmpdir(), `refmgr-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     attachmentsBaseDir = join(tempDir, "attachments");
     attachDir = join(attachmentsBaseDir, "Smith-2024-123e4567");
 
