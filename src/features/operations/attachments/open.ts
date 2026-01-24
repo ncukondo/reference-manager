@@ -143,6 +143,7 @@ function normalizePath(p: string): string {
 
 /**
  * Resolve target path for file or role
+ * Returns native path for file operations
  */
 async function resolveTargetPath(
   dirPath: string,
@@ -155,7 +156,7 @@ async function resolveTargetPath(
     if (!(await pathExists(targetPath))) {
       return { error: `Attachment file not found: ${filename}` };
     }
-    return { path: normalizePath(targetPath) };
+    return { path: targetPath };
   }
 
   if (role) {
@@ -167,10 +168,10 @@ async function resolveTargetPath(
     if (!(await pathExists(targetPath))) {
       return { error: `Attachment file not found: ${foundFilename}` };
     }
-    return { path: normalizePath(targetPath) };
+    return { path: targetPath };
   }
 
-  return { path: normalizePath(dirPath) };
+  return { path: dirPath };
 }
 
 /**
@@ -227,7 +228,8 @@ export async function openAttachment(
 
   return {
     success: true,
-    path: targetResult.path,
+    // Normalize for output (forward slashes for cross-platform consistency)
+    path: normalizePath(targetResult.path),
     directoryCreated,
   };
 }
