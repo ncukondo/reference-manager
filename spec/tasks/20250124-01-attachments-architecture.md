@@ -175,16 +175,16 @@ Synchronize metadata with files on disk.
 
 Open directory or file with system application.
 
-- [ ] Write test: `src/features/operations/attachments/open.test.ts`
+- [x] Write test: `src/features/operations/attachments/open.test.ts`
   - Test open directory
   - Test open specific file
   - Test open by role
   - Test create directory if not exists
   - Test print path option
-- [ ] Implement: `src/features/operations/attachments/open.ts`
+- [x] Implement: `src/features/operations/attachments/open.ts`
   - `openAttachment(library, refId, options): Promise<OpenResult>`
-- [ ] Verify: `npm run test:unit`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `npm run test:unit`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 11: CLI - attach Command
 
