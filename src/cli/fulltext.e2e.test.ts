@@ -292,7 +292,8 @@ describe("Fulltext Command E2E", () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("pdf:");
-      expect(result.stdout).toContain(fulltextDir);
+      // Output uses forward slashes for cross-platform consistency
+      expect(result.stdout).toContain(fulltextDir.replace(/\\/g, "/"));
     });
 
     it("should get all attached file paths", async () => {

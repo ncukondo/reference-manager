@@ -93,21 +93,23 @@ export async function getAttachment(
     return { success: false, error: "No filename or role specified" };
   }
 
-  // Build path
+  // Build path (native for file operations)
   const filePath = join(attachmentsDirectory, attachments.directory, attachment.filename);
+  // Normalize for output (forward slashes for cross-platform consistency)
+  const normalizedPath = filePath.replace(/\\/g, "/");
 
   // If stdout, read and return content
   if (stdout) {
     try {
       const content = await readFile(filePath);
-      return { success: true, path: filePath, content };
+      return { success: true, path: normalizedPath, content };
     } catch {
       return {
         success: false,
-        error: `File not found on disk: ${filePath}`,
+        error: `File not found on disk: ${normalizedPath}`,
       };
     }
   }
 
-  return { success: true, path: filePath };
+  return { success: true, path: normalizedPath };
 }

@@ -135,6 +135,13 @@ async function updateDirectoryMetadata(
 }
 
 /**
+ * Normalize path to forward slashes for cross-platform consistency
+ */
+function normalizePath(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
+/**
  * Resolve target path for file or role
  */
 async function resolveTargetPath(
@@ -148,7 +155,7 @@ async function resolveTargetPath(
     if (!(await pathExists(targetPath))) {
       return { error: `Attachment file not found: ${filename}` };
     }
-    return { path: targetPath };
+    return { path: normalizePath(targetPath) };
   }
 
   if (role) {
@@ -160,10 +167,10 @@ async function resolveTargetPath(
     if (!(await pathExists(targetPath))) {
       return { error: `Attachment file not found: ${foundFilename}` };
     }
-    return { path: targetPath };
+    return { path: normalizePath(targetPath) };
   }
 
-  return { path: dirPath };
+  return { path: normalizePath(dirPath) };
 }
 
 /**
