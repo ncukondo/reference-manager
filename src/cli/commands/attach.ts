@@ -439,6 +439,21 @@ export function formatAttachSyncOutput(result: SyncAttachmentResult): string {
 }
 
 /**
+ * Format sync preview for TTY interactive mode (no dry-run hints)
+ */
+function formatSyncPreview(result: SyncAttachmentResult): string {
+  if (!result.success) {
+    return `Error: ${result.error}`;
+  }
+
+  const lines: string[] = [];
+  formatNewFilesSection(result, lines);
+  formatMissingFilesSection(result, lines);
+
+  return lines.join("\n").trimEnd();
+}
+
+/**
  * Get exit code for attach command result
  */
 export function getAttachExitCode(
@@ -510,7 +525,7 @@ async function resolveIdentifier(
 export interface AttachOpenActionOptions {
   print?: boolean;
   role?: string;
-  noSync?: boolean;
+  sync?: boolean;
   uuid?: boolean;
 }
 
@@ -536,11 +551,21 @@ async function waitForEnter(): Promise<void> {
     process.stderr.write("Press Enter when done editing...");
     process.stdin.setRawMode(true);
     process.stdin.resume();
-    // Ensure stdin keeps the event loop alive (may be unref'd by previous prompts)
+
+    // Use a timer to keep the event loop alive.
+    // In Node.js 22+, stdin.ref() alone may not be sufficient after enquirer prompts
+    // complete, as enquirer may leave stdin in a state where ref() doesn't work as expected.
+    const keepAliveTimer = setInterval(() => {
+      // No-op: timer exists solely to keep event loop active
+    }, 60000);
+
+    // Also call ref() for belt-and-suspenders approach
     if (typeof process.stdin.ref === "function") {
       process.stdin.ref();
     }
+
     process.stdin.once("data", () => {
+      clearInterval(keepAliveTimer);
       process.stdin.setRawMode(false);
       process.stdin.pause();
       process.stderr.write("\n\n");
@@ -633,7 +658,8 @@ export async function handleAttachOpenAction(
     const identifier = await resolveIdentifier(identifierArg, context, config);
 
     const isDirectoryMode = !filenameArg && !options.role;
-    const shouldUseInteractive = isTTY() && isDirectoryMode && !options.print && !options.noSync;
+    const shouldUseInteractive =
+      isTTY() && isDirectoryMode && !options.print && options.sync !== false;
     const openOptions = buildOpenOptions(
       identifier,
       filenameArg,
@@ -889,12 +915,12 @@ async function runInteractiveSyncMode(
     return;
   }
 
-  // Show preview and ask for confirmation
-  process.stderr.write(`${formatAttachSyncOutput(dryRunResult)}\n\n`);
+  // Show preview and ask for confirmation (without dry-run hints for TTY)
+  process.stderr.write(`${formatSyncPreview(dryRunResult)}\n`);
 
   const shouldApplyNew = hasNewFiles && (await readConfirmation("Add new files to metadata?"));
   const shouldApplyFix =
-    hasMissingFiles && shouldApplyNew && (await readConfirmation("Remove missing files?"));
+    hasMissingFiles && (await readConfirmation("Remove missing files from metadata?"));
 
   if (!shouldApplyNew && !shouldApplyFix) {
     process.stderr.write("No changes applied.\n");

@@ -54,13 +54,26 @@ export async function openWithSystemApp(
   const [command, ...baseArgs] = commandParts;
   const args = [...baseArgs, filePath];
 
-  return new Promise((resolve, reject) => {
+  // Use a timer to keep the event loop alive while waiting for the close event.
+  // In Node.js 22+, after enquirer prompts complete, the event loop may have no
+  // active handles. Combined with proc.unref(), this can cause Node.js to exit
+  // before the close event fires.
+  const keepAliveTimer = setInterval(() => {
+    // No-op: timer exists solely to keep event loop active
+  }, 60000);
+
+  return new Promise<void>((resolve, reject) => {
     const proc: ChildProcess = spawn(command as string, args, {
       detached: true,
       stdio: "ignore",
     });
 
+    const cleanup = (): void => {
+      clearInterval(keepAliveTimer);
+    };
+
     proc.on("error", (err: NodeJS.ErrnoException) => {
+      cleanup();
       // Check if the command was not found (ENOENT)
       if (err.code === "ENOENT") {
         if (wsl && command === "wslview") {
@@ -76,6 +89,7 @@ export async function openWithSystemApp(
     });
 
     proc.on("close", (code: number | null) => {
+      cleanup();
       // wslview may return non-zero exit codes even on success
       // We treat the operation as successful if the process exited without error
       if (code === 0 || (wsl && command === "wslview")) {
