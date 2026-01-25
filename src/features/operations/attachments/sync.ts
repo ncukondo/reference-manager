@@ -12,6 +12,7 @@ import { join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { parseFilename } from "../../attachments/filename.js";
+import { isReservedRole } from "../../attachments/types.js";
 import type { AttachmentFile, Attachments } from "../../attachments/types.js";
 
 /**
@@ -53,9 +54,6 @@ export interface SyncAttachmentResult {
   error?: string;
 }
 
-/** Reserved roles that have special meaning */
-const RESERVED_ROLES = ["fulltext", "supplement", "notes", "draft"];
-
 /**
  * Create an error result
  */
@@ -83,7 +81,7 @@ function inferFromFilename(filename: string): InferredFile {
   const { role, label } = parsed;
 
   // Check if role is reserved
-  if (RESERVED_ROLES.includes(role)) {
+  if (isReservedRole(role)) {
     return label ? { filename, role, label } : { filename, role };
   }
 
