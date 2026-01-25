@@ -170,8 +170,8 @@ export function SearchableMultiSelect<T>({
 
             return (
               <Box key={choice.id} flexDirection="row">
-                {/* Focus indicator */}
-                {isFocusedItem ? <Text color="cyan">❯ </Text> : <Text> </Text>}
+                {/* Focus indicator - fixed width for layout stability */}
+                <Box width={2}>{isFocusedItem ? <Text color="cyan">❯</Text> : <Text> </Text>}</Box>
 
                 {/* Selection checkbox */}
                 <Text color={isSelected ? "green" : "gray"}>{isSelected ? "◉ " : "○ "}</Text>

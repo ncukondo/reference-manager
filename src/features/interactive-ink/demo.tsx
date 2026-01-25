@@ -9,117 +9,209 @@ import { render } from "ink";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { App } from "./App.js";
 
-// Sample references for demo
-const SAMPLE_REFERENCES: CslItem[] = [
-  {
-    id: "smith2020ml",
-    type: "article-journal",
-    title: "Machine learning in medicine: A comprehensive review of applications and challenges",
-    author: [
-      { family: "Smith", given: "John" },
-      { family: "Doe", given: "Alice" },
-    ],
-    issued: { "date-parts": [[2020]] },
-    DOI: "10.1000/example1",
-    PMID: "12345678",
-  },
-  {
-    id: "johnson2021ai",
-    type: "article-journal",
-    title: "Artificial intelligence in healthcare: Current trends and future directions",
-    author: [
-      { family: "Johnson", given: "Emily" },
-      { family: "Williams", given: "Michael" },
-      { family: "Brown", given: "Sarah" },
-    ],
-    issued: { "date-parts": [[2021]] },
-    DOI: "10.1000/example2",
-  },
-  {
-    id: "davis2019deep",
-    type: "article-journal",
-    title: "Deep learning approaches for medical image analysis",
-    author: [{ family: "Davis", given: "Robert" }],
-    issued: { "date-parts": [[2019]] },
-    DOI: "10.1000/example3",
-    PMID: "87654321",
-  },
-  {
-    id: "miller2022nlp",
-    type: "article-journal",
-    title: "Natural language processing for clinical documentation: A systematic review",
-    author: [
-      { family: "Miller", given: "Lisa" },
-      { family: "Wilson", given: "James" },
-    ],
-    issued: { "date-parts": [[2022]] },
-    DOI: "10.1000/example4",
-  },
-  {
-    id: "taylor2020neural",
-    type: "article-journal",
-    title: "Neural networks for drug discovery: Methods and applications",
-    author: [
-      { family: "Taylor", given: "Christopher" },
-      { family: "Anderson", given: "Jennifer" },
-      { family: "Thomas", given: "David" },
-      { family: "Jackson", given: "Maria" },
-    ],
-    issued: { "date-parts": [[2020]] },
-    DOI: "10.1000/example5",
-  },
-  {
-    id: "white2023transformer",
-    type: "article-journal",
-    title: "Transformer models in biomedical text mining",
-    author: [{ family: "White", given: "Patricia" }],
-    issued: { "date-parts": [[2023]] },
-    DOI: "10.1000/example6",
-  },
-  {
-    id: "harris2021covid",
-    type: "article-journal",
-    title: "COVID-19 prediction models using machine learning: A meta-analysis",
-    author: [
-      { family: "Harris", given: "Matthew" },
-      { family: "Martin", given: "Susan" },
-    ],
-    issued: { "date-parts": [[2021]] },
-    DOI: "10.1000/example7",
-    PMID: "11111111",
-  },
-  {
-    id: "garcia2022federated",
-    type: "article-journal",
-    title: "Federated learning for privacy-preserving healthcare analytics",
-    author: [
-      { family: "Garcia", given: "Carlos" },
-      { family: "Rodriguez", given: "Ana" },
-    ],
-    issued: { "date-parts": [[2022]] },
-    DOI: "10.1000/example8",
-  },
-  {
-    id: "martinez2020xai",
-    type: "article-journal",
-    title: "Explainable AI in clinical decision support systems",
-    author: [{ family: "Martinez", given: "Rosa" }],
-    issued: { "date-parts": [[2020]] },
-    DOI: "10.1000/example9",
-  },
-  {
-    id: "robinson2023llm",
-    type: "article-journal",
-    title: "Large language models for medical question answering",
-    author: [
-      { family: "Robinson", given: "Kevin" },
-      { family: "Clark", given: "Nancy" },
-      { family: "Lewis", given: "Paul" },
-    ],
-    issued: { "date-parts": [[2023]] },
-    DOI: "10.1000/example10",
-  },
+// Data for generating sample references
+const FIRST_NAMES = [
+  "John",
+  "Alice",
+  "Emily",
+  "Michael",
+  "Sarah",
+  "Robert",
+  "Lisa",
+  "James",
+  "Christopher",
+  "Jennifer",
+  "David",
+  "Maria",
+  "Patricia",
+  "Matthew",
+  "Susan",
+  "Carlos",
+  "Ana",
+  "Rosa",
+  "Kevin",
+  "Nancy",
+  "Paul",
+  "Laura",
+  "Daniel",
+  "Michelle",
+  "Thomas",
+  "Karen",
+  "Richard",
+  "Linda",
+  "Mark",
+  "Elizabeth",
 ];
+
+const LAST_NAMES = [
+  "Smith",
+  "Johnson",
+  "Williams",
+  "Brown",
+  "Davis",
+  "Miller",
+  "Wilson",
+  "Taylor",
+  "Anderson",
+  "Thomas",
+  "Jackson",
+  "White",
+  "Harris",
+  "Martin",
+  "Garcia",
+  "Rodriguez",
+  "Martinez",
+  "Robinson",
+  "Clark",
+  "Lewis",
+  "Lee",
+  "Walker",
+  "Hall",
+  "Allen",
+  "Young",
+  "King",
+  "Wright",
+  "Scott",
+  "Green",
+  "Baker",
+];
+
+const TOPICS = [
+  "machine learning",
+  "deep learning",
+  "artificial intelligence",
+  "neural networks",
+  "natural language processing",
+  "computer vision",
+  "reinforcement learning",
+  "federated learning",
+  "transfer learning",
+  "graph neural networks",
+  "transformer models",
+  "attention mechanisms",
+  "generative models",
+  "adversarial networks",
+  "convolutional networks",
+  "recurrent networks",
+  "language models",
+  "knowledge graphs",
+  "semantic analysis",
+  "sentiment analysis",
+];
+
+const DOMAINS = [
+  "healthcare",
+  "medicine",
+  "clinical practice",
+  "drug discovery",
+  "genomics",
+  "radiology",
+  "pathology",
+  "oncology",
+  "cardiology",
+  "neurology",
+  "psychiatry",
+  "dermatology",
+  "ophthalmology",
+  "surgery",
+  "emergency medicine",
+  "pediatrics",
+  "geriatrics",
+  "infectious diseases",
+  "immunology",
+  "epidemiology",
+];
+
+const ARTICLE_TYPES = [
+  "A comprehensive review",
+  "A systematic review",
+  "A meta-analysis",
+  "Current trends and future directions",
+  "Methods and applications",
+  "Challenges and opportunities",
+  "A practical guide",
+  "State of the art",
+  "Benchmarking study",
+  "Comparative analysis",
+];
+
+/**
+ * Generate a random integer between min and max (inclusive)
+ */
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Pick a random element from an array
+ */
+function randomPick<T>(arr: T[]): T {
+  const item = arr[randomInt(0, arr.length - 1)];
+  if (item === undefined) throw new Error("Array is empty");
+  return item;
+}
+
+/**
+ * Generate a random author
+ */
+function generateAuthor(): { family: string; given: string } {
+  return {
+    family: randomPick(LAST_NAMES),
+    given: randomPick(FIRST_NAMES),
+  };
+}
+
+/**
+ * Generate sample references
+ */
+function generateSampleReferences(count: number): CslItem[] {
+  const references: CslItem[] = [];
+
+  for (let i = 1; i <= count; i++) {
+    const topic = randomPick(TOPICS);
+    const domain = randomPick(DOMAINS);
+    const articleType = randomPick(ARTICLE_TYPES);
+    const year = randomInt(2018, 2025);
+    const authorCount = randomInt(1, 4);
+
+    // Generate unique authors
+    const authors: { family: string; given: string }[] = [];
+    for (let j = 0; j < authorCount; j++) {
+      authors.push(generateAuthor());
+    }
+
+    // Create title with capitalized first letter
+    const titleBase = `${topic} in ${domain}`;
+    const title = `${titleBase.charAt(0).toUpperCase()}${titleBase.slice(1)}: ${articleType}`;
+
+    // Generate ID from first author and year
+    const firstAuthor = authors[0];
+    const idBase = firstAuthor
+      ? `${firstAuthor.family.toLowerCase()}${year}${topic.split(" ")[0]}`
+      : `ref${year}${i}`;
+
+    const ref: CslItem = {
+      id: `${idBase}${i}`,
+      type: "article-journal",
+      title,
+      author: authors,
+      issued: { "date-parts": [[year]] },
+      DOI: `10.1000/example${i}`,
+    };
+
+    // Add PMID to some references
+    if (Math.random() > 0.5) {
+      ref.PMID = String(10000000 + i);
+    }
+
+    references.push(ref);
+  }
+
+  return references;
+}
+
+// Generate 100 sample references
+const SAMPLE_REFERENCES = generateSampleReferences(100);
 
 // Simple search function for demo
 function searchReferences(query: string): CslItem[] {
@@ -138,6 +230,7 @@ function searchReferences(query: string): CslItem[] {
 // Main
 console.clear();
 console.log("React Ink TUI Prototype Demo");
+console.log(`Total references: ${SAMPLE_REFERENCES.length}`);
 console.log("============================\n");
 
 const { waitUntilExit } = render(

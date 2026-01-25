@@ -86,8 +86,8 @@ export function Select<T = string>({
 
           return (
             <Box key={`${option.label}-${index}`} flexDirection="row">
-              {/* Focus indicator */}
-              {isFocusedItem ? <Text color="cyan">❯ </Text> : <Text> </Text>}
+              {/* Focus indicator - fixed width for layout stability */}
+              <Box width={2}>{isFocusedItem ? <Text color="cyan">❯</Text> : <Text> </Text>}</Box>
 
               {/* Label */}
               {isFocusedItem ? (
