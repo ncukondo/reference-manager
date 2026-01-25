@@ -20,6 +20,29 @@ export interface Choice<T = unknown> {
   meta?: string;
   /** Associated value */
   value: T;
+  /** Date when the item was last updated (custom.timestamp) */
+  updatedDate?: Date;
+  /** Date when the item was created (custom.created_at) */
+  createdDate?: Date;
+  /** Date when the item was published (for sorting) */
+  publishedDate?: Date;
+}
+
+/** Sort option identifier */
+export type SortOption =
+  | "updated-desc"
+  | "updated-asc"
+  | "created-desc"
+  | "created-asc"
+  | "published-desc"
+  | "published-asc"
+  | "relevance";
+
+/** Sort option configuration */
+interface SortOptionConfig {
+  id: SortOption;
+  label: string;
+  requiresQuery: boolean;
 }
 
 export interface SearchableMultiSelectProps<T> {
@@ -39,6 +62,73 @@ export interface SearchableMultiSelectProps<T> {
   header?: string;
   /** Footer text */
   footer?: string;
+  /** Default sort option */
+  defaultSort?: SortOption;
+}
+
+/** All available sort options */
+const SORT_OPTIONS: SortOptionConfig[] = [
+  { id: "updated-desc", label: "Updated (newest first)", requiresQuery: false },
+  { id: "updated-asc", label: "Updated (oldest first)", requiresQuery: false },
+  { id: "created-desc", label: "Created (newest first)", requiresQuery: false },
+  { id: "created-asc", label: "Created (oldest first)", requiresQuery: false },
+  { id: "published-desc", label: "Published (newest first)", requiresQuery: false },
+  { id: "published-asc", label: "Published (oldest first)", requiresQuery: false },
+  { id: "relevance", label: "Relevance", requiresQuery: true },
+];
+
+/** Get short label for status bar */
+function getSortShortLabel(sortOption: SortOption): string {
+  switch (sortOption) {
+    case "updated-desc":
+      return "Updated ↓";
+    case "updated-asc":
+      return "Updated ↑";
+    case "created-desc":
+      return "Created ↓";
+    case "created-asc":
+      return "Created ↑";
+    case "published-desc":
+      return "Published ↓";
+    case "published-asc":
+      return "Published ↑";
+    case "relevance":
+      return "Relevance";
+  }
+}
+
+/** Create a date comparator for sorting */
+function createDateComparator<T>(
+  getDate: (choice: Choice<T>) => Date | undefined,
+  descending: boolean
+): (a: Choice<T>, b: Choice<T>) => number {
+  return (a, b) => {
+    const dateA = getDate(a)?.getTime() ?? 0;
+    const dateB = getDate(b)?.getTime() ?? 0;
+    return descending ? dateB - dateA : dateA - dateB;
+  };
+}
+
+/**
+ * Sort choices by the given option
+ */
+function sortChoices<T>(choices: Choice<T>[], sortOption: SortOption): Choice<T>[] {
+  if (sortOption === "relevance") return [...choices];
+
+  const sorted = [...choices];
+  const comparators: Record<
+    Exclude<SortOption, "relevance">,
+    (a: Choice<T>, b: Choice<T>) => number
+  > = {
+    "updated-desc": createDateComparator((c) => c.updatedDate, true),
+    "updated-asc": createDateComparator((c) => c.updatedDate, false),
+    "created-desc": createDateComparator((c) => c.createdDate, true),
+    "created-asc": createDateComparator((c) => c.createdDate, false),
+    "published-desc": createDateComparator((c) => c.publishedDate, true),
+    "published-asc": createDateComparator((c) => c.publishedDate, false),
+  };
+
+  return sorted.sort(comparators[sortOption]);
 }
 
 /**
@@ -73,37 +163,56 @@ type KeyAction =
   | { type: "toggle" }
   | { type: "backspace" }
   | { type: "input"; char: string }
+  | { type: "sort" }
   | { type: "none" };
+
+/** Key state type for parsing */
+interface KeyState {
+  escape: boolean;
+  return: boolean;
+  upArrow: boolean;
+  downArrow: boolean;
+  pageUp: boolean;
+  pageDown: boolean;
+  tab: boolean;
+  backspace: boolean;
+  delete: boolean;
+  ctrl: boolean;
+  meta: boolean;
+}
+
+/** Get navigation delta from key state */
+function getNavigationDelta(
+  key: KeyState,
+  input: string,
+  visibleCount: number,
+  maxIndex: number
+): number | null {
+  if (key.upArrow) return -1;
+  if (key.downArrow) return 1;
+  if (key.pageUp) return -visibleCount;
+  if (key.pageDown) return visibleCount;
+  if (key.ctrl && input === "a") return -maxIndex - 1;
+  if (key.ctrl && input === "e") return maxIndex + 1;
+  return null;
+}
 
 /**
  * Parse key input into action
  */
 function parseKeyAction(
   input: string,
-  key: {
-    escape: boolean;
-    return: boolean;
-    upArrow: boolean;
-    downArrow: boolean;
-    pageUp: boolean;
-    pageDown: boolean;
-    tab: boolean;
-    backspace: boolean;
-    delete: boolean;
-    ctrl: boolean;
-    meta: boolean;
-  },
+  key: KeyState,
   visibleCount: number,
   maxIndex: number
 ): KeyAction {
   if (key.escape) return { type: "cancel" };
   if (key.return) return { type: "submit" };
-  if (key.upArrow) return { type: "navigate", delta: -1 };
-  if (key.downArrow) return { type: "navigate", delta: 1 };
-  if (key.pageUp) return { type: "navigate", delta: -visibleCount };
-  if (key.pageDown) return { type: "navigate", delta: visibleCount };
-  if (key.ctrl && input === "a") return { type: "navigate", delta: -maxIndex - 1 };
-  if (key.ctrl && input === "e") return { type: "navigate", delta: maxIndex + 1 };
+
+  const navDelta = getNavigationDelta(key, input, visibleCount, maxIndex);
+  if (navDelta !== null) return { type: "navigate", delta: navDelta };
+
+  if (key.ctrl && input === "s") return { type: "sort" };
   if (key.tab) return { type: "toggle" };
   if (key.backspace || key.delete) return { type: "backspace" };
   if (input && !key.ctrl && !key.meta) return { type: "input", char: input };
@@ -176,6 +285,131 @@ function ChoiceItem<T>({
   );
 }
 
+/**
+ * Scroll indicator component
+ */
+function ScrollIndicator({
+  direction,
+  count,
+  visible,
+}: {
+  direction: "up" | "down";
+  count: number;
+  visible: boolean;
+}): React.ReactElement | null {
+  if (!visible) return null;
+  const arrow = direction === "up" ? "↑" : "↓";
+  const label = direction === "up" ? "more above" : "more below";
+  return (
+    <Box height={1}>
+      {count > 0 ? (
+        <Text dimColor>
+          {" "}
+          {arrow} {count} {label}
+        </Text>
+      ) : (
+        <Text> </Text>
+      )}
+    </Box>
+  );
+}
+
+/**
+ * Choice list component
+ */
+function ChoiceList<T>({
+  choices,
+  selectedIds,
+  focusIndex,
+  scrollOffset,
+  contentWidth,
+}: {
+  choices: Choice<T>[];
+  selectedIds: Set<string>;
+  focusIndex: number;
+  scrollOffset: number;
+  contentWidth: number;
+}): React.ReactElement {
+  if (choices.length === 0) {
+    return (
+      <Box paddingY={1}>
+        <Text dimColor>No results found</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      {choices.map((choice, visibleIndex) => {
+        const actualIndex = scrollOffset + visibleIndex;
+        return (
+          <Box key={choice.id} flexDirection="row">
+            <ChoiceItem
+              choice={choice}
+              isSelected={selectedIds.has(choice.id)}
+              isFocused={actualIndex === focusIndex}
+              contentWidth={contentWidth}
+            />
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+/**
+ * Sort menu component
+ */
+function SortMenu({
+  options,
+  focusIndex,
+  currentSort,
+}: {
+  options: SortOptionConfig[];
+  focusIndex: number;
+  currentSort: SortOption;
+}): React.ReactElement {
+  return (
+    <Box
+      flexDirection="column"
+      marginBottom={1}
+      paddingX={1}
+      borderStyle="round"
+      borderColor="yellow"
+    >
+      <Box marginBottom={1}>
+        <Text bold color="yellow">
+          Sort by:
+        </Text>
+      </Box>
+      {options.map((opt, index) => {
+        const isFocused = index === focusIndex;
+        const isCurrent = opt.id === currentSort;
+        const checkMark = isCurrent ? " ✓" : "";
+        return (
+          <Box key={opt.id}>
+            {isFocused ? (
+              <Text color="cyan">
+                ❯ {opt.label}
+                {checkMark}
+              </Text>
+            ) : (
+              <Text>
+                {"  "}
+                {opt.label}
+                {checkMark}
+              </Text>
+            )}
+          </Box>
+        );
+      })}
+      <Box marginTop={1}>
+        <Text dimColor>↑↓:select Enter:confirm Esc:cancel</Text>
+      </Box>
+    </Box>
+  );
+}
+
 export function SearchableMultiSelect<T>({
   choices,
   filterFn = defaultFilter,
@@ -185,11 +419,15 @@ export function SearchableMultiSelect<T>({
   placeholder = "Type to search...",
   header,
   footer,
+  defaultSort = "updated-desc",
 }: SearchableMultiSelectProps<T>): React.ReactElement {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusIndex, setFocusIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
+  const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [sortMenuIndex, setSortMenuIndex] = useState(0);
   const { isFocused } = useFocus({ autoFocus: true });
   const { stdout } = useStdout();
 
@@ -211,7 +449,20 @@ export function SearchableMultiSelect<T>({
 
   // Filter choices based on query
   const filteredChoices = useMemo(() => filterFn(query, choices), [query, choices, filterFn]);
-  const maxIndex = filteredChoices.length - 1;
+
+  // Get available sort options (relevance only when query exists)
+  const availableSortOptions = useMemo(
+    () => SORT_OPTIONS.filter((opt) => !opt.requiresQuery || query.trim().length > 0),
+    [query]
+  );
+
+  // Apply sorting (skip for relevance as filter function handles it)
+  const sortedChoices = useMemo(
+    () => (sortOption === "relevance" ? filteredChoices : sortChoices(filteredChoices, sortOption)),
+    [filteredChoices, sortOption]
+  );
+
+  const maxIndex = sortedChoices.length - 1;
 
   // Reset focus and scroll when query changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on query change
@@ -231,13 +482,13 @@ export function SearchableMultiSelect<T>({
 
   // Get visible choices
   const visibleChoices = useMemo(
-    () => filteredChoices.slice(scrollOffset, scrollOffset + visibleCount),
-    [filteredChoices, scrollOffset, visibleCount]
+    () => sortedChoices.slice(scrollOffset, scrollOffset + visibleCount),
+    [sortedChoices, scrollOffset, visibleCount]
   );
 
   // Toggle selection
   const toggleSelection = useCallback(() => {
-    const currentChoice = filteredChoices[focusIndex];
+    const currentChoice = sortedChoices[focusIndex];
     if (!currentChoice) return;
     setSelectedIds((prev) => {
       const newSet = new Set(prev);
@@ -248,9 +499,38 @@ export function SearchableMultiSelect<T>({
       }
       return newSet;
     });
-  }, [filteredChoices, focusIndex]);
+  }, [sortedChoices, focusIndex]);
 
-  // Handle keyboard input
+  // Handle keyboard input for sort menu
+  useInput(
+    (_input, key) => {
+      if (key.escape) {
+        setShowSortMenu(false);
+        return;
+      }
+      if (key.return) {
+        const selected = availableSortOptions[sortMenuIndex];
+        if (selected) {
+          setSortOption(selected.id);
+          setFocusIndex(0);
+          setScrollOffset(0);
+        }
+        setShowSortMenu(false);
+        return;
+      }
+      if (key.upArrow) {
+        setSortMenuIndex((prev) => Math.max(0, prev - 1));
+        return;
+      }
+      if (key.downArrow) {
+        setSortMenuIndex((prev) => Math.min(availableSortOptions.length - 1, prev + 1));
+        return;
+      }
+    },
+    { isActive: isFocused && showSortMenu }
+  );
+
+  // Handle keyboard input for main list
   useInput(
     (input, key) => {
       const action = parseKeyAction(input, key, visibleCount, maxIndex);
@@ -273,19 +553,23 @@ export function SearchableMultiSelect<T>({
         case "input":
           setQuery((prev) => prev + action.char);
           break;
+        case "sort":
+          setSortMenuIndex(availableSortOptions.findIndex((o) => o.id === sortOption));
+          setShowSortMenu(true);
+          break;
       }
     },
-    { isActive: isFocused }
+    { isActive: isFocused && !showSortMenu }
   );
 
-  const totalItems = filteredChoices.length;
+  const totalItems = sortedChoices.length;
   const showScrollIndicator = totalItems > visibleCount;
 
   const footerText =
     footer ??
     (showScrollIndicator
-      ? `↑↓:move PgUp/Dn:scroll Tab:select Enter:confirm (${focusIndex + 1}/${totalItems})`
-      : "↑↓:move Tab:select Enter:confirm Esc:cancel");
+      ? `↑↓:move Tab:select ^S:sort Enter:confirm (${focusIndex + 1}/${totalItems})`
+      : "↑↓:move Tab:select ^S:sort Enter:confirm Esc:cancel");
 
   return (
     <Box flexDirection="column" paddingX={1}>
@@ -306,74 +590,48 @@ export function SearchableMultiSelect<T>({
       </Box>
 
       {/* Status bar */}
-      <Box marginBottom={1} paddingX={1}>
-        {selectedIds.size > 0 ? (
-          <Text color="yellow">
-            {selectedIds.size} selected / {totalItems} results
-          </Text>
-        ) : (
-          <Text dimColor>{totalItems} results</Text>
-        )}
-      </Box>
-
-      {/* Scroll up indicator */}
-      {showScrollIndicator && (
-        <Box height={1}>
-          {scrollOffset > 0 ? (
-            <Text dimColor color="gray">
-              {" "}
-              ↑ {scrollOffset} more above
+      <Box marginBottom={1} paddingX={1} justifyContent="space-between">
+        <Box>
+          {selectedIds.size > 0 ? (
+            <Text color="yellow">
+              {selectedIds.size} selected / {totalItems} results
             </Text>
           ) : (
-            <Text> </Text>
+            <Text dimColor>{totalItems} results</Text>
           )}
         </Box>
-      )}
+        <Box>
+          <Text dimColor>Sort: {getSortShortLabel(sortOption)}</Text>
+        </Box>
+      </Box>
 
-      {/* Choice list */}
-      <Box flexDirection="column">
-        {visibleChoices.length === 0 ? (
-          <Box paddingY={1}>
-            <Text dimColor>No results found</Text>
+      {/* Sort menu (replaces list when shown) */}
+      {showSortMenu ? (
+        <SortMenu
+          options={availableSortOptions}
+          focusIndex={sortMenuIndex}
+          currentSort={sortOption}
+        />
+      ) : (
+        <>
+          <ScrollIndicator direction="up" count={scrollOffset} visible={showScrollIndicator} />
+          <ChoiceList
+            choices={visibleChoices}
+            selectedIds={selectedIds}
+            focusIndex={focusIndex}
+            scrollOffset={scrollOffset}
+            contentWidth={contentWidth}
+          />
+          <ScrollIndicator
+            direction="down"
+            count={totalItems - scrollOffset - visibleCount}
+            visible={showScrollIndicator}
+          />
+          <Box marginTop={1}>
+            <Text dimColor>{footerText}</Text>
           </Box>
-        ) : (
-          visibleChoices.map((choice, visibleIndex) => {
-            const actualIndex = scrollOffset + visibleIndex;
-            const isSelected = selectedIds.has(choice.id);
-            const isFocusedItem = actualIndex === focusIndex;
-
-            return (
-              <Box key={choice.id} flexDirection="row">
-                <ChoiceItem
-                  choice={choice}
-                  isSelected={isSelected}
-                  isFocused={isFocusedItem}
-                  contentWidth={contentWidth}
-                />
-              </Box>
-            );
-          })
-        )}
-      </Box>
-
-      {/* Scroll down indicator */}
-      {showScrollIndicator && (
-        <Box height={1}>
-          {scrollOffset + visibleCount < totalItems ? (
-            <Text dimColor color="gray">
-              {" "}
-              ↓ {totalItems - scrollOffset - visibleCount} more below
-            </Text>
-          ) : (
-            <Text> </Text>
-          )}
-        </Box>
+        </>
       )}
-
-      {/* Footer */}
-      <Box marginTop={1}>
-        <Text dimColor>{footerText}</Text>
-      </Box>
     </Box>
   );
 }

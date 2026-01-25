@@ -49,6 +49,39 @@ function extractYear(item: CslItem): number | undefined {
 }
 
 /**
+ * Extract published date from CSL item
+ */
+function extractPublishedDate(item: CslItem): Date | undefined {
+  const dateParts = item.issued?.["date-parts"];
+  if (!dateParts || dateParts.length === 0) return undefined;
+  const firstDatePart = dateParts[0];
+  if (!firstDatePart || firstDatePart.length === 0) return undefined;
+  const [year, month = 1, day = 1] = firstDatePart;
+  if (year === undefined) return undefined;
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Extract updated date from CSL item (from custom.timestamp)
+ */
+function extractUpdatedDate(item: CslItem): Date | undefined {
+  const dateStr = item.custom?.timestamp;
+  if (!dateStr || typeof dateStr !== "string") return undefined;
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+/**
+ * Extract created date from CSL item (from custom.created_at)
+ */
+function extractCreatedDate(item: CslItem): Date | undefined {
+  const dateStr = item.custom?.created_at;
+  if (!dateStr || typeof dateStr !== "string") return undefined;
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+/**
  * Format identifiers for meta line
  */
 function formatIdentifiers(item: CslItem): string {
@@ -93,12 +126,19 @@ function toChoice(item: CslItem): Choice<CslItem> {
   metaParts.push(itemType);
   if (identifiers) metaParts.push(identifiers);
 
+  const updatedDate = extractUpdatedDate(item);
+  const createdDate = extractCreatedDate(item);
+  const publishedDate = extractPublishedDate(item);
+
   return {
     id: item.id,
     title: item.title ?? "(No title)",
     subtitle: authors || "(No authors)",
     meta: metaParts.join(" · "),
     value: item,
+    ...(updatedDate && { updatedDate }),
+    ...(createdDate && { createdDate }),
+    ...(publishedDate && { publishedDate }),
   };
 }
 

@@ -190,6 +190,15 @@ function generateSampleReferences(count: number): CslItem[] {
       ? `${firstAuthor.family.toLowerCase()}${year}${topic.split(" ")[0]}`
       : `ref${year}${i}`;
 
+    // Generate random dates for created_at and timestamp
+    const createdDaysAgo = randomInt(30, 730); // Created 30-730 days ago
+    const createdAt = new Date();
+    createdAt.setDate(createdAt.getDate() - createdDaysAgo);
+
+    const updatedDaysAgo = randomInt(0, createdDaysAgo); // Updated between now and created date
+    const timestamp = new Date();
+    timestamp.setDate(timestamp.getDate() - updatedDaysAgo);
+
     const ref: CslItem = {
       id: `${idBase}${i}`,
       type: "article-journal",
@@ -197,6 +206,10 @@ function generateSampleReferences(count: number): CslItem[] {
       author: authors,
       issued: { "date-parts": [[year]] },
       DOI: `10.1000/example${i}`,
+      custom: {
+        timestamp: timestamp.toISOString(),
+        created_at: createdAt.toISOString(),
+      },
     };
 
     // Add PMID to some references
