@@ -4,6 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import { stderr, stdin, stdout } from "node:process";
+import { finished } from "node:stream/promises";
 import { loadConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 
@@ -314,14 +315,15 @@ export function exitWithOutput(output: string): void {
  * is full or the stream is closed. Since CLI output is typically small, the
  * buffer never fills up.
  *
- * Calling end() on the streams forces all buffered data to be flushed before
- * the process exits. This ensures piped output is captured correctly.
+ * We use stream.end() followed by stream/promises.finished() to ensure all
+ * buffered data is completely written to the underlying system before the
+ * process exits. The finished() function waits for the stream to be fully
+ * closed, which is more reliable than end()'s callback alone.
  *
  * Call this at the end of the main function to ensure all output is visible.
  */
 export async function flushOutput(): Promise<void> {
-  await Promise.all([
-    new Promise<void>((resolve) => stdout.end(resolve)),
-    new Promise<void>((resolve) => stderr.end(resolve)),
-  ]);
+  stdout.end();
+  stderr.end();
+  await Promise.all([finished(stdout).catch(() => {}), finished(stderr).catch(() => {})]);
 }
