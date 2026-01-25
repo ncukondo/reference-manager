@@ -2,9 +2,9 @@
  * CLI Helper Functions
  */
 
+import { once } from "node:events";
 import { readFileSync } from "node:fs";
 import { stderr, stdin, stdout } from "node:process";
-import { finished } from "node:stream/promises";
 import { loadConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 
@@ -315,15 +315,17 @@ export function exitWithOutput(output: string): void {
  * is full or the stream is closed. Since CLI output is typically small, the
  * buffer never fills up.
  *
- * We use stream.end() followed by stream/promises.finished() to ensure all
+ * We use stream.end() followed by waiting for the 'finish' event to ensure all
  * buffered data is completely written to the underlying system before the
- * process exits. The finished() function waits for the stream to be fully
- * closed, which is more reliable than end()'s callback alone.
+ * process exits.
  *
  * Call this at the end of the main function to ensure all output is visible.
  */
 export async function flushOutput(): Promise<void> {
   stdout.end();
   stderr.end();
-  await Promise.all([finished(stdout).catch(() => {}), finished(stderr).catch(() => {})]);
+  await Promise.all([
+    once(stdout, "finish").catch(() => {}),
+    once(stderr, "finish").catch(() => {}),
+  ]);
 }
