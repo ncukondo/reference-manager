@@ -309,16 +309,15 @@ export function exitWithOutput(output: string): void {
 /**
  * Wait for a stream to drain (flush all buffered data).
  * @param stream - The writable stream to wait for
+ *
+ * Note: We use write('', callback) instead of checking writableLength
+ * because writableLength === 0 doesn't guarantee the data has been
+ * flushed to the OS. The write callback is called after the data is
+ * handed off to the underlying system, ensuring proper flush.
  */
 function waitForDrain(stream: NodeJS.WriteStream): Promise<void> {
   return new Promise((resolve) => {
-    // If the stream's internal buffer is empty, resolve immediately
-    if (stream.writableLength === 0) {
-      resolve();
-      return;
-    }
-    // Otherwise, wait for the drain event
-    stream.once("drain", resolve);
+    stream.write("", () => resolve());
   });
 }
 
