@@ -2,9 +2,8 @@
  * CLI Helper Functions
  */
 
-import { once } from "node:events";
 import { readFileSync } from "node:fs";
-import { stderr, stdin, stdout } from "node:process";
+import { stdin, stdout } from "node:process";
 import { loadConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 
@@ -310,22 +309,12 @@ export function exitWithOutput(output: string): void {
 /**
  * Flush stdout and stderr to ensure all output is written before process exit.
  *
- * When stdout/stderr are piped (e.g., in child process tests), they use block
- * buffering instead of line buffering. Data won't be flushed until the buffer
- * is full or the stream is closed. Since CLI output is typically small, the
- * buffer never fills up.
+ * This is a no-op placeholder. The actual flushing is handled by process.exit()
+ * which is called after this function in main(). process.exit() has internal
+ * logic to flush streams before terminating.
  *
- * We use stream.end() followed by waiting for the 'finish' event to ensure all
- * buffered data is completely written to the underlying system before the
- * process exits.
- *
- * Call this at the end of the main function to ensure all output is visible.
+ * We keep this function for semantic clarity and potential future use.
  */
 export async function flushOutput(): Promise<void> {
-  stdout.end();
-  stderr.end();
-  await Promise.all([
-    once(stdout, "finish").catch(() => {}),
-    once(stderr, "finish").catch(() => {}),
-  ]);
+  // No-op: process.exit() handles flushing
 }
