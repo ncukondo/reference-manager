@@ -310,16 +310,25 @@ export function exitWithOutput(output: string): void {
  * Wait for a stream to drain (flush all buffered data).
  * @param stream - The writable stream to wait for
  *
- * Note: We use write('', callback) combined with setImmediate to ensure
- * the data is fully flushed. The write callback alone may resolve before
- * the data is actually written when the stream is piped (e.g., in tests).
- * setImmediate ensures we wait for the current event loop phase to complete.
+ * This function handles both backpressure (when write returns false) and
+ * normal completion. Multiple setImmediate calls ensure we wait for the
+ * I/O poll phase to complete, which is necessary for piped streams in
+ * child processes (e.g., tests capturing CLI output).
  */
 function waitForDrain(stream: NodeJS.WriteStream): Promise<void> {
   return new Promise((resolve) => {
-    stream.write("", () => {
-      setImmediate(resolve);
-    });
+    const needsDrain = !stream.write("");
+
+    const finish = () => {
+      // Double setImmediate to ensure I/O callbacks complete
+      setImmediate(() => setImmediate(resolve));
+    };
+
+    if (needsDrain) {
+      stream.once("drain", finish);
+    } else {
+      finish();
+    }
   });
 }
 
@@ -332,4 +341,6 @@ function waitForDrain(stream: NodeJS.WriteStream): Promise<void> {
  */
 export async function flushOutput(): Promise<void> {
   await Promise.all([waitForDrain(stdout), waitForDrain(stderr)]);
+  // Final setImmediate to ensure all pending I/O is processed
+  await new Promise<void>((resolve) => setImmediate(resolve));
 }
