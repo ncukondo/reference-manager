@@ -1,1 +1,1 @@
-npm run typecheck && npm run check:paths && npx lint-staged
+npm run typecheck && npm run check:paths && npm run check:no-process-exit && npx lint-staged

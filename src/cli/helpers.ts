@@ -246,3 +246,62 @@ export async function readStdinBuffer(): Promise<Buffer> {
   }
   return Buffer.concat(chunks);
 }
+
+// ============================================================================
+// Exit code helpers
+// ============================================================================
+// These helpers set process.exitCode instead of calling process.exit() directly.
+// This allows the event loop to complete naturally, ensuring all output is flushed.
+// Usage: setExitCode(1); return;
+
+/**
+ * Standard exit codes for CLI commands
+ */
+export const ExitCode = {
+  /** Success */
+  SUCCESS: 0,
+  /** General error (e.g., not found, validation failed) */
+  ERROR: 1,
+  /** Internal/unexpected error */
+  INTERNAL_ERROR: 4,
+  /** Interrupted by SIGINT */
+  SIGINT: 130,
+} as const;
+
+/**
+ * Set the process exit code without immediately exiting.
+ * The process will exit with this code when the event loop completes.
+ * @param code - Exit code (0 = success, non-zero = error)
+ */
+export function setExitCode(code: number): void {
+  process.exitCode = code;
+}
+
+/**
+ * Write error message to stderr and set exit code.
+ * @param message - Error message to display
+ * @param code - Exit code (defaults to 1)
+ */
+export function exitWithError(message: string, code: number = ExitCode.ERROR): void {
+  process.stderr.write(`Error: ${message}\n`);
+  setExitCode(code);
+}
+
+/**
+ * Write message to stderr and set exit code.
+ * @param message - Message to display
+ * @param code - Exit code
+ */
+export function exitWithMessage(message: string, code: number): void {
+  process.stderr.write(`${message}\n`);
+  setExitCode(code);
+}
+
+/**
+ * Write output to stdout and set success exit code.
+ * @param output - Output to display
+ */
+export function exitWithOutput(output: string): void {
+  process.stdout.write(`${output}\n`);
+  setExitCode(ExitCode.SUCCESS);
+}

@@ -14,6 +14,7 @@ import { loadConfig } from "../config/loader.js";
 import type { ILibrary } from "../core/library-interface.js";
 import { Library } from "../core/library.js";
 import { searchSortFieldSchema, sortOrderSchema } from "../features/pagination/types.js";
+import { ExitCode, setExitCode } from "./helpers.js";
 import { ServerClient } from "./server-client.js";
 import { getServerConnection } from "./server-detection.js";
 
@@ -485,7 +486,7 @@ export function registerCompletionCommand(program: Command): void {
       } else {
         console.error(`Unknown action: ${action}`);
         console.error("Usage: ref completion [install|uninstall]");
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 }

@@ -30,10 +30,12 @@ import {
 } from "../../features/operations/attachments/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
+  ExitCode,
   isTTY,
   loadConfigWithOverrides,
   readConfirmation,
   readIdentifierFromStdin,
+  setExitCode,
 } from "../helpers.js";
 
 // ============================================================================
@@ -496,7 +498,8 @@ async function resolveIdentifier(
     process.stderr.write(
       "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
     );
-    process.exit(1);
+    setExitCode(ExitCode.ERROR);
+    return "";
   }
   return stdinId;
 }
@@ -637,12 +640,13 @@ export async function handleAttachOpenAction(
 
     if (!result.success) {
       process.stderr.write(`Error: ${result.error}\n`);
-      process.exit(1);
+      setExitCode(ExitCode.ERROR);
+      return;
     }
 
     if (options.print) {
       process.stdout.write(`${result.path}\n`);
-      process.exit(0);
+      setExitCode(ExitCode.SUCCESS);
     }
 
     if (shouldUseInteractive) {
@@ -657,10 +661,10 @@ export async function handleAttachOpenAction(
       process.stderr.write(`${formatAttachOpenOutput(result)}\n`);
     }
 
-    process.exit(0);
+    setExitCode(ExitCode.SUCCESS);
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -704,10 +708,10 @@ export async function handleAttachAddAction(
     const result = await executeAttachAdd(addOptions, context);
     const output = formatAttachAddOutput(result);
     process.stderr.write(`${output}\n`);
-    process.exit(getAttachExitCode(result));
+    setExitCode(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -743,10 +747,10 @@ export async function handleAttachListAction(
     const result = await executeAttachList(listOptions, context);
     const output = formatAttachListOutput(result, identifier);
     process.stdout.write(`${output}\n`);
-    process.exit(getAttachExitCode(result));
+    setExitCode(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -793,10 +797,10 @@ export async function handleAttachGetAction(
       process.stderr.write(`Error: ${result.error}\n`);
     }
 
-    process.exit(getAttachExitCode(result));
+    setExitCode(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -838,10 +842,10 @@ export async function handleAttachDetachAction(
     const result = await executeAttachDetach(detachOptions, context);
     const output = formatAttachDetachOutput(result);
     process.stderr.write(`${output}\n`);
-    process.exit(getAttachExitCode(result));
+    setExitCode(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -925,7 +929,8 @@ export async function handleAttachSyncAction(
 
     if (shouldUseInteractive) {
       await runInteractiveSyncMode(identifier, attachmentsDirectory, idType, context);
-      process.exit(0);
+      setExitCode(ExitCode.SUCCESS);
+      return;
     }
 
     // Direct mode: execute sync with provided flags
@@ -938,9 +943,9 @@ export async function handleAttachSyncAction(
     };
     const result = await executeAttachSync(syncOptions, context);
     process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
-    process.exit(getAttachExitCode(result));
+    setExitCode(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }

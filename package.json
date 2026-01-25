@@ -41,6 +41,7 @@
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
     "check:paths": "! grep -rn --include='*.ts' --exclude='*.test.ts' --exclude='*.d.ts' --exclude='path.ts' '\\.replace(/\\\\\\\\' src/ 2>/dev/null",
+    "check:no-process-exit": "! grep -rn --include='*.ts' --exclude='*.test.ts' 'process\\.exit(' src/cli/ 2>/dev/null | grep -v 'helpers.ts' | grep -v '// '",
     "prepublishOnly": "npm run build",
     "prepare": "husky || true"
   },

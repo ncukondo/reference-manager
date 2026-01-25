@@ -6,11 +6,13 @@ import { Library } from "../../core/library.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
+  ExitCode,
   isTTY,
   loadConfigWithOverrides,
   parseJsonInput,
   readIdentifierFromStdin,
   readJsonInput,
+  setExitCode,
 } from "../helpers.js";
 
 /**
@@ -428,7 +430,8 @@ async function resolveUpdateIdentifier(
       process.stderr.write(
         "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
       );
-      process.exit(1);
+      setExitCode(ExitCode.ERROR);
+      return "";
     }
     return stdinId;
   }
@@ -437,7 +440,8 @@ async function resolveUpdateIdentifier(
   process.stderr.write(
     "Error: No identifier provided. When using stdin for JSON input, identifier must be provided as argument.\n"
   );
-  process.exit(1);
+  setExitCode(ExitCode.ERROR);
+  return "";
 }
 
 /**
@@ -466,18 +470,18 @@ function parseUpdateInput(
 /**
  * Handle update error.
  */
-function handleUpdateError(error: unknown): never {
+function handleUpdateError(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("Parse error")) {
     process.stderr.write(`Error: ${message}\n`);
-    process.exit(3);
+    setExitCode(3);
   }
   if (message.includes("not found") || message.includes("validation")) {
     process.stderr.write(`Error: ${message}\n`);
-    process.exit(1);
+    setExitCode(ExitCode.ERROR);
   }
   process.stderr.write(`Error: ${message}\n`);
-  process.exit(4);
+  setExitCode(ExitCode.INTERNAL_ERROR);
 }
 
 /**
@@ -487,11 +491,15 @@ function handleUpdateErrorWithFormat(
   error: unknown,
   identifier: string,
   outputFormat: "json" | "text"
-): never {
+): void {
   const message = error instanceof Error ? error.message : String(error);
   if (outputFormat === "json") {
     process.stdout.write(`${JSON.stringify({ success: false, id: identifier, error: message })}\n`);
-    process.exit(message.includes("not found") || message.includes("validation") ? 1 : 4);
+    setExitCode(
+      message.includes("not found") || message.includes("validation")
+        ? ExitCode.ERROR
+        : ExitCode.INTERNAL_ERROR
+    );
   }
   handleUpdateError(error);
 }
@@ -541,7 +549,7 @@ export async function handleUpdateAction(
       process.stderr.write(`${output}\n`);
     }
 
-    process.exit(result.updated ? 0 : 1);
+    setExitCode(result.updated ? ExitCode.SUCCESS : ExitCode.ERROR);
   } catch (error) {
     handleUpdateErrorWithFormat(error, identifierArg ?? "", outputFormat);
   }

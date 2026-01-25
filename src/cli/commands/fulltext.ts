@@ -24,10 +24,12 @@ import {
 } from "../../features/operations/fulltext/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
+  ExitCode,
   isTTY,
   loadConfigWithOverrides,
   readIdentifierFromStdin,
   readStdinBuffer,
+  setExitCode,
 } from "../helpers.js";
 
 /**
@@ -325,7 +327,8 @@ export async function handleFulltextAttachAction(
         process.stderr.write(
           "Error: No identifier provided. Provide an ID or run interactively in a TTY.\n"
         );
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
+        return;
       }
       identifier = await executeInteractiveSelect(context, config);
     }
@@ -349,10 +352,10 @@ export async function handleFulltextAttachAction(
     const result = await executeFulltextAttach(attachOptions, context);
     const output = formatFulltextAttachOutput(result);
     process.stderr.write(`${output}\n`);
-    process.exit(getFulltextExitCode(result));
+    setExitCode(getFulltextExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -408,7 +411,8 @@ export async function handleFulltextGetAction(
         process.stderr.write(
           "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
         );
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
+        return;
       }
       identifier = stdinId;
     }
@@ -424,10 +428,10 @@ export async function handleFulltextGetAction(
 
     const result = await executeFulltextGet(getOptions, context);
     outputFulltextGetResult(result, Boolean(options.stdout));
-    process.exit(getFulltextExitCode(result));
+    setExitCode(getFulltextExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -467,7 +471,8 @@ export async function handleFulltextDetachAction(
         process.stderr.write(
           "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
         );
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
+        return;
       }
       identifier = stdinId;
     }
@@ -486,10 +491,10 @@ export async function handleFulltextDetachAction(
     const output = formatFulltextDetachOutput(result);
     process.stderr.write(`${output}\n`);
 
-    process.exit(getFulltextExitCode(result));
+    setExitCode(getFulltextExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -527,7 +532,8 @@ export async function handleFulltextOpenAction(
         process.stderr.write(
           "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
         );
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
+        return;
       }
       identifier = stdinId;
     }
@@ -543,9 +549,9 @@ export async function handleFulltextOpenAction(
     const result = await executeFulltextOpen(openOptions, context);
     const output = formatFulltextOpenOutput(result);
     process.stderr.write(`${output}\n`);
-    process.exit(getFulltextExitCode(result));
+    setExitCode(getFulltextExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }

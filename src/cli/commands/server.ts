@@ -8,6 +8,7 @@ import {
   removePortfile,
   writePortfile,
 } from "../../server/portfile.js";
+import { ExitCode, setExitCode } from "../helpers.js";
 
 export interface ServerStartOptions {
   port?: number;
@@ -109,7 +110,7 @@ async function startServerForeground(options: ServerStartOptions): Promise<void>
     server.close();
     await dispose();
     await removePortfile(options.portfilePath);
-    process.exit(0);
+    setExitCode(ExitCode.SUCCESS);
   };
 
   // Handle termination signals

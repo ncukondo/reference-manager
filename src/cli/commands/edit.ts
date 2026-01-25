@@ -10,7 +10,13 @@ import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides, readIdentifiersFromStdin } from "../helpers.js";
+import {
+  ExitCode,
+  isTTY,
+  loadConfigWithOverrides,
+  readIdentifiersFromStdin,
+  setExitCode,
+} from "../helpers.js";
 
 /**
  * Options for the edit command.
@@ -293,7 +299,7 @@ export async function handleEditAction(
       const result = await executeInteractiveEdit(options, context, config);
       const output = formatEditOutput(result);
       process.stderr.write(`${output}\n`);
-      process.exit(result.success ? 0 : 1);
+      setExitCode(result.success ? ExitCode.SUCCESS : ExitCode.ERROR);
       return; // unreachable, but satisfies TypeScript
     } else {
       // Non-TTY mode: read from stdin (pipeline support)
@@ -302,7 +308,8 @@ export async function handleEditAction(
         process.stderr.write(
           "Error: No identifiers provided. Provide IDs, pipe them via stdin, or run interactively in a TTY.\n"
         );
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
+        return;
       }
       resolvedIdentifiers = stdinIds;
     }
@@ -310,7 +317,8 @@ export async function handleEditAction(
     // Edit requires TTY for the editor
     if (!isTTY()) {
       process.stderr.write("Error: Edit command requires a TTY to open the editor.\n");
-      process.exit(1);
+      setExitCode(ExitCode.ERROR);
+      return;
     }
 
     const format = options.format ?? config.cli.edit.defaultFormat;
@@ -327,9 +335,9 @@ export async function handleEditAction(
     const output = formatEditOutput(result);
     process.stderr.write(`${output}\n`);
 
-    process.exit(result.success ? 0 : 1);
+    setExitCode(result.success ? ExitCode.SUCCESS : ExitCode.ERROR);
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }

@@ -19,6 +19,7 @@ import { unsetConfigValue } from "../../features/config/unset.js";
 import { resolveWriteTarget } from "../../features/config/write-target.js";
 import { openEditor } from "../../features/edit/edit-session.js";
 import { resolveEditor } from "../../features/edit/editor-resolver.js";
+import { ExitCode, setExitCode } from "../helpers.js";
 
 /**
  * Register 'config' command with all subcommands
@@ -42,10 +43,10 @@ export function registerConfigCommand(program: Command): void {
           sources: options.sources,
         });
         process.stdout.write(`${output}\n`);
-        process.exit(0);
+        setExitCode(ExitCode.SUCCESS);
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 
@@ -71,13 +72,13 @@ export function registerConfigCommand(program: Command): void {
         if (result.found) {
           const { formatValue } = await import("../../features/config/get.js");
           process.stdout.write(`${formatValue(result.value)}\n`);
-          process.exit(0);
+          setExitCode(ExitCode.SUCCESS);
         } else {
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
         }
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 
@@ -108,17 +109,18 @@ export function registerConfigCommand(program: Command): void {
 
         if (!result.success) {
           process.stderr.write(`Error: ${result.error}\n`);
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
+          return;
         }
 
         if (result.warning) {
           process.stderr.write(`${result.warning}\n`);
         }
 
-        process.exit(0);
+        setExitCode(ExitCode.SUCCESS);
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 
@@ -142,13 +144,14 @@ export function registerConfigCommand(program: Command): void {
 
         if (!result.success) {
           process.stderr.write(`Error: ${result.error}\n`);
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
+          return;
         }
 
-        process.exit(0);
+        setExitCode(ExitCode.SUCCESS);
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 
@@ -163,10 +166,10 @@ export function registerConfigCommand(program: Command): void {
         if (output) {
           process.stdout.write(`${output}\n`);
         }
-        process.exit(0);
+        setExitCode(ExitCode.SUCCESS);
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 
@@ -180,10 +183,10 @@ export function registerConfigCommand(program: Command): void {
       try {
         const output = showConfigPaths({ user: options.user, local: options.local });
         process.stdout.write(`${output}\n`);
-        process.exit(0);
+        setExitCode(ExitCode.SUCCESS);
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 
@@ -197,7 +200,8 @@ export function registerConfigCommand(program: Command): void {
         // Check if TTY
         if (!process.stdin.isTTY) {
           process.stderr.write("Error: config edit requires a terminal (TTY)\n");
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
+          return;
         }
 
         const target = getConfigEditTarget({ local: options.local });
@@ -212,10 +216,10 @@ export function registerConfigCommand(program: Command): void {
         // Open editor
         const editor = resolveEditor();
         const exitCode = openEditor(editor, target.path);
-        process.exit(exitCode);
+        setExitCode(exitCode);
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 }

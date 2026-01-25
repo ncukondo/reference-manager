@@ -50,7 +50,13 @@ import { collectSetOption, handleUpdateAction } from "./commands/update.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
-import { loadConfigWithOverrides, readStdinContent } from "./helpers.js";
+import {
+  ExitCode,
+  exitWithError,
+  loadConfigWithOverrides,
+  readStdinContent,
+  setExitCode,
+} from "./helpers.js";
 
 /**
  * Create Commander program instance
@@ -108,10 +114,9 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
       process.stdout.write(`${output}\n`);
     }
 
-    process.exit(0);
+    setExitCode(ExitCode.SUCCESS);
   } catch (error) {
-    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    exitWithError(error instanceof Error ? error.message : String(error), ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -163,10 +168,10 @@ async function handleExportAction(
       }
     }
 
-    process.exit(getExportExitCode(result));
+    setExitCode(getExportExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -206,7 +211,7 @@ async function handleSearchAction(
       if (result.output) {
         process.stdout.write(`${result.output}\n`);
       }
-      process.exit(result.cancelled ? 0 : 0);
+      setExitCode(ExitCode.SUCCESS);
     }
 
     // Regular search mode
@@ -217,10 +222,10 @@ async function handleSearchAction(
       process.stdout.write(`${output}\n`);
     }
 
-    process.exit(0);
+    setExitCode(ExitCode.SUCCESS);
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
 
@@ -246,7 +251,8 @@ function registerSearchCommand(program: Command): void {
       // Validate: query is required unless TUI mode
       if (!options.tui && !query) {
         process.stderr.write("Error: Search query is required unless using --tui\n");
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
+        return;
       }
       await handleSearchAction(query ?? "", options, program);
     });
@@ -349,7 +355,7 @@ async function handleAddAction(
       process.stderr.write(`${output}\n`);
     }
 
-    process.exit(getExitCode(result));
+    setExitCode(getExitCode(result));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
@@ -358,7 +364,7 @@ async function handleAddAction(
     } else {
       process.stderr.write(`Error: ${message}\n`);
     }
-    process.exit(1);
+    setExitCode(ExitCode.ERROR);
   }
 }
 
@@ -480,16 +486,16 @@ function registerServerCommand(program: Command): void {
 
         // Only exit if daemon mode (foreground keeps running)
         if (options.daemon) {
-          process.exit(0);
+          setExitCode(ExitCode.SUCCESS);
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes("already running") || message.includes("conflict")) {
           process.stderr.write(`Error: ${message}\n`);
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
         }
         process.stderr.write(`Error: ${message}\n`);
-        process.exit(4);
+        setExitCode(ExitCode.INTERNAL_ERROR);
       }
     });
 
@@ -502,15 +508,15 @@ function registerServerCommand(program: Command): void {
         await serverStop(portfilePath);
 
         process.stderr.write("Server stopped.\n");
-        process.exit(0);
+        setExitCode(ExitCode.SUCCESS);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes("not running")) {
           process.stderr.write(`Error: ${message}\n`);
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
         }
         process.stderr.write(`Error: ${message}\n`);
-        process.exit(4);
+        setExitCode(ExitCode.INTERNAL_ERROR);
       }
     });
 
@@ -526,14 +532,14 @@ function registerServerCommand(program: Command): void {
           process.stdout.write(
             `Server is running\nPort: ${status.port}\nPID: ${status.pid}\nLibrary: ${status.library}\n`
           );
-          process.exit(0);
+          setExitCode(ExitCode.SUCCESS);
         } else {
           process.stdout.write("Server not running\n");
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
         }
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(4);
+        setExitCode(ExitCode.INTERNAL_ERROR);
       }
     });
 }
@@ -574,7 +580,7 @@ function registerMcpCommand(program: Command): void {
         });
       } catch (error) {
         process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-        process.exit(1);
+        setExitCode(ExitCode.ERROR);
       }
     });
 }
@@ -735,11 +741,11 @@ export async function main(argv: string[]): Promise<void> {
 
   // Setup signal handlers
   process.on("SIGINT", () => {
-    process.exit(130);
+    setExitCode(ExitCode.SIGINT);
   });
 
   process.on("SIGTERM", () => {
-    process.exit(0);
+    setExitCode(ExitCode.SUCCESS);
   });
 
   await program.parseAsync(argv);

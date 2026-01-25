@@ -6,10 +6,12 @@ import type { FulltextType } from "../../features/fulltext/index.js";
 import { type RemoveResult, getFulltextAttachmentTypes } from "../../features/operations/remove.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
+  ExitCode,
   isTTY,
   loadConfigWithOverrides,
   readConfirmation,
   readIdentifierFromStdin,
+  setExitCode,
 } from "../helpers.js";
 
 // Re-export for convenience
@@ -230,7 +232,7 @@ function handleRemoveError(
   error: unknown,
   identifierArg: string | undefined,
   outputFormat: "json" | "text"
-): never {
+): void {
   const message = error instanceof Error ? error.message : String(error);
   if (outputFormat === "json") {
     process.stdout.write(
@@ -242,7 +244,7 @@ function handleRemoveError(
   // Exit code 1 for "not found" or "No identifier" errors (user input issues)
   // Exit code 4 for other errors (internal/system errors)
   const isUserError = message.includes("not found") || message.includes("No identifier");
-  process.exit(isUserError ? 1 : 4);
+  setExitCode(isUserError ? ExitCode.ERROR : ExitCode.INTERNAL_ERROR);
 }
 
 /**
@@ -275,13 +277,15 @@ export async function handleRemoveAction(
     // Non-TTY with fulltext requires --force
     if (hasFulltext && !isTTY() && !force) {
       process.stderr.write(`Error: ${formatFulltextWarning(fulltextTypes)}\n`);
-      process.exit(1);
+      setExitCode(ExitCode.ERROR);
+      return;
     }
 
     const confirmed = await confirmRemoveIfNeeded(refToRemove, hasFulltext, force);
     if (!confirmed) {
       process.stderr.write("Cancelled.\n");
-      process.exit(2);
+      setExitCode(2);
+      return;
     }
 
     const removeOptions: RemoveCommandOptions = {
@@ -293,7 +297,7 @@ export async function handleRemoveAction(
 
     const result = await executeRemove(removeOptions, context);
     outputResult(result, identifier, outputFormat, options.full, formatRemoveJsonOutput);
-    process.exit(result.removed ? 0 : 1);
+    setExitCode(result.removed ? ExitCode.SUCCESS : ExitCode.ERROR);
   } catch (error) {
     handleRemoveError(error, identifierArg, outputFormat);
   }

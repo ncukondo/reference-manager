@@ -2,7 +2,13 @@ import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
 import type { CiteOperationOptions, CiteResult } from "../../features/operations/cite.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides, readIdentifiersFromStdin } from "../helpers.js";
+import {
+  ExitCode,
+  isTTY,
+  loadConfigWithOverrides,
+  readIdentifiersFromStdin,
+  setExitCode,
+} from "../helpers.js";
 
 /**
  * Options for the cite command.
@@ -147,7 +153,8 @@ async function executeInteractiveCite(
     });
 
     if (styleResult.cancelled) {
-      process.exit(0);
+      setExitCode(ExitCode.SUCCESS);
+      return { results: [] };
     }
     style = styleResult.style;
   }
@@ -180,7 +187,8 @@ export async function handleCiteAction(
           process.stderr.write(
             "Error: No identifiers provided. Provide IDs, pipe them via stdin, or run interactively in a TTY.\n"
           );
-          process.exit(1);
+          setExitCode(ExitCode.ERROR);
+          return;
         }
         result = await executeCite({ ...options, identifiers: stdinIds }, context);
       }
@@ -198,9 +206,9 @@ export async function handleCiteAction(
       process.stderr.write(`${errors}\n`);
     }
 
-    process.exit(getCiteExitCode(result));
+    setExitCode(getCiteExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(4);
+    setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
