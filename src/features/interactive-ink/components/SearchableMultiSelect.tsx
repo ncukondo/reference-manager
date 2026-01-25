@@ -233,9 +233,10 @@ export function SearchableMultiSelect<T>({
         )}
       </Box>
 
-      {showScrollIndicator && scrollOffset > 0 && (
-        <Box>
-          <Text dimColor> ↑ {scrollOffset} more above</Text>
+      {/* Scroll up indicator - always reserve space when scrollable */}
+      {showScrollIndicator && (
+        <Box height={1}>
+          {scrollOffset > 0 ? <Text dimColor> ↑ {scrollOffset} more above</Text> : <Text> </Text>}
         </Box>
       )}
 
@@ -276,9 +277,14 @@ export function SearchableMultiSelect<T>({
         )}
       </Box>
 
-      {showScrollIndicator && scrollOffset + visibleCount < totalItems && (
-        <Box>
-          <Text dimColor> ↓ {totalItems - scrollOffset - visibleCount} more below</Text>
+      {/* Scroll down indicator - always reserve space when scrollable */}
+      {showScrollIndicator && (
+        <Box height={1}>
+          {scrollOffset + visibleCount < totalItems ? (
+            <Text dimColor> ↓ {totalItems - scrollOffset - visibleCount} more below</Text>
+          ) : (
+            <Text> </Text>
+          )}
         </Box>
       )}
 
