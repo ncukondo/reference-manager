@@ -5,9 +5,9 @@
  * which is not available in ink-ui out of the box.
  */
 
-import { Box, Text, useFocus, useInput } from "ink";
+import { Box, Text, useFocus, useInput, useStdout } from "ink";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface Choice<T = unknown> {
   /** Unique identifier for the choice */
@@ -26,7 +26,7 @@ export interface SearchableMultiSelectProps<T> {
   /** Filter function for search */
   filterFn?: (query: string, choices: Choice<T>[]) => Choice<T>[];
   /** Maximum visible items */
-  limit?: number;
+  visibleCount?: number;
   /** Callback when selection is confirmed */
   onSubmit: (selected: Choice<T>[]) => void;
   /** Callback when cancelled */
@@ -52,39 +52,113 @@ function defaultFilter<T>(query: string, choices: Choice<T>[]): Choice<T>[] {
   );
 }
 
+/**
+ * Truncate text to fit within maxWidth
+ */
+function truncate(text: string, maxWidth: number): string {
+  if (text.length <= maxWidth) return text;
+  return `${text.slice(0, maxWidth - 1)}…`;
+}
+
+/**
+ * Key handler result type
+ */
+type KeyAction =
+  | { type: "cancel" }
+  | { type: "submit" }
+  | { type: "navigate"; delta: number }
+  | { type: "toggle" }
+  | { type: "backspace" }
+  | { type: "input"; char: string }
+  | { type: "none" };
+
+/**
+ * Parse key input into action
+ */
+function parseKeyAction(
+  input: string,
+  key: {
+    escape: boolean;
+    return: boolean;
+    upArrow: boolean;
+    downArrow: boolean;
+    pageUp: boolean;
+    pageDown: boolean;
+    tab: boolean;
+    backspace: boolean;
+    delete: boolean;
+    ctrl: boolean;
+    meta: boolean;
+  },
+  visibleCount: number,
+  maxIndex: number
+): KeyAction {
+  if (key.escape) return { type: "cancel" };
+  if (key.return) return { type: "submit" };
+  if (key.upArrow) return { type: "navigate", delta: -1 };
+  if (key.downArrow) return { type: "navigate", delta: 1 };
+  if (key.pageUp) return { type: "navigate", delta: -visibleCount };
+  if (key.pageDown) return { type: "navigate", delta: visibleCount };
+  if (key.ctrl && input === "a") return { type: "navigate", delta: -maxIndex - 1 };
+  if (key.ctrl && input === "e") return { type: "navigate", delta: maxIndex + 1 };
+  if (key.tab) return { type: "toggle" };
+  if (key.backspace || key.delete) return { type: "backspace" };
+  if (input && !key.ctrl && !key.meta) return { type: "input", char: input };
+  return { type: "none" };
+}
+
 export function SearchableMultiSelect<T>({
   choices,
   filterFn = defaultFilter,
-  limit = 10,
+  visibleCount = 10,
   onSubmit,
   onCancel,
   placeholder = "Type to search...",
   header,
-  footer = "(↑↓: navigate, Tab: select, Enter: confirm, Esc: cancel)",
+  footer,
 }: SearchableMultiSelectProps<T>): React.ReactElement {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusIndex, setFocusIndex] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const { isFocused } = useFocus({ autoFocus: true });
+  const { stdout } = useStdout();
+
+  // Get terminal width for truncation
+  const terminalWidth = stdout?.columns ?? 80;
+  const labelWidth = Math.floor((terminalWidth - 10) * 0.4);
+  const hintWidth = Math.floor((terminalWidth - 10) * 0.5);
 
   // Filter choices based on query
-  const filteredChoices = useMemo(() => {
-    const filtered = filterFn(query, choices);
-    return filtered.slice(0, limit);
-  }, [query, choices, filterFn, limit]);
+  const filteredChoices = useMemo(() => filterFn(query, choices), [query, choices, filterFn]);
+  const maxIndex = filteredChoices.length - 1;
 
-  // Reset focus when filtered results change
-  useMemo(() => {
-    if (focusIndex >= filteredChoices.length) {
-      setFocusIndex(Math.max(0, filteredChoices.length - 1));
+  // Reset focus and scroll when query changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on query change
+  useEffect(() => {
+    setFocusIndex(0);
+    setScrollOffset(0);
+  }, [query]);
+
+  // Adjust scroll offset when focus changes
+  useEffect(() => {
+    if (focusIndex < scrollOffset) {
+      setScrollOffset(focusIndex);
+    } else if (focusIndex >= scrollOffset + visibleCount) {
+      setScrollOffset(focusIndex - visibleCount + 1);
     }
-  }, [filteredChoices.length, focusIndex]);
+  }, [focusIndex, scrollOffset, visibleCount]);
 
-  // Toggle selection for current item
+  // Get visible choices
+  const visibleChoices = useMemo(
+    () => filteredChoices.slice(scrollOffset, scrollOffset + visibleCount),
+    [filteredChoices, scrollOffset, visibleCount]
+  );
+
+  // Toggle selection
   const toggleSelection = useCallback(() => {
     const currentChoice = filteredChoices[focusIndex];
     if (!currentChoice) return;
-
     setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(currentChoice.id)) {
@@ -96,45 +170,45 @@ export function SearchableMultiSelect<T>({
     });
   }, [filteredChoices, focusIndex]);
 
-  // Handle navigation keys
-  const handleNavigation = useCallback(
-    (key: { upArrow: boolean; downArrow: boolean }) => {
-      if (key.upArrow) {
-        setFocusIndex((prev) => Math.max(0, prev - 1));
-        return true;
-      }
-      if (key.downArrow) {
-        setFocusIndex((prev) => Math.min(filteredChoices.length - 1, prev + 1));
-        return true;
-      }
-      return false;
-    },
-    [filteredChoices.length]
-  );
-
   // Handle keyboard input
   useInput(
     (input, key) => {
-      if (key.escape) {
-        onCancel();
-      } else if (key.return) {
-        onSubmit(choices.filter((c) => selectedIds.has(c.id)));
-      } else if (handleNavigation(key)) {
-        // Navigation handled
-      } else if (key.tab) {
-        toggleSelection();
-      } else if (key.backspace || key.delete) {
-        setQuery((prev) => prev.slice(0, -1));
-      } else if (input && !key.ctrl && !key.meta) {
-        setQuery((prev) => prev + input);
+      const action = parseKeyAction(input, key, visibleCount, maxIndex);
+      switch (action.type) {
+        case "cancel":
+          onCancel();
+          break;
+        case "submit":
+          onSubmit(choices.filter((c) => selectedIds.has(c.id)));
+          break;
+        case "navigate":
+          setFocusIndex((prev) => Math.max(0, Math.min(maxIndex, prev + action.delta)));
+          break;
+        case "toggle":
+          toggleSelection();
+          break;
+        case "backspace":
+          setQuery((prev) => prev.slice(0, -1));
+          break;
+        case "input":
+          setQuery((prev) => prev + action.char);
+          break;
       }
     },
     { isActive: isFocused }
   );
 
+  const totalItems = filteredChoices.length;
+  const showScrollIndicator = totalItems > visibleCount;
+
+  const footerText =
+    footer ??
+    (showScrollIndicator
+      ? `↑↓:move PgUp/Dn:scroll Tab:select Enter:confirm (${focusIndex + 1}/${totalItems})`
+      : "↑↓:move Tab:select Enter:confirm Esc:cancel");
+
   return (
     <Box flexDirection="column">
-      {/* Header */}
       {header && (
         <Box marginBottom={1}>
           <Text bold color="cyan">
@@ -143,62 +217,74 @@ export function SearchableMultiSelect<T>({
         </Box>
       )}
 
-      {/* Search input */}
       <Box>
         <Text color="green">❯ </Text>
         <Text>{query || <Text dimColor>{placeholder}</Text>}</Text>
         <Text color="gray">▎</Text>
       </Box>
 
-      {/* Selected count */}
-      {selectedIds.size > 0 && (
-        <Box marginTop={1}>
+      <Box marginTop={1}>
+        {selectedIds.size > 0 ? (
           <Text color="yellow">
-            {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""} selected
+            {selectedIds.size} selected / {totalItems} results
           </Text>
+        ) : (
+          <Text dimColor>{totalItems} results</Text>
+        )}
+      </Box>
+
+      {showScrollIndicator && scrollOffset > 0 && (
+        <Box>
+          <Text dimColor> ↑ {scrollOffset} more above</Text>
         </Box>
       )}
 
-      {/* Choice list */}
-      <Box flexDirection="column" marginTop={1}>
-        {filteredChoices.length === 0 ? (
+      <Box flexDirection="column">
+        {visibleChoices.length === 0 ? (
           <Text dimColor>No results found</Text>
         ) : (
-          filteredChoices.map((choice, index) => {
+          visibleChoices.map((choice, visibleIndex) => {
+            const actualIndex = scrollOffset + visibleIndex;
             const isSelected = selectedIds.has(choice.id);
-            const isFocusedItem = index === focusIndex;
+            const isFocusedItem = actualIndex === focusIndex;
 
             return (
-              <Box key={choice.id} flexDirection="row">
-                {/* Focus indicator - fixed width for layout stability */}
+              <Box key={choice.id} height={1}>
                 <Box width={2}>{isFocusedItem ? <Text color="cyan">❯</Text> : <Text> </Text>}</Box>
-
-                {/* Selection checkbox */}
-                <Text color={isSelected ? "green" : "gray"}>{isSelected ? "◉ " : "○ "}</Text>
-
-                {/* Label */}
-                {isFocusedItem ? (
-                  <Text color="cyan" bold>
-                    {choice.label}
-                  </Text>
-                ) : (
-                  <Text>{choice.label}</Text>
+                <Box width={2}>
+                  <Text color={isSelected ? "green" : "gray"}>{isSelected ? "◉" : "○"}</Text>
+                </Box>
+                <Box width={labelWidth}>
+                  {isFocusedItem ? (
+                    <Text color="cyan" bold wrap="truncate">
+                      {truncate(choice.label, labelWidth)}
+                    </Text>
+                  ) : (
+                    <Text wrap="truncate">{truncate(choice.label, labelWidth)}</Text>
+                  )}
+                </Box>
+                {choice.hint && (
+                  <Box width={hintWidth} marginLeft={1}>
+                    <Text dimColor wrap="truncate">
+                      {truncate(choice.hint, hintWidth)}
+                    </Text>
+                  </Box>
                 )}
-
-                {/* Hint */}
-                {choice.hint && <Text dimColor> - {choice.hint}</Text>}
               </Box>
             );
           })
         )}
       </Box>
 
-      {/* Footer */}
-      {footer && (
-        <Box marginTop={1}>
-          <Text dimColor>{footer}</Text>
+      {showScrollIndicator && scrollOffset + visibleCount < totalItems && (
+        <Box>
+          <Text dimColor> ↓ {totalItems - scrollOffset - visibleCount} more below</Text>
         </Box>
       )}
+
+      <Box marginTop={1}>
+        <Text dimColor>{footerText}</Text>
+      </Box>
     </Box>
   );
 }

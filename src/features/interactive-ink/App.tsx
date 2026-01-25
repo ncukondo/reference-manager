@@ -154,7 +154,7 @@ export function App({ references, searchFn, onComplete }: AppProps): React.React
       <SearchableMultiSelect
         choices={choices}
         filterFn={filterFn}
-        limit={10}
+        visibleCount={10}
         onSubmit={handleSearchSubmit}
         onCancel={handleSearchCancel}
         header="Search references"
