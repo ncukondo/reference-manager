@@ -124,12 +124,16 @@ function ChoiceItem<T>({
   isFocused: boolean;
   contentWidth: number;
 }): React.ReactElement {
-  const indent = "     "; // 5 spaces to align with title (after checkbox)
+  const indent = "      "; // 6 spaces to align with title (after indicator + checkbox)
 
   return (
     <Box flexDirection="column" paddingY={0}>
-      {/* Row 1: Checkbox + Title */}
+      {/* Row 1: Focus indicator + Checkbox + Title */}
       <Box flexDirection="row">
+        {/* Focus indicator - fixed width */}
+        <Box width={2}>
+          <Text color="cyan">{isFocused ? "❯" : " "}</Text>
+        </Box>
         {/* Selection checkbox */}
         <Box width={2}>
           <Text color={isSelected ? "green" : "gray"}>{isSelected ? "◉" : "○"}</Text>
@@ -175,7 +179,7 @@ function ChoiceItem<T>({
 export function SearchableMultiSelect<T>({
   choices,
   filterFn = defaultFilter,
-  visibleCount = 5,
+  visibleCount: visibleCountProp,
   onSubmit,
   onCancel,
   placeholder = "Type to search...",
@@ -189,9 +193,21 @@ export function SearchableMultiSelect<T>({
   const { isFocused } = useFocus({ autoFocus: true });
   const { stdout } = useStdout();
 
-  // Get terminal width for truncation
+  // Get terminal dimensions
   const terminalWidth = stdout?.columns ?? 80;
+  const terminalHeight = stdout?.rows ?? 24;
   const contentWidth = terminalWidth - 8; // Reserve space for checkbox and padding
+
+  // Calculate visible count based on terminal height
+  // Each item takes 3 lines (title + subtitle + meta)
+  // Reserve lines for: header(2) + search(3) + status(1) + scroll indicators(2) + footer(2) = 10
+  const itemHeight = 3;
+  const reservedLines = 10;
+  const calculatedVisibleCount = Math.max(
+    1,
+    Math.floor((terminalHeight - reservedLines) / itemHeight)
+  );
+  const visibleCount = visibleCountProp ?? calculatedVisibleCount;
 
   // Filter choices based on query
   const filteredChoices = useMemo(() => filterFn(query, choices), [query, choices, filterFn]);
@@ -283,14 +299,14 @@ export function SearchableMultiSelect<T>({
       )}
 
       {/* Search input */}
-      <Box marginBottom={1}>
+      <Box marginBottom={1} paddingX={1} borderStyle="round" borderColor="cyan">
         <Text color="green">❯ </Text>
         <Text>{query || <Text dimColor>{placeholder}</Text>}</Text>
         <Text color="gray">▎</Text>
       </Box>
 
       {/* Status bar */}
-      <Box marginBottom={1} paddingX={1} borderStyle="single" borderColor="gray">
+      <Box marginBottom={1} paddingX={1}>
         {selectedIds.size > 0 ? (
           <Text color="yellow">
             {selectedIds.size} selected / {totalItems} results
@@ -327,15 +343,7 @@ export function SearchableMultiSelect<T>({
             const isFocusedItem = actualIndex === focusIndex;
 
             return (
-              <Box
-                key={choice.id}
-                flexDirection="row"
-                marginBottom={1}
-                borderStyle={isFocusedItem ? "round" : undefined}
-                borderColor={isFocusedItem ? "cyan" : undefined}
-                paddingX={isFocusedItem ? 1 : 0}
-                marginLeft={isFocusedItem ? 0 : 2}
-              >
+              <Box key={choice.id} flexDirection="row">
                 <ChoiceItem
                   choice={choice}
                   isSelected={isSelected}
@@ -363,7 +371,7 @@ export function SearchableMultiSelect<T>({
       )}
 
       {/* Footer */}
-      <Box marginTop={1} paddingTop={1} borderStyle="single" borderTop borderColor="gray">
+      <Box marginTop={1}>
         <Text dimColor>{footerText}</Text>
       </Box>
     </Box>

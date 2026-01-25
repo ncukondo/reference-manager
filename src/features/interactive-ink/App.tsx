@@ -194,7 +194,6 @@ export function App({ references, searchFn, onComplete }: AppProps): React.React
       <SearchableMultiSelect
         choices={choices}
         filterFn={filterFn}
-        visibleCount={5}
         onSubmit={handleSearchSubmit}
         onCancel={handleSearchCancel}
         header="Search references"
@@ -224,7 +223,7 @@ export function App({ references, searchFn, onComplete }: AppProps): React.React
           ✓ Action completed: {result?.action}
         </Text>
       </Box>
-      <Box flexDirection="column" borderStyle="single" paddingX={1}>
+      <Box flexDirection="column">
         <Text>{result?.output}</Text>
       </Box>
       <Box marginTop={1}>
