@@ -536,6 +536,10 @@ async function waitForEnter(): Promise<void> {
     process.stderr.write("Press Enter when done editing...");
     process.stdin.setRawMode(true);
     process.stdin.resume();
+    // Ensure stdin keeps the event loop alive (may be unref'd by previous prompts)
+    if (typeof process.stdin.ref === "function") {
+      process.stdin.ref();
+    }
     process.stdin.once("data", () => {
       process.stdin.setRawMode(false);
       process.stdin.pause();
