@@ -53,7 +53,6 @@ import type { CliOptions } from "./helpers.js";
 import {
   ExitCode,
   exitWithError,
-  flushOutput,
   loadConfigWithOverrides,
   readStdinContent,
   setExitCode,
@@ -750,11 +749,4 @@ export async function main(argv: string[]): Promise<void> {
   });
 
   await program.parseAsync(argv);
-
-  // Ensure all output is flushed before the process exits
-  // Note: We must call process.exit() after flushing because process.exitCode
-  // alone doesn't guarantee streams are flushed when they're piped (e.g., in tests).
-  // process.exit() has internal logic to flush streams before terminating.
-  await flushOutput();
-  process.exit(process.exitCode ?? 0); // intentional: must exit after flushing piped streams
 }

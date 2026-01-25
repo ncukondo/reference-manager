@@ -305,16 +305,3 @@ export function exitWithOutput(output: string): void {
   process.stdout.write(`${output}\n`);
   setExitCode(ExitCode.SUCCESS);
 }
-
-/**
- * Flush stdout and stderr to ensure all output is written before process exit.
- *
- * This is a no-op placeholder. The actual flushing is handled by process.exit()
- * which is called after this function in main(). process.exit() has internal
- * logic to flush streams before terminating.
- *
- * We keep this function for semantic clarity and potential future use.
- */
-export async function flushOutput(): Promise<void> {
-  // No-op: process.exit() handles flushing
-}
