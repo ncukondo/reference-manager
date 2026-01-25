@@ -29,7 +29,7 @@ export interface FulltextDetachOptions {
   /** Specific type to detach (pdf or markdown) */
   type?: FulltextType | undefined;
   /** Delete the file from disk */
-  delete?: boolean | undefined;
+  removeFiles?: boolean | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
   idType?: IdentifierType | undefined;
   /** Directory for attachments (replaces fulltextDirectory) */
@@ -67,7 +67,7 @@ async function detachFiles(
   library: ILibrary,
   files: AttachmentFile[],
   identifier: string,
-  deleteFile: boolean | undefined,
+  removeFiles: boolean | undefined,
   idType: IdentifierType,
   fulltextDirectory: string
 ): Promise<{ detached: FulltextType[]; deleted: FulltextType[] }> {
@@ -78,7 +78,7 @@ async function detachFiles(
     const result = await detachAttachment(library, {
       identifier,
       filename: file.filename,
-      delete: deleteFile ?? false,
+      removeFiles: removeFiles ?? false,
       idType,
       attachmentsDirectory: fulltextDirectory,
     });
@@ -128,7 +128,7 @@ export async function fulltextDetach(
   library: ILibrary,
   options: FulltextDetachOptions
 ): Promise<FulltextDetachResult> {
-  const { identifier, type, delete: deleteFile, idType = "id", fulltextDirectory } = options;
+  const { identifier, type, removeFiles, idType = "id", fulltextDirectory } = options;
 
   // Find reference first to check for fulltext files
   const item = await library.find(identifier, { idType });
@@ -157,7 +157,7 @@ export async function fulltextDetach(
     library,
     filesToDetach,
     identifier,
-    deleteFile,
+    removeFiles,
     idType,
     fulltextDirectory
   );

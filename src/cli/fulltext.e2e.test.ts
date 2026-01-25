@@ -405,13 +405,13 @@ describe("Fulltext Command E2E", () => {
       expect(files.length).toBe(2); // Both files still exist
     });
 
-    it("should detach and delete with --delete option", async () => {
+    it("should detach and delete with --remove-files option", async () => {
       const result = await runWithFulltext([
         "fulltext",
         "detach",
         "Smith-2024",
         "--pdf",
-        "--delete",
+        "--remove-files",
         "--library",
         libraryPath,
       ]);
@@ -516,7 +516,7 @@ describe("Fulltext Command E2E", () => {
         "detach",
         "Smith-2024",
         "--pdf",
-        "--delete",
+        "--remove-files",
         "--library",
         libraryPath,
       ]);

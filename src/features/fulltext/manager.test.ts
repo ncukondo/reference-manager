@@ -370,8 +370,8 @@ describe("FulltextManager", () => {
       });
     });
 
-    describe("with delete option", () => {
-      it("deletes file when delete option is true", async () => {
+    describe("with removeFiles option", () => {
+      it("deletes file when removeFiles option is true", async () => {
         const item = createTestItem({
           custom: {
             uuid: "123e4567-e89b-12d3-a456-426614174000",
@@ -388,7 +388,7 @@ describe("FulltextManager", () => {
         const filePath = join(fulltextDir, "Smith-2024-123e4567-e89b-12d3-a456-426614174000.pdf");
         writeFileSync(filePath, "PDF content");
 
-        const result = await manager.detachFile(item, "pdf", { delete: true });
+        const result = await manager.detachFile(item, "pdf", { removeFiles: true });
 
         expect(result.deleted).toBe(true);
         expect(existsSync(filePath)).toBe(false);
@@ -408,7 +408,7 @@ describe("FulltextManager", () => {
 
         // Don't create the file - simulating orphaned metadata
 
-        const result = await manager.detachFile(item, "pdf", { delete: true });
+        const result = await manager.detachFile(item, "pdf", { removeFiles: true });
 
         expect(result.filename).toBe("Smith-2024-123e4567-e89b-12d3-a456-426614174000.pdf");
         // deleted should still be true as we attempted deletion

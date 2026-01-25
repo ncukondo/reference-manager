@@ -92,7 +92,7 @@ export interface AttachDetachOptions {
   filename?: string;
   role?: string;
   all?: boolean;
-  delete?: boolean;
+  removeFiles?: boolean;
   idType?: IdentifierType;
   attachmentsDirectory: string;
 }
@@ -211,7 +211,7 @@ export async function executeAttachDetach(
     ...(options.filename !== undefined && { filename: options.filename }),
     ...(options.role !== undefined && { role: options.role }),
     ...(options.all !== undefined && { all: options.all }),
-    ...(options.delete !== undefined && { delete: options.delete }),
+    ...(options.removeFiles !== undefined && { removeFiles: options.removeFiles }),
     ...(options.idType !== undefined && { idType: options.idType }),
   };
 
@@ -796,7 +796,7 @@ export async function handleAttachGetAction(
 export interface AttachDetachActionOptions {
   role?: string;
   all?: boolean;
-  delete?: boolean;
+  removeFiles?: boolean;
   uuid?: boolean;
 }
 
@@ -821,7 +821,7 @@ export async function handleAttachDetachAction(
       ...(filenameArg && { filename: filenameArg }),
       ...(options.role && { role: options.role }),
       ...(options.all && { all: options.all }),
-      ...(options.delete && { delete: options.delete }),
+      ...(options.removeFiles && { removeFiles: options.removeFiles }),
       ...(options.uuid && { idType: "uuid" as const }),
     };
 

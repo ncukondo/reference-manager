@@ -97,12 +97,12 @@ describe("detachAttachment", () => {
     });
   });
 
-  describe("delete file with --delete", () => {
-    it("should remove file from disk when delete=true", async () => {
+  describe("delete file with --remove-files", () => {
+    it("should remove file from disk when removeFiles=true", async () => {
       const options: DetachAttachmentOptions = {
         identifier: "Smith-2024",
         filename: "notes.md",
-        delete: true,
+        removeFiles: true,
         attachmentsDirectory: attachmentsBaseDir,
       };
 
@@ -153,7 +153,7 @@ describe("detachAttachment", () => {
       expect(updatedItem?.custom?.attachments?.files).toHaveLength(2);
     });
 
-    it("should delete all files of role when delete=true", async () => {
+    it("should delete all files of role when removeFiles=true", async () => {
       mockReference.custom = {
         ...mockReference.custom,
         attachments: {
@@ -172,7 +172,7 @@ describe("detachAttachment", () => {
         identifier: "Smith-2024",
         role: "supplement",
         all: true,
-        delete: true,
+        removeFiles: true,
         attachmentsDirectory: attachmentsBaseDir,
       };
 
@@ -189,7 +189,7 @@ describe("detachAttachment", () => {
   });
 
   describe("directory cleanup when last file removed", () => {
-    it("should delete directory when last file removed with delete=true", async () => {
+    it("should delete directory when last file removed with removeFiles=true", async () => {
       // Reference with single file
       mockReference.custom = {
         uuid: "123e4567-e89b-12d3-a456-426614174000",
@@ -206,7 +206,7 @@ describe("detachAttachment", () => {
       const options: DetachAttachmentOptions = {
         identifier: "Smith-2024",
         filename: "fulltext.pdf",
-        delete: true,
+        removeFiles: true,
         attachmentsDirectory: attachmentsBaseDir,
       };
 
@@ -223,7 +223,7 @@ describe("detachAttachment", () => {
       const options: DetachAttachmentOptions = {
         identifier: "Smith-2024",
         filename: "notes.md",
-        delete: true,
+        removeFiles: true,
         attachmentsDirectory: attachmentsBaseDir,
       };
 

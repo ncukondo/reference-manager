@@ -178,7 +178,7 @@ describe("fulltextDetach", () => {
       expect(mockedDetachAttachment).toHaveBeenCalledTimes(2);
     });
 
-    it("should delete files when delete option is true", async () => {
+    it("should delete files when removeFiles option is true", async () => {
       const item = createItem("test-id", {
         directory: "test-id-12345678",
         files: [{ filename: "fulltext.pdf", role: "fulltext" }],
@@ -192,7 +192,7 @@ describe("fulltextDetach", () => {
 
       const result = await fulltextDetach(mockLibrary, {
         identifier: "test-id",
-        delete: true,
+        removeFiles: true,
         fulltextDirectory: "/fulltext",
       });
 
@@ -202,7 +202,7 @@ describe("fulltextDetach", () => {
       expect(mockedDetachAttachment).toHaveBeenCalledWith(
         mockLibrary,
         expect.objectContaining({
-          delete: true,
+          removeFiles: true,
         })
       );
     });
@@ -269,7 +269,7 @@ describe("fulltextDetach", () => {
 
       await fulltextDetach(mockLibrary, {
         identifier: "test-id",
-        delete: true,
+        removeFiles: true,
         fulltextDirectory: "/attachments",
         idType: "id",
       });
@@ -277,7 +277,7 @@ describe("fulltextDetach", () => {
       expect(mockedDetachAttachment).toHaveBeenCalledWith(mockLibrary, {
         identifier: "test-id",
         filename: "fulltext.pdf",
-        delete: true,
+        removeFiles: true,
         idType: "id",
         attachmentsDirectory: "/attachments",
       });

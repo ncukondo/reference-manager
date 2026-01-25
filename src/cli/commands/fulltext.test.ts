@@ -541,7 +541,7 @@ describe("fulltext command", () => {
         expect(result.detached).toContain("pdf");
       });
 
-      it("should detach and delete file with delete option", async () => {
+      it("should detach and delete file with removeFiles option", async () => {
         vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
         const mockDetachResult: DetachResult = {
           filename: "Smith-2024-uuid.pdf",
@@ -554,7 +554,7 @@ describe("fulltext command", () => {
         const options: FulltextDetachOptions = {
           identifier: "Smith-2024",
           type: "pdf",
-          delete: true,
+          removeFiles: true,
           fulltextDirectory,
         };
 

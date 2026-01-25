@@ -22,7 +22,7 @@ export interface DetachAttachmentOptions {
   /** Detach all files of the role */
   all?: boolean;
   /** Delete file from disk */
-  delete?: boolean;
+  removeFiles?: boolean;
   /** Identifier type */
   idType?: IdentifierType;
   /** Base directory for attachments */
@@ -138,7 +138,7 @@ export async function detachAttachment(
     filename,
     role,
     all = false,
-    delete: deleteFile = false,
+    removeFiles = false,
     idType = "id",
     attachmentsDirectory,
   } = options;
@@ -174,7 +174,7 @@ export async function detachAttachment(
   const dirPath = join(attachmentsDirectory, attachments.directory);
 
   // Delete files from disk if requested
-  const deletedFiles = deleteFile ? await deleteFiles(dirPath, detachedFilenames) : [];
+  const deletedFiles = removeFiles ? await deleteFiles(dirPath, detachedFilenames) : [];
 
   // Update metadata
   const remainingFiles = attachments.files.filter((f) => !detachedFilenames.includes(f.filename));
@@ -183,7 +183,7 @@ export async function detachAttachment(
 
   // Try to delete directory if empty and files were deleted
   const directoryDeleted =
-    deleteFile && remainingFiles.length === 0 ? await tryDeleteEmptyDirectory(dirPath) : false;
+    removeFiles && remainingFiles.length === 0 ? await tryDeleteEmptyDirectory(dirPath) : false;
 
   return {
     success: true,

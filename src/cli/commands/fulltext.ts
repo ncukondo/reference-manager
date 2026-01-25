@@ -61,7 +61,7 @@ export interface FulltextGetOptions {
 export interface FulltextDetachOptions {
   identifier: string;
   type?: FulltextType;
-  delete?: boolean;
+  removeFiles?: boolean;
   force?: boolean;
   idType?: IdentifierType;
   fulltextDirectory: string;
@@ -129,7 +129,7 @@ export async function executeFulltextDetach(
   const operationOptions: OperationDetachOptions = {
     identifier: options.identifier,
     type: options.type,
-    delete: options.delete,
+    removeFiles: options.removeFiles,
     idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
   };
@@ -437,7 +437,7 @@ export async function handleFulltextGetAction(
 export interface FulltextDetachActionOptions {
   pdf?: boolean;
   markdown?: boolean;
-  delete?: boolean;
+  removeFiles?: boolean;
   force?: boolean;
   uuid?: boolean;
 }
@@ -477,7 +477,7 @@ export async function handleFulltextDetachAction(
       fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
-      ...(options.delete && { delete: options.delete }),
+      ...(options.removeFiles && { removeFiles: options.removeFiles }),
       ...(options.force && { force: options.force }),
       ...(options.uuid && { idType: "uuid" as const }),
     };

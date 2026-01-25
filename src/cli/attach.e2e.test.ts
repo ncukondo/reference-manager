@@ -202,7 +202,7 @@ describe("Attach Command E2E", () => {
   });
 
   describe("Scenario: Detach with file deletion", () => {
-    it("should detach file and delete with --delete option", async () => {
+    it("should detach file and delete with --remove-files option", async () => {
       // 1. Add attachment
       const testFile = path.join(testDir, "notes.md");
       await fs.writeFile(testFile, "# My Notes", "utf-8");
@@ -225,13 +225,13 @@ describe("Attach Command E2E", () => {
       expect(files.length).toBe(1);
       expect(files[0]).toBe("notes.md");
 
-      // 2. Run `ref attach detach <id> <filename> --delete`
+      // 2. Run `ref attach detach <id> <filename> --remove-files`
       const detachResult = await runWithAttachments([
         "attach",
         "detach",
         "Smith-2024",
         "notes.md",
-        "--delete",
+        "--remove-files",
         "--library",
         libraryPath,
       ]);
@@ -278,7 +278,7 @@ describe("Attach Command E2E", () => {
       const refDirs = await fs.readdir(attachmentsDir);
       const refDir = path.join(attachmentsDir, refDirs[0]);
 
-      // Detach without --delete
+      // Detach without --remove-files
       const detachResult = await runWithAttachments([
         "attach",
         "detach",
@@ -298,7 +298,7 @@ describe("Attach Command E2E", () => {
   });
 
   describe("Scenario: Directory lifecycle", () => {
-    it("should create directory on first attachment and remove when last detached with --delete", async () => {
+    it("should create directory on first attachment and remove when last detached with --remove-files", async () => {
       // 1. Verify no directory exists initially
       let dirs = await fs.readdir(attachmentsDir);
       expect(dirs.length).toBe(0);
@@ -322,13 +322,13 @@ describe("Attach Command E2E", () => {
       expect(dirs.length).toBe(1);
       const refDir = path.join(attachmentsDir, dirs[0]);
 
-      // 3. Detach last attachment with --delete → directory removed
+      // 3. Detach last attachment with --remove-files → directory removed
       await runWithAttachments([
         "attach",
         "detach",
         "Smith-2024",
         "supplement.csv",
-        "--delete",
+        "--remove-files",
         "--library",
         libraryPath,
       ]);
@@ -377,13 +377,13 @@ describe("Attach Command E2E", () => {
       const dirs = await fs.readdir(attachmentsDir);
       const refDir = path.join(attachmentsDir, dirs[0]);
 
-      // Detach first file with --delete
+      // Detach first file with --remove-files
       await runWithAttachments([
         "attach",
         "detach",
         "Smith-2024",
         "supplement-file1.pdf",
-        "--delete",
+        "--remove-files",
         "--library",
         libraryPath,
       ]);
@@ -673,7 +673,7 @@ describe("Attach Command E2E", () => {
         libraryPath,
       ]);
 
-      // Detach all supplements with --delete
+      // Detach all supplements with --remove-files
       const result = await runWithAttachments([
         "attach",
         "detach",
@@ -681,7 +681,7 @@ describe("Attach Command E2E", () => {
         "--role",
         "supplement",
         "--all",
-        "--delete",
+        "--remove-files",
         "--library",
         libraryPath,
       ]);

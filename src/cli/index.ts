@@ -644,7 +644,7 @@ function registerAttachCommand(program: Command): void {
     .argument("[filename]", "Specific file to detach")
     .option("--role <role>", "Detach files by role")
     .option("--all", "Detach all files of specified role")
-    .option("--delete", "Also delete file from disk")
+    .option("--remove-files", "Also delete files from disk")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, filename: string | undefined, options) => {
       await handleAttachDetachAction(identifier, filename, options, program.opts());
@@ -702,8 +702,8 @@ function registerFulltextCommand(program: Command): void {
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--pdf", "Detach PDF only")
     .option("--markdown", "Detach Markdown only")
-    .option("--delete", "Also delete the file from disk")
-    .option("-f, --force", "Skip confirmation for delete")
+    .option("--remove-files", "Also delete the file from disk")
+    .option("-f, --force", "Skip confirmation for file removal")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextDetachAction(identifier, options, program.opts());
