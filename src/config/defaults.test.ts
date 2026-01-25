@@ -29,10 +29,11 @@ describe("default paths", () => {
     expect(cslDir).toMatch(/csl$/);
   });
 
-  test("getDefaultFulltextDirectory() uses data path", () => {
+  test("getDefaultFulltextDirectory() uses attachments directory (deprecated)", () => {
+    // getDefaultFulltextDirectory is deprecated and now returns attachments directory
     const fulltextDir = getDefaultFulltextDirectory();
     expect(fulltextDir).toContain(paths.data);
-    expect(fulltextDir).toMatch(/fulltext$/);
+    expect(fulltextDir).toMatch(/attachments$/);
   });
 
   test("getDefaultBackupDirectory() uses cache path", () => {

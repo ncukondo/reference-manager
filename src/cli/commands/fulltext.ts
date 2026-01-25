@@ -61,7 +61,7 @@ export interface FulltextGetOptions {
 export interface FulltextDetachOptions {
   identifier: string;
   type?: FulltextType;
-  delete?: boolean;
+  removeFiles?: boolean;
   force?: boolean;
   idType?: IdentifierType;
   fulltextDirectory: string;
@@ -129,7 +129,7 @@ export async function executeFulltextDetach(
   const operationOptions: OperationDetachOptions = {
     identifier: options.identifier,
     type: options.type,
-    delete: options.delete,
+    removeFiles: options.removeFiles,
     idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
   };
@@ -337,7 +337,7 @@ export async function handleFulltextAttachAction(
 
     const attachOptions: FulltextAttachOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(filePath && { filePath }),
       ...(type && { type }),
       ...(options.move && { move: options.move }),
@@ -415,7 +415,7 @@ export async function handleFulltextGetAction(
 
     const getOptions: FulltextGetOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.stdout && { stdout: options.stdout }),
@@ -437,7 +437,7 @@ export async function handleFulltextGetAction(
 export interface FulltextDetachActionOptions {
   pdf?: boolean;
   markdown?: boolean;
-  delete?: boolean;
+  removeFiles?: boolean;
   force?: boolean;
   uuid?: boolean;
 }
@@ -474,10 +474,10 @@ export async function handleFulltextDetachAction(
 
     const detachOptions: FulltextDetachOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
-      ...(options.delete && { delete: options.delete }),
+      ...(options.removeFiles && { removeFiles: options.removeFiles }),
       ...(options.force && { force: options.force }),
       ...(options.uuid && { idType: "uuid" as const }),
     };
@@ -534,7 +534,7 @@ export async function handleFulltextOpenAction(
 
     const openOptions: FulltextOpenOptions = {
       identifier,
-      fulltextDirectory: config.fulltext.directory,
+      fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.uuid && { idType: "uuid" as const }),

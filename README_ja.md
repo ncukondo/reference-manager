@@ -221,16 +221,18 @@ ref completion uninstall
 インストール後、シェルを再起動するか設定ファイルをsourceしてください：
 
 ```bash
-ref <TAB>                    # 表示: list search add remove ...
+ref <TAB>                    # 表示: list search add remove attach ...
 ref list --<TAB>             # 表示: --json --sort --limit ...
 ref list --sort <TAB>        # 表示: created updated published ...
 ref cite <TAB>               # 表示: smith2023 jones2024 ...
 ref cite smith<TAB>          # 表示: smith2023 smith2024-review
+ref attach <TAB>             # 表示: open add list get detach sync
+ref attach add <ID> --role <TAB>  # 表示: fulltext supplement notes draft
 ```
 
 補完機能の内容：
 - サブコマンドとオプション
-- オプション値（ソートフィールド、引用スタイルなど）
+- オプション値（ソートフィールド、引用スタイル、添付ファイルロールなど）
 - ライブラリからの動的な文献ID
 
 ## CLIリファレンス
@@ -247,6 +249,8 @@ ref remove                # 文献を選択 → 削除確認
 ref update                # 文献を選択 → 更新フロー
 ref fulltext attach       # 文献を選択 → ファイル添付
 ref fulltext open         # 文献を選択 → ファイルを開く
+ref attach open           # 文献を選択 → フォルダを開く
+ref attach add            # 文献を選択 → 添付ファイルを追加
 ```
 
 引用キーを覚えていなくても、素早く文献を見つけて操作できます。
@@ -365,6 +369,52 @@ ref search "review" --format ids-only | xargs -I{} ref fulltext open {}
 ref fulltext detach smith2024 --pdf
 ref fulltext detach smith2024 --pdf --delete      # ファイルも削除
 ```
+
+### 添付ファイル管理
+
+文献ごとに複数のファイルをロールベースで分類できる、より柔軟な添付ファイルシステム：
+
+```bash
+# 文献の添付ファイルフォルダを開く（ドラッグ＆ドロップでファイル管理）
+ref attach open smith2024                # ファイルマネージャでフォルダを開く
+ref attach open smith2024 --print        # パスのみ表示（スクリプト用）
+
+# プログラムで添付ファイルを追加
+ref attach add smith2024 supplement.xlsx --role supplement
+ref attach add smith2024 notes.md --role notes
+ref attach add smith2024 draft-v1.docx --role draft --label v1
+ref attach add smith2024 file.pdf --move    # コピーではなく移動
+ref attach add smith2024 file.pdf --force   # 既存を上書き
+
+# 添付ファイル一覧
+ref attach list smith2024                # すべての添付ファイルを表示
+ref attach list smith2024 --role supplement  # ロールでフィルタ
+
+# 添付ファイルのパスを取得
+ref attach get smith2024 supplement-data.xlsx
+
+# メタデータをファイルシステムと同期（手動ファイル操作後）
+ref attach sync smith2024                # 保留中の変更を表示（ドライラン）
+ref attach sync smith2024 --yes          # 変更を適用
+ref attach sync smith2024 --fix          # 欠落ファイルもメタデータから削除
+
+# ファイルを切り離す
+ref attach detach smith2024 supplement-data.xlsx
+ref attach detach smith2024 supplement-data.xlsx --delete  # ファイルも削除
+```
+
+**利用可能なロール：**
+- `fulltext` — メイン文書（PDFまたはMarkdown）
+- `supplement` — 補足資料、データセット
+- `notes` — 研究ノート
+- `draft` — 下書き版
+
+**手動ワークフロー：**
+1. `ref attach open smith2024` — ファイルマネージャでフォルダを開く
+2. フォルダにファイルをドラッグ＆ドロップ
+3. `ref attach sync smith2024 --yes` — メタデータを更新して新しいファイルを含める
+
+ファイルは添付ファイルディレクトリ配下の`著者-年-ID-UUID`形式のディレクトリに整理されます。
 
 ### editコマンド
 
@@ -548,7 +598,7 @@ auto_stop_minutes = 60
 | 変数 | 説明 |
 |------|------|
 | `REFERENCE_MANAGER_LIBRARY` | ライブラリファイルパスを上書き |
-| `REFERENCE_MANAGER_FULLTEXT_DIR` | フルテキストディレクトリを上書き |
+| `REFERENCE_MANAGER_ATTACHMENTS_DIR` | 添付ファイルディレクトリを上書き |
 
 ### configコマンド
 

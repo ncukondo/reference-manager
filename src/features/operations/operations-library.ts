@@ -17,6 +17,20 @@ import type {
   UpdateOptions,
   UpdateResult,
 } from "../../core/library-interface.js";
+import type {
+  AddAttachmentOptions,
+  AddAttachmentResult,
+  DetachAttachmentOptions,
+  DetachAttachmentResult,
+  GetAttachmentOptions,
+  GetAttachmentResult,
+  ListAttachmentsOptions,
+  ListAttachmentsResult,
+  OpenAttachmentOptions,
+  OpenAttachmentResult,
+  SyncAttachmentOptions,
+  SyncAttachmentResult,
+} from "./attachments/index.js";
 import type { CiteOperationOptions, CiteResult } from "./cite.js";
 import type { ILibraryOperations, ImportOptions, ImportResult } from "./library-operations.js";
 import type { ListOptions, ListResult } from "./list.js";
@@ -92,5 +106,37 @@ export class OperationsLibrary implements ILibraryOperations {
   async import(inputs: string[], options?: ImportOptions): Promise<ImportResult> {
     const { addReferences } = await import("./add.js");
     return addReferences(inputs, this.library, options ?? {});
+  }
+
+  // Attachment operations
+
+  async attachAdd(options: AddAttachmentOptions): Promise<AddAttachmentResult> {
+    const { addAttachment } = await import("./attachments/index.js");
+    return addAttachment(this.library, options);
+  }
+
+  async attachList(options: ListAttachmentsOptions): Promise<ListAttachmentsResult> {
+    const { listAttachments } = await import("./attachments/index.js");
+    return listAttachments(this.library, options);
+  }
+
+  async attachGet(options: GetAttachmentOptions): Promise<GetAttachmentResult> {
+    const { getAttachment } = await import("./attachments/index.js");
+    return getAttachment(this.library, options);
+  }
+
+  async attachDetach(options: DetachAttachmentOptions): Promise<DetachAttachmentResult> {
+    const { detachAttachment } = await import("./attachments/index.js");
+    return detachAttachment(this.library, options);
+  }
+
+  async attachSync(options: SyncAttachmentOptions): Promise<SyncAttachmentResult> {
+    const { syncAttachments } = await import("./attachments/index.js");
+    return syncAttachments(this.library, options);
+  }
+
+  async attachOpen(options: OpenAttachmentOptions): Promise<OpenAttachmentResult> {
+    const { openAttachment } = await import("./attachments/index.js");
+    return openAttachment(this.library, options);
   }
 }

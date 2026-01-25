@@ -23,6 +23,22 @@ export type { ListOptions, ListResult } from "./list.js";
 export type { CiteOperationOptions, CiteResult, CiteItemResult } from "./cite.js";
 export type { AddReferencesOptions, AddReferencesResult } from "./add.js";
 
+// Attachment operation types
+export type {
+  AddAttachmentOptions,
+  AddAttachmentResult,
+  ListAttachmentsOptions,
+  ListAttachmentsResult,
+  GetAttachmentOptions,
+  GetAttachmentResult,
+  DetachAttachmentOptions,
+  DetachAttachmentResult,
+  SyncAttachmentOptions,
+  SyncAttachmentResult,
+  OpenAttachmentOptions,
+  OpenAttachmentResult,
+} from "./attachments/index.js";
+
 // JSON output types and formatters
 export type {
   AddJsonOutput,

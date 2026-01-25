@@ -24,6 +24,15 @@ vi.mock("./add.js", () => ({
   addReferences: vi.fn(),
 }));
 
+vi.mock("./attachments/index.js", () => ({
+  addAttachment: vi.fn(),
+  listAttachments: vi.fn(),
+  getAttachment: vi.fn(),
+  detachAttachment: vi.fn(),
+  syncAttachments: vi.fn(),
+  openAttachment: vi.fn(),
+}));
+
 describe("OperationsLibrary", () => {
   const mockItem: CslItem = {
     id: "smith2023",
@@ -334,6 +343,119 @@ describe("OperationsLibrary", () => {
         format: "bibtex",
       });
       expect(result).toBe(addResult);
+    });
+  });
+
+  describe("attachment operations", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should call addAttachment for attachAdd()", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { addAttachment } = await import("./attachments/index.js");
+      const mockLibrary = createMockLibrary();
+      const addResult = { success: true, filename: "test.pdf", directory: "smith2023-abc12345" };
+      vi.mocked(addAttachment).mockResolvedValue(addResult);
+
+      const ops = new OperationsLibrary(mockLibrary);
+      const options = {
+        identifier: "smith2023",
+        filePath: "/path/to/file.pdf",
+        role: "supplement",
+        attachmentsDirectory: "/attachments",
+      };
+      const result = await ops.attachAdd(options);
+
+      expect(addAttachment).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(addResult);
+    });
+
+    it("should call listAttachments for attachList()", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { listAttachments } = await import("./attachments/index.js");
+      const mockLibrary = createMockLibrary();
+      const listResult = {
+        success: true,
+        files: [{ filename: "test.pdf", role: "supplement" }],
+        directory: "smith2023-abc12345",
+      };
+      vi.mocked(listAttachments).mockResolvedValue(listResult);
+
+      const ops = new OperationsLibrary(mockLibrary);
+      const options = { identifier: "smith2023", attachmentsDirectory: "/attachments" };
+      const result = await ops.attachList(options);
+
+      expect(listAttachments).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(listResult);
+    });
+
+    it("should call getAttachment for attachGet()", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { getAttachment } = await import("./attachments/index.js");
+      const mockLibrary = createMockLibrary();
+      const getResult = { success: true, path: "/attachments/smith2023/test.pdf" };
+      vi.mocked(getAttachment).mockResolvedValue(getResult);
+
+      const ops = new OperationsLibrary(mockLibrary);
+      const options = {
+        identifier: "smith2023",
+        filename: "test.pdf",
+        attachmentsDirectory: "/attachments",
+      };
+      const result = await ops.attachGet(options);
+
+      expect(getAttachment).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(getResult);
+    });
+
+    it("should call detachAttachment for attachDetach()", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { detachAttachment } = await import("./attachments/index.js");
+      const mockLibrary = createMockLibrary();
+      const detachResult = { success: true, detached: ["test.pdf"], deleted: [] };
+      vi.mocked(detachAttachment).mockResolvedValue(detachResult);
+
+      const ops = new OperationsLibrary(mockLibrary);
+      const options = {
+        identifier: "smith2023",
+        filename: "test.pdf",
+        attachmentsDirectory: "/attachments",
+      };
+      const result = await ops.attachDetach(options);
+
+      expect(detachAttachment).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(detachResult);
+    });
+
+    it("should call syncAttachments for attachSync()", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { syncAttachments } = await import("./attachments/index.js");
+      const mockLibrary = createMockLibrary();
+      const syncResult = { success: true, added: [], removed: [], newFiles: [], missingFiles: [] };
+      vi.mocked(syncAttachments).mockResolvedValue(syncResult);
+
+      const ops = new OperationsLibrary(mockLibrary);
+      const options = { identifier: "smith2023", attachmentsDirectory: "/attachments" };
+      const result = await ops.attachSync(options);
+
+      expect(syncAttachments).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(syncResult);
+    });
+
+    it("should call openAttachment for attachOpen()", async () => {
+      const { OperationsLibrary } = await import("./operations-library.js");
+      const { openAttachment } = await import("./attachments/index.js");
+      const mockLibrary = createMockLibrary();
+      const openResult = { success: true, path: "/attachments/smith2023" };
+      vi.mocked(openAttachment).mockResolvedValue(openResult);
+
+      const ops = new OperationsLibrary(mockLibrary);
+      const options = { identifier: "smith2023", attachmentsDirectory: "/attachments" };
+      const result = await ops.attachOpen(options);
+
+      expect(openAttachment).toHaveBeenCalledWith(mockLibrary, options);
+      expect(result).toBe(openResult);
     });
   });
 });

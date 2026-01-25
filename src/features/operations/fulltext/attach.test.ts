@@ -3,31 +3,22 @@ import type { CslItem } from "../../../core/csl-json/types.js";
 import type { Library } from "../../../core/library.js";
 import { type FulltextAttachOptions, fulltextAttach } from "./attach.js";
 
-// Mock the FulltextManager
-vi.mock("../../fulltext/index.js", () => ({
-  FulltextManager: vi.fn(),
-  FulltextIOError: class extends Error {
-    name = "FulltextIOError";
-  },
+// Mock the addAttachment operation
+vi.mock("../attachments/add.js", () => ({
+  addAttachment: vi.fn(),
 }));
 
-// Mock the update operation
-vi.mock("../update.js", () => ({
-  updateReference: vi.fn(),
-}));
+import { addAttachment } from "../attachments/add.js";
 
-import { FulltextIOError, FulltextManager } from "../../fulltext/index.js";
-import { updateReference } from "../update.js";
-
-const mockedUpdateReference = vi.mocked(updateReference);
+const mockedAddAttachment = vi.mocked(addAttachment);
 
 describe("fulltextAttach", () => {
   let mockLibrary: Library;
-  let mockManager: {
-    attachFile: ReturnType<typeof vi.fn>;
-  };
 
-  const createItem = (id: string, fulltext?: { pdf?: string; markdown?: string }): CslItem => ({
+  const createItem = (
+    id: string,
+    attachments?: { directory?: string; files?: Array<{ filename: string; role: string }> }
+  ): CslItem => ({
     id,
     type: "article",
     title: "Test Article",
@@ -35,18 +26,12 @@ describe("fulltextAttach", () => {
       uuid: `${id}-uuid`,
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
-      ...(fulltext && { fulltext }),
+      ...(attachments && { attachments }),
     },
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockManager = {
-      attachFile: vi.fn(),
-    };
-
-    vi.mocked(FulltextManager).mockImplementation(() => mockManager as unknown as FulltextManager);
 
     // Default mock library behavior
     mockLibrary = {
@@ -60,7 +45,11 @@ describe("fulltextAttach", () => {
     it("should find reference by id when idType is 'id'", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
 
       await fulltextAttach(mockLibrary, {
         identifier: "test-id",
@@ -68,13 +57,23 @@ describe("fulltextAttach", () => {
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("test-id", { idType: "id" });
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          identifier: "test-id",
+          idType: "id",
+        })
+      );
     });
 
     it("should find reference by uuid when idType is 'uuid'", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
 
       await fulltextAttach(mockLibrary, {
         identifier: "test-uuid",
@@ -83,11 +82,20 @@ describe("fulltextAttach", () => {
         idType: "uuid",
       });
 
-      expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { idType: "uuid" });
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          identifier: "test-uuid",
+          idType: "uuid",
+        })
+      );
     });
 
     it("should return error when reference not found", async () => {
-      vi.mocked(mockLibrary.find).mockResolvedValue(undefined);
+      mockedAddAttachment.mockResolvedValue({
+        success: false,
+        error: "Reference 'nonexistent' not found",
+      });
 
       const result = await fulltextAttach(mockLibrary, {
         identifier: "nonexistent",
@@ -104,44 +112,73 @@ describe("fulltextAttach", () => {
     it("should detect pdf type from file extension", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
 
-      await fulltextAttach(mockLibrary, {
+      const result = await fulltextAttach(mockLibrary, {
         identifier: "test-id",
         filePath: "/path/to/file.pdf",
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockManager.attachFile).toHaveBeenCalledWith(item, "/path/to/file.pdf", "pdf", {});
+      expect(result.success).toBe(true);
+      expect(result.type).toBe("pdf");
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          filePath: "/path/to/file.pdf",
+          role: "fulltext",
+        })
+      );
     });
 
     it("should detect markdown type from .md extension", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.md", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.md",
+        overwritten: false,
+      });
 
-      await fulltextAttach(mockLibrary, {
+      const result = await fulltextAttach(mockLibrary, {
         identifier: "test-id",
         filePath: "/path/to/file.md",
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockManager.attachFile).toHaveBeenCalledWith(item, "/path/to/file.md", "markdown", {});
+      expect(result.success).toBe(true);
+      expect(result.type).toBe("markdown");
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          filePath: "/path/to/file.md",
+          role: "fulltext",
+        })
+      );
     });
 
     it("should use explicit type when provided", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
 
-      await fulltextAttach(mockLibrary, {
+      const result = await fulltextAttach(mockLibrary, {
         identifier: "test-id",
         filePath: "/path/to/file.txt",
         type: "pdf",
         fulltextDirectory: "/fulltext",
       });
 
-      expect(mockManager.attachFile).toHaveBeenCalledWith(item, "/path/to/file.txt", "pdf", {});
+      expect(result.success).toBe(true);
+      expect(result.type).toBe("pdf");
     });
 
     it("should return error when file type cannot be detected", async () => {
@@ -163,7 +200,11 @@ describe("fulltextAttach", () => {
     it("should attach file successfully", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test-id.pdf", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
 
       const result = await fulltextAttach(mockLibrary, {
         identifier: "test-id",
@@ -172,15 +213,19 @@ describe("fulltextAttach", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.filename).toBe("test-id.pdf");
+      expect(result.filename).toBe("fulltext.pdf");
       expect(result.type).toBe("pdf");
       expect(result.overwritten).toBe(false);
     });
 
-    it("should pass move option to manager", async () => {
+    it("should pass move option to addAttachment", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
 
       await fulltextAttach(mockLibrary, {
         identifier: "test-id",
@@ -189,15 +234,22 @@ describe("fulltextAttach", () => {
         move: true,
       });
 
-      expect(mockManager.attachFile).toHaveBeenCalledWith(item, "/path/to/file.pdf", "pdf", {
-        move: true,
-      });
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          move: true,
+        })
+      );
     });
 
-    it("should pass force option to manager", async () => {
+    it("should pass force option to addAttachment", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test.pdf", overwritten: true });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: true,
+      });
 
       await fulltextAttach(mockLibrary, {
         identifier: "test-id",
@@ -206,9 +258,12 @@ describe("fulltextAttach", () => {
         force: true,
       });
 
-      expect(mockManager.attachFile).toHaveBeenCalledWith(item, "/path/to/file.pdf", "pdf", {
-        force: true,
-      });
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          force: true,
+        })
+      );
     });
   });
 
@@ -216,10 +271,10 @@ describe("fulltextAttach", () => {
     it("should return requiresConfirmation when existing file and not forced", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({
-        filename: "test.pdf",
-        existingFile: "/fulltext/existing.pdf",
-        overwritten: false,
+      mockedAddAttachment.mockResolvedValue({
+        success: false,
+        existingFile: "fulltext.pdf",
+        requiresConfirmation: true,
       });
 
       const result = await fulltextAttach(mockLibrary, {
@@ -230,14 +285,15 @@ describe("fulltextAttach", () => {
 
       expect(result.success).toBe(false);
       expect(result.requiresConfirmation).toBe(true);
-      expect(result.existingFile).toBe("/fulltext/existing.pdf");
+      expect(result.existingFile).toBe("fulltext.pdf");
     });
 
-    it("should update metadata when overwritten", async () => {
+    it("should return overwritten=true when force overwrites", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({
-        filename: "test-id.pdf",
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
         overwritten: true,
       });
 
@@ -250,67 +306,17 @@ describe("fulltextAttach", () => {
 
       expect(result.success).toBe(true);
       expect(result.overwritten).toBe(true);
-      expect(mockedUpdateReference).toHaveBeenCalledWith(
-        mockLibrary,
-        expect.objectContaining({
-          identifier: "test-id",
-          idType: "id",
-        })
-      );
-    });
-  });
-
-  describe("metadata update", () => {
-    it("should update fulltext metadata after successful attach", async () => {
-      const item = createItem("test-id");
-      vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test-id.pdf", overwritten: false });
-
-      await fulltextAttach(mockLibrary, {
-        identifier: "test-id",
-        filePath: "/path/to/file.pdf",
-        fulltextDirectory: "/fulltext",
-      });
-
-      expect(mockedUpdateReference).toHaveBeenCalledWith(mockLibrary, {
-        identifier: "test-id",
-        updates: {
-          custom: {
-            fulltext: { pdf: "test-id.pdf" },
-          },
-        },
-        idType: "id",
-      });
-    });
-
-    it("should preserve existing fulltext entries when adding new type", async () => {
-      const item = createItem("test-id", { markdown: "existing.md" });
-      vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test-id.pdf", overwritten: false });
-
-      await fulltextAttach(mockLibrary, {
-        identifier: "test-id",
-        filePath: "/path/to/file.pdf",
-        fulltextDirectory: "/fulltext",
-      });
-
-      expect(mockedUpdateReference).toHaveBeenCalledWith(mockLibrary, {
-        identifier: "test-id",
-        updates: {
-          custom: {
-            fulltext: { markdown: "existing.md", pdf: "test-id.pdf" },
-          },
-        },
-        idType: "id",
-      });
     });
   });
 
   describe("error handling", () => {
-    it("should handle FulltextIOError", async () => {
+    it("should handle addAttachment errors", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockRejectedValue(new FulltextIOError("File not found"));
+      mockedAddAttachment.mockResolvedValue({
+        success: false,
+        error: "File not found",
+      });
 
       const result = await fulltextAttach(mockLibrary, {
         identifier: "test-id",
@@ -325,7 +331,7 @@ describe("fulltextAttach", () => {
     it("should rethrow unexpected errors", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockRejectedValue(new Error("Unexpected error"));
+      mockedAddAttachment.mockRejectedValue(new Error("Unexpected error"));
 
       await expect(
         fulltextAttach(mockLibrary, {
@@ -354,7 +360,11 @@ describe("fulltextAttach", () => {
     it("should handle stdin content with explicit type", async () => {
       const item = createItem("test-id");
       vi.mocked(mockLibrary.find).mockResolvedValue(item);
-      mockManager.attachFile.mockResolvedValue({ filename: "test-id.md", overwritten: false });
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.md",
+        overwritten: false,
+      });
 
       const result = await fulltextAttach(mockLibrary, {
         identifier: "test-id",
@@ -379,6 +389,32 @@ describe("fulltextAttach", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("File type must be specified");
+    });
+  });
+
+  describe("attachments system integration", () => {
+    it("should use fulltext role when calling addAttachment", async () => {
+      const item = createItem("test-id");
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+      mockedAddAttachment.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        overwritten: false,
+      });
+
+      await fulltextAttach(mockLibrary, {
+        identifier: "test-id",
+        filePath: "/path/to/file.pdf",
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          role: "fulltext",
+          attachmentsDirectory: "/fulltext",
+        })
+      );
     });
   });
 });

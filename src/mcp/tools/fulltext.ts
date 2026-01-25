@@ -64,7 +64,7 @@ export function registerFulltextAttachTool(
         identifier: args.id,
         filePath: args.path,
         force: true, // MCP tools don't support interactive confirmation
-        fulltextDirectory: config.fulltext.directory,
+        fulltextDirectory: config.attachments.directory,
       });
 
       if (!result.success) {
@@ -114,7 +114,7 @@ export function registerFulltextGetTool(
       // First, check what types are attached
       const pathResult = await fulltextGet(libraryOps, {
         identifier: args.id,
-        fulltextDirectory: config.fulltext.directory,
+        fulltextDirectory: config.attachments.directory,
       });
 
       if (!pathResult.success) {
@@ -132,7 +132,7 @@ export function registerFulltextGetTool(
           identifier: args.id,
           type: "markdown",
           stdout: true,
-          fulltextDirectory: config.fulltext.directory,
+          fulltextDirectory: config.attachments.directory,
         });
 
         if (contentResult.success && contentResult.content) {
@@ -190,7 +190,7 @@ export function registerFulltextDetachTool(
 
       const result = await fulltextDetach(libraryOps, {
         identifier: args.id,
-        fulltextDirectory: config.fulltext.directory,
+        fulltextDirectory: config.attachments.directory,
       });
 
       if (!result.success) {

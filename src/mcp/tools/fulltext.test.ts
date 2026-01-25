@@ -18,18 +18,20 @@ import {
 describe("MCP fulltext tools", () => {
   let tempDir: string;
   let libraryPath: string;
-  let fulltextDir: string;
+  let attachmentsDir: string;
   let libraryOperations: ILibraryOperations;
   let config: Config;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-fulltext-test-"));
     libraryPath = path.join(tempDir, "references.json");
-    fulltextDir = path.join(tempDir, "fulltext");
-    await fs.mkdir(fulltextDir, { recursive: true });
+    attachmentsDir = path.join(tempDir, "attachments");
+    await fs.mkdir(attachmentsDir, { recursive: true });
 
-    // Create library with test reference
+    // Create library with test references using new attachments format
     const testTimestamp = "2024-01-01T00:00:00.000Z";
+    const jonesUuid = "test-uuid-5678-0000-000000000000";
+    const jonesDirectory = "jones2023-test-uuid";
     const refs = [
       {
         id: "smith2024",
@@ -38,7 +40,7 @@ describe("MCP fulltext tools", () => {
         author: [{ family: "Smith", given: "John" }],
         issued: { "date-parts": [[2024]] },
         custom: {
-          uuid: "test-uuid-1234",
+          uuid: "test-uuid-1234-0000-000000000000",
           created_at: testTimestamp,
           timestamp: testTimestamp,
         },
@@ -50,11 +52,12 @@ describe("MCP fulltext tools", () => {
         author: [{ family: "Jones", given: "Mary" }],
         issued: { "date-parts": [[2023]] },
         custom: {
-          uuid: "test-uuid-5678",
+          uuid: jonesUuid,
           created_at: testTimestamp,
           timestamp: testTimestamp,
-          fulltext: {
-            markdown: "jones2023-test-uuid-5678.md",
+          attachments: {
+            directory: jonesDirectory,
+            files: [{ filename: "fulltext.md", role: "fulltext", format: "markdown" }],
           },
         },
       },
@@ -63,18 +66,20 @@ describe("MCP fulltext tools", () => {
     const library = await Library.load(libraryPath);
     libraryOperations = new OperationsLibrary(library);
 
-    // Create existing fulltext file
+    // Create existing fulltext file in attachments directory structure
+    const jonesDir = path.join(attachmentsDir, jonesDirectory);
+    await fs.mkdir(jonesDir, { recursive: true });
     await fs.writeFile(
-      path.join(fulltextDir, "jones2023-test-uuid-5678.md"),
+      path.join(jonesDir, "fulltext.md"),
       "# Test content\n\nThis is test markdown content.",
       "utf-8"
     );
 
-    // Create mock config
+    // Create mock config with attachments section
     config = {
       library: libraryPath,
-      fulltext: {
-        directory: fulltextDir,
+      attachments: {
+        directory: attachmentsDir,
       },
     } as Config;
   });

@@ -1,16 +1,24 @@
 /**
  * Fulltext detach operation
+ *
+ * Uses attachments system internally with role='fulltext'.
  */
 
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
+import type { AttachmentFile, Attachments } from "../../attachments/types.js";
+import { detachAttachment } from "../attachments/detach.js";
 import {
-  FulltextIOError,
-  FulltextManager,
-  FulltextNotAttachedError,
-  type FulltextType,
-} from "../../fulltext/index.js";
-import { updateReference } from "../update.js";
+  type FulltextFormat,
+  extensionToFormat,
+  findFulltextFile,
+  findFulltextFiles,
+} from "../fulltext-adapter/index.js";
+
+/**
+ * Fulltext type (matches existing FulltextType for backward compatibility)
+ */
+export type FulltextType = FulltextFormat;
 
 /**
  * Options for fulltextDetach operation
@@ -21,10 +29,10 @@ export interface FulltextDetachOptions {
   /** Specific type to detach (pdf or markdown) */
   type?: FulltextType | undefined;
   /** Delete the file from disk */
-  delete?: boolean | undefined;
+  removeFiles?: boolean | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
   idType?: IdentifierType | undefined;
-  /** Directory for fulltext files */
+  /** Directory for attachments (replaces fulltextDirectory) */
   fulltextDirectory: string;
 }
 
@@ -39,23 +47,51 @@ export interface FulltextDetachResult {
 }
 
 /**
- * Perform detach operations for specified types
+ * Determine which files to detach based on type option
  */
-async function performDetachOperations(
-  manager: FulltextManager,
-  item: CslItem,
-  typesToDetach: FulltextType[],
-  deleteFile: boolean | undefined
+function getFilesToDetach(
+  attachments: Attachments | undefined,
+  type: FulltextType | undefined
+): AttachmentFile[] {
+  if (type) {
+    const file = findFulltextFile(attachments, type);
+    return file ? [file] : [];
+  }
+  return findFulltextFiles(attachments);
+}
+
+/**
+ * Perform detach operations for each file
+ */
+async function detachFiles(
+  library: ILibrary,
+  files: AttachmentFile[],
+  identifier: string,
+  removeFiles: boolean | undefined,
+  idType: IdentifierType,
+  fulltextDirectory: string
 ): Promise<{ detached: FulltextType[]; deleted: FulltextType[] }> {
   const detached: FulltextType[] = [];
   const deleted: FulltextType[] = [];
 
-  for (const t of typesToDetach) {
-    const detachOptions = deleteFile ? { delete: deleteFile } : {};
-    const result = await manager.detachFile(item, t, detachOptions);
-    detached.push(t);
-    if (result.deleted) {
-      deleted.push(t);
+  for (const file of files) {
+    const result = await detachAttachment(library, {
+      identifier,
+      filename: file.filename,
+      removeFiles: removeFiles ?? false,
+      idType,
+      attachmentsDirectory: fulltextDirectory,
+    });
+
+    if (result.success) {
+      const ext = file.filename.split(".").pop() || "";
+      const format = extensionToFormat(ext);
+      if (format) {
+        detached.push(format);
+        if (result.deleted.length > 0) {
+          deleted.push(format);
+        }
+      }
     }
   }
 
@@ -63,30 +99,22 @@ async function performDetachOperations(
 }
 
 /**
- * Build remaining fulltext metadata after detach
+ * Build result from detach operations
  */
-function buildRemainingFulltext(
-  currentFulltext: { pdf?: string | undefined; markdown?: string | undefined },
-  detached: FulltextType[]
-): { pdf?: string; markdown?: string } | undefined {
-  const newFulltext: { pdf?: string; markdown?: string } = {};
-  if (currentFulltext.pdf && !detached.includes("pdf")) {
-    newFulltext.pdf = currentFulltext.pdf;
+function buildResult(
+  detached: FulltextType[],
+  deleted: FulltextType[],
+  identifier: string
+): FulltextDetachResult {
+  if (detached.length === 0) {
+    return { success: false, error: `Failed to detach fulltext from '${identifier}'` };
   }
-  if (currentFulltext.markdown && !detached.includes("markdown")) {
-    newFulltext.markdown = currentFulltext.markdown;
-  }
-  return Object.keys(newFulltext).length > 0 ? newFulltext : undefined;
-}
 
-/**
- * Handle detach errors
- */
-function handleDetachError(error: unknown): FulltextDetachResult {
-  if (error instanceof FulltextNotAttachedError || error instanceof FulltextIOError) {
-    return { success: false, error: error.message };
+  const result: FulltextDetachResult = { success: true, detached };
+  if (deleted.length > 0) {
+    result.deleted = deleted;
   }
-  throw error;
+  return result;
 }
 
 /**
@@ -100,45 +128,39 @@ export async function fulltextDetach(
   library: ILibrary,
   options: FulltextDetachOptions
 ): Promise<FulltextDetachResult> {
-  const { identifier, type, delete: deleteFile, idType = "id", fulltextDirectory } = options;
+  const { identifier, type, removeFiles, idType = "id", fulltextDirectory } = options;
 
-  // Find reference (returns CslItem directly)
+  // Find reference first to check for fulltext files
   const item = await library.find(identifier, { idType });
-
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
   }
 
-  const manager = new FulltextManager(fulltextDirectory);
-  const typesToDetach: FulltextType[] = type ? [type] : manager.getAttachedTypes(item);
+  // Get attachments metadata
+  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
 
-  if (typesToDetach.length === 0) {
+  // Find fulltext files
+  const fulltextFiles = findFulltextFiles(attachments);
+  if (fulltextFiles.length === 0) {
     return { success: false, error: `No fulltext attached to '${identifier}'` };
   }
 
-  try {
-    const { detached, deleted } = await performDetachOperations(
-      manager,
-      item,
-      typesToDetach,
-      deleteFile
-    );
+  // Determine which files to detach
+  const filesToDetach = getFilesToDetach(attachments, type);
 
-    const updatedFulltext = buildRemainingFulltext(item.custom?.fulltext ?? {}, detached);
-    await updateReference(library, {
-      identifier,
-      updates: {
-        custom: { fulltext: updatedFulltext },
-      } as Partial<CslItem>,
-      idType,
-    });
-
-    const resultData: FulltextDetachResult = { success: true, detached };
-    if (deleted.length > 0) {
-      resultData.deleted = deleted;
-    }
-    return resultData;
-  } catch (error) {
-    return handleDetachError(error);
+  if (filesToDetach.length === 0) {
+    return { success: false, error: `No ${type} fulltext attached to '${identifier}'` };
   }
+
+  // Perform detach operations
+  const { detached, deleted } = await detachFiles(
+    library,
+    filesToDetach,
+    identifier,
+    removeFiles,
+    idType,
+    fulltextDirectory
+  );
+
+  return buildResult(detached, deleted, identifier);
 }

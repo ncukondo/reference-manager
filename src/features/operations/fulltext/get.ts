@@ -1,11 +1,25 @@
 /**
  * Fulltext get operation
+ *
+ * Uses attachments system internally with role='fulltext'.
  */
 
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
-import { FulltextManager, type FulltextType } from "../../fulltext/index.js";
+import type { AttachmentFile, Attachments } from "../../attachments/types.js";
+import {
+  type FulltextFormat,
+  extensionToFormat,
+  findFulltextFile,
+  findFulltextFiles,
+} from "../fulltext-adapter/index.js";
+
+/**
+ * Fulltext type (matches existing FulltextType for backward compatibility)
+ */
+export type FulltextType = FulltextFormat;
 
 /**
  * Options for fulltextGet operation
@@ -19,7 +33,7 @@ export interface FulltextGetOptions {
   stdout?: boolean | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
   idType?: IdentifierType | undefined;
-  /** Directory for fulltext files */
+  /** Directory for attachments (replaces fulltextDirectory) */
   fulltextDirectory: string;
 }
 
@@ -37,44 +51,77 @@ export interface FulltextGetResult {
 }
 
 /**
+ * Build file path from attachments metadata
+ */
+function buildFilePath(attachmentsDirectory: string, directory: string, filename: string): string {
+  // Normalize to forward slashes for consistent cross-platform output
+  return join(attachmentsDirectory, directory, filename).replace(/\\/g, "/");
+}
+
+/**
  * Get file content for stdout mode
  */
-async function getFileContent(
-  manager: FulltextManager,
-  item: CslItem,
+async function getFileContent(filePath: string): Promise<FulltextGetResult> {
+  const content = await readFile(filePath);
+  return { success: true, content };
+}
+
+/**
+ * Handle stdout mode - get file content
+ */
+async function handleStdoutMode(
+  attachments: Attachments | undefined,
   type: FulltextType,
-  identifier: string
+  identifier: string,
+  fulltextDirectory: string
 ): Promise<FulltextGetResult> {
-  const filePath = manager.getFilePath(item, type);
-  if (!filePath) {
+  const file = findFulltextFile(attachments, type);
+  if (!file || !attachments?.directory) {
     return { success: false, error: `No ${type} fulltext attached to '${identifier}'` };
   }
-
+  const filePath = buildFilePath(fulltextDirectory, attachments.directory, file.filename);
   try {
-    const content = await readFile(filePath);
-    return { success: true, content };
-  } catch (error) {
-    return {
-      success: false,
-      error: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
-    };
+    return await getFileContent(filePath);
+  } catch {
+    return { success: false, error: `No ${type} fulltext attached to '${identifier}'` };
   }
 }
 
 /**
- * Get file paths for path mode
+ * Get single type path
  */
-function getFilePaths(
-  manager: FulltextManager,
-  item: CslItem,
-  types: FulltextType[],
+function getSingleTypePath(
+  attachments: Attachments | undefined,
+  type: FulltextType,
+  identifier: string,
+  fulltextDirectory: string
+): FulltextGetResult {
+  const file = findFulltextFile(attachments, type);
+  if (!file || !attachments?.directory) {
+    return { success: false, error: `No ${type} fulltext attached to '${identifier}'` };
+  }
+  const filePath = buildFilePath(fulltextDirectory, attachments.directory, file.filename);
+  const paths: { pdf?: string; markdown?: string } = {};
+  paths[type] = filePath;
+  return { success: true, paths };
+}
+
+/**
+ * Get all fulltext paths
+ */
+function getAllFulltextPaths(
+  attachments: Attachments,
+  fulltextFiles: AttachmentFile[],
+  fulltextDirectory: string,
   identifier: string
 ): FulltextGetResult {
   const paths: { pdf?: string; markdown?: string } = {};
-  for (const t of types) {
-    const filePath = manager.getFilePath(item, t);
-    if (filePath) {
-      paths[t] = filePath;
+  for (const file of fulltextFiles) {
+    const ext = file.filename.split(".").pop() || "";
+    const format = extensionToFormat(ext);
+    if (format) {
+      const filePath = buildFilePath(fulltextDirectory, attachments.directory, file.filename);
+      paths[format] = filePath;
     }
   }
 
@@ -98,25 +145,35 @@ export async function fulltextGet(
 ): Promise<FulltextGetResult> {
   const { identifier, type, stdout, idType = "id", fulltextDirectory } = options;
 
-  // Find reference (returns CslItem directly)
+  // Find reference
   const item = await library.find(identifier, { idType });
-
   if (!item) {
     return { success: false, error: `Reference '${identifier}' not found` };
   }
 
-  const manager = new FulltextManager(fulltextDirectory);
+  // Get attachments metadata
+  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
 
   // Stdout mode with specific type
   if (stdout && type) {
-    return getFileContent(manager, item, type, identifier);
+    return handleStdoutMode(attachments, type, identifier, fulltextDirectory);
   }
 
-  // Path mode
-  const attachedTypes = type ? [type] : manager.getAttachedTypes(item);
-  if (attachedTypes.length === 0) {
+  // Path mode - find all fulltext files
+  const fulltextFiles = findFulltextFiles(attachments);
+  if (fulltextFiles.length === 0) {
     return { success: false, error: `No fulltext attached to '${identifier}'` };
   }
 
-  return getFilePaths(manager, item, attachedTypes, identifier);
+  // If specific type requested, filter to that type
+  if (type) {
+    return getSingleTypePath(attachments, type, identifier, fulltextDirectory);
+  }
+
+  // Return all fulltext paths
+  if (!attachments) {
+    return { success: false, error: `No fulltext attached to '${identifier}'` };
+  }
+
+  return getAllFulltextPaths(attachments, fulltextFiles, fulltextDirectory, identifier);
 }

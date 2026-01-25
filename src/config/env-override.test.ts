@@ -40,9 +40,9 @@ describe("env-override", () => {
       expect(getEnvOverride("pubmed.api_key")).toBe("my-api-key");
     });
 
-    it("returns value when REFERENCE_MANAGER_FULLTEXT_DIR is set", () => {
-      process.env.REFERENCE_MANAGER_FULLTEXT_DIR = "/env/fulltext";
-      expect(getEnvOverride("fulltext.directory")).toBe("/env/fulltext");
+    it("returns value when REFERENCE_MANAGER_ATTACHMENTS_DIR is set", () => {
+      process.env.REFERENCE_MANAGER_ATTACHMENTS_DIR = "/env/attachments";
+      expect(getEnvOverride("attachments.directory")).toBe("/env/attachments");
     });
 
     it("returns value when REFERENCE_MANAGER_CLI_DEFAULT_LIMIT is set", () => {

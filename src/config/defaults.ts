@@ -48,10 +48,19 @@ export function getDefaultCslDirectory(): string {
 
 /**
  * Get the default fulltext directory
- * Uses platform-specific data path + fulltext/
+ * @deprecated Use getDefaultAttachmentsDirectory() instead.
+ * Fulltext is now stored in the attachments directory.
  */
 export function getDefaultFulltextDirectory(): string {
-  return join(getPaths().data, "fulltext");
+  return getDefaultAttachmentsDirectory();
+}
+
+/**
+ * Get the default attachments directory
+ * Uses platform-specific data path + attachments/
+ */
+export function getDefaultAttachmentsDirectory(): string {
+  return join(getPaths().data, "attachments");
 }
 
 /**
@@ -86,7 +95,10 @@ export const defaultConfig: Config = {
     apiKey: undefined,
   },
   fulltext: {
-    directory: getDefaultFulltextDirectory(),
+    directory: getDefaultAttachmentsDirectory(),
+  },
+  attachments: {
+    directory: getDefaultAttachmentsDirectory(),
   },
   cli: {
     defaultLimit: 0,

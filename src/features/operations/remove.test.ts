@@ -67,6 +67,80 @@ describe("getFulltextAttachmentTypes", () => {
     };
     expect(getFulltextAttachmentTypes(item)).toEqual(["pdf", "markdown"]);
   });
+
+  it("should return ['pdf'] when using new attachments format", () => {
+    const item: CslItem = {
+      id: "test",
+      type: "article-journal",
+      custom: {
+        uuid: "uuid-1",
+        created_at: "",
+        timestamp: "",
+        attachments: {
+          directory: "test-uuid-1",
+          files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+        },
+      },
+    };
+    expect(getFulltextAttachmentTypes(item)).toEqual(["pdf"]);
+  });
+
+  it("should return ['markdown'] when using new attachments format with markdown", () => {
+    const item: CslItem = {
+      id: "test",
+      type: "article-journal",
+      custom: {
+        uuid: "uuid-1",
+        created_at: "",
+        timestamp: "",
+        attachments: {
+          directory: "test-uuid-1",
+          files: [{ filename: "fulltext.md", role: "fulltext" }],
+        },
+      },
+    };
+    expect(getFulltextAttachmentTypes(item)).toEqual(["markdown"]);
+  });
+
+  it("should return both types when using new attachments format with both pdf and markdown", () => {
+    const item: CslItem = {
+      id: "test",
+      type: "article-journal",
+      custom: {
+        uuid: "uuid-1",
+        created_at: "",
+        timestamp: "",
+        attachments: {
+          directory: "test-uuid-1",
+          files: [
+            { filename: "fulltext.pdf", role: "fulltext" },
+            { filename: "fulltext.md", role: "fulltext" },
+          ],
+        },
+      },
+    };
+    expect(getFulltextAttachmentTypes(item)).toEqual(["pdf", "markdown"]);
+  });
+
+  it("should ignore non-fulltext attachments", () => {
+    const item: CslItem = {
+      id: "test",
+      type: "article-journal",
+      custom: {
+        uuid: "uuid-1",
+        created_at: "",
+        timestamp: "",
+        attachments: {
+          directory: "test-uuid-1",
+          files: [
+            { filename: "fulltext.pdf", role: "fulltext" },
+            { filename: "supplement.xlsx", role: "supplement" },
+          ],
+        },
+      },
+    };
+    expect(getFulltextAttachmentTypes(item)).toEqual(["pdf"]);
+  });
 });
 
 describe("removeReference", () => {

@@ -1,15 +1,37 @@
 import { type ChildProcess, spawn } from "node:child_process";
+import fs from "node:fs";
+
+/**
+ * Detect if running in Windows Subsystem for Linux (WSL)
+ */
+export function isWSL(): boolean {
+  // Check for WSL_DISTRO_NAME environment variable
+  if (process.env.WSL_DISTRO_NAME !== undefined) {
+    return true;
+  }
+
+  // Check for WSLInterop file
+  try {
+    return fs.existsSync("/proc/sys/fs/binfmt_misc/WSLInterop");
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Get the system opener command for the specified platform.
  * @param platform - The platform (darwin, linux, win32)
+ * @param wsl - Whether running in WSL (defaults to isWSL())
  * @returns The command array to execute
  */
-export function getOpenerCommand(platform: string): string[] {
+export function getOpenerCommand(platform: string, wsl: boolean = isWSL()): string[] {
   switch (platform) {
     case "darwin":
       return ["open"];
     case "linux":
+      if (wsl) {
+        return ["wslview"];
+      }
       return ["xdg-open"];
     case "win32":
       return ["cmd", "/c", "start", ""];

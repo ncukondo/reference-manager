@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Attachments System**: Comprehensive attachment management replacing the limited fulltext feature
+  - `ref attach open <id>`: Open reference's attachment folder in file manager
+  - `ref attach add <id> <file> --role <role>`: Add attachment with role (fulltext, supplement, notes, draft)
+  - `ref attach list <id>`: List all attachments, optionally filter by `--role`
+  - `ref attach get <id> <filename>`: Get attachment file path
+  - `ref attach detach <id> <filename>`: Remove attachment, with `--delete` to remove file
+  - `ref attach sync <id>`: Synchronize metadata with filesystem after manual file operations
+  - Per-reference directories named `{id}-{uuid-prefix}`
+  - Role-based file naming: `{role}[-{label}].{ext}`
+  - Interactive mode for `attach open`: auto-syncs on completion
+  - WSL support: uses `wslview` for opening files/directories
+
+- **Shell Completion for attach command**: Tab completion for subcommands, `--role` option values, and reference IDs
+
 ### Changed
 
 - **BREAKING: CLI Option Consistency**: Unified input/output format options and short option conventions across all commands

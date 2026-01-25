@@ -1,8 +1,10 @@
-import { unlink } from "node:fs/promises";
+import { rmdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../core/library-interface.js";
+import type { Attachments } from "../attachments/types.js";
 import type { FulltextType } from "../fulltext/index.js";
+import { extensionToFormat, findFulltextFiles } from "./fulltext-adapter/index.js";
 
 /**
  * Options for removeReference operation
@@ -32,11 +34,13 @@ export interface RemoveResult {
 
 /**
  * Get fulltext attachment types from a CSL item.
+ * Supports both legacy fulltext structure and new attachments structure.
  */
 export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
   const types: FulltextType[] = [];
-  const fulltext = item.custom?.fulltext;
 
+  // Check legacy fulltext structure
+  const fulltext = item.custom?.fulltext;
   if (fulltext?.pdf) {
     types.push("pdf");
   }
@@ -44,32 +48,61 @@ export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
     types.push("markdown");
   }
 
+  // Check new attachments structure
+  const attachments = item.custom?.attachments as Attachments | undefined;
+  const fulltextFiles = findFulltextFiles(attachments);
+  for (const file of fulltextFiles) {
+    const ext = file.filename.split(".").pop()?.toLowerCase();
+    const format = ext ? extensionToFormat(ext) : undefined;
+    if (format && !types.includes(format)) {
+      types.push(format);
+    }
+  }
+
   return types;
 }
 
 /**
  * Delete fulltext files associated with an item.
+ * Supports both legacy fulltext structure and new attachments structure.
  */
 async function deleteFulltextFiles(item: CslItem, fulltextDirectory: string): Promise<void> {
-  const fulltext = item.custom?.fulltext;
-  if (!fulltext) {
-    return;
-  }
-
   const filesToDelete: string[] = [];
 
-  if (fulltext.pdf) {
+  // Check legacy fulltext structure
+  const fulltext = item.custom?.fulltext;
+  if (fulltext?.pdf) {
     filesToDelete.push(join(fulltextDirectory, fulltext.pdf));
   }
-  if (fulltext.markdown) {
+  if (fulltext?.markdown) {
     filesToDelete.push(join(fulltextDirectory, fulltext.markdown));
   }
 
+  // Check new attachments structure
+  const attachments = item.custom?.attachments as Attachments | undefined;
+  if (attachments?.directory) {
+    const fulltextFiles = findFulltextFiles(attachments);
+    for (const file of fulltextFiles) {
+      filesToDelete.push(join(fulltextDirectory, attachments.directory, file.filename));
+    }
+  }
+
+  // Delete individual files
   for (const filePath of filesToDelete) {
     try {
       await unlink(filePath);
     } catch {
       // Ignore errors (file might not exist)
+    }
+  }
+
+  // Try to remove the attachments directory if it's now empty
+  if (attachments?.directory) {
+    try {
+      const dirPath = join(fulltextDirectory, attachments.directory);
+      await rmdir(dirPath); // Only removes if empty
+    } catch {
+      // Ignore - directory might not be empty or not exist
     }
   }
 }

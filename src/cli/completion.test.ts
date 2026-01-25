@@ -266,6 +266,52 @@ describe("completion", () => {
       // So it returns main subcommands
       expect(completions.length).toBeGreaterThan(0);
     });
+
+    it("returns nested subcommands for attach command", () => {
+      const env = createEnv({ line: "ref attach ", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // attach has subcommands: open, add, list, get, detach, sync
+      expect(names).toContain("open");
+      expect(names).toContain("add");
+      expect(names).toContain("list");
+      expect(names).toContain("get");
+      expect(names).toContain("detach");
+      expect(names).toContain("sync");
+    });
+
+    it("returns role values for attach add --role", () => {
+      const env = createEnv({ line: "ref attach add --role ", prev: "--role", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // Should return reserved roles
+      expect(names).toContain("fulltext");
+      expect(names).toContain("supplement");
+      expect(names).toContain("notes");
+      expect(names).toContain("draft");
+    });
+
+    it("returns role values for attach list --role", () => {
+      const env = createEnv({ line: "ref attach list --role ", prev: "--role", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // Should return reserved roles
+      expect(names).toContain("fulltext");
+      expect(names).toContain("supplement");
+    });
+
+    it("returns role values for short -r option", () => {
+      const env = createEnv({ line: "ref attach add -r ", prev: "-r", last: "" });
+      const completions = getCompletions(env, program);
+      const names = completions.map((c) => c.name);
+
+      // Should return reserved roles for short option too
+      expect(names).toContain("fulltext");
+      expect(names).toContain("supplement");
+    });
   });
 
   describe("needsIdCompletion", () => {
@@ -348,6 +394,60 @@ describe("completion", () => {
       const result = needsIdCompletion(env);
 
       expect(result.needs).toBe(false);
+    });
+
+    it("returns true for attach open subcommand", () => {
+      const env = createEnv({ line: "ref attach open ", prev: "open", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("attach");
+      expect(result.subcommand).toBe("open");
+    });
+
+    it("returns true for attach add subcommand", () => {
+      const env = createEnv({ line: "ref attach add ", prev: "add", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("attach");
+      expect(result.subcommand).toBe("add");
+    });
+
+    it("returns true for attach list subcommand", () => {
+      const env = createEnv({ line: "ref attach list ", prev: "list", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("attach");
+      expect(result.subcommand).toBe("list");
+    });
+
+    it("returns true for attach get subcommand", () => {
+      const env = createEnv({ line: "ref attach get ", prev: "get", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("attach");
+      expect(result.subcommand).toBe("get");
+    });
+
+    it("returns true for attach detach subcommand", () => {
+      const env = createEnv({ line: "ref attach detach ", prev: "detach", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("attach");
+      expect(result.subcommand).toBe("detach");
+    });
+
+    it("returns true for attach sync subcommand", () => {
+      const env = createEnv({ line: "ref attach sync ", prev: "sync", last: "" });
+      const result = needsIdCompletion(env);
+
+      expect(result.needs).toBe(true);
+      expect(result.command).toBe("attach");
+      expect(result.subcommand).toBe("sync");
     });
   });
 

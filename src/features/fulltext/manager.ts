@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { copyFile, mkdir, rename, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
+import { normalizePathForOutput } from "../../utils/path.js";
 import { generateFulltextFilename } from "./filename.js";
 import type { FulltextType } from "./types.js";
 
@@ -64,7 +65,7 @@ export interface AttachResult {
  */
 export interface DetachOptions {
   /** Delete file from disk (default: false, metadata-only detach) */
-  delete?: boolean;
+  removeFiles?: boolean;
 }
 
 /**
@@ -198,7 +199,7 @@ export class FulltextManager {
     if (!filename) {
       return null;
     }
-    return join(this.fulltextDirectory, filename);
+    return normalizePathForOutput(join(this.fulltextDirectory, filename));
   }
 
   /**
@@ -209,14 +210,14 @@ export class FulltextManager {
     type: FulltextType,
     options?: DetachOptions
   ): Promise<DetachResult> {
-    const { delete: deleteFile = false } = options ?? {};
+    const { removeFiles = false } = options ?? {};
 
     const filename = this.getExistingFilename(item, type);
     if (!filename) {
       throw new FulltextNotAttachedError(item.id, type);
     }
 
-    if (deleteFile) {
+    if (removeFiles) {
       const filePath = join(this.fulltextDirectory, filename);
       try {
         await unlink(filePath);
@@ -227,7 +228,7 @@ export class FulltextManager {
 
     return {
       filename,
-      deleted: deleteFile,
+      deleted: removeFiles,
     };
   }
 

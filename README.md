@@ -221,16 +221,18 @@ ref completion uninstall
 After installation, restart your shell or source the config file. Then:
 
 ```bash
-ref <TAB>                    # Shows: list search add remove ...
+ref <TAB>                    # Shows: list search add remove attach ...
 ref list --<TAB>             # Shows: --json --sort --limit ...
 ref list --sort <TAB>        # Shows: created updated published ...
 ref cite <TAB>               # Shows: smith2023 jones2024 ...
 ref cite smith<TAB>          # Shows: smith2023 smith2024-review
+ref attach <TAB>             # Shows: open add list get detach sync
+ref attach add <ID> --role <TAB>  # Shows: fulltext supplement notes draft
 ```
 
 Completion includes:
 - Subcommands and options
-- Option values (sort fields, citation styles, etc.)
+- Option values (sort fields, citation styles, attachment roles, etc.)
 - Dynamic reference IDs from your library
 
 ## CLI Reference
@@ -365,6 +367,52 @@ ref search "review" --format ids-only | xargs -I{} ref fulltext open {}
 ref fulltext detach smith2024 --pdf
 ref fulltext detach smith2024 --pdf --delete      # Also delete the file
 ```
+
+### Attachment Management
+
+A more flexible attachment system supporting multiple files per reference with role-based categorization:
+
+```bash
+# Open reference's attachment folder (for drag-and-drop file management)
+ref attach open smith2024                # Opens folder in file manager
+ref attach open smith2024 --print        # Print path only (for scripting)
+
+# Add attachments programmatically
+ref attach add smith2024 supplement.xlsx --role supplement
+ref attach add smith2024 notes.md --role notes
+ref attach add smith2024 draft-v1.docx --role draft --label v1
+ref attach add smith2024 file.pdf --move    # Move instead of copy
+ref attach add smith2024 file.pdf --force   # Overwrite existing
+
+# List attachments
+ref attach list smith2024                # List all attachments
+ref attach list smith2024 --role supplement  # Filter by role
+
+# Get attachment path
+ref attach get smith2024 supplement-data.xlsx
+
+# Sync metadata with filesystem (after manual file operations)
+ref attach sync smith2024                # Show pending changes (dry-run)
+ref attach sync smith2024 --yes          # Apply changes
+ref attach sync smith2024 --fix          # Also remove missing files from metadata
+
+# Detach files
+ref attach detach smith2024 supplement-data.xlsx
+ref attach detach smith2024 supplement-data.xlsx --delete  # Also delete file
+```
+
+**Available Roles:**
+- `fulltext` — Primary document (PDF or Markdown)
+- `supplement` — Supplementary materials, datasets
+- `notes` — Research notes
+- `draft` — Draft versions
+
+**Manual Workflow:**
+1. `ref attach open smith2024` — Opens folder in your file manager
+2. Drag and drop files into the folder
+3. `ref attach sync smith2024 --yes` — Updates metadata to include new files
+
+Files are organized by reference in directories named `Author-Year-ID-UUID` under the attachments directory.
 
 ### Edit Command
 
@@ -548,7 +596,7 @@ auto_stop_minutes = 60
 | Variable | Description |
 |----------|-------------|
 | `REFERENCE_MANAGER_LIBRARY` | Override library file path |
-| `REFERENCE_MANAGER_FULLTEXT_DIR` | Override fulltext directory |
+| `REFERENCE_MANAGER_ATTACHMENTS_DIR` | Override attachments directory |
 
 ### Config Command
 

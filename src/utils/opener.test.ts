@@ -1,14 +1,49 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getOpenerCommand, openWithSystemApp } from "./opener.js";
+import { getOpenerCommand, isWSL, openWithSystemApp } from "./opener.js";
 
 vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
+vi.mock("node:fs", () => ({
+  default: {
+    existsSync: vi.fn(),
+  },
+}));
+
 describe("opener", () => {
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe("isWSL", () => {
+    const originalEnv = process.env;
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it("returns true when WSL_DISTRO_NAME is set", () => {
+      process.env = { ...originalEnv, WSL_DISTRO_NAME: "Ubuntu" };
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      expect(isWSL()).toBe(true);
+    });
+
+    it("returns true when WSLInterop file exists", () => {
+      process.env = { ...originalEnv };
+      process.env.WSL_DISTRO_NAME = undefined;
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      expect(isWSL()).toBe(true);
+    });
+
+    it("returns false when not in WSL", () => {
+      process.env = { ...originalEnv };
+      process.env.WSL_DISTRO_NAME = undefined;
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      expect(isWSL()).toBe(false);
+    });
   });
 
   describe("getOpenerCommand", () => {
@@ -26,6 +61,14 @@ describe("opener", () => {
 
     it("throws error for unsupported platform", () => {
       expect(() => getOpenerCommand("freebsd")).toThrow("Unsupported platform: freebsd");
+    });
+
+    it("returns 'wslview' for linux when isWSL is true", () => {
+      expect(getOpenerCommand("linux", true)).toEqual(["wslview"]);
+    });
+
+    it("returns 'xdg-open' for linux when isWSL is false", () => {
+      expect(getOpenerCommand("linux", false)).toEqual(["xdg-open"]);
     });
   });
 

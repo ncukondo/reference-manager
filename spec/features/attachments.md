@@ -23,12 +23,12 @@ Attachment information is stored in the `custom.attachments` field:
   "attachments": {
     "directory": "Smith-2024-PMID12345678-123e4567",
     "files": [
-      { "filename": "fulltext.pdf", "role": "fulltext", "format": "pdf" },
-      { "filename": "fulltext.md", "role": "fulltext", "format": "markdown" },
-      { "filename": "supplement-table-s1.xlsx", "role": "supplement", "format": "xlsx", "label": "Table S1" },
-      { "filename": "notes.md", "role": "notes", "format": "markdown" },
-      { "filename": "draft-v1.pdf", "role": "draft", "format": "pdf", "label": "v1" },
-      { "filename": "slides-conference.pdf", "role": "slides", "format": "pdf", "label": "Conference 2024" }
+      { "filename": "fulltext.pdf", "role": "fulltext" },
+      { "filename": "fulltext.md", "role": "fulltext" },
+      { "filename": "supplement-table-s1.xlsx", "role": "supplement", "label": "Table S1" },
+      { "filename": "notes.md", "role": "notes" },
+      { "filename": "draft-v1.pdf", "role": "draft", "label": "v1" },
+      { "filename": "slides-conference.pdf", "role": "slides", "label": "Conference 2024" }
     ]
   }
 }
@@ -42,7 +42,6 @@ Attachment information is stored in the `custom.attachments` field:
 | `attachments.files` | `array` | Yes | List of attached files |
 | `files[].filename` | `string` | Yes | Filename (without path) |
 | `files[].role` | `string` | Yes | Role identifier |
-| `files[].format` | `string` | Yes | File format (extension without dot) |
 | `files[].label` | `string` | No | Human-readable label |
 
 ### Roles
@@ -308,14 +307,14 @@ ref attach list <ref-id> --role supplement   # Filter by role
 Attachments for Smith-2024 (Smith-2024-PMID12345678-123e4567/):
 
 fulltext:
-  fulltext.pdf (pdf)
-  fulltext.md (markdown)
+  fulltext.pdf
+  fulltext.md
 
 supplement:
-  supplement-table-s1.xlsx (xlsx) - "Table S1"
+  supplement-table-s1.xlsx - "Table S1"
 
 notes:
-  notes.md (markdown)
+  notes.md
 ```
 
 #### `attach get`
