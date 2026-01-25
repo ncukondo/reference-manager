@@ -8,6 +8,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
+import { normalizePathForOutput } from "../../../utils/path.js";
 import type { AttachmentFile, Attachments } from "../../attachments/types.js";
 import {
   type FulltextFormat,
@@ -54,8 +55,7 @@ export interface FulltextGetResult {
  * Build file path from attachments metadata
  */
 function buildFilePath(attachmentsDirectory: string, directory: string, filename: string): string {
-  // Normalize to forward slashes for consistent cross-platform output
-  return join(attachmentsDirectory, directory, filename).replace(/\\/g, "/");
+  return normalizePathForOutput(join(attachmentsDirectory, directory, filename));
 }
 
 /**
