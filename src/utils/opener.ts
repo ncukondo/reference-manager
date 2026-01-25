@@ -49,7 +49,8 @@ export async function openWithSystemApp(
   filePath: string,
   platform: string = process.platform
 ): Promise<void> {
-  const commandParts = getOpenerCommand(platform);
+  const wsl = isWSL();
+  const commandParts = getOpenerCommand(platform, wsl);
   const [command, ...baseArgs] = commandParts;
   const args = [...baseArgs, filePath];
 
@@ -59,15 +60,28 @@ export async function openWithSystemApp(
       stdio: "ignore",
     });
 
-    proc.on("error", () => {
-      reject(new Error(`Failed to open file: ${filePath}`));
+    proc.on("error", (err: NodeJS.ErrnoException) => {
+      // Check if the command was not found (ENOENT)
+      if (err.code === "ENOENT") {
+        if (wsl && command === "wslview") {
+          reject(new Error("wslview not found. Install with: sudo apt install wslu"));
+        } else if (command === "xdg-open") {
+          reject(new Error("xdg-open not found. Install a desktop environment or xdg-utils."));
+        } else {
+          reject(new Error(`Opener command '${command}' not found`));
+        }
+      } else {
+        reject(new Error(`Failed to open: ${filePath}`));
+      }
     });
 
     proc.on("close", (code: number | null) => {
-      if (code === 0) {
+      // wslview may return non-zero exit codes even on success
+      // We treat the operation as successful if the process exited without error
+      if (code === 0 || (wsl && command === "wslview")) {
         resolve();
       } else {
-        reject(new Error(`Failed to open file: ${filePath}`));
+        reject(new Error(`Failed to open: ${filePath}`));
       }
     });
 

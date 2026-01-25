@@ -147,7 +147,7 @@ describe("opener", () => {
       vi.mocked(spawn).mockReturnValue(mockProcess as never);
 
       await expect(openWithSystemApp("/path/to/file.pdf", "darwin")).rejects.toThrow(
-        "Failed to open file: /path/to/file.pdf"
+        "Failed to open: /path/to/file.pdf"
       );
     });
 
@@ -164,8 +164,53 @@ describe("opener", () => {
       vi.mocked(spawn).mockReturnValue(mockProcess as never);
 
       await expect(openWithSystemApp("/path/to/file.pdf", "darwin")).rejects.toThrow(
-        "Failed to open file: /path/to/file.pdf"
+        "Failed to open: /path/to/file.pdf"
       );
+    });
+
+    it("shows helpful error when wslview is not found in WSL", async () => {
+      const originalEnv = process.env;
+      process.env = { ...originalEnv, WSL_DISTRO_NAME: "Ubuntu" };
+
+      const mockProcess = {
+        on: vi.fn((event, callback) => {
+          if (event === "error") {
+            const err = new Error("spawn ENOENT") as NodeJS.ErrnoException;
+            err.code = "ENOENT";
+            callback(err);
+          }
+          return mockProcess;
+        }),
+        unref: vi.fn(),
+      };
+      vi.mocked(spawn).mockReturnValue(mockProcess as never);
+
+      await expect(openWithSystemApp("/path/to/file.pdf", "linux")).rejects.toThrow(
+        "wslview not found. Install with: sudo apt install wslu"
+      );
+
+      process.env = originalEnv;
+    });
+
+    it("succeeds when wslview exits with non-zero code in WSL", async () => {
+      const originalEnv = process.env;
+      process.env = { ...originalEnv, WSL_DISTRO_NAME: "Ubuntu" };
+
+      const mockProcess = {
+        on: vi.fn((event, callback) => {
+          if (event === "close") {
+            callback(1); // wslview may return non-zero even on success
+          }
+          return mockProcess;
+        }),
+        unref: vi.fn(),
+      };
+      vi.mocked(spawn).mockReturnValue(mockProcess as never);
+
+      // Should not reject - wslview non-zero exit is tolerated
+      await expect(openWithSystemApp("/path/to/file.pdf", "linux")).resolves.toBeUndefined();
+
+      process.env = originalEnv;
     });
   });
 });

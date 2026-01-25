@@ -29,7 +29,12 @@ import {
   syncAttachments,
 } from "../../features/operations/attachments/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
-import { isTTY, loadConfigWithOverrides, readIdentifierFromStdin } from "../helpers.js";
+import {
+  isTTY,
+  loadConfigWithOverrides,
+  readConfirmation,
+  readIdentifierFromStdin,
+} from "../helpers.js";
 
 // ============================================================================
 // Options interfaces
@@ -414,12 +419,17 @@ export function formatAttachSyncOutput(result: SyncAttachmentResult): string {
   formatNewFilesSection(result, lines);
   formatMissingFilesSection(result, lines);
 
-  if (!result.applied) {
+  if (result.applied) {
+    lines.push("Changes applied.");
+  } else {
+    // Show clear dry-run message for non-TTY mode
+    lines.push("");
+    lines.push("(dry-run: no changes made)");
     if (hasNewFiles) {
       lines.push("Run with --yes to add new files");
     }
     if (hasMissingFiles) {
-      lines.push("Run with --fix to remove missing files");
+      lines.push("Run with --fix to remove missing files from metadata");
     }
   }
 
@@ -845,6 +855,57 @@ export interface AttachSyncActionOptions {
 }
 
 /**
+ * Run interactive sync mode: dry-run, confirm, then apply.
+ * Similar pattern to runInteractiveMode for attach open.
+ */
+async function runInteractiveSyncMode(
+  identifier: string,
+  attachmentsDirectory: string,
+  idType: "uuid" | undefined,
+  context: ExecutionContext
+): Promise<void> {
+  // Run dry-run first
+  const dryRunOptions: AttachSyncOptions = {
+    identifier,
+    attachmentsDirectory,
+    ...(idType && { idType }),
+  };
+  const dryRunResult = await executeAttachSync(dryRunOptions, context);
+
+  // Check if there are any changes to apply
+  const hasNewFiles = dryRunResult.newFiles.length > 0;
+  const hasMissingFiles = dryRunResult.missingFiles.length > 0;
+
+  if (!dryRunResult.success || (!hasNewFiles && !hasMissingFiles)) {
+    process.stderr.write(`${formatAttachSyncOutput(dryRunResult)}\n`);
+    return;
+  }
+
+  // Show preview and ask for confirmation
+  process.stderr.write(`${formatAttachSyncOutput(dryRunResult)}\n\n`);
+
+  const shouldApplyNew = hasNewFiles && (await readConfirmation("Add new files to metadata?"));
+  const shouldApplyFix =
+    hasMissingFiles && shouldApplyNew && (await readConfirmation("Remove missing files?"));
+
+  if (!shouldApplyNew && !shouldApplyFix) {
+    process.stderr.write("No changes applied.\n");
+    return;
+  }
+
+  // Apply changes
+  const applyOptions: AttachSyncOptions = {
+    identifier,
+    attachmentsDirectory,
+    ...(shouldApplyNew && { yes: true }),
+    ...(shouldApplyFix && { fix: true }),
+    ...(idType && { idType }),
+  };
+  const result = await executeAttachSync(applyOptions, context);
+  process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
+}
+
+/**
  * Handle 'attach sync' command action.
  */
 export async function handleAttachSyncAction(
@@ -855,20 +916,28 @@ export async function handleAttachSyncAction(
   try {
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
-
     const identifier = await resolveIdentifier(identifierArg, context, config);
+    const attachmentsDirectory = config.attachments.directory;
+    const idType = options.uuid ? ("uuid" as const) : undefined;
 
+    // Determine mode: interactive (TTY without flags) or direct
+    const shouldUseInteractive = isTTY() && !options.yes && !options.fix;
+
+    if (shouldUseInteractive) {
+      await runInteractiveSyncMode(identifier, attachmentsDirectory, idType, context);
+      process.exit(0);
+    }
+
+    // Direct mode: execute sync with provided flags
     const syncOptions: AttachSyncOptions = {
       identifier,
-      attachmentsDirectory: config.attachments.directory,
-      ...(options.yes && { yes: options.yes }),
-      ...(options.fix && { fix: options.fix }),
-      ...(options.uuid && { idType: "uuid" as const }),
+      attachmentsDirectory,
+      ...(options.yes && { yes: true }),
+      ...(options.fix && { fix: true }),
+      ...(idType && { idType }),
     };
-
     const result = await executeAttachSync(syncOptions, context);
-    const output = formatAttachSyncOutput(result);
-    process.stderr.write(`${output}\n`);
+    process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
     process.exit(getAttachExitCode(result));
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
