@@ -10,8 +10,8 @@
     "node": ">=22"
   },
   "bin": {
-    "ref": "./bin/reference-manager.js",
-    "reference-manager": "./bin/reference-manager.js"
+    "ref": "./bin/cli.js",
+    "reference-manager": "./bin/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
