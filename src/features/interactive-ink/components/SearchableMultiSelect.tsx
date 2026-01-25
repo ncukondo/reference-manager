@@ -12,10 +12,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 export interface Choice<T = unknown> {
   /** Unique identifier for the choice */
   id: string;
-  /** Display label */
-  label: string;
-  /** Optional secondary text */
-  hint?: string;
+  /** Primary text (title) - displayed in cyan when focused */
+  title: string;
+  /** Secondary text (e.g., authors) */
+  subtitle?: string;
+  /** Tertiary text (e.g., year, type, identifiers) */
+  meta?: string;
   /** Associated value */
   value: T;
 }
@@ -47,8 +49,9 @@ function defaultFilter<T>(query: string, choices: Choice<T>[]): Choice<T>[] {
   const lowerQuery = query.toLowerCase();
   return choices.filter(
     (choice) =>
-      choice.label.toLowerCase().includes(lowerQuery) ||
-      choice.hint?.toLowerCase().includes(lowerQuery)
+      choice.title.toLowerCase().includes(lowerQuery) ||
+      choice.subtitle?.toLowerCase().includes(lowerQuery) ||
+      choice.meta?.toLowerCase().includes(lowerQuery)
   );
 }
 
@@ -107,10 +110,72 @@ function parseKeyAction(
   return { type: "none" };
 }
 
+/**
+ * Choice item component - renders a single multi-line choice
+ */
+function ChoiceItem<T>({
+  choice,
+  isSelected,
+  isFocused,
+  contentWidth,
+}: {
+  choice: Choice<T>;
+  isSelected: boolean;
+  isFocused: boolean;
+  contentWidth: number;
+}): React.ReactElement {
+  const indent = "     "; // 5 spaces to align with title (after checkbox)
+
+  return (
+    <Box flexDirection="column" paddingY={0}>
+      {/* Row 1: Checkbox + Title */}
+      <Box flexDirection="row">
+        {/* Selection checkbox */}
+        <Box width={2}>
+          <Text color={isSelected ? "green" : "gray"}>{isSelected ? "◉" : "○"}</Text>
+        </Box>
+        <Box width={1}>
+          <Text> </Text>
+        </Box>
+        {/* Title */}
+        <Box>
+          {isFocused ? (
+            <Text color="cyan" bold>
+              {truncate(choice.title, contentWidth)}
+            </Text>
+          ) : (
+            <Text color="blue">{truncate(choice.title, contentWidth)}</Text>
+          )}
+        </Box>
+      </Box>
+
+      {/* Row 2: Subtitle (authors) */}
+      {choice.subtitle && (
+        <Box>
+          <Text dimColor>
+            {indent}
+            {truncate(choice.subtitle, contentWidth)}
+          </Text>
+        </Box>
+      )}
+
+      {/* Row 3: Meta (year, type, identifiers) */}
+      {choice.meta && (
+        <Box>
+          <Text dimColor>
+            {indent}
+            {truncate(choice.meta, contentWidth)}
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export function SearchableMultiSelect<T>({
   choices,
   filterFn = defaultFilter,
-  visibleCount = 10,
+  visibleCount = 5,
   onSubmit,
   onCancel,
   placeholder = "Type to search...",
@@ -126,8 +191,7 @@ export function SearchableMultiSelect<T>({
 
   // Get terminal width for truncation
   const terminalWidth = stdout?.columns ?? 80;
-  const labelWidth = Math.floor((terminalWidth - 10) * 0.4);
-  const hintWidth = Math.floor((terminalWidth - 10) * 0.5);
+  const contentWidth = terminalWidth - 8; // Reserve space for checkbox and padding
 
   // Filter choices based on query
   const filteredChoices = useMemo(() => filterFn(query, choices), [query, choices, filterFn]);
@@ -208,7 +272,8 @@ export function SearchableMultiSelect<T>({
       : "↑↓:move Tab:select Enter:confirm Esc:cancel");
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" paddingX={1}>
+      {/* Header */}
       {header && (
         <Box marginBottom={1}>
           <Text bold color="cyan">
@@ -217,13 +282,15 @@ export function SearchableMultiSelect<T>({
         </Box>
       )}
 
-      <Box>
+      {/* Search input */}
+      <Box marginBottom={1}>
         <Text color="green">❯ </Text>
         <Text>{query || <Text dimColor>{placeholder}</Text>}</Text>
         <Text color="gray">▎</Text>
       </Box>
 
-      <Box marginTop={1}>
+      {/* Status bar */}
+      <Box marginBottom={1} paddingX={1} borderStyle="single" borderColor="gray">
         {selectedIds.size > 0 ? (
           <Text color="yellow">
             {selectedIds.size} selected / {totalItems} results
@@ -233,16 +300,26 @@ export function SearchableMultiSelect<T>({
         )}
       </Box>
 
-      {/* Scroll up indicator - always reserve space when scrollable */}
+      {/* Scroll up indicator */}
       {showScrollIndicator && (
         <Box height={1}>
-          {scrollOffset > 0 ? <Text dimColor> ↑ {scrollOffset} more above</Text> : <Text> </Text>}
+          {scrollOffset > 0 ? (
+            <Text dimColor color="gray">
+              {" "}
+              ↑ {scrollOffset} more above
+            </Text>
+          ) : (
+            <Text> </Text>
+          )}
         </Box>
       )}
 
+      {/* Choice list */}
       <Box flexDirection="column">
         {visibleChoices.length === 0 ? (
-          <Text dimColor>No results found</Text>
+          <Box paddingY={1}>
+            <Text dimColor>No results found</Text>
+          </Box>
         ) : (
           visibleChoices.map((choice, visibleIndex) => {
             const actualIndex = scrollOffset + visibleIndex;
@@ -250,45 +327,43 @@ export function SearchableMultiSelect<T>({
             const isFocusedItem = actualIndex === focusIndex;
 
             return (
-              <Box key={choice.id} height={1}>
-                <Box width={2}>{isFocusedItem ? <Text color="cyan">❯</Text> : <Text> </Text>}</Box>
-                <Box width={2}>
-                  <Text color={isSelected ? "green" : "gray"}>{isSelected ? "◉" : "○"}</Text>
-                </Box>
-                <Box width={labelWidth}>
-                  {isFocusedItem ? (
-                    <Text color="cyan" bold wrap="truncate">
-                      {truncate(choice.label, labelWidth)}
-                    </Text>
-                  ) : (
-                    <Text wrap="truncate">{truncate(choice.label, labelWidth)}</Text>
-                  )}
-                </Box>
-                {choice.hint && (
-                  <Box width={hintWidth} marginLeft={1}>
-                    <Text dimColor wrap="truncate">
-                      {truncate(choice.hint, hintWidth)}
-                    </Text>
-                  </Box>
-                )}
+              <Box
+                key={choice.id}
+                flexDirection="row"
+                marginBottom={1}
+                borderStyle={isFocusedItem ? "round" : undefined}
+                borderColor={isFocusedItem ? "cyan" : undefined}
+                paddingX={isFocusedItem ? 1 : 0}
+                marginLeft={isFocusedItem ? 0 : 2}
+              >
+                <ChoiceItem
+                  choice={choice}
+                  isSelected={isSelected}
+                  isFocused={isFocusedItem}
+                  contentWidth={contentWidth}
+                />
               </Box>
             );
           })
         )}
       </Box>
 
-      {/* Scroll down indicator - always reserve space when scrollable */}
+      {/* Scroll down indicator */}
       {showScrollIndicator && (
         <Box height={1}>
           {scrollOffset + visibleCount < totalItems ? (
-            <Text dimColor> ↓ {totalItems - scrollOffset - visibleCount} more below</Text>
+            <Text dimColor color="gray">
+              {" "}
+              ↓ {totalItems - scrollOffset - visibleCount} more below
+            </Text>
           ) : (
             <Text> </Text>
           )}
         </Box>
       )}
 
-      <Box marginTop={1}>
+      {/* Footer */}
+      <Box marginTop={1} paddingTop={1} borderStyle="single" borderTop borderColor="gray">
         <Text dimColor>{footerText}</Text>
       </Box>
     </Box>

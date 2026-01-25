@@ -49,17 +49,55 @@ function extractYear(item: CslItem): number | undefined {
 }
 
 /**
+ * Format identifiers for meta line
+ */
+function formatIdentifiers(item: CslItem): string {
+  const parts: string[] = [];
+  if (item.DOI) parts.push(`DOI: ${item.DOI}`);
+  if (item.PMID) parts.push(`PMID: ${item.PMID}`);
+  if (item.PMCID) parts.push(`PMCID: ${item.PMCID}`);
+  if (item.ISBN) parts.push(`ISBN: ${item.ISBN}`);
+  return parts.join(" · ");
+}
+
+/**
+ * Format item type for display
+ */
+function formatType(type: string): string {
+  const typeMap: Record<string, string> = {
+    "article-journal": "Journal article",
+    "article-magazine": "Magazine article",
+    "article-newspaper": "Newspaper article",
+    book: "Book",
+    chapter: "Book chapter",
+    "paper-conference": "Conference paper",
+    thesis: "Thesis",
+    report: "Report",
+    webpage: "Web page",
+  };
+  return typeMap[type] ?? type;
+}
+
+/**
  * Convert CslItem to Choice for SearchableMultiSelect
  */
 function toChoice(item: CslItem): Choice<CslItem> {
   const authors = formatAuthors(item.author);
   const year = extractYear(item);
-  const yearPart = year ? ` (${year})` : "";
+  const identifiers = formatIdentifiers(item);
+  const itemType = formatType(item.type);
+
+  // Build meta line: Year · Type · Identifiers
+  const metaParts: string[] = [];
+  if (year) metaParts.push(String(year));
+  metaParts.push(itemType);
+  if (identifiers) metaParts.push(identifiers);
 
   return {
     id: item.id,
-    label: `${authors}${yearPart}`,
-    hint: item.title?.slice(0, 60) + (item.title && item.title.length > 60 ? "..." : ""),
+    title: item.title ?? "(No title)",
+    subtitle: authors || "(No authors)",
+    meta: metaParts.join(" · "),
     value: item,
   };
 }
@@ -86,7 +124,9 @@ export function App({ references, searchFn, onComplete }: AppProps): React.React
     const lowerQuery = query.toLowerCase();
     return choices.filter(
       (c) =>
-        c.label.toLowerCase().includes(lowerQuery) || c.hint?.toLowerCase().includes(lowerQuery)
+        c.title.toLowerCase().includes(lowerQuery) ||
+        c.subtitle?.toLowerCase().includes(lowerQuery) ||
+        c.meta?.toLowerCase().includes(lowerQuery)
     );
   };
 
@@ -154,7 +194,7 @@ export function App({ references, searchFn, onComplete }: AppProps): React.React
       <SearchableMultiSelect
         choices={choices}
         filterFn={filterFn}
-        visibleCount={10}
+        visibleCount={5}
         onSubmit={handleSearchSubmit}
         onCancel={handleSearchCancel}
         header="Search references"
