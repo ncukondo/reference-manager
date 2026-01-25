@@ -53,6 +53,7 @@ import type { CliOptions } from "./helpers.js";
 import {
   ExitCode,
   exitWithError,
+  flushOutput,
   loadConfigWithOverrides,
   readStdinContent,
   setExitCode,
@@ -749,4 +750,7 @@ export async function main(argv: string[]): Promise<void> {
   });
 
   await program.parseAsync(argv);
+
+  // Ensure all output is flushed before the process exits
+  await flushOutput();
 }

@@ -3,7 +3,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { stdin, stdout } from "node:process";
+import { stderr, stdin, stdout } from "node:process";
 import { loadConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 
@@ -304,4 +304,31 @@ export function exitWithMessage(message: string, code: number): void {
 export function exitWithOutput(output: string): void {
   process.stdout.write(`${output}\n`);
   setExitCode(ExitCode.SUCCESS);
+}
+
+/**
+ * Wait for a stream to drain (flush all buffered data).
+ * @param stream - The writable stream to wait for
+ */
+function waitForDrain(stream: NodeJS.WriteStream): Promise<void> {
+  return new Promise((resolve) => {
+    // If the stream's internal buffer is empty, resolve immediately
+    if (stream.writableLength === 0) {
+      resolve();
+      return;
+    }
+    // Otherwise, wait for the drain event
+    stream.once("drain", resolve);
+  });
+}
+
+/**
+ * Flush stdout and stderr to ensure all output is written before process exit.
+ * This is necessary because process.exitCode allows the event loop to complete,
+ * but buffered output may not be flushed if the event loop becomes empty.
+ *
+ * Call this at the end of the main function to ensure all output is visible.
+ */
+export async function flushOutput(): Promise<void> {
+  await Promise.all([waitForDrain(stdout), waitForDrain(stderr)]);
 }
