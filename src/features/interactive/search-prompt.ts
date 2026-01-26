@@ -8,12 +8,8 @@ import { render } from "ink";
 import type React from "react";
 import { createElement } from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
-import {
-  type Choice,
-  SearchableMultiSelect,
-  type SortOption,
-} from "../interactive-ink/components/index.js";
 import type { SearchResult } from "../search/types.js";
+import { type Choice, SearchableMultiSelect, type SortOption } from "./components/index.js";
 import { formatAuthors } from "./format.js";
 
 /**

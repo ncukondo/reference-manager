@@ -37,7 +37,6 @@ export default defineConfig({
         "@modelcontextprotocol/sdk",
         "chokidar",
         "commander",
-        "enquirer",
         "hono",
         "ink",
         "react",

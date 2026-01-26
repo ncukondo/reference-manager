@@ -145,17 +145,21 @@ Comprehensive testing to catch bugs that unit tests miss.
 - [ ] Large dataset (100+ items) scrolling
 - [ ] **If bugs found**: Create regression test, then fix implementation
 
-### Step 7: Cleanup
+### Step 7: Cleanup ✅
 
 Remove prototype directory and Enquirer dependency.
 
-- [ ] Update demo script to use `src/features/interactive/` instead of `interactive-ink/`
-- [ ] Delete `src/features/interactive-ink/` directory
-- [ ] Remove `enquirer` from `package.json` dependencies
-- [ ] Run `npm install` to update lockfile
-- [ ] Verify build: `npm run build`
-- [ ] Run all tests: `npm run test`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Move components from `src/features/interactive-ink/components/` to `src/features/interactive/components/`
+- [x] Update import paths in search-prompt.ts, style-select.ts, action-menu.ts
+- [x] Delete `src/features/interactive-ink/` directory
+- [x] Remove demo:ink script from package.json (demo removed with interactive-ink)
+- [x] Remove `enquirer` from `package.json` dependencies
+- [x] Replace Enquirer Confirm prompt in helpers.ts with readline-based implementation
+- [x] Remove enquirer from vite.config.ts externals
+- [x] Remove enquirer.d.ts type declaration
+- [x] Verify build: `npm run build` ✓
+- [x] Run all tests: `npm run test:unit` ✓, `npm run test:e2e` ✓ (2629 tests passed)
+- [x] Lint/Type check: `npm run lint && npm run typecheck` ✓
 
 ### Step 8: Update Documentation
 

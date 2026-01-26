@@ -11,7 +11,7 @@ import { render } from "ink";
 import { createElement } from "react";
 import type React from "react";
 import { BUILTIN_STYLES } from "../../config/csl-styles.js";
-import { Select, type SelectOption } from "../interactive-ink/components/index.js";
+import { Select, type SelectOption } from "./components/index.js";
 
 /**
  * Options for style selection

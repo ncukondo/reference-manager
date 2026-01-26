@@ -8,7 +8,7 @@ import { createElement } from "react";
 import type React from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibliographyCSL, formatBibtex } from "../format/index.js";
-import { Select, type SelectOption } from "../interactive-ink/components/index.js";
+import { Select, type SelectOption } from "./components/index.js";
 
 /**
  * Action types available in the action menu.

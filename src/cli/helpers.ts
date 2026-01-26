@@ -183,26 +183,25 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
     return true;
   }
 
-  // Use Enquirer for confirmation to work correctly after other Enquirer prompts
-  // enquirer is a CommonJS module, so we must use default import
-  const enquirer = await import("enquirer");
-  const Confirm = (enquirer.default as unknown as Record<string, unknown>)
-    .Confirm as new (options: { name: string; message: string; initial?: boolean }) => {
-    run: () => Promise<boolean>;
-  };
+  const readline = await import("node:readline");
 
-  const confirmPrompt = new Confirm({
-    name: "confirm",
-    message: prompt,
-    initial: false,
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
   });
 
-  try {
-    return await confirmPrompt.run();
-  } catch {
-    // User cancelled (Ctrl+C)
-    return false;
-  }
+  return new Promise<boolean>((resolve) => {
+    rl.question(`${prompt} (y/N) `, (answer) => {
+      rl.close();
+      const normalized = answer.trim().toLowerCase();
+      resolve(normalized === "y" || normalized === "yes");
+    });
+
+    // Handle Ctrl+C
+    rl.on("close", () => {
+      resolve(false);
+    });
+  });
 }
 
 /**
