@@ -421,6 +421,16 @@ async function resolveUpdateIdentifier(
   }
 
   if (isTTY()) {
+    if (!hasSetOptions) {
+      // TTY mode without --set: suggest using edit command for interactive editing
+      process.stderr.write(
+        "Error: The update command requires --set options or a file argument.\n" +
+          "For interactive editing, use: ref edit [id]\n"
+      );
+      setExitCode(ExitCode.ERROR);
+      return "";
+    }
+    // TTY mode with --set: use interactive selection
     return executeInteractiveUpdate(context, config);
   }
 

@@ -8,6 +8,7 @@ import { render } from "ink";
 import { createElement } from "react";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { SearchResult } from "../../search/types.js";
+import { restoreStdinAfterInk } from "../alternate-screen.js";
 import type { Choice, SelectOption, SortOption } from "../components/index.js";
 import { formatAuthors } from "../format.js";
 import { CiteFlowApp, type CiteFlowResult } from "./CiteFlowApp.js";
@@ -193,15 +194,20 @@ export async function runCiteFlow(options: RunCiteFlowOptions): Promise<CiteFlow
 
   // Create a promise to capture the result
   return new Promise<CiteFlowResult>((resolve) => {
+    let flowResult: CiteFlowResult = {
+      identifiers: [],
+      cancelled: true,
+    };
+
     const handleComplete = (result: CiteFlowResult): void => {
-      resolve(result);
+      flowResult = result;
     };
 
     const handleCancel = (): void => {
-      resolve({
+      flowResult = {
         identifiers: [],
         cancelled: true,
-      });
+      };
     };
 
     // Render the Ink app (single render for entire flow)
@@ -218,12 +224,18 @@ export async function runCiteFlow(options: RunCiteFlowOptions): Promise<CiteFlow
       })
     );
 
-    // Wait for the app to exit
-    waitUntilExit().catch(() => {
-      resolve({
-        identifiers: [],
-        cancelled: true,
+    // Wait for the app to exit, then resolve
+    waitUntilExit()
+      .then(() => {
+        restoreStdinAfterInk();
+        resolve(flowResult);
+      })
+      .catch(() => {
+        restoreStdinAfterInk();
+        resolve({
+          identifiers: [],
+          cancelled: true,
+        });
       });
-    });
   });
 }

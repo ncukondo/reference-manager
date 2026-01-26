@@ -11,6 +11,7 @@ import { render, useApp } from "ink";
 import { createElement } from "react";
 import type React from "react";
 import { BUILTIN_STYLES } from "../../config/csl-styles.js";
+import { restoreStdinAfterInk } from "./alternate-screen.js";
 import { Select, type SelectOption } from "./components/index.js";
 
 /**
@@ -197,10 +198,12 @@ export async function runStyleSelect(options: StyleSelectOptions): Promise<Style
     waitUntilExit()
       .then(() => {
         clear();
+        restoreStdinAfterInk();
         resolve(result);
       })
       .catch(() => {
         clear();
+        restoreStdinAfterInk();
         resolve({
           cancelled: true,
         });

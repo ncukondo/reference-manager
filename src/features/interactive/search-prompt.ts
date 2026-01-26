@@ -9,6 +9,7 @@ import type React from "react";
 import { createElement } from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { SearchResult } from "../search/types.js";
+import { restoreStdinAfterInk } from "./alternate-screen.js";
 import { type Choice, SearchableMultiSelect, type SortOption } from "./components/index.js";
 import { formatAuthors } from "./format.js";
 
@@ -276,10 +277,12 @@ export async function runSearchPrompt(
     waitUntilExit()
       .then(() => {
         clear();
+        restoreStdinAfterInk();
         resolve(result);
       })
       .catch(() => {
         clear();
+        restoreStdinAfterInk();
         resolve({
           selected: [],
           cancelled: true,

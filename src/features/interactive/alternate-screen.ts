@@ -39,3 +39,21 @@ export async function withAlternateScreen<T>(fn: () => Promise<T>): Promise<T> {
     process.stdout.write(EXIT_ALT_SCREEN);
   }
 }
+
+/**
+ * Restore stdin after Ink exits.
+ *
+ * Ink calls stdin.unref() when it exits, which can cause the Node.js process
+ * to exit prematurely if there's still async work to do. This function uses
+ * a short-lived ref'd timer to keep the event loop alive long enough for
+ * subsequent async operations to start (e.g., file I/O, database operations),
+ * which will then keep the event loop alive on their own.
+ *
+ * Call this after Ink's waitUntilExit() resolves.
+ */
+export function restoreStdinAfterInk(): void {
+  // Use a ref'd timer to keep the event loop alive for 100ms.
+  // This gives async operations time to start and take over keeping
+  // the event loop alive. The timer will then expire naturally.
+  setTimeout(() => {}, 100);
+}

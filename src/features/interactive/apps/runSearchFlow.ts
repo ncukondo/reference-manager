@@ -9,6 +9,7 @@ import { createElement } from "react";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { SearchResult } from "../../search/types.js";
 import type { ActionMenuResult } from "../action-menu.js";
+import { restoreStdinAfterInk } from "../alternate-screen.js";
 import type { Choice, SortOption } from "../components/index.js";
 import { formatAuthors } from "../format.js";
 import { SearchFlowApp } from "./SearchFlowApp.js";
@@ -182,16 +183,22 @@ export async function runSearchFlow(
 
   // Create a promise to capture the result
   return new Promise<ActionMenuResult>((resolve) => {
+    let flowResult: ActionMenuResult = {
+      action: "cancel",
+      output: "",
+      cancelled: true,
+    };
+
     const handleComplete = (result: ActionMenuResult): void => {
-      resolve(result);
+      flowResult = result;
     };
 
     const handleCancel = (): void => {
-      resolve({
+      flowResult = {
         action: "cancel",
         output: "",
         cancelled: true,
-      });
+      };
     };
 
     // Render the Ink app (single render for entire flow)
@@ -206,13 +213,19 @@ export async function runSearchFlow(
       })
     );
 
-    // Wait for the app to exit
-    waitUntilExit().catch(() => {
-      resolve({
-        action: "cancel",
-        output: "",
-        cancelled: true,
+    // Wait for the app to exit, then resolve
+    waitUntilExit()
+      .then(() => {
+        restoreStdinAfterInk();
+        resolve(flowResult);
+      })
+      .catch(() => {
+        restoreStdinAfterInk();
+        resolve({
+          action: "cancel",
+          output: "",
+          cancelled: true,
+        });
       });
-    });
   });
 }

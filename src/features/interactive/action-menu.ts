@@ -8,6 +8,7 @@ import { createElement } from "react";
 import type React from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibliographyCSL, formatBibtex } from "../format/index.js";
+import { restoreStdinAfterInk } from "./alternate-screen.js";
 import { Select, type SelectOption } from "./components/index.js";
 
 /**
@@ -145,38 +146,42 @@ export function generateOutput(action: ActionType, items: CslItem[], style = "ap
  */
 export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
   return new Promise<StyleSelectResult>((resolve) => {
+    let result: StyleSelectResult = { cancelled: true };
+
     const handleSelect = (value: string): void => {
-      resolve({
+      result = {
         style: value,
         cancelled: false,
-      });
+      };
     };
 
     const handleCancel = (): void => {
-      resolve({
+      result = {
         cancelled: true,
-      });
+      };
     };
 
     // Render the Ink app
     const { waitUntilExit } = render(
       createElement(StyleSelectApp, {
         options: STYLE_CHOICES,
-        onSelect: (value) => {
-          handleSelect(value);
-        },
-        onCancel: () => {
-          handleCancel();
-        },
+        onSelect: handleSelect,
+        onCancel: handleCancel,
       })
     );
 
-    // Wait for the app to exit
-    waitUntilExit().catch(() => {
-      resolve({
-        cancelled: true,
+    // Wait for the app to exit, then resolve
+    waitUntilExit()
+      .then(() => {
+        restoreStdinAfterInk();
+        resolve(result);
+      })
+      .catch(() => {
+        restoreStdinAfterInk();
+        resolve({
+          cancelled: true,
+        });
       });
-    });
   });
 }
 
@@ -230,17 +235,14 @@ export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult>
   const message = `Action for ${count} selected ${refWord}:`;
 
   return new Promise<ActionMenuResult>((resolve) => {
+    let selectedAction: ActionType | null = null;
+
     const handleSelect = (action: ActionType): void => {
-      // Process the action after unmounting
-      processAction(action, items).then(resolve);
+      selectedAction = action;
     };
 
     const handleCancel = (): void => {
-      resolve({
-        action: "cancel",
-        output: "",
-        cancelled: true,
-      });
+      selectedAction = null;
     };
 
     // Render the Ink app
@@ -248,22 +250,34 @@ export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult>
       createElement(ActionMenuApp, {
         message,
         options: ACTION_CHOICES,
-        onSelect: (action) => {
-          handleSelect(action);
-        },
-        onCancel: () => {
-          handleCancel();
-        },
+        onSelect: handleSelect,
+        onCancel: handleCancel,
       })
     );
 
-    // Wait for the app to exit
-    waitUntilExit().catch(() => {
-      resolve({
-        action: "cancel",
-        output: "",
-        cancelled: true,
+    // Wait for the app to exit, then process the action
+    waitUntilExit()
+      .then(async () => {
+        restoreStdinAfterInk();
+
+        if (selectedAction === null) {
+          resolve({
+            action: "cancel",
+            output: "",
+            cancelled: true,
+          });
+        } else {
+          const result = await processAction(selectedAction, items);
+          resolve(result);
+        }
+      })
+      .catch(() => {
+        restoreStdinAfterInk();
+        resolve({
+          action: "cancel",
+          output: "",
+          cancelled: true,
+        });
       });
-    });
   });
 }

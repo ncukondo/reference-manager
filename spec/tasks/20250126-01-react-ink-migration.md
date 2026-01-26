@@ -139,8 +139,8 @@ Comprehensive testing to catch bugs that unit tests miss.
 - [x] `ref cite` without arguments
 - [x] `ref edit` without arguments
 - [x] `ref remove` without arguments - Fixed: stdin.ref() after Ink unref'd it
-- [ ] `ref update` without arguments
-- [ ] `ref fulltext open` without arguments
+- [x] `ref update` without arguments - Disabled interactive mode without --set, suggests using `edit`
+- [x] `ref fulltext open` without arguments - Works correctly
 - [ ] Terminal resize handling
 - [x] Large dataset (40 items) scrolling
 - [ ] **If bugs found**: Create regression test, then fix implementation
@@ -187,17 +187,18 @@ Remove prototype directory and Enquirer dependency.
 - [x] `search -t` - Working correctly
 - [x] `cite` - Working correctly (Single App Pattern applied)
 - [x] `edit` - Working correctly
-- [x] `remove` - Working correctly (stdin.ref() fix applied)
-- [ ] `update` - Not tested
-- [ ] `fulltext open` - Not tested
+- [x] `remove` - Working correctly (restoreStdinAfterInk fix applied)
+- [x] `update` - Disabled interactive mode without --set, suggests `edit`
+- [x] `fulltext open` - Working correctly
 
 ### Bugs Fixed This Session
 1. **readline.createInterface error**: Added `node:readline` to Vite externals, changed to static import
-2. **stdin unref issue**: Ink calls `stdin.unref()` on exit, causing Node.js to exit before readline could read input. Fixed by calling `stdin.ref()` in `readConfirmation()`
+2. **stdin unref issue**: Ink calls `stdin.unref()` on exit, causing Node.js to exit before readline could read input. Fixed with `restoreStdinAfterInk()` utility using short-lived timer
+3. **update command design**: Disabled interactive mode without `--set`, now suggests using `edit` command for interactive editing
 
 ### Pending Work
-1. **Complete manual testing** for remaining commands (update, fulltext open)
-2. **Step 8**: Documentation updates
+1. **Step 8**: Documentation updates
+2. Terminal resize handling (optional)
 
 ### Test Environment
 ```bash
