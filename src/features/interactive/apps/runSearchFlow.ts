@@ -13,6 +13,11 @@ import type { Choice, SortOption } from "../components/index.js";
 import { formatAuthors } from "../format.js";
 import { SearchFlowApp } from "./SearchFlowApp.js";
 
+// ANSI escape sequences for alternate screen buffer
+// This preserves terminal scrollback history when running fullscreen TUI
+const ENTER_ALT_SCREEN = "\x1b[?1049h";
+const EXIT_ALT_SCREEN = "\x1b[?1049l";
+
 /**
  * Configuration for the search flow
  */
@@ -182,17 +187,26 @@ export async function runSearchFlow(
 
   // Create a promise to capture the result
   return new Promise<ActionMenuResult>((resolve) => {
-    const handleComplete = (result: ActionMenuResult): void => {
-      resolve(result);
+    let result: ActionMenuResult = {
+      action: "cancel",
+      output: "",
+      cancelled: true,
+    };
+
+    const handleComplete = (r: ActionMenuResult): void => {
+      result = r;
     };
 
     const handleCancel = (): void => {
-      resolve({
+      result = {
         action: "cancel",
         output: "",
         cancelled: true,
-      });
+      };
     };
+
+    // Enter alternate screen buffer to preserve terminal scrollback
+    process.stdout.write(ENTER_ALT_SCREEN);
 
     // Render the Ink app (single render for entire flow)
     const { waitUntilExit } = render(
@@ -206,13 +220,15 @@ export async function runSearchFlow(
       })
     );
 
-    // Wait for the app to exit
-    waitUntilExit().catch(() => {
-      resolve({
-        action: "cancel",
-        output: "",
-        cancelled: true,
+    // Wait for the app to exit, then restore screen
+    waitUntilExit()
+      .catch(() => {
+        // Keep default cancelled result
+      })
+      .finally(() => {
+        // Exit alternate screen buffer (restore original screen)
+        process.stdout.write(EXIT_ALT_SCREEN);
+        resolve(result);
       });
-    });
   });
 }

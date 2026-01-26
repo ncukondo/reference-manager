@@ -167,40 +167,21 @@ Remove prototype directory and Enquirer dependency.
 - [ ] Update demo script path in package.json (`demo:ink` → use interactive/)
 - [ ] Verify all spec files reference React Ink (already done in ADR-014)
 
-## Session Handoff (2026-01-26 Session 2)
+## Session Handoff (2026-01-26 Session 3)
 
 ### Completed This Session
-- **ADR-015**: Created `spec/decisions/ADR-015-react-ink-single-app-pattern.md`
-  - Documents "1 Flow = 1 App = 1 render()" principle
-  - Explains why multiple render() calls cause screen clearing issues
-- **SearchFlowApp**: Created `src/features/interactive/apps/SearchFlowApp.tsx`
-  - Single App component for `search -t` flow
-  - Manages state transitions: search → action → style → exiting
-  - Uses React state management instead of multiple render() calls
-- **runSearchFlow**: Created `src/features/interactive/apps/runSearchFlow.ts`
-  - Runner function that calls render() once
-- **Fixed**: Screen transition from search to action menu works correctly
-- **Fixed**: Action menu clears when selecting an option (using "exiting" state with empty Box)
-- **Fixed**: reservedLines calculation (5 → 10) for proper header display
-
-### Remaining Issue
-**Terminal history not restored after Ink exit**
-- After exiting the Ink app, previous terminal commands are not restored
-- In the original demo (`feature/interactive-ink`), this worked correctly
-- The demo displayed results inside Ink component with "Press any key to exit"
-- Current implementation exits Ink and writes to stdout externally
-
-**Investigation needed**:
-- Compare demo's App.tsx behavior (git show 5bfc395:src/features/interactive-ink/App.tsx)
-- Demo used `setState("result")` to show output inside Ink before exit
-- May need to investigate Ink's alternate screen buffer behavior
+- **Fixed**: Terminal history restoration using alternate screen buffer
+  - Added ANSI escape sequences `\x1b[?1049h` (enter) and `\x1b[?1049l` (exit)
+  - `runSearchFlow` now wraps Ink render with alternate screen buffer
+  - Previous terminal content is preserved after TUI exit
+- **Fixed**: Unit test for `calculateEffectiveLimit` (reservedLines 5 → 10)
+- **Fixed**: Updated `spec/features/edit.md` (Enquirer → React Ink)
 
 ### Pending Work
-1. **Fix terminal history restoration** - investigate demo's approach
-2. **Apply Single App Pattern to `cite` command** - similar to SearchFlowApp
-3. **Manual testing** for all interactive commands
-4. **Step 8**: Documentation updates
-5. **Run tests**: unit, e2e, lint, typecheck
+1. **Apply Single App Pattern to `cite` command** - similar to SearchFlowApp
+2. **Manual testing** for all interactive commands
+3. **Step 8**: Documentation updates
+4. **Run tests**: e2e
 
 ### Test Environment
 ```bash

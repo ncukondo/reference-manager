@@ -232,8 +232,8 @@ describe("calculateEffectiveLimit", () => {
       writable: true,
     });
 
-    // 70 rows - 5 reserved = 65 available, 65 / 3 lines per item = 21 max
-    // config limit 20 is smaller, so returns 20
+    // 70 rows - 10 reserved = 60 available, 60 / 3 lines per item = 20 max
+    // config limit 20 is equal, so returns 20
     expect(calculateEffectiveLimit(20)).toBe(20);
   });
 
@@ -243,9 +243,9 @@ describe("calculateEffectiveLimit", () => {
       writable: true,
     });
 
-    // 20 rows - 5 reserved = 15 available, 15 / 3 = 5 max items
-    // config limit 20 is larger, so returns 5
-    expect(calculateEffectiveLimit(20)).toBe(5);
+    // 20 rows - 10 reserved = 10 available, 10 / 3 = 3 max items
+    // config limit 20 is larger, so returns 3
+    expect(calculateEffectiveLimit(20)).toBe(3);
   });
 
   it("returns terminal-based limit when config limit is 0", () => {
@@ -254,8 +254,8 @@ describe("calculateEffectiveLimit", () => {
       writable: true,
     });
 
-    // 44 rows - 5 reserved = 39 available, 39 / 3 = 13 max items
-    expect(calculateEffectiveLimit(0)).toBe(13);
+    // 44 rows - 10 reserved = 34 available, 34 / 3 = 11 max items
+    expect(calculateEffectiveLimit(0)).toBe(11);
   });
 
   it("returns at least 1 even with very small terminal", () => {
@@ -264,7 +264,7 @@ describe("calculateEffectiveLimit", () => {
       writable: true,
     });
 
-    // 5 - 5 = 0 available, 0 / 3 = 0, but should be at least 1
+    // 5 - 10 = -5 available, -5 / 3 = -1, but should be at least 1
     expect(calculateEffectiveLimit(20)).toBe(1);
   });
 });
