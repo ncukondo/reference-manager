@@ -93,10 +93,10 @@ Update `ref edit` output:
 - List updated items
 - List failed items with reasons
 
-- [ ] Update `formatEditOutput` function
-- [ ] Write E2E test if applicable
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `formatEditOutput` function
+- [x] Write E2E test if applicable (unit tests added)
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 

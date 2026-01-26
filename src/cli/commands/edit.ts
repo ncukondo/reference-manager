@@ -264,30 +264,65 @@ export async function executeEditCommand(
 }
 
 /**
+ * Format a list of items with a header
+ */
+function formatItemList(lines: string[], header: string, items: string[]): void {
+  if (items.length === 0) return;
+  lines.push(header);
+  for (const item of items) {
+    lines.push(`  - ${item}`);
+  }
+}
+
+/**
+ * Format failed items with their reasons
+ */
+function formatFailedItems(lines: string[], failed: EditItemResult[]): void {
+  if (failed.length === 0) return;
+  lines.push(`Failed: ${failed.length}`);
+  for (const r of failed) {
+    const reason = r.state === "id_collision" ? "ID collision" : "Not found";
+    lines.push(`  - ${r.id} (${reason})`);
+  }
+}
+
+/**
+ * Format the summary header line
+ */
+function formatSummaryHeader(updatedCount: number, totalCount: number): string {
+  if (totalCount === 0 || updatedCount === totalCount) {
+    const refWord = updatedCount === 1 ? "reference" : "references";
+    return `Updated ${updatedCount} ${refWord}:`;
+  }
+  return `Updated ${updatedCount} of ${totalCount} references:`;
+}
+
+/**
  * Format edit result for CLI output.
- *
- * @param result - Edit result
- * @returns Formatted output string
  */
 export function formatEditOutput(result: EditCommandResult): string {
-  if (result.aborted) {
-    return "Edit aborted.";
-  }
+  if (result.aborted) return "Edit aborted.";
+  if (!result.success) return `Error: ${result.error || "Unknown error"}`;
 
-  if (!result.success) {
-    return `Error: ${result.error || "Unknown error"}`;
-  }
+  const totalCount = result.results.length;
+  const { updatedCount, updatedIds } = result;
 
-  const count = result.updatedCount;
-  const refWord = count === 1 ? "reference" : "references";
+  if (totalCount === 0 && updatedCount === 0) return "No references were updated.";
 
-  if (count === 0) {
-    return "No references were updated.";
-  }
+  const lines: string[] = [formatSummaryHeader(updatedCount, totalCount)];
+  formatItemList(lines, "", updatedIds);
 
-  const lines = [`Updated ${count} ${refWord}:`];
-  for (const id of result.updatedIds) {
-    lines.push(`  - ${id}`);
+  if (totalCount > 0) {
+    const unchanged = result.results.filter((r) => r.state === "unchanged");
+    const failed = result.results.filter(
+      (r) => r.state === "not_found" || r.state === "id_collision"
+    );
+    formatItemList(
+      lines,
+      `No changes: ${unchanged.length}`,
+      unchanged.map((r) => r.id)
+    );
+    formatFailedItems(lines, failed);
   }
 
   return lines.join("\n");

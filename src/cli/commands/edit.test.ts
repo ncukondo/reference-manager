@@ -340,6 +340,59 @@ describe("edit command", () => {
       const output = formatEditOutput(result);
       expect(output).toContain("aborted");
     });
+
+    it("formats output with unchanged items", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [
+          { id: "Smith-2024", state: "updated" },
+          { id: "Doe-2023", state: "unchanged" },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Updated 1 of 2 references");
+      expect(output).toContain("Smith-2024");
+      expect(output).toContain("No changes: 1");
+      expect(output).toContain("Doe-2023");
+    });
+
+    it("formats output with failed items", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [
+          { id: "Smith-2024", state: "updated" },
+          { id: "NotFound", state: "not_found" },
+          { id: "Collision", state: "id_collision" },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Updated 1 of 3 references");
+      expect(output).toContain("Failed: 2");
+      expect(output).toContain("NotFound (Not found)");
+      expect(output).toContain("Collision (ID collision)");
+    });
+
+    it("formats output when all items unchanged", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 0,
+        updatedIds: [],
+        results: [
+          { id: "Smith-2024", state: "unchanged" },
+          { id: "Doe-2023", state: "unchanged" },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Updated 0 of 2 references");
+      expect(output).toContain("No changes: 2");
+    });
   });
 
   describe("executeInteractiveEdit", () => {
