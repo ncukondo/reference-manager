@@ -93,6 +93,20 @@ Comprehensive file attachment system replacing the limited fulltext feature.
 **Spec**: `spec/features/attachments.md`
 **ADR**: `spec/decisions/ADR-013-attachments-architecture.md`
 
+### Phase 26: React Ink Migration
+
+Replace Enquirer with React Ink for all interactive TUI components.
+
+- **Task 1**: React Ink migration (`20250126-01-react-ink-migration.md`)
+  - Finalize core components (SearchableMultiSelect, Select)
+  - Create integration layer (reference-select, style-select)
+  - Migrate interactive search command (`search -t`)
+  - Migrate ID selection fallback (cite, edit, remove without args)
+  - Remove Enquirer dependency
+
+**ADR**: `spec/decisions/ADR-014-use-react-ink-for-tui.md`
+**Supersedes**: `spec/decisions/ADR-012-use-enquirer-for-interactive-prompts.md`
+
 ---
 
 ## Next Steps
@@ -110,7 +124,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 26: Citation Enhancements
+### Phase 27: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -119,7 +133,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 27: Advanced Features
+### Phase 28: Advanced Features
 
 Additional features beyond core functionality:
 

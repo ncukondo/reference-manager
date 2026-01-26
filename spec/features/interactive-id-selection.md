@@ -178,8 +178,10 @@ Note: `fulltext open` already accepts optional `[identifier]`.
 
 ## Dependencies
 
-- **Enquirer**: For interactive prompts (already used by interactive search)
-- Existing interactive search components
+- **React Ink**: Declarative terminal UI framework
+- **ink-ui**: Component library for Ink
+- See `spec/decisions/ADR-014-use-react-ink-for-tui.md`
+- Existing interactive search components (migrated to React Ink)
 
 ## Related
 
