@@ -486,6 +486,76 @@ describe("Library", () => {
         expect(result.item?.custom?.uuid).toBe(uuid);
       });
     });
+
+    describe("change detection", () => {
+      it("should return updated=false when no changes detected", async () => {
+        const library = await Library.load(testFilePath);
+        const original = await library.find("smith-2023");
+
+        // Update with same title (no actual change)
+        const result = await library.update("smith-2023", { title: original?.title });
+
+        expect(result.updated).toBe(false);
+        expect(result.errorType).toBeUndefined();
+        expect(result.item).toBeDefined();
+        expect(result.item?.id).toBe("smith-2023");
+      });
+
+      it("should return updated=false when updating with same ID", async () => {
+        const library = await Library.load(testFilePath);
+
+        // Update only with same ID
+        const result = await library.update("smith-2023", { id: "smith-2023" });
+
+        expect(result.updated).toBe(false);
+        expect(result.errorType).toBeUndefined();
+        expect(result.item).toBeDefined();
+      });
+
+      it("should return updated=true when actual changes detected", async () => {
+        const library = await Library.load(testFilePath);
+
+        const result = await library.update("smith-2023", { title: "New Title" });
+
+        expect(result.updated).toBe(true);
+        expect(result.item?.title).toBe("New Title");
+      });
+
+      it("should return updated=false for empty updates object", async () => {
+        const library = await Library.load(testFilePath);
+
+        const result = await library.update("smith-2023", {});
+
+        expect(result.updated).toBe(false);
+        expect(result.errorType).toBeUndefined();
+        expect(result.item).toBeDefined();
+      });
+
+      it("should detect changes in nested custom fields", async () => {
+        const library = await Library.load(testFilePath);
+
+        const result = await library.update("smith-2023", {
+          custom: { my_field: "new value" },
+        });
+
+        expect(result.updated).toBe(true);
+        expect(result.item?.custom?.my_field).toBe("new value");
+      });
+
+      it("should not update timestamp when no changes", async () => {
+        const library = await Library.load(testFilePath);
+        const original = await library.find("smith-2023");
+        const originalTimestamp = original?.custom?.timestamp;
+
+        // Wait a bit to ensure timestamp would be different if updated
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        const result = await library.update("smith-2023", { title: original?.title });
+
+        expect(result.updated).toBe(false);
+        expect(result.item?.custom?.timestamp).toBe(originalTimestamp);
+      });
+    });
   });
 
   describe("find methods", () => {

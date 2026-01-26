@@ -45,10 +45,10 @@ Add change detection logic to `src/core/library.ts`:
 - Return `updated: false` with `item` when no changes detected
 - Only update `timestamp` when actual changes occur
 
-- [ ] Write test: `src/core/library.test.ts` - add "should return updated=false when no changes" test
-- [ ] Implement change detection in `updateReference`
-- [ ] Verify Green: `npm run test:unit -- library.test.ts`
-- [ ] Lint/Type check
+- [x] Write test: `src/core/library.test.ts` - add "should return updated=false when no changes" test
+- [x] Implement change detection in `updateReference`
+- [x] Verify Green: `npm run test:unit -- library.test.ts`
+- [x] Lint/Type check
 
 ### Step 3: Update Command Output
 
