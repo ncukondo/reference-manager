@@ -4,6 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import { stdin, stdout } from "node:process";
+import * as readline from "node:readline";
 import { loadConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 
@@ -183,7 +184,15 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
     return true;
   }
 
-  const readline = await import("node:readline");
+  // Ensure stdin is in normal mode (Ink may leave it in raw mode)
+  if (process.stdin.isTTY && process.stdin.isRaw) {
+    process.stdin.setRawMode(false);
+  }
+
+  // Resume stdin and ref it to keep the event loop alive
+  // Ink may have unref'd stdin, causing Node.js to exit prematurely
+  process.stdin.resume();
+  process.stdin.ref();
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -191,15 +200,23 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
   });
 
   return new Promise<boolean>((resolve) => {
+    let resolved = false;
+
     rl.question(`${prompt} (y/N) `, (answer) => {
-      rl.close();
-      const normalized = answer.trim().toLowerCase();
-      resolve(normalized === "y" || normalized === "yes");
+      if (!resolved) {
+        resolved = true;
+        rl.close();
+        const normalized = answer.trim().toLowerCase();
+        resolve(normalized === "y" || normalized === "yes");
+      }
     });
 
-    // Handle Ctrl+C
+    // Handle Ctrl+C or unexpected close
     rl.on("close", () => {
-      resolve(false);
+      if (!resolved) {
+        resolved = true;
+        resolve(false);
+      }
     });
   });
 }

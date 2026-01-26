@@ -138,7 +138,7 @@ Comprehensive testing to catch bugs that unit tests miss.
 - [x] Cancel (Esc)
 - [x] `ref cite` without arguments
 - [x] `ref edit` without arguments
-- [ ] `ref remove` without arguments - **BUG**: readline.createInterface error
+- [x] `ref remove` without arguments - Fixed: stdin.ref() after Ink unref'd it
 - [ ] `ref update` without arguments
 - [ ] `ref fulltext open` without arguments
 - [ ] Terminal resize handling
@@ -187,21 +187,17 @@ Remove prototype directory and Enquirer dependency.
 - [x] `search -t` - Working correctly
 - [x] `cite` - Working correctly (Single App Pattern applied)
 - [x] `edit` - Working correctly
-- [ ] `remove` - **ERROR**: `readline.createInterface is not a function`
+- [x] `remove` - Working correctly (stdin.ref() fix applied)
 - [ ] `update` - Not tested
 - [ ] `fulltext open` - Not tested
 
-### Bug to Fix
-**`remove` command error**: `readline.createInterface is not a function`
-- Likely in `src/cli/helpers.ts` `readConfirmation()` function
-- This was a readline-based replacement for Enquirer's Confirm prompt
-- Investigate the import and fix
+### Bugs Fixed This Session
+1. **readline.createInterface error**: Added `node:readline` to Vite externals, changed to static import
+2. **stdin unref issue**: Ink calls `stdin.unref()` on exit, causing Node.js to exit before readline could read input. Fixed by calling `stdin.ref()` in `readConfirmation()`
 
 ### Pending Work
-1. **Fix `remove` command** - readline.createInterface error
-2. **Complete manual testing** for remaining commands (update, fulltext open)
-3. **Step 8**: Documentation updates
-4. **Run tests**: e2e, unit
+1. **Complete manual testing** for remaining commands (update, fulltext open)
+2. **Step 8**: Documentation updates
 
 ### Test Environment
 ```bash

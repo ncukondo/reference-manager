@@ -26,6 +26,7 @@ export default defineConfig({
         "node:events",
         "node:stream",
         "node:buffer",
+        "node:readline",
         "@citation-js/core",
         "@citation-js/plugin-bibtex",
         "@citation-js/plugin-csl",
