@@ -141,7 +141,7 @@ Comprehensive testing to catch bugs that unit tests miss.
 - [x] `ref remove` without arguments - Fixed: stdin.ref() after Ink unref'd it
 - [x] `ref update` without arguments - Disabled interactive mode without --set, suggests using `edit`
 - [x] `ref fulltext open` without arguments - Works correctly
-- [ ] Terminal resize handling
+- [ ] Terminal resize handling - **Known limitation**: Header/status go off-screen when terminal is shrunk
 - [x] Large dataset (40 items) scrolling
 - [ ] **If bugs found**: Create regression test, then fix implementation
 
@@ -161,11 +161,11 @@ Remove prototype directory and Enquirer dependency.
 - [x] Run all tests: `npm run test:unit` ✓, `npm run test:e2e` ✓ (2629 tests passed)
 - [x] Lint/Type check: `npm run lint && npm run typecheck` ✓
 
-### Step 8: Update Documentation
+### Step 8: Update Documentation ✅
 
-- [ ] Update README.md if it mentions Enquirer
-- [ ] Update demo script path in package.json (`demo:ink` → use interactive/)
-- [ ] Verify all spec files reference React Ink (already done in ADR-014)
+- [x] Update README.md if it mentions Enquirer - No mentions found
+- [x] Update demo script path in package.json - Already removed in Step 7
+- [x] Verify all spec files reference React Ink (already done in ADR-014)
 
 ## Session Handoff (2026-01-26 Session 4)
 
@@ -196,9 +196,11 @@ Remove prototype directory and Enquirer dependency.
 2. **stdin unref issue**: Ink calls `stdin.unref()` on exit, causing Node.js to exit before readline could read input. Fixed with `restoreStdinAfterInk()` utility using short-lived timer
 3. **update command design**: Disabled interactive mode without `--set`, now suggests using `edit` command for interactive editing
 
+### Known Limitations
+- **Terminal resize**: When terminal is shrunk, header/search/status go off-screen upward and cannot be scrolled. Fix requires implementing `useStdoutDimensions` hook to recalculate visible count on resize.
+
 ### Pending Work
-1. **Step 8**: Documentation updates
-2. Terminal resize handling (optional)
+1. **Step 8**: Documentation updates (README.md doesn't mention Enquirer, so minimal changes needed)
 
 ### Test Environment
 ```bash
