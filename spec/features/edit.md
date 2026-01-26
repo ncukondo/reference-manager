@@ -290,21 +290,31 @@ interface EditCommandResult {
 
 ### Output Format
 
-**Text output:**
+**Text output (with change details):**
 ```
 Updated 2 of 3 references:
   - smith-2024
+    title: "Old Title" → "New Title"
+    volume: "10" → "11"
   - jones-2023
-Failed:
+    author: +1 entry
+No changes: 1
+  - unchanged-2024
+Failed: 1
   - doe-2024 (ID collision)
 ```
 
-**With diff (future enhancement):**
-```
-Updated smith-2024:
-  title: "Old Title" → "New Title"
-  volume: "10" → "11"
-```
+**Change detail format:**
+
+| Field Type | Format | Example |
+|------------|--------|---------|
+| String | `"old" → "new"` | `title: "Old" → "New"` |
+| Array (add) | `+N entries` | `author: +1 entry` |
+| Array (remove) | `-N entries` | `keyword: -2 entries` |
+| Array (mixed) | `+N/-M entries` | `author: +1/-1 entries` |
+| Long string | Truncate at 25 chars | `abstract: "Long text..." → "New long..."` |
+| Added field | `(added)` | `volume: (added) "10"` |
+| Removed field | `(removed)` | `issue: "5" (removed)` |
 
 ## Error Handling
 

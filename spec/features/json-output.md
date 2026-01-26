@@ -179,6 +179,8 @@ interface UpdateJsonOutput {
   id: string;           // Updated item's ID
   uuid?: string;        // UUID (success only)
   title?: string;       // Updated title (success only)
+  unchanged?: boolean;  // True if no changes detected
+  changes?: string[];   // List of changed field names (success only, when updated)
   idChanged?: boolean;  // True if ID was changed
   previousId?: string;  // Previous ID (idChanged only)
   before?: CslItem;     // Before update (--full only, success only)
@@ -187,14 +189,27 @@ interface UpdateJsonOutput {
 }
 ```
 
-**Example (success):**
+**Example (success with changes):**
 
 ```json
 {
   "success": true,
   "id": "smith-2024",
   "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "title": "Updated Title"
+  "title": "Updated Title",
+  "changes": ["title", "volume"]
+}
+```
+
+**Example (no changes):**
+
+```json
+{
+  "success": true,
+  "id": "smith-2024",
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "title": "Same Title",
+  "unchanged": true
 }
 ```
 
@@ -206,6 +221,7 @@ interface UpdateJsonOutput {
   "id": "jones-2024",
   "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "title": "Article",
+  "changes": ["id"],
   "idChanged": true,
   "previousId": "smith-2024"
 }
@@ -225,7 +241,7 @@ interface UpdateJsonOutput {
 
 | Code | Condition |
 |------|-----------|
-| `0` | Successfully updated |
+| `0` | Successfully updated or unchanged |
 | `1` | Not found or validation error |
 
 ## Fatal Error Output

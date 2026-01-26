@@ -268,7 +268,7 @@ export async function executeEditCommand(
  */
 function formatItemList(lines: string[], header: string, items: string[]): void {
   if (items.length === 0) return;
-  lines.push(header);
+  if (header) lines.push(header);
   for (const item of items) {
     lines.push(`  - ${item}`);
   }

@@ -98,6 +98,36 @@ Update `ref edit` output:
 - [x] Verify Green
 - [x] Lint/Type check
 
+### Step 7: Change Details Display
+
+Show which fields changed in update/edit output:
+
+**Text output format:**
+```
+Updated: [smith-2024] New Title
+  title: "Old Title" → "New Title"
+  author: +1 entry
+```
+
+**JSON output format:**
+- Add `changes?: string[]` field to UpdateJsonOutput
+
+**Implementation:**
+- Add `getChangedFields(oldItem, newItem)` utility function
+- Add `formatFieldChange(field, oldValue, newValue)` formatter
+- Update `formatUpdateOutput` to show changes
+- Update `formatEditOutput` to show changes per item
+- Update `formatUpdateJsonOutput` to include `changes` array
+
+- [ ] Write tests for change detection utilities
+- [ ] Implement `getChangedFields` function
+- [ ] Implement `formatFieldChange` function
+- [ ] Update `formatUpdateOutput` with change details
+- [ ] Update `formatEditOutput` with change details
+- [ ] Update JSON output with `changes` field
+- [ ] Verify Green
+- [ ] Lint/Type check
+
 ## Completion Checklist
 
 - [ ] All tests pass (`npm run test`)
@@ -105,8 +135,10 @@ Update `ref edit` output:
 - [ ] Type check passes (`npm run typecheck`)
 - [ ] Build succeeds (`npm run build`)
 - [ ] Manual verification:
-  - [ ] `ref edit <id>` without changes shows "No changes"
-  - [ ] `ref update --set title="same"` shows "No changes" when title is same
-  - [ ] `ref edit` with some changes shows correct counts
+  - [x] `ref edit <id>` without changes shows "No changes"
+  - [x] `ref update --set title="same"` shows "No changes" when title is same
+  - [x] `ref edit` with some changes shows correct counts
+  - [ ] `ref update` shows changed fields
+  - [ ] `ref edit` shows changed fields per item
 - [ ] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
