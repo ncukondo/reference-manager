@@ -85,30 +85,39 @@ Move React Ink implementation to replace Enquirer-based code.
 - [x] Lint/Type check: `npm run lint && npm run typecheck`
 - [x] All unit tests pass
 
-### Step 4: Migrate Interactive Search Command
+### Step 4: Migrate Interactive Search Command ✅
 
 Replace Enquirer usage in `search -t` / `search --tui` command.
 
-- [ ] Update `src/cli/commands/search.ts` to use React Ink components from `src/features/interactive/`
-- [ ] Verify all features work:
+- [x] Update `src/cli/commands/search.ts` to use React Ink components from `src/features/interactive/`
+  - Already imports from `src/features/interactive/search-prompt.js` and `action-menu.js`
+  - These modules now use React Ink internally
+- [ ] Verify all features work (manual testing):
   - Real-time search filtering
   - Multi-select with Tab
   - Sort options (Ctrl+S)
   - Scroll indicators
   - Action menu after selection
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
-### Step 5: Migrate ID Selection Fallback
+### Step 5: Migrate ID Selection Fallback ✅
 
 Update ID-less command invocations to use new implementation.
 
-- [ ] Verify commands work without arguments:
+- [x] All commands already import from `src/features/interactive/`:
+  - `cite.ts` → `reference-select.js`, `style-select.js`
+  - `edit.ts` → `reference-select.js`
+  - `remove.ts` → `reference-select.js`
+  - `update.ts` → `reference-select.js`
+  - `fulltext.ts` → `reference-select.js`
+  - `attach.ts` → `reference-select.js`
+- [ ] Verify commands work without arguments (manual testing):
   - `ref cite` (multi-select + style selection)
   - `ref edit` (multi-select)
   - `ref remove` (multi-select + confirmation)
   - `ref update` (single-select)
   - `ref fulltext open` (single-select)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: E2E and Manual Testing
 
