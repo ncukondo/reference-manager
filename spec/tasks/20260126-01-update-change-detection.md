@@ -56,11 +56,11 @@ Update `ref update` output in `src/cli/commands/update.ts` and `src/features/ope
 - Handle "no changes" case in text output
 - Handle "no changes" case in JSON output
 
-- [ ] Write test: `src/cli/commands/update.test.ts` - add output format tests
-- [ ] Update `formatUpdateOutput` function
-- [ ] Update `formatUpdateJsonOutput` function
-- [ ] Verify Green: `npm run test:unit -- update.test.ts`
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/update.test.ts` - add output format tests
+- [x] Update `formatUpdateOutput` function
+- [x] Update `formatUpdateJsonOutput` function
+- [x] Verify Green: `npm run test:unit -- update.test.ts`
+- [x] Lint/Type check
 
 ### Step 4: EditCommandResult Interface
 

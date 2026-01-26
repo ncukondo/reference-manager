@@ -90,6 +90,18 @@ describe("update command", () => {
 
       expect(output).toBe("Updated reference: test-uuid");
     });
+
+    it("should format no changes result", () => {
+      const item = createItem("Smith-2020", "Test Title");
+      const result: UpdateOperationResult = {
+        updated: false,
+        item, // item present means reference found but no changes
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toBe("No changes: [Smith-2020] Test Title");
+    });
   });
 
   describe("parseSetOption", () => {
@@ -566,6 +578,44 @@ describe("update command", () => {
         expect(output.title).toBeUndefined();
         expect(output.before).toBeUndefined();
         expect(output.after).toBeUndefined();
+      });
+
+      it("should format no changes result as JSON", () => {
+        const item = createItem("Smith-2020", "Same Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: false,
+          item, // item present means reference found but no changes
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output).toEqual({
+          success: true,
+          unchanged: true,
+          id: "Smith-2020",
+          uuid: "uuid-123",
+          title: "Same Title",
+        });
+      });
+
+      it("should format no changes result with --full option", () => {
+        const item = createItem("Smith-2020", "Same Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: false,
+          item,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", { full: true, before: item });
+
+        expect(output).toEqual({
+          success: true,
+          unchanged: true,
+          id: "Smith-2020",
+          uuid: "uuid-123",
+          title: "Same Title",
+          before: item,
+          after: item,
+        });
       });
     });
   });

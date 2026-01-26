@@ -73,6 +73,7 @@ export interface UpdateJsonOutput {
   id: string;
   uuid?: string;
   title?: string;
+  unchanged?: boolean;
   idChanged?: boolean;
   previousId?: string;
   before?: CslItem;
@@ -195,6 +196,70 @@ export interface FormatUpdateJsonOptions {
 }
 
 /**
+ * Format error result as JSON output
+ */
+function formatUpdateErrorJson(originalId: string, errorType?: string): UpdateJsonOutput {
+  if (errorType === "id_collision") {
+    return { success: false, id: originalId, error: "ID collision: target ID already exists" };
+  }
+  return { success: false, id: originalId, error: `Reference not found: ${originalId}` };
+}
+
+/**
+ * Add full output fields (before/after) to the output object
+ */
+function addFullOutputFields(output: UpdateJsonOutput, item: CslItem, before?: CslItem): void {
+  if (before) output.before = before;
+  output.after = item;
+}
+
+/**
+ * Build base success output from item
+ */
+function buildUpdateSuccessOutput(item: CslItem, id: string): UpdateJsonOutput {
+  return {
+    success: true,
+    id,
+    ...(item.custom?.uuid && { uuid: item.custom.uuid }),
+    title: typeof item.title === "string" ? item.title : "",
+  };
+}
+
+/**
+ * Format no-changes result as JSON output
+ */
+function formatUnchangedJson(
+  item: CslItem,
+  originalId: string,
+  options: FormatUpdateJsonOptions
+): UpdateJsonOutput {
+  const output = buildUpdateSuccessOutput(item, item.id ?? originalId);
+  output.unchanged = true;
+  if (options.full) addFullOutputFields(output, item, options.before);
+  return output;
+}
+
+/**
+ * Format successful update result as JSON output
+ */
+function formatUpdateSuccessJson(
+  result: UpdateOperationResult,
+  originalId: string,
+  options: FormatUpdateJsonOptions
+): UpdateJsonOutput {
+  const item = result.item as CslItem;
+  const finalId = result.idChanged && result.newId ? result.newId : (item.id ?? originalId);
+  const output = buildUpdateSuccessOutput(item, finalId);
+
+  if (result.idChanged && result.newId) {
+    output.idChanged = true;
+    output.previousId = originalId;
+  }
+  if (options.full) addFullOutputFields(output, item, options.before);
+  return output;
+}
+
+/**
  * Format update command result as JSON output
  */
 export function formatUpdateJsonOutput(
@@ -202,46 +267,16 @@ export function formatUpdateJsonOutput(
   originalId: string,
   options: FormatUpdateJsonOptions
 ): UpdateJsonOutput {
-  const { full = false, before } = options;
-
-  // Handle failure cases
-  if (!result.updated || !result.item) {
-    if (result.errorType === "id_collision") {
-      return {
-        success: false,
-        id: originalId,
-        error: "ID collision: target ID already exists",
-      };
-    }
-    return {
-      success: false,
-      id: originalId,
-      error: `Reference not found: ${originalId}`,
-    };
+  // Handle failure cases (errors)
+  if (!result.updated && !result.item) {
+    return formatUpdateErrorJson(originalId, result.errorType);
   }
 
-  const item = result.item;
-  const uuid = item.custom?.uuid;
-  const finalId = result.idChanged && result.newId ? result.newId : (item.id ?? originalId);
-
-  const output: UpdateJsonOutput = {
-    success: true,
-    id: finalId,
-    ...(uuid && { uuid }),
-    title: typeof item.title === "string" ? item.title : "",
-  };
-
-  if (result.idChanged && result.newId) {
-    output.idChanged = true;
-    output.previousId = originalId;
+  // Handle no changes case (item present but not updated)
+  if (!result.updated && result.item) {
+    return formatUnchangedJson(result.item, originalId, options);
   }
 
-  if (full) {
-    if (before) {
-      output.before = before;
-    }
-    output.after = item;
-  }
-
-  return output;
+  // Handle success case
+  return formatUpdateSuccessJson(result, originalId, options);
 }

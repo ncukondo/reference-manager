@@ -357,6 +357,10 @@ export function formatUpdateOutput(result: UpdateCommandResult, identifier: stri
     if (result.errorType === "id_collision") {
       return `Update failed: ID collision for ${identifier}`;
     }
+    // No changes detected - item is present
+    if (result.item) {
+      return `No changes: [${result.item.id}] ${result.item.title || "(no title)"}`;
+    }
     return `Reference not found: ${identifier}`;
   }
 
