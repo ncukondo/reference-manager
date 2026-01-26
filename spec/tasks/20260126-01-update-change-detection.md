@@ -69,9 +69,9 @@ Create new result types in `src/cli/commands/edit.ts`:
 - Define `EditItemResult` interface with `id`, `state`, `item?`, `oldItem?`
 - Update `EditCommandResult` to use `results: EditItemResult[]`
 
-- [ ] Define new interfaces
-- [ ] Update existing tests for new interface
-- [ ] Lint/Type check
+- [x] Define new interfaces
+- [x] Update existing tests for new interface
+- [x] Lint/Type check
 
 ### Step 5: Edit Command Change Detection
 
@@ -80,11 +80,11 @@ Update `src/cli/commands/edit.ts`:
 - Track each item's state (updated/unchanged/not_found/id_collision)
 - Populate `item` and `oldItem` fields
 
-- [ ] Write test: `src/cli/commands/edit.test.ts` - add change detection tests
-- [ ] Update `executeEditCommand` function
-- [ ] Update `updateEditedItem` function
-- [ ] Verify Green: `npm run test:unit -- edit.test.ts`
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/edit.test.ts` - add change detection tests
+- [x] Update `executeEditCommand` function
+- [x] Update `updateEditedItem` function
+- [x] Verify Green: `npm run test:unit -- edit.test.ts`
+- [x] Lint/Type check
 
 ### Step 6: Edit Command Output
 

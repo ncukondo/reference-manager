@@ -205,6 +205,87 @@ describe("edit command", () => {
       expect(mockUpdate).toHaveBeenCalled();
       expect(mockSave).toHaveBeenCalled();
     });
+
+    it("returns unchanged state when no changes detected", async () => {
+      const unchangedItem = { ...sampleItem, title: "Same Title" };
+      mockFind.mockResolvedValue(unchangedItem);
+      mockUpdate.mockResolvedValue({ updated: false, item: unchangedItem });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Same Title",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.success).toBe(true);
+      expect(result.updatedCount).toBe(0);
+      expect(result.results.length).toBe(1);
+      expect(result.results[0].state).toBe("unchanged");
+      expect(result.results[0].item).toBeDefined();
+      expect(result.results[0].oldItem).toBeDefined();
+      expect(mockSave).not.toHaveBeenCalled();
+    });
+
+    it("returns detailed results for each edited item", async () => {
+      const item1 = {
+        ...sampleItem,
+        id: "Item-1",
+        custom: { ...sampleItem.custom, uuid: "uuid-1" },
+      };
+      const item2 = {
+        ...sampleItem,
+        id: "Item-2",
+        custom: { ...sampleItem.custom, uuid: "uuid-2" },
+      };
+
+      mockFind.mockImplementation((id) => {
+        if (id === "Item-1") return Promise.resolve(item1);
+        if (id === "Item-2") return Promise.resolve(item2);
+        return Promise.resolve(undefined);
+      });
+
+      mockUpdate.mockImplementation((uuid) => {
+        if (uuid === "uuid-1")
+          return Promise.resolve({ updated: true, item: { ...item1, title: "Updated 1" } });
+        if (uuid === "uuid-2") return Promise.resolve({ updated: false, item: item2 }); // No changes
+        return Promise.resolve({ updated: false });
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          { id: "Item-1", title: "Updated 1", _extractedUuid: "uuid-1" },
+          { id: "Item-2", title: item2.title, _extractedUuid: "uuid-2" },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Item-1", "Item-2"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.success).toBe(true);
+      expect(result.updatedCount).toBe(1);
+      expect(result.updatedIds).toEqual(["Item-1"]);
+      expect(result.results.length).toBe(2);
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[1].state).toBe("unchanged");
+    });
   });
 
   describe("formatEditOutput", () => {
@@ -213,6 +294,7 @@ describe("edit command", () => {
         success: true,
         updatedCount: 1,
         updatedIds: ["Smith-2024"],
+        results: [],
       };
 
       const output = formatEditOutput(result);
@@ -225,6 +307,7 @@ describe("edit command", () => {
         success: true,
         updatedCount: 3,
         updatedIds: ["Smith-2024", "Doe-2023", "Johnson-2022"],
+        results: [],
       };
 
       const output = formatEditOutput(result);
@@ -236,6 +319,7 @@ describe("edit command", () => {
         success: false,
         updatedCount: 0,
         updatedIds: [],
+        results: [],
         error: "Reference not found: Unknown-2024",
       };
 
@@ -249,6 +333,7 @@ describe("edit command", () => {
         success: false,
         updatedCount: 0,
         updatedIds: [],
+        results: [],
         aborted: true,
       };
 
