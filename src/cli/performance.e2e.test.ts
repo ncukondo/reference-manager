@@ -16,7 +16,7 @@ import { Library } from "../core/library.js";
 import { createServer } from "../server/index.js";
 import { getPortfilePath, writePortfile } from "../server/portfile.js";
 
-const CLI_PATH = path.resolve("bin/reference-manager.js");
+const CLI_PATH = path.resolve("bin/cli.js");
 
 describe("CLI Performance", () => {
   let testDir: string;

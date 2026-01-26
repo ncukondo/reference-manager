@@ -13,7 +13,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-const CLI_PATH = path.resolve("bin/reference-manager.js");
+const CLI_PATH = path.resolve("bin/cli.js");
 
 /**
  * Run CLI command and return result

@@ -8,7 +8,7 @@ import * as path from "node:path";
 import { parse as parseTOML } from "@iarna/toml";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-const CLI_PATH = path.resolve("bin/reference-manager.js");
+const CLI_PATH = path.resolve("bin/cli.js");
 
 // Helper type for parsed TOML config
 type ParsedConfig = Record<string, unknown>;

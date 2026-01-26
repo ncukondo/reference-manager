@@ -16,10 +16,10 @@
   "license": "MIT",
   "server": {
     "type": "node",
-    "entry_point": "bin/reference-manager.js",
+    "entry_point": "bin/cli.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/bin/reference-manager.js", "mcp", "--config", "${user_config.config_path}"]
+      "args": ["${__dirname}/bin/cli.js", "mcp", "--config", "${user_config.config_path}"]
     }
   },
   "tools": [
