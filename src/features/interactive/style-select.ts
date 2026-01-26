@@ -7,7 +7,11 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { render } from "ink";
+import { createElement } from "react";
+import type React from "react";
 import { BUILTIN_STYLES } from "../../config/csl-styles.js";
+import { Select, type SelectOption } from "../interactive-ink/components/index.js";
 
 /**
  * Options for style selection
@@ -27,15 +31,6 @@ export interface StyleSelectResult {
   style?: string;
   /** Whether the selection was cancelled */
   cancelled: boolean;
-}
-
-/**
- * Choice definition for Enquirer Select prompt
- */
-interface StyleChoice {
-  name: string;
-  message: string;
-  value: string;
 }
 
 /**
@@ -90,20 +85,22 @@ export function listCustomStyles(cslDirectory: string | string[] | undefined): s
  *
  * @param customStyles - Custom style names from csl_directory
  * @param defaultStyle - Default style to show first
- * @returns Array of choices for Enquirer Select prompt
+ * @returns Array of SelectOption for Ink Select prompt
  */
-export function buildStyleChoices(customStyles: string[], defaultStyle = "apa"): StyleChoice[] {
-  const choices: StyleChoice[] = [];
+export function buildStyleChoices(
+  customStyles: string[],
+  defaultStyle = "apa"
+): SelectOption<string>[] {
+  const choices: SelectOption<string>[] = [];
   const addedStyles = new Set<string>();
 
   // Helper to add a style choice
-  const addChoice = (styleName: string, isDefault: boolean) => {
+  const addChoice = (styleName: string, isDefault: boolean): void => {
     if (addedStyles.has(styleName)) return;
     addedStyles.add(styleName);
 
     choices.push({
-      name: styleName,
-      message: isDefault ? `${styleName} (default)` : styleName,
+      label: isDefault ? `${styleName} (default)` : styleName,
       value: styleName,
     });
   };
@@ -125,45 +122,75 @@ export function buildStyleChoices(customStyles: string[], defaultStyle = "apa"):
 }
 
 /**
+ * Props for the StyleSelectApp component
+ */
+interface StyleSelectAppProps {
+  options: SelectOption<string>[];
+  onSelect: (value: string) => void;
+  onCancel: () => void;
+}
+
+/**
+ * StyleSelectApp component - wraps Select for style selection
+ */
+function StyleSelectApp({ options, onSelect, onCancel }: StyleSelectAppProps): React.ReactElement {
+  return createElement(Select<string>, {
+    options,
+    message: "Select citation style:",
+    onSelect,
+    onCancel,
+  });
+}
+
+/**
  * Run the style selection prompt.
  *
  * @param options - Style selection options
  * @returns Selection result with style name
  */
 export async function runStyleSelect(options: StyleSelectOptions): Promise<StyleSelectResult> {
-  // Dynamic import to allow mocking in tests
-  const enquirer = await import("enquirer");
-  const Select = (enquirer.default as unknown as Record<string, unknown>).Select as new (
-    opts: Record<string, unknown>
-  ) => { run(): Promise<string> };
-
   // List custom styles from csl_directory
   const customStyles = listCustomStyles(options.cslDirectory);
 
   // Build choices with default first
   const choices = buildStyleChoices(customStyles, options.defaultStyle);
 
-  const promptOptions = {
-    name: "style",
-    message: "Select citation style:",
-    choices,
-  };
-
-  try {
-    const prompt = new Select(promptOptions);
-    const result = await prompt.run();
-
-    return {
-      style: result,
-      cancelled: false,
+  // Create a promise to capture the result
+  return new Promise<StyleSelectResult>((resolve) => {
+    const handleSelect = (value: string): void => {
+      resolve({
+        style: value,
+        cancelled: false,
+      });
     };
-  } catch (error) {
-    // Enquirer throws an empty string when cancelled
-    if (error === "" || (error instanceof Error && error.message === "")) {
-      return {
+
+    const handleCancel = (): void => {
+      resolve({
         cancelled: true,
-      };
-    }
-    throw error;
-  }
+      });
+    };
+
+    // Render the Ink app
+    const { unmount, waitUntilExit } = render(
+      createElement(StyleSelectApp, {
+        options: choices,
+        onSelect: (value) => {
+          handleSelect(value);
+          unmount();
+        },
+        onCancel: () => {
+          handleCancel();
+          unmount();
+        },
+      })
+    );
+
+    // Wait for the app to exit
+    waitUntilExit().catch(() => {
+      // Handle any errors during exit
+      resolve({
+        cancelled: true,
+      });
+    });
+  });
 }

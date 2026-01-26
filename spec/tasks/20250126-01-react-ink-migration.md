@@ -48,36 +48,42 @@ Unit tests alone cannot catch all TUI interaction bugs. E2E and manual testing a
 
 ## Steps
 
-### Step 1: Finalize Core Components
+### Step 1: Finalize Core Components ✅
 
 The prototype components are already implemented in `src/features/interactive-ink/`.
 
-- [ ] Review and finalize `SearchableMultiSelect` component
-- [ ] Review and finalize `Select` component
-- [ ] Add unit tests for components (if feasible with Ink)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Review and finalize `SearchableMultiSelect` component
+- [x] Review and finalize `Select` component
+- [x] Add unit tests for components (if feasible with Ink)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
-### Step 2: Create Integration Layer
+### Step 2: Create Integration Layer ✅
 
 Create a unified API that mirrors the existing interactive module.
 
-- [ ] Create `src/features/interactive-ink/reference-select.ts`
+- [x] Create `src/features/interactive-ink/reference-select.ts`
   - Export `runReferenceSelect(options)` function
   - Match interface from `spec/features/interactive-id-selection.md`
-- [ ] Create `src/features/interactive-ink/style-select.ts`
+- [x] Create `src/features/interactive-ink/style-select.ts`
   - Export `runStyleSelect(options)` function
   - Support built-in and custom CSL styles
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
-### Step 3: Migrate to `src/features/interactive/`
+Note: Integration layer is implemented directly in `src/features/interactive/` as part of Step 3.
+
+### Step 3: Migrate to `src/features/interactive/` ✅
 
 Move React Ink implementation to replace Enquirer-based code.
 
-- [ ] Replace Enquirer components in `src/features/interactive/` with React Ink components
-- [ ] Update `src/features/interactive/reference-select.ts` to use React Ink
-- [ ] Update `src/features/interactive/style-select.ts` to use React Ink
-- [ ] Ensure all exports from `src/features/interactive/index.ts` work correctly
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Replace Enquirer components in `src/features/interactive/` with React Ink components
+  - `search-prompt.ts` now uses React Ink `SearchableMultiSelect`
+  - `style-select.ts` now uses React Ink `Select`
+  - `action-menu.ts` now uses React Ink `Select`
+- [x] Update `src/features/interactive/reference-select.ts` to use React Ink (unchanged, uses runSearchPrompt)
+- [x] Update `src/features/interactive/style-select.ts` to use React Ink
+- [x] Ensure all exports work correctly (no index.ts, individual imports used)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] All unit tests pass
 
 ### Step 4: Migrate Interactive Search Command
 

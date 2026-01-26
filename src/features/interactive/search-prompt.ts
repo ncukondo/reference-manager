@@ -1,13 +1,20 @@
 /**
- * Interactive search prompt using Enquirer's AutoComplete
+ * Interactive search prompt using React Ink
  *
  * Provides real-time incremental search with multiple selection support.
  */
 
+import { render } from "ink";
+import type React from "react";
+import { createElement } from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
+import {
+  type Choice,
+  SearchableMultiSelect,
+  type SortOption,
+} from "../interactive-ink/components/index.js";
 import type { SearchResult } from "../search/types.js";
-import type { AutoCompleteChoice } from "./enquirer.js";
-import { formatSearchResult } from "./format.js";
+import { formatAuthors } from "./format.js";
 
 /**
  * Configuration for the search prompt
@@ -15,7 +22,7 @@ import { formatSearchResult } from "./format.js";
 export interface SearchPromptConfig {
   /** Maximum number of results to display */
   limit: number;
-  /** Debounce delay in milliseconds */
+  /** Debounce delay in milliseconds (not used in Ink version, kept for API compatibility) */
   debounceMs: number;
 }
 
@@ -32,59 +39,6 @@ export interface SearchPromptResult {
   selected: CslItem[];
   /** Whether the prompt was cancelled */
   cancelled: boolean;
-}
-
-/**
- * Maps internal choice value to CslItem
- */
-interface ChoiceData {
-  index: number;
-  item: CslItem;
-}
-
-/**
- * Creates choices from search results
- */
-export function createChoices(
-  results: SearchResult[],
-  terminalWidth: number
-): AutoCompleteChoice[] {
-  return results.map((result, index) => {
-    const displayIndex = index + 1;
-    const formattedText = formatSearchResult(result.reference, displayIndex, terminalWidth);
-
-    // Enquirer returns the 'name' property on selection when 'value' is not defined
-    // So we store the JSON data in 'name' and use 'message' for display
-    return {
-      name: JSON.stringify({
-        index,
-        item: result.reference,
-      } satisfies ChoiceData),
-      message: formattedText,
-    };
-  });
-}
-
-/**
- * Parses selected values back to CslItems
- */
-export function parseSelectedValues(values: string | string[]): CslItem[] {
-  const valueArray = Array.isArray(values) ? values : [values];
-  const items: CslItem[] = [];
-
-  for (const value of valueArray) {
-    if (!value) continue;
-    try {
-      const data = JSON.parse(value) as ChoiceData;
-      items.push(data.item);
-    } catch {
-      // If parsing fails, the value might be just the id (name)
-      // In this case, we can't recover the full item
-      // This shouldn't happen in normal operation
-    }
-  }
-
-  return items;
 }
 
 /**
@@ -117,37 +71,143 @@ export function calculateEffectiveLimit(configLimit: number): number {
 }
 
 /**
- * Collects enabled (selected) item IDs from choices
+ * Extract year from CSL item
  */
-function collectEnabledIds(choices: AutoCompleteChoice[]): Set<string> {
-  const enabledIds = new Set<string>();
-  for (const choice of choices) {
-    if ((choice as { enabled?: boolean }).enabled) {
-      try {
-        const data = JSON.parse(choice.name) as ChoiceData;
-        enabledIds.add(data.item.id);
-      } catch {
-        // Ignore parse errors
-      }
-    }
-  }
-  return enabledIds;
+function extractYear(item: CslItem): number | undefined {
+  const dateParts = item.issued?.["date-parts"];
+  if (!dateParts || dateParts.length === 0) return undefined;
+  const firstDatePart = dateParts[0];
+  if (!firstDatePart || firstDatePart.length === 0) return undefined;
+  return firstDatePart[0];
 }
 
 /**
- * Restores enabled state for choices matching the given IDs
+ * Extract published date from CSL item
  */
-function restoreEnabledState(choices: AutoCompleteChoice[], enabledIds: Set<string>): void {
-  for (const choice of choices) {
-    try {
-      const data = JSON.parse(choice.name) as ChoiceData;
-      if (enabledIds.has(data.item.id)) {
-        (choice as { enabled?: boolean }).enabled = true;
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }
+function extractPublishedDate(item: CslItem): Date | undefined {
+  const dateParts = item.issued?.["date-parts"];
+  if (!dateParts || dateParts.length === 0) return undefined;
+  const firstDatePart = dateParts[0];
+  if (!firstDatePart || firstDatePart.length === 0) return undefined;
+  const [year, month = 1, day = 1] = firstDatePart;
+  if (year === undefined) return undefined;
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Extract updated date from CSL item (from custom.timestamp)
+ */
+function extractUpdatedDate(item: CslItem): Date | undefined {
+  const dateStr = item.custom?.timestamp;
+  if (!dateStr || typeof dateStr !== "string") return undefined;
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+/**
+ * Extract created date from CSL item (from custom.created_at)
+ */
+function extractCreatedDate(item: CslItem): Date | undefined {
+  const dateStr = item.custom?.created_at;
+  if (!dateStr || typeof dateStr !== "string") return undefined;
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+/**
+ * Format identifiers for meta line
+ */
+function formatIdentifiers(item: CslItem): string {
+  const parts: string[] = [];
+  if (item.DOI) parts.push(`DOI: ${item.DOI}`);
+  if (item.PMID) parts.push(`PMID: ${item.PMID}`);
+  if (item.PMCID) parts.push(`PMCID: ${item.PMCID}`);
+  if (item.ISBN) parts.push(`ISBN: ${item.ISBN}`);
+  return parts.join(" · ");
+}
+
+/**
+ * Format item type for display
+ */
+function formatType(type: string): string {
+  const typeMap: Record<string, string> = {
+    "article-journal": "Journal article",
+    "article-magazine": "Magazine article",
+    "article-newspaper": "Newspaper article",
+    book: "Book",
+    chapter: "Book chapter",
+    "paper-conference": "Conference paper",
+    thesis: "Thesis",
+    report: "Report",
+    webpage: "Web page",
+  };
+  return typeMap[type] ?? type;
+}
+
+/**
+ * Convert CslItem to Choice for SearchableMultiSelect
+ */
+function toChoice(item: CslItem): Choice<CslItem> {
+  const authors = formatAuthors(item.author);
+  const year = extractYear(item);
+  const identifiers = formatIdentifiers(item);
+  const itemType = formatType(item.type);
+
+  // Build meta line: Year · Type · Identifiers
+  const metaParts: string[] = [];
+  if (year) metaParts.push(String(year));
+  metaParts.push(itemType);
+  if (identifiers) metaParts.push(identifiers);
+
+  const updatedDate = extractUpdatedDate(item);
+  const createdDate = extractCreatedDate(item);
+  const publishedDate = extractPublishedDate(item);
+
+  return {
+    id: item.id,
+    title: item.title ?? "(No title)",
+    subtitle: authors || "(No authors)",
+    meta: metaParts.join(" · "),
+    value: item,
+    ...(updatedDate && { updatedDate }),
+    ...(createdDate && { createdDate }),
+    ...(publishedDate && { publishedDate }),
+  };
+}
+
+/**
+ * Props for the SearchPromptApp component
+ */
+interface SearchPromptAppProps {
+  choices: Choice<CslItem>[];
+  filterFn: (query: string, choices: Choice<CslItem>[]) => Choice<CslItem>[];
+  visibleCount: number;
+  defaultSort: SortOption;
+  onSubmit: (selected: Choice<CslItem>[]) => void;
+  onCancel: () => void;
+}
+
+/**
+ * SearchPromptApp component - wraps SearchableMultiSelect for search prompt
+ */
+function SearchPromptApp({
+  choices,
+  filterFn,
+  visibleCount,
+  defaultSort,
+  onSubmit,
+  onCancel,
+}: SearchPromptAppProps): React.ReactElement {
+  return createElement(SearchableMultiSelect<CslItem>, {
+    choices,
+    filterFn,
+    visibleCount,
+    onSubmit,
+    onCancel,
+    header: "Search references",
+    placeholder: "Type to search...",
+    defaultSort,
+  });
 }
 
 /**
@@ -157,220 +217,103 @@ export async function runSearchPrompt(
   allReferences: CslItem[],
   searchFn: SearchFunction,
   config: SearchPromptConfig,
-  initialQuery = ""
+  _initialQuery = "" // kept for API compatibility, not used in Ink version
 ): Promise<SearchPromptResult> {
-  // Dynamic import to allow mocking in tests
-  // enquirer is a CommonJS module, so we must use default import
-  const enquirer = await import("enquirer");
-  const BaseAutoComplete = (enquirer.default as unknown as Record<string, unknown>)
-    .AutoComplete as new (
-    options: Record<string, unknown>
-  ) => {
-    run(): Promise<string | string[]>;
-  };
+  // Convert references to choices
+  const choices = allReferences.map(toChoice);
 
-  const terminalWidth = getTerminalWidth();
-  // Calculate effective limit based on terminal height
+  // Calculate effective visible count
   const effectiveLimit = calculateEffectiveLimit(config.limit);
 
-  // Create initial choices from all references (limited)
-  const initialResults: SearchResult[] = initialQuery
-    ? searchFn(initialQuery).slice(0, effectiveLimit)
-    : allReferences.slice(0, effectiveLimit).map((ref) => ({
-        reference: ref,
-        overallStrength: "exact" as const,
-        tokenMatches: [],
-        score: 0,
-      }));
+  // Create filter function using the provided search function
+  const filterFn = (query: string, choices: Choice<CslItem>[]): Choice<CslItem>[] => {
+    if (!query.trim()) return choices;
 
-  const initialChoices = createChoices(initialResults, terminalWidth);
-
-  // Track last search query to avoid redundant searches
-  let lastQuery = initialQuery;
-
-  const promptOptions = {
-    name: "references",
-    message: "Search references",
-    initial: initialQuery,
-    choices: initialChoices,
-    multiple: true,
-    limit: effectiveLimit,
-    footer: "(Tab: select, Enter: confirm)",
-    suggest: (input: string, choices: AutoCompleteChoice[]) => {
-      // If input hasn't changed, return current choices
-      if (input === lastQuery) {
-        return choices;
-      }
-      lastQuery = input;
-
-      // Collect enabled (selected) item IDs from current choices
-      const enabledIds = collectEnabledIds(choices);
-
-      // Create new choices based on input
-      const newChoices = input.trim()
-        ? createChoices(searchFn(input).slice(0, effectiveLimit), terminalWidth)
-        : createChoices(
-            allReferences.slice(0, effectiveLimit).map((ref) => ({
-              reference: ref,
-              overallStrength: "exact" as const,
-              tokenMatches: [],
-              score: 0,
-            })),
-            terminalWidth
-          );
-
-      // Restore enabled state for matching items
-      restoreEnabledState(newChoices, enabledIds);
-
-      return newChoices;
-    },
+    const results = searchFn(query);
+    return results.map((r) => toChoice(r.reference));
   };
 
-  try {
-    const prompt = new BaseAutoComplete(promptOptions);
-
-    // Override key handlers:
-    // - Space: append character instead of toggling selection
-    // - Tab: toggle selection (like space does in default multiple mode)
-    const promptInstance = prompt as unknown as {
-      space: () => void;
-      dispatch: (s: string, key: { name: string }) => Promise<void>;
-      append: (ch: string) => void;
-      toggle: (item: unknown) => void;
-      focused: unknown;
-      run(): Promise<string | string[]>;
+  // Create a promise to capture the result
+  return new Promise<SearchPromptResult>((resolve) => {
+    const handleSubmit = (selected: Choice<CslItem>[]): void => {
+      resolve({
+        selected: selected.map((c) => c.value),
+        cancelled: false,
+      });
     };
 
-    promptInstance.space = function () {
-      return this.append(" ");
-    };
-
-    // Fix backspace at position 0 bug in enquirer
-    // enquirer's delete() doesn't check if cursor is at position 0
-    const promptWithDelete = promptInstance as unknown as {
-      delete: () => unknown;
-      cursor: number;
-      input: string;
-      alert: () => unknown;
-      moveCursor: (n: number) => void;
-      complete: () => Promise<void>;
-    };
-    if (typeof promptWithDelete.delete === "function") {
-      const originalDelete = promptWithDelete.delete.bind(promptWithDelete);
-      promptWithDelete.delete = function () {
-        // Prevent deletion when cursor is at position 0
-        if (this.cursor <= 0) {
-          return this.alert();
-        }
-        return originalDelete();
-      };
-    }
-
-    // Override next() which is called on Tab key press
-    // Make it toggle selection only (no movement, use arrow keys to move)
-    const promptWithRender = promptInstance as unknown as {
-      next: () => void;
-      render: () => void;
-    };
-    promptWithRender.next = function () {
-      promptInstance.toggle(promptInstance.focused);
-      this.render();
-    };
-
-    // Fix cursor position calculation bug in enquirer
-    // enquirer's restore() uses input.length - cursor for cursor positioning,
-    // but this doesn't account for the actual display width properly
-    const promptWithRestore = promptInstance as unknown as {
-      restore: () => void;
-      sections: () => {
-        header: string;
-        prompt: string;
-        after: string;
-        rest: string[];
-        last: string;
-      };
-      cursor: number;
-      input: string;
-      initial: string;
-      value: string;
-      state: { size: number; prompt: string };
-      stdout: { write: (s: string) => void };
-      options: { show?: boolean };
-    };
-
-    // Only override if restore method exists (it won't in test mocks)
-    if (typeof promptWithRestore.restore === "function") {
-      const originalRestore = promptWithRestore.restore.bind(promptWithRestore);
-      promptWithRestore.restore = function () {
-        if (this.options.show === false) return;
-
-        const sections = this.sections();
-        const size = sections.rest.length;
-        this.state.size = size;
-
-        if (size > 0) {
-          // Move cursor up by 'size' lines and to the correct column position
-          // Use the actual prompt from state (without input) for accurate positioning
-          const basePrompt = this.state.prompt || "";
-          const cursorPos = this.cursor;
-
-          // Strip ANSI escape codes to get accurate display width
-          // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes require control characters
-          const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
-          const promptDisplayWidth = stripAnsi(basePrompt).length;
-
-          // Calculate target column: base prompt length + cursor position in input
-          // Add 1 because cursor.to() uses 0-indexed column but we want 1-indexed for ANSI
-          const targetCol = promptDisplayWidth + cursorPos;
-
-          // Build ANSI escape sequence
-          let codes = "";
-          codes += `\u001b[${size}A`; // cursor up
-          codes += `\u001b[${targetCol + 1}G`; // cursor to column (1-indexed)
-
-          this.stdout.write(codes);
-        } else {
-          // Fall back to original behavior for non-list cases
-          originalRestore();
-        }
-      };
-    }
-
-    const result = await promptInstance.run();
-
-    // Workaround for Enquirer bug: focused item with enabled=true may not be in result
-    const promptAny = prompt as unknown as {
-      focused?: { name: string; enabled?: boolean };
-      selected?: Array<{ name: string }>;
-    };
-
-    let valuesToParse: string | string[] = result;
-
-    // If result is empty but focused item is enabled, use focused item
-    if (
-      Array.isArray(result) &&
-      result.length === 0 &&
-      promptAny.focused?.enabled &&
-      promptAny.focused?.name
-    ) {
-      valuesToParse = [promptAny.focused.name];
-    }
-
-    // Handle result
-    const selected = parseSelectedValues(valuesToParse);
-
-    return {
-      selected,
-      cancelled: false,
-    };
-  } catch (error) {
-    // Enquirer throws an empty string when cancelled
-    if (error === "" || (error instanceof Error && error.message === "")) {
-      return {
+    const handleCancel = (): void => {
+      resolve({
         selected: [],
         cancelled: true,
-      };
+      });
+    };
+
+    // Render the Ink app
+    const { unmount, waitUntilExit } = render(
+      createElement(SearchPromptApp, {
+        choices,
+        filterFn,
+        visibleCount: effectiveLimit,
+        defaultSort: "updated-desc",
+        onSubmit: (selected) => {
+          handleSubmit(selected);
+          unmount();
+        },
+        onCancel: () => {
+          handleCancel();
+          unmount();
+        },
+      })
+    );
+
+    // Wait for the app to exit
+    waitUntilExit().catch(() => {
+      // Handle any errors during exit
+      resolve({
+        selected: [],
+        cancelled: true,
+      });
+    });
+  });
+}
+
+// Export legacy functions for backward compatibility with existing tests
+// These are no longer used by the React Ink implementation
+export interface AutoCompleteChoice {
+  name: string;
+  message: string;
+}
+
+/**
+ * Creates choices from search results (legacy, for test compatibility)
+ */
+export function createChoices(
+  results: SearchResult[],
+  _terminalWidth: number
+): AutoCompleteChoice[] {
+  return results.map((result, index) => ({
+    name: JSON.stringify({ index, item: result.reference }),
+    message: `[${index + 1}] ${result.reference.title ?? "(No title)"}`,
+  }));
+}
+
+/**
+ * Parses selected values back to CslItems (legacy, for test compatibility)
+ */
+export function parseSelectedValues(values: string | string[]): CslItem[] {
+  const valueArray = Array.isArray(values) ? values : [values];
+  const items: CslItem[] = [];
+
+  for (const value of valueArray) {
+    if (!value) continue;
+    try {
+      const data = JSON.parse(value) as { index: number; item: CslItem };
+      items.push(data.item);
+    } catch {
+      // Ignore parse errors
     }
-    throw error;
   }
+
+  return items;
 }
