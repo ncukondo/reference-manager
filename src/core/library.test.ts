@@ -432,7 +432,7 @@ describe("Library", () => {
         const result = await library.update("smith-2023", { id: "tanaka-2022" });
 
         expect(result.updated).toBe(false);
-        expect(result.idCollision).toBe(true);
+        expect(result.errorType).toBe("id_collision");
         expect(result.item).toBeUndefined();
         // Original reference should be unchanged
         expect(await library.find("smith-2023")).toBeDefined();
@@ -466,7 +466,7 @@ describe("Library", () => {
         const result = await library.update("smith-2023", { id: "smith-2023", title: "Updated" });
 
         expect(result.updated).toBe(true);
-        expect(result.idCollision).toBeUndefined();
+        expect(result.errorType).toBeUndefined();
         expect(result.item?.title).toBe("Updated");
       });
 

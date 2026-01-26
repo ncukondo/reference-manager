@@ -95,8 +95,8 @@ describe("updateReference", () => {
   });
 
   describe("ID collision handling", () => {
-    it("should return idCollision when collision occurs with fail option", async () => {
-      const updateResult: UpdateResult = { updated: false, idCollision: true };
+    it("should return errorType when collision occurs with fail option", async () => {
+      const updateResult: UpdateResult = { updated: false, errorType: "id_collision" };
       (mockLibrary.update as ReturnType<typeof vi.fn>).mockResolvedValue(updateResult);
 
       const options: UpdateOperationOptions = {
@@ -107,7 +107,7 @@ describe("updateReference", () => {
       const result = await updateReference(mockLibrary, options);
 
       expect(result.updated).toBe(false);
-      expect(result.idCollision).toBe(true);
+      expect(result.errorType).toBe("id_collision");
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
 

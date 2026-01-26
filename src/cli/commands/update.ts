@@ -354,7 +354,7 @@ export async function executeUpdate(
  */
 export function formatUpdateOutput(result: UpdateCommandResult, identifier: string): string {
   if (!result.updated) {
-    if (result.idCollision) {
+    if (result.errorType === "id_collision") {
       return `Update failed: ID collision for ${identifier}`;
     }
     return `Reference not found: ${identifier}`;

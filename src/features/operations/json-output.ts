@@ -206,7 +206,7 @@ export function formatUpdateJsonOutput(
 
   // Handle failure cases
   if (!result.updated || !result.item) {
-    if (result.idCollision) {
+    if (result.errorType === "id_collision") {
       return {
         success: false,
         id: originalId,

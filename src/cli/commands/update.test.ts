@@ -60,7 +60,7 @@ describe("update command", () => {
     it("should format ID collision result", () => {
       const result: UpdateOperationResult = {
         updated: false,
-        idCollision: true,
+        errorType: "id_collision",
       };
 
       const output = formatUpdateOutput(result, "Smith-2020");
@@ -542,7 +542,7 @@ describe("update command", () => {
       it("should format ID collision as JSON error", () => {
         const result: UpdateOperationResult = {
           updated: false,
-          idCollision: true,
+          errorType: "id_collision",
         };
 
         const output = formatUpdateJsonOutput(result, "Smith-2020", {});

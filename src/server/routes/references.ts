@@ -96,7 +96,7 @@ export function createReferencesRoute(library: Library) {
 
     // Return operation result with appropriate status code
     if (!result.updated) {
-      const status = result.idCollision ? 409 : 404;
+      const status = result.errorType === "id_collision" ? 409 : 404;
       return c.json(result, status);
     }
 
@@ -137,7 +137,7 @@ export function createReferencesRoute(library: Library) {
 
     // Return operation result with appropriate status code
     if (!result.updated) {
-      const status = result.idCollision ? 409 : 404;
+      const status = result.errorType === "id_collision" ? 409 : 404;
       return c.json(result, status);
     }
 

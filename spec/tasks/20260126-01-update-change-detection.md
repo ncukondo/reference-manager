@@ -33,10 +33,10 @@ Update `UpdateResult` interface in `src/core/library-interface.ts`:
 - Remove `idCollision?: boolean` (replaced by `errorType`)
 - Update JSDoc comments
 
-- [ ] Update interface definition
-- [ ] Update all usages of `idCollision` to `errorType === 'id_collision'`
-- [ ] Update existing tests
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Update interface definition
+- [x] Update all usages of `idCollision` to `errorType === 'id_collision'`
+- [x] Update existing tests
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Change Detection in Library.updateReference
 

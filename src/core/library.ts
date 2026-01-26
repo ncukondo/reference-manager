@@ -328,7 +328,7 @@ export class Library implements ILibrary {
     );
 
     if (collision) {
-      return { updated: false, idCollision: true };
+      return { updated: false, errorType: "id_collision" };
     }
 
     const updatedItem = this.buildUpdatedItem(existingItem, updates, newId);
