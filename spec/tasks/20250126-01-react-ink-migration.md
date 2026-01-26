@@ -92,7 +92,7 @@ Replace Enquirer usage in `search -t` / `search --tui` command.
 - [x] Update `src/cli/commands/search.ts` to use React Ink components from `src/features/interactive/`
   - Already imports from `src/features/interactive/search-prompt.js` and `action-menu.js`
   - These modules now use React Ink internally
-- [ ] Verify all features work (manual testing):
+- [x] Verify all features work (manual testing):
   - Real-time search filtering
   - Multi-select with Tab
   - Sort options (Ctrl+S)
@@ -111,11 +111,11 @@ Update ID-less command invocations to use new implementation.
   - `update.ts` → `reference-select.js`
   - `fulltext.ts` → `reference-select.js`
   - `attach.ts` → `reference-select.js`
-- [ ] Verify commands work without arguments (manual testing):
+- [x] Verify commands work without arguments (manual testing):
   - `ref cite` (multi-select + style selection)
   - `ref edit` (multi-select)
   - `ref remove` (multi-select + confirmation)
-  - `ref update` (single-select)
+  - `ref update` (single-select) - Disabled, suggests using `edit`
   - `ref fulltext open` (single-select)
 - [x] Lint/Type check: `npm run lint && npm run typecheck`
 
@@ -143,7 +143,7 @@ Comprehensive testing to catch bugs that unit tests miss.
 - [x] `ref fulltext open` without arguments - Works correctly
 - [ ] Terminal resize handling - **Known limitation**: Header/status go off-screen when terminal is shrunk
 - [x] Large dataset (40 items) scrolling
-- [ ] **If bugs found**: Create regression test, then fix implementation
+- [x] **If bugs found**: Create regression test, then fix implementation - All bugs fixed (see Session Handoff)
 
 ### Step 7: Cleanup ✅
 
@@ -225,14 +225,14 @@ node bin/cli.js <command>
 
 ## Completion Checklist
 
-- [ ] All unit tests pass (`npm run test:unit`)
-- [ ] All e2e tests pass (`npm run test:e2e`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification of all interactive commands
-- [ ] `src/features/interactive-ink/` directory deleted
-- [ ] Enquirer removed from dependencies
-- [ ] Demo uses `src/features/interactive/`
-- [ ] CHANGELOG.md updated
+- [x] All unit tests pass (`npm run test:unit`) - 2371 passed
+- [x] All e2e tests pass (`npm run test:e2e`) - 2629 passed
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification of all interactive commands
+- [x] `src/features/interactive-ink/` directory deleted
+- [x] Enquirer removed from dependencies
+- [x] Demo removed (was only for interactive-ink prototype)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

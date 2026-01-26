@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Interactive TUI**: Migrated from Enquirer to React Ink for all interactive components
+  - Improved declarative UI model with better state management
+  - Terminal history preserved using alternate screen buffer
+  - Single App Pattern for multi-step flows (e.g., `cite` command)
+  - All interactive commands (`search -t`, `cite`, `edit`, `remove`, `fulltext open`, `attach open`) now use React Ink
+  - **Known limitation**: Terminal resize may cause header/status to scroll off-screen
+
+### Removed
+
+- **Enquirer dependency**: Replaced with React Ink and readline for confirmations
+
 ### Added
 
 - **Attachments System**: Comprehensive attachment management replacing the limited fulltext feature
