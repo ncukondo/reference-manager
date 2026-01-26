@@ -1,26 +1,24 @@
 /**
- * Interactive search prompt using React Ink
+ * Runner for CiteFlowApp
  *
- * Provides real-time incremental search with multiple selection support.
+ * Provides the public API for running the cite flow.
  */
 
-import { render, useApp } from "ink";
-import type React from "react";
+import { render } from "ink";
 import { createElement } from "react";
-import type { CslItem } from "../../core/csl-json/types.js";
-import type { SearchResult } from "../search/types.js";
-import { restoreStdinAfterInk } from "./alternate-screen.js";
-import { type Choice, SearchableMultiSelect, type SortOption } from "./components/index.js";
-import { formatAuthors } from "./format.js";
+import type { CslItem } from "../../../core/csl-json/types.js";
+import type { SearchResult } from "../../search/types.js";
+import { restoreStdinAfterInk } from "../alternate-screen.js";
+import type { Choice, SelectOption, SortOption } from "../components/index.js";
+import { formatAuthors } from "../format.js";
+import { CiteFlowApp, type CiteFlowResult } from "./CiteFlowApp.js";
 
 /**
- * Configuration for the search prompt
+ * Configuration for the cite flow
  */
-export interface SearchPromptConfig {
+export interface CiteFlowConfig {
   /** Maximum number of results to display */
   limit: number;
-  /** Debounce delay in milliseconds (not used in Ink version, kept for API compatibility) */
-  debounceMs: number;
 }
 
 /**
@@ -29,40 +27,20 @@ export interface SearchPromptConfig {
 export type SearchFunction = (query: string) => SearchResult[];
 
 /**
- * Result from the search prompt
- */
-export interface SearchPromptResult {
-  /** Selected references */
-  selected: CslItem[];
-  /** Whether the prompt was cancelled */
-  cancelled: boolean;
-}
-
-/**
- * Gets terminal width, falling back to 80 if not available
- */
-export function getTerminalWidth(): number {
-  return process.stdout.columns ?? 80;
-}
-
-/**
  * Gets terminal height, falling back to 24 if not available
  */
-export function getTerminalHeight(): number {
+function getTerminalHeight(): number {
   return process.stdout.rows ?? 24;
 }
 
 /**
  * Calculates the effective limit for the autocomplete list
- * based on terminal height to prevent input field from being hidden.
- * Reserves space for: prompt header (1), input line (1), footer hint (1), and padding (2)
- * Each item displays up to 3 lines (author/year, title, identifiers)
  */
-export function calculateEffectiveLimit(configLimit: number): number {
+function calculateEffectiveLimit(configLimit: number): number {
   const terminalHeight = getTerminalHeight();
   // Reserve lines for: header(2) + search box(3) + status(1) + scroll indicators(2) + footer(2) = 10
   const reservedLines = 10;
-  const linesPerItem = 3; // each search result shows up to 3 lines
+  const linesPerItem = 3;
   const availableLines = terminalHeight - reservedLines;
   const maxVisibleChoices = Math.max(1, Math.floor(availableLines / linesPerItem));
   return configLimit > 0 ? Math.min(configLimit, maxVisibleChoices) : maxVisibleChoices;
@@ -174,61 +152,29 @@ function toChoice(item: CslItem): Choice<CslItem> {
 }
 
 /**
- * Props for the SearchPromptApp component
+ * Options for running the cite flow
  */
-interface SearchPromptAppProps {
-  choices: Choice<CslItem>[];
-  filterFn: (query: string, choices: Choice<CslItem>[]) => Choice<CslItem>[];
-  visibleCount: number;
-  defaultSort: SortOption;
-  onSubmit: (selected: Choice<CslItem>[]) => void;
-  onCancel: () => void;
+export interface RunCiteFlowOptions {
+  /** All references available for selection */
+  allReferences: CslItem[];
+  /** Search function for filtering */
+  searchFn: SearchFunction;
+  /** Flow configuration */
+  config: CiteFlowConfig;
+  /** Style options for style selection */
+  styleOptions: SelectOption<string>[];
+  /** Whether to show style selection */
+  showStyleSelect: boolean;
 }
 
 /**
- * SearchPromptApp component - wraps SearchableMultiSelect for search prompt
+ * Run the cite flow (reference selection → style selection if needed)
+ *
+ * This is the main entry point for interactive cite command.
  */
-function SearchPromptApp({
-  choices,
-  filterFn,
-  visibleCount,
-  defaultSort,
-  onSubmit,
-  onCancel,
-}: SearchPromptAppProps): React.ReactElement {
-  const { exit } = useApp();
+export async function runCiteFlow(options: RunCiteFlowOptions): Promise<CiteFlowResult> {
+  const { allReferences, searchFn, config, styleOptions, showStyleSelect } = options;
 
-  const handleSubmit = (selected: Choice<CslItem>[]): void => {
-    onSubmit(selected);
-    exit();
-  };
-
-  const handleCancel = (): void => {
-    onCancel();
-    exit();
-  };
-
-  return createElement(SearchableMultiSelect<CslItem>, {
-    choices,
-    filterFn,
-    visibleCount,
-    onSubmit: handleSubmit,
-    onCancel: handleCancel,
-    header: "Search references",
-    placeholder: "Type to search...",
-    defaultSort,
-  });
-}
-
-/**
- * Creates and runs an interactive search prompt
- */
-export async function runSearchPrompt(
-  allReferences: CslItem[],
-  searchFn: SearchFunction,
-  config: SearchPromptConfig,
-  _initialQuery = "" // kept for API compatibility, not used in Ink version
-): Promise<SearchPromptResult> {
   // Convert references to choices
   const choices = allReferences.map(toChoice);
 
@@ -243,90 +189,53 @@ export async function runSearchPrompt(
     return results.map((r) => toChoice(r.reference));
   };
 
-  // Create a promise to capture the result
-  return new Promise<SearchPromptResult>((resolve) => {
-    let result: SearchPromptResult = { selected: [], cancelled: true };
+  // Default sort option
+  const defaultSort: SortOption = "updated-desc";
 
-    const handleSubmit = (selected: Choice<CslItem>[]): void => {
-      result = {
-        selected: selected.map((c) => c.value),
-        cancelled: false,
-      };
+  // Create a promise to capture the result
+  return new Promise<CiteFlowResult>((resolve) => {
+    let flowResult: CiteFlowResult = {
+      identifiers: [],
+      cancelled: true,
+    };
+
+    const handleComplete = (result: CiteFlowResult): void => {
+      flowResult = result;
     };
 
     const handleCancel = (): void => {
-      result = {
-        selected: [],
+      flowResult = {
+        identifiers: [],
         cancelled: true,
       };
     };
 
-    // Render the Ink app
-    const { waitUntilExit, clear } = render(
-      createElement(SearchPromptApp, {
+    // Render the Ink app (single render for entire flow)
+    const { waitUntilExit } = render(
+      createElement(CiteFlowApp, {
         choices,
         filterFn,
         visibleCount: effectiveLimit,
-        defaultSort: "updated-desc",
-        onSubmit: handleSubmit,
+        defaultSort,
+        styleOptions,
+        showStyleSelect,
+        onComplete: handleComplete,
         onCancel: handleCancel,
       })
     );
 
-    // Wait for the app to exit, clear the screen, then resolve
+    // Wait for the app to exit, then resolve
     waitUntilExit()
       .then(() => {
-        clear();
         restoreStdinAfterInk();
-        resolve(result);
+        resolve(flowResult);
       })
       .catch(() => {
-        clear();
         restoreStdinAfterInk();
         resolve({
-          selected: [],
+          identifiers: [],
           cancelled: true,
         });
       });
   });
-}
-
-// Export legacy functions for backward compatibility with existing tests
-// These are no longer used by the React Ink implementation
-export interface AutoCompleteChoice {
-  name: string;
-  message: string;
-}
-
-/**
- * Creates choices from search results (legacy, for test compatibility)
- */
-export function createChoices(
-  results: SearchResult[],
-  _terminalWidth: number
-): AutoCompleteChoice[] {
-  return results.map((result, index) => ({
-    name: JSON.stringify({ index, item: result.reference }),
-    message: `[${index + 1}] ${result.reference.title ?? "(No title)"}`,
-  }));
-}
-
-/**
- * Parses selected values back to CslItems (legacy, for test compatibility)
- */
-export function parseSelectedValues(values: string | string[]): CslItem[] {
-  const valueArray = Array.isArray(values) ? values : [values];
-  const items: CslItem[] = [];
-
-  for (const value of valueArray) {
-    if (!value) continue;
-    try {
-      const data = JSON.parse(value) as { index: number; item: CslItem };
-      items.push(data.item);
-    } catch {
-      // Ignore parse errors
-    }
-  }
-
-  return items;
 }

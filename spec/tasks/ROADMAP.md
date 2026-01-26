@@ -71,6 +71,8 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 22**: Interactive ID Selection (fallback to interactive search for ID selection)
 - **Phase 23**: Config Command (show/get/set/unset/list-keys/path/edit subcommands)
 - **Phase 24**: CLI Option Consistency (unified input/output options, --tui, config keys)
+- **Phase 25**: Attachments Architecture (per-reference directories, roles, attach command)
+- **Phase 26**: React Ink Migration (replaced Enquirer with React Ink for all TUI)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -78,20 +80,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 25: Attachments Architecture
-
-Comprehensive file attachment system replacing the limited fulltext feature.
-
-- **Task 1**: Attachments system (`20250124-01-attachments-architecture.md`)
-  - Per-reference directories for file organization
-  - Role-based file categorization (fulltext, supplement, notes, draft, custom)
-  - `attach` command with open/add/list/get/detach/sync subcommands
-  - Interactive mode for manual file addition (TTY)
-  - WSL support via wslview
-  - Migrate `fulltext` command to use new attachments backend
-
-**Spec**: `spec/features/attachments.md`
-**ADR**: `spec/decisions/ADR-013-attachments-architecture.md`
+No active development phase. Next steps below.
 
 ---
 
@@ -110,7 +99,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 26: Citation Enhancements
+### Phase 27: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -119,7 +108,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 27: Advanced Features
+### Phase 28: Advanced Features
 
 Additional features beyond core functionality:
 

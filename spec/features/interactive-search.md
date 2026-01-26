@@ -187,8 +187,9 @@ Not in initial scope, may be added later:
 
 ## Dependencies
 
-- **Enquirer**: Interactive prompt library
-- See `spec/decisions/ADR-012-use-enquirer-for-interactive-prompts.md`
+- **React Ink**: Declarative terminal UI framework
+- **ink-ui**: Component library for Ink
+- See `spec/decisions/ADR-014-use-react-ink-for-tui.md`
 
 ## Related
 

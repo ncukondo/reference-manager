@@ -4,6 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import { stdin, stdout } from "node:process";
+import * as readline from "node:readline";
 import { loadConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 
@@ -183,26 +184,41 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
     return true;
   }
 
-  // Use Enquirer for confirmation to work correctly after other Enquirer prompts
-  // enquirer is a CommonJS module, so we must use default import
-  const enquirer = await import("enquirer");
-  const Confirm = (enquirer.default as unknown as Record<string, unknown>)
-    .Confirm as new (options: { name: string; message: string; initial?: boolean }) => {
-    run: () => Promise<boolean>;
-  };
+  // Ensure stdin is in normal mode (Ink may leave it in raw mode)
+  if (process.stdin.isTTY && process.stdin.isRaw) {
+    process.stdin.setRawMode(false);
+  }
 
-  const confirmPrompt = new Confirm({
-    name: "confirm",
-    message: prompt,
-    initial: false,
+  // Resume stdin and ref it to keep the event loop alive
+  // Ink may have unref'd stdin, causing Node.js to exit prematurely
+  process.stdin.resume();
+  process.stdin.ref();
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
   });
 
-  try {
-    return await confirmPrompt.run();
-  } catch {
-    // User cancelled (Ctrl+C)
-    return false;
-  }
+  return new Promise<boolean>((resolve) => {
+    let resolved = false;
+
+    rl.question(`${prompt} (y/N) `, (answer) => {
+      if (!resolved) {
+        resolved = true;
+        rl.close();
+        const normalized = answer.trim().toLowerCase();
+        resolve(normalized === "y" || normalized === "yes");
+      }
+    });
+
+    // Handle Ctrl+C or unexpected close
+    rl.on("close", () => {
+      if (!resolved) {
+        resolved = true;
+        resolve(false);
+      }
+    });
+  });
 }
 
 /**

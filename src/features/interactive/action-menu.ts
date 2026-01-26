@@ -3,8 +3,13 @@
  * Allows users to perform actions on selected references.
  */
 
+import { render } from "ink";
+import { createElement } from "react";
+import type React from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibliographyCSL, formatBibtex } from "../format/index.js";
+import { restoreStdinAfterInk } from "./alternate-screen.js";
+import { Select, type SelectOption } from "./components/index.js";
 
 /**
  * Action types available in the action menu.
@@ -40,44 +45,78 @@ export interface StyleSelectResult {
 }
 
 /**
- * Choice definition for Enquirer Select prompt.
- */
-interface SelectChoice {
-  name: string;
-  message: string;
-  value: ActionType | string;
-}
-
-/**
  * Available action choices for the action menu.
  */
-export const ACTION_CHOICES: SelectChoice[] = [
-  { name: "output-ids", message: "Output IDs (citation keys)", value: "output-ids" },
-  { name: "output-csl-json", message: "Output as CSL-JSON", value: "output-csl-json" },
-  { name: "output-bibtex", message: "Output as BibTeX", value: "output-bibtex" },
-  { name: "cite-apa", message: "Generate citation (APA)", value: "cite-apa" },
-  { name: "cite-choose", message: "Generate citation (choose style)", value: "cite-choose" },
-  { name: "cancel", message: "Cancel", value: "cancel" },
+export const ACTION_CHOICES: SelectOption<ActionType>[] = [
+  { label: "Output IDs (citation keys)", value: "output-ids" },
+  { label: "Output as CSL-JSON", value: "output-csl-json" },
+  { label: "Output as BibTeX", value: "output-bibtex" },
+  { label: "Generate citation (APA)", value: "cite-apa" },
+  { label: "Generate citation (choose style)", value: "cite-choose" },
+  { label: "Cancel", value: "cancel" },
 ];
 
 /**
  * Available style choices for citation style selection.
- * Uses BUILTIN_STYLES from config/csl-styles.ts
  */
-export const STYLE_CHOICES: SelectChoice[] = [
-  { name: "apa", message: "APA", value: "apa" },
-  { name: "vancouver", message: "Vancouver", value: "vancouver" },
-  { name: "harvard", message: "Harvard", value: "harvard" },
+export const STYLE_CHOICES: SelectOption<string>[] = [
+  { label: "APA", value: "apa" },
+  { label: "Vancouver", value: "vancouver" },
+  { label: "Harvard", value: "harvard" },
 ];
 
 /**
- * Run the style selection prompt.
+ * Props for the ActionMenuApp component
  */
+interface ActionMenuAppProps {
+  message: string;
+  options: SelectOption<ActionType>[];
+  onSelect: (value: ActionType) => void;
+  onCancel: () => void;
+}
+
+/**
+ * ActionMenuApp component - wraps Select for action menu
+ */
+function ActionMenuApp({
+  message,
+  options,
+  onSelect,
+  onCancel,
+}: ActionMenuAppProps): React.ReactElement {
+  return createElement(Select<ActionType>, {
+    options,
+    message,
+    onSelect,
+    onCancel,
+  });
+}
+
+/**
+ * Props for the StyleSelectApp component
+ */
+interface StyleSelectAppProps {
+  options: SelectOption<string>[];
+  onSelect: (value: string) => void;
+  onCancel: () => void;
+}
+
+/**
+ * StyleSelectApp component - wraps Select for style selection
+ */
+function StyleSelectApp({ options, onSelect, onCancel }: StyleSelectAppProps): React.ReactElement {
+  return createElement(Select<string>, {
+    options,
+    message: "Select citation style:",
+    onSelect,
+    onCancel,
+  });
+}
 
 /**
  * Generate output for the given action and items.
  */
-function generateOutput(action: ActionType, items: CslItem[], style = "apa"): string {
+export function generateOutput(action: ActionType, items: CslItem[], style = "apa"): string {
   switch (action) {
     case "output-ids":
       return items.map((item) => item.id).join("\n");
@@ -100,6 +139,50 @@ function generateOutput(action: ActionType, items: CslItem[], style = "apa"): st
     default:
       return "";
   }
+}
+
+/**
+ * Run the style selection prompt.
+ */
+export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
+  return new Promise<StyleSelectResult>((resolve) => {
+    let result: StyleSelectResult = { cancelled: true };
+
+    const handleSelect = (value: string): void => {
+      result = {
+        style: value,
+        cancelled: false,
+      };
+    };
+
+    const handleCancel = (): void => {
+      result = {
+        cancelled: true,
+      };
+    };
+
+    // Render the Ink app
+    const { waitUntilExit } = render(
+      createElement(StyleSelectApp, {
+        options: STYLE_CHOICES,
+        onSelect: handleSelect,
+        onCancel: handleCancel,
+      })
+    );
+
+    // Wait for the app to exit, then resolve
+    waitUntilExit()
+      .then(() => {
+        restoreStdinAfterInk();
+        resolve(result);
+      })
+      .catch(() => {
+        restoreStdinAfterInk();
+        resolve({
+          cancelled: true,
+        });
+      });
+  });
 }
 
 /**
@@ -140,39 +223,6 @@ async function processAction(action: ActionType, items: CslItem[]): Promise<Acti
   };
 }
 
-export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
-  // Dynamic import to allow mocking in tests
-  // enquirer is a CommonJS module, so we must use default import
-  const enquirer = await import("enquirer");
-  const Select = (enquirer.default as unknown as Record<string, unknown>).Select as new (
-    options: Record<string, unknown>
-  ) => { run(): Promise<string> };
-
-  const promptOptions = {
-    name: "style",
-    message: "Select citation style:",
-    choices: STYLE_CHOICES,
-  };
-
-  try {
-    const prompt = new Select(promptOptions);
-    const result = (await prompt.run()) as string;
-
-    return {
-      style: result,
-      cancelled: false,
-    };
-  } catch (error) {
-    // Enquirer throws an empty string when cancelled
-    if (error === "" || (error instanceof Error && error.message === "")) {
-      return {
-        cancelled: true,
-      };
-    }
-    throw error;
-  }
-}
-
 /**
  * Run the action menu for selected references.
  *
@@ -180,37 +230,54 @@ export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
  * @returns Action result with output
  */
 export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult> {
-  // Dynamic import to allow mocking in tests
-  // enquirer is a CommonJS module, so we must use default import
-  const enquirer = await import("enquirer");
-  const Select = (enquirer.default as unknown as Record<string, unknown>).Select as new (
-    options: Record<string, unknown>
-  ) => { run(): Promise<string> };
-
   const count = items.length;
   const refWord = count === 1 ? "reference" : "references";
   const message = `Action for ${count} selected ${refWord}:`;
 
-  const promptOptions = {
-    name: "action",
-    message,
-    choices: ACTION_CHOICES,
-  };
+  return new Promise<ActionMenuResult>((resolve) => {
+    let selectedAction: ActionType | null = null;
 
-  try {
-    const prompt = new Select(promptOptions);
-    const action = (await prompt.run()) as ActionType;
+    const handleSelect = (action: ActionType): void => {
+      selectedAction = action;
+    };
 
-    return processAction(action, items);
-  } catch (error) {
-    // Enquirer throws an empty string when cancelled
-    if (error === "" || (error instanceof Error && error.message === "")) {
-      return {
-        action: "cancel",
-        output: "",
-        cancelled: true,
-      };
-    }
-    throw error;
-  }
+    const handleCancel = (): void => {
+      selectedAction = null;
+    };
+
+    // Render the Ink app
+    const { waitUntilExit } = render(
+      createElement(ActionMenuApp, {
+        message,
+        options: ACTION_CHOICES,
+        onSelect: handleSelect,
+        onCancel: handleCancel,
+      })
+    );
+
+    // Wait for the app to exit, then process the action
+    waitUntilExit()
+      .then(async () => {
+        restoreStdinAfterInk();
+
+        if (selectedAction === null) {
+          resolve({
+            action: "cancel",
+            output: "",
+            cancelled: true,
+          });
+        } else {
+          const result = await processAction(selectedAction, items);
+          resolve(result);
+        }
+      })
+      .catch(() => {
+        restoreStdinAfterInk();
+        resolve({
+          action: "cancel",
+          output: "",
+          cancelled: true,
+        });
+      });
+  });
 }

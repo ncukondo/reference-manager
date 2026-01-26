@@ -266,7 +266,7 @@ default_format = "yaml"    # Default format: yaml, json
 ## Dependencies
 
 - **js-yaml**: YAML parsing and serialization
-- **Enquirer**: Interactive prompts for error recovery
+- **React Ink**: Interactive prompts for error recovery
 - **child_process**: Editor invocation
 
 ## Related
