@@ -131,18 +131,18 @@ Comprehensive testing to catch bugs that unit tests miss.
 - [x] Fixed: Vite config updated to externalize `ink`, `react`, `node:buffer`
 
 **Manual Testing Checklist**:
-- [ ] `ref search -t` with various queries
-- [ ] Keyboard navigation (arrows, Page Up/Down, Ctrl+A, Ctrl+E)
-- [ ] Selection (Tab to toggle, Enter to confirm)
-- [ ] Sort menu (Ctrl+S)
-- [ ] Cancel (Esc)
-- [ ] `ref cite` without arguments
-- [ ] `ref edit` without arguments
-- [ ] `ref remove` without arguments
+- [x] `ref search -t` with various queries
+- [x] Keyboard navigation (arrows, Page Up/Down, Ctrl+A) - Ctrl+E not tested (VSCode keybind conflict)
+- [x] Selection (Tab to toggle, Enter to confirm)
+- [x] Sort menu (Ctrl+S)
+- [x] Cancel (Esc)
+- [x] `ref cite` without arguments
+- [x] `ref edit` without arguments
+- [ ] `ref remove` without arguments - **BUG**: readline.createInterface error
 - [ ] `ref update` without arguments
 - [ ] `ref fulltext open` without arguments
 - [ ] Terminal resize handling
-- [ ] Large dataset (100+ items) scrolling
+- [x] Large dataset (40 items) scrolling
 - [ ] **If bugs found**: Create regression test, then fix implementation
 
 ### Step 7: Cleanup ✅
