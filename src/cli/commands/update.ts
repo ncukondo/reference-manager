@@ -393,13 +393,14 @@ async function executeInteractiveUpdate(
   context: ExecutionContext,
   config: Config
 ): Promise<string> {
+  const { withAlternateScreen } = await import("../../features/interactive/alternate-screen.js");
   const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
 
   const allReferences = await context.library.getAll();
-  const identifiers = await selectReferencesOrExit(
-    allReferences,
-    { multiSelect: false },
-    config.cli.tui
+
+  // Run TUI session in alternate screen to preserve terminal scrollback
+  const identifiers = await withAlternateScreen(() =>
+    selectReferencesOrExit(allReferences, { multiSelect: false }, config.cli.tui)
   );
 
   // Type assertion is safe: selectReferencesOrExit guarantees non-empty array

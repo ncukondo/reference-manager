@@ -152,15 +152,16 @@ async function executeInteractiveRemove(
   context: ExecutionContext,
   config: Config
 ): Promise<{ identifier: string; item: CslItem }> {
+  const { withAlternateScreen } = await import("../../features/interactive/alternate-screen.js");
   const { selectReferenceItemsOrExit } = await import(
     "../../features/interactive/reference-select.js"
   );
 
   const allReferences = await context.library.getAll();
-  const selectedItems = await selectReferenceItemsOrExit(
-    allReferences,
-    { multiSelect: false },
-    config.cli.tui
+
+  // Run TUI session in alternate screen to preserve terminal scrollback
+  const selectedItems = await withAlternateScreen(() =>
+    selectReferenceItemsOrExit(allReferences, { multiSelect: false }, config.cli.tui)
   );
 
   // Type assertion is safe: selectReferenceItemsOrExit guarantees non-empty array

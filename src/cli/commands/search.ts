@@ -227,6 +227,7 @@ export async function executeInteractiveSearch(
 
   // Import interactive modules dynamically to avoid loading React/Ink in non-interactive mode
   const { checkTTY } = await import("../../features/interactive/tty.js");
+  const { withAlternateScreen } = await import("../../features/interactive/alternate-screen.js");
   const { runSearchFlow } = await import("../../features/interactive/apps/index.js");
   const { search } = await import("../../features/search/matcher.js");
   const { tokenize } = await import("../../features/search/tokenizer.js");
@@ -246,11 +247,13 @@ export async function executeInteractiveSearch(
   // Get TUI config from config
   const tuiConfig = config.cli.tui;
 
-  // Run the search flow (search → action → style if needed)
-  const result = await runSearchFlow(allReferences, searchFn, {
-    limit: tuiConfig.limit,
-    debounceMs: tuiConfig.debounceMs,
-  });
+  // Run the search flow in alternate screen to preserve terminal scrollback
+  const result = await withAlternateScreen(() =>
+    runSearchFlow(allReferences, searchFn, {
+      limit: tuiConfig.limit,
+      debounceMs: tuiConfig.debounceMs,
+    })
+  );
 
   return {
     output: result.output,

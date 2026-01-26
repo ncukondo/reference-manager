@@ -4,7 +4,7 @@
  * Provides real-time incremental search with multiple selection support.
  */
 
-import { render } from "ink";
+import { render, useApp } from "ink";
 import type React from "react";
 import { createElement } from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
@@ -195,12 +195,24 @@ function SearchPromptApp({
   onSubmit,
   onCancel,
 }: SearchPromptAppProps): React.ReactElement {
+  const { exit } = useApp();
+
+  const handleSubmit = (selected: Choice<CslItem>[]): void => {
+    onSubmit(selected);
+    exit();
+  };
+
+  const handleCancel = (): void => {
+    onCancel();
+    exit();
+  };
+
   return createElement(SearchableMultiSelect<CslItem>, {
     choices,
     filterFn,
     visibleCount,
-    onSubmit,
-    onCancel,
+    onSubmit: handleSubmit,
+    onCancel: handleCancel,
     header: "Search references",
     placeholder: "Type to search...",
     defaultSort,
@@ -232,18 +244,20 @@ export async function runSearchPrompt(
 
   // Create a promise to capture the result
   return new Promise<SearchPromptResult>((resolve) => {
+    let result: SearchPromptResult = { selected: [], cancelled: true };
+
     const handleSubmit = (selected: Choice<CslItem>[]): void => {
-      resolve({
+      result = {
         selected: selected.map((c) => c.value),
         cancelled: false,
-      });
+      };
     };
 
     const handleCancel = (): void => {
-      resolve({
+      result = {
         selected: [],
         cancelled: true,
-      });
+      };
     };
 
     // Render the Ink app
@@ -253,19 +267,16 @@ export async function runSearchPrompt(
         filterFn,
         visibleCount: effectiveLimit,
         defaultSort: "updated-desc",
-        onSubmit: (selected) => {
-          handleSubmit(selected);
-        },
-        onCancel: () => {
-          handleCancel();
-        },
+        onSubmit: handleSubmit,
+        onCancel: handleCancel,
       })
     );
 
-    // Wait for the app to exit and clear the screen
+    // Wait for the app to exit, clear the screen, then resolve
     waitUntilExit()
       .then(() => {
         clear();
+        resolve(result);
       })
       .catch(() => {
         clear();

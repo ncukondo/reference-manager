@@ -167,39 +167,62 @@ Remove prototype directory and Enquirer dependency.
 - [ ] Update demo script path in package.json (`demo:ink` → use interactive/)
 - [ ] Verify all spec files reference React Ink (already done in ADR-014)
 
-## Session Handoff (2026-01-26 Session 3)
+## Session Handoff (2026-01-26 Session 4)
 
 ### Completed This Session
 - **Fixed**: Terminal history restoration using alternate screen buffer
-  - Added ANSI escape sequences `\x1b[?1049h` (enter) and `\x1b[?1049l` (exit)
-  - `runSearchFlow` now wraps Ink render with alternate screen buffer
-  - Previous terminal content is preserved after TUI exit
-- **Fixed**: Unit test for `calculateEffectiveLimit` (reservedLines 5 → 10)
-- **Fixed**: Updated `spec/features/edit.md` (Enquirer → React Ink)
+  - Created `src/features/interactive/alternate-screen.ts` with `withAlternateScreen()` utility
+  - All interactive commands now use `withAlternateScreen()` to preserve terminal scrollback
+- **Applied Single App Pattern to `cite` command**
+  - Created `src/features/interactive/apps/CiteFlowApp.tsx`
+  - Created `src/features/interactive/apps/runCiteFlow.ts`
+  - `cite` command now uses single Ink app for reference selection → style selection flow
+- **Fixed**: Ink apps now properly call `exit()` after selection
+  - Updated `StyleSelectApp` in `style-select.ts`
+  - Updated `SearchPromptApp` in `search-prompt.ts`
+- **Fixed**: Promise resolution order in `runSearchPrompt` and `runStyleSelect`
+  - Now waits for `waitUntilExit()` before resolving to ensure proper cleanup
+
+### Manual Testing Progress
+- [x] `search -t` - Working correctly
+- [x] `cite` - Working correctly (Single App Pattern applied)
+- [x] `edit` - Working correctly
+- [ ] `remove` - **ERROR**: `readline.createInterface is not a function`
+- [ ] `update` - Not tested
+- [ ] `fulltext open` - Not tested
+
+### Bug to Fix
+**`remove` command error**: `readline.createInterface is not a function`
+- Likely in `src/cli/helpers.ts` `readConfirmation()` function
+- This was a readline-based replacement for Enquirer's Confirm prompt
+- Investigate the import and fix
 
 ### Pending Work
-1. **Apply Single App Pattern to `cite` command** - similar to SearchFlowApp
-2. **Manual testing** for all interactive commands
+1. **Fix `remove` command** - readline.createInterface error
+2. **Complete manual testing** for remaining commands (update, fulltext open)
 3. **Step 8**: Documentation updates
-4. **Run tests**: e2e
+4. **Run tests**: e2e, unit
 
 ### Test Environment
 ```bash
-export REFERENCE_MANAGER_LIBRARY=/tmp/ref-manual-test/references.json
-alias ref="node /workspaces/reference-manager/bin/cli.js"
-ref search -t
+export REFERENCE_MANAGER_LIBRARY=/tmp/ref-test/references.json
+node bin/cli.js <command>
 ```
 
-### Key Files Modified
-- `src/features/interactive/apps/SearchFlowApp.tsx` (new)
-- `src/features/interactive/apps/runSearchFlow.ts` (new)
-- `src/features/interactive/apps/index.ts` (new)
-- `src/cli/commands/search.ts` (uses runSearchFlow)
-- `src/features/interactive/components/SearchableMultiSelect.tsx` (removed exit())
-- `src/features/interactive/components/Select.tsx` (removed exit())
-- `src/features/interactive/action-menu.ts` (exported generateOutput)
-- `src/features/interactive/search-prompt.ts` (reservedLines fix)
-- `spec/decisions/ADR-015-react-ink-single-app-pattern.md` (new)
+### Key Files Modified This Session
+- `src/features/interactive/alternate-screen.ts` (new)
+- `src/features/interactive/apps/CiteFlowApp.tsx` (new)
+- `src/features/interactive/apps/runCiteFlow.ts` (new)
+- `src/features/interactive/apps/index.ts` (updated exports)
+- `src/cli/commands/cite.ts` (uses runCiteFlow)
+- `src/cli/commands/search.ts` (uses withAlternateScreen)
+- `src/cli/commands/edit.ts` (uses withAlternateScreen)
+- `src/cli/commands/remove.ts` (uses withAlternateScreen)
+- `src/cli/commands/update.ts` (uses withAlternateScreen)
+- `src/cli/commands/fulltext.ts` (uses withAlternateScreen)
+- `src/cli/commands/attach.ts` (uses withAlternateScreen)
+- `src/features/interactive/style-select.ts` (added exit(), fixed Promise order)
+- `src/features/interactive/search-prompt.ts` (added exit(), fixed Promise order)
 
 ## Completion Checklist
 

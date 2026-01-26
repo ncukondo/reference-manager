@@ -1,26 +1,23 @@
 /**
- * Runner for SearchFlowApp
+ * Runner for CiteFlowApp
  *
- * Provides the public API for running the search flow.
+ * Provides the public API for running the cite flow.
  */
 
 import { render } from "ink";
 import { createElement } from "react";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { SearchResult } from "../../search/types.js";
-import type { ActionMenuResult } from "../action-menu.js";
-import type { Choice, SortOption } from "../components/index.js";
+import type { Choice, SelectOption, SortOption } from "../components/index.js";
 import { formatAuthors } from "../format.js";
-import { SearchFlowApp } from "./SearchFlowApp.js";
+import { CiteFlowApp, type CiteFlowResult } from "./CiteFlowApp.js";
 
 /**
- * Configuration for the search flow
+ * Configuration for the cite flow
  */
-export interface SearchFlowConfig {
+export interface CiteFlowConfig {
   /** Maximum number of results to display */
   limit: number;
-  /** Debounce delay in milliseconds (not used, kept for API compatibility) */
-  debounceMs: number;
 }
 
 /**
@@ -154,15 +151,29 @@ function toChoice(item: CslItem): Choice<CslItem> {
 }
 
 /**
- * Run the search flow (search → action → style if needed)
- *
- * This is the main entry point for the `search -t` command.
+ * Options for running the cite flow
  */
-export async function runSearchFlow(
-  allReferences: CslItem[],
-  searchFn: SearchFunction,
-  config: SearchFlowConfig
-): Promise<ActionMenuResult> {
+export interface RunCiteFlowOptions {
+  /** All references available for selection */
+  allReferences: CslItem[];
+  /** Search function for filtering */
+  searchFn: SearchFunction;
+  /** Flow configuration */
+  config: CiteFlowConfig;
+  /** Style options for style selection */
+  styleOptions: SelectOption<string>[];
+  /** Whether to show style selection */
+  showStyleSelect: boolean;
+}
+
+/**
+ * Run the cite flow (reference selection → style selection if needed)
+ *
+ * This is the main entry point for interactive cite command.
+ */
+export async function runCiteFlow(options: RunCiteFlowOptions): Promise<CiteFlowResult> {
+  const { allReferences, searchFn, config, styleOptions, showStyleSelect } = options;
+
   // Convert references to choices
   const choices = allReferences.map(toChoice);
 
@@ -181,26 +192,27 @@ export async function runSearchFlow(
   const defaultSort: SortOption = "updated-desc";
 
   // Create a promise to capture the result
-  return new Promise<ActionMenuResult>((resolve) => {
-    const handleComplete = (result: ActionMenuResult): void => {
+  return new Promise<CiteFlowResult>((resolve) => {
+    const handleComplete = (result: CiteFlowResult): void => {
       resolve(result);
     };
 
     const handleCancel = (): void => {
       resolve({
-        action: "cancel",
-        output: "",
+        identifiers: [],
         cancelled: true,
       });
     };
 
     // Render the Ink app (single render for entire flow)
     const { waitUntilExit } = render(
-      createElement(SearchFlowApp, {
+      createElement(CiteFlowApp, {
         choices,
         filterFn,
         visibleCount: effectiveLimit,
         defaultSort,
+        styleOptions,
+        showStyleSelect,
         onComplete: handleComplete,
         onCancel: handleCancel,
       })
@@ -209,8 +221,7 @@ export async function runSearchFlow(
     // Wait for the app to exit
     waitUntilExit().catch(() => {
       resolve({
-        action: "cancel",
-        output: "",
+        identifiers: [],
         cancelled: true,
       });
     });

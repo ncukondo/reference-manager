@@ -135,31 +135,58 @@ async function executeInteractiveCite(
   context: ExecutionContext,
   config: Config
 ): Promise<CiteCommandResult> {
-  const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
-  const { runStyleSelect } = await import("../../features/interactive/style-select.js");
+  const { withAlternateScreen } = await import("../../features/interactive/alternate-screen.js");
+  const { runCiteFlow } = await import("../../features/interactive/apps/index.js");
+  const { buildStyleChoices, listCustomStyles } = await import(
+    "../../features/interactive/style-select.js"
+  );
+  const { search } = await import("../../features/search/matcher.js");
+  const { tokenize } = await import("../../features/search/tokenizer.js");
+  const { checkTTY } = await import("../../features/interactive/tty.js");
+
+  // Check TTY requirement
+  checkTTY();
 
   const allReferences = await context.library.getAll();
-  const identifiers = await selectReferencesOrExit(
-    allReferences,
-    { multiSelect: true },
-    config.cli.tui
-  );
 
-  let style = options.style;
-  if (!style && !options.cslFile) {
-    const styleResult = await runStyleSelect({
-      cslDirectory: config.citation.cslDirectory,
-      defaultStyle: config.citation.defaultStyle,
-    });
-
-    if (styleResult.cancelled) {
-      setExitCode(ExitCode.SUCCESS);
-      return { results: [] };
-    }
-    style = styleResult.style;
+  if (allReferences.length === 0) {
+    process.stderr.write("No references in library.\n");
+    setExitCode(ExitCode.SUCCESS);
+    return { results: [] };
   }
 
-  return executeCite({ ...options, ...(style && { style }), identifiers }, context);
+  // Create search function
+  const searchFn = (query: string) => {
+    const { tokens } = tokenize(query);
+    return search(allReferences, tokens);
+  };
+
+  // Build style options
+  const showStyleSelect = !options.style && !options.cslFile;
+  const customStyles = listCustomStyles(config.citation.cslDirectory);
+  const styleOptions = buildStyleChoices(customStyles, config.citation.defaultStyle);
+
+  // Run cite flow in alternate screen (Single App Pattern)
+  const result = await withAlternateScreen(() =>
+    runCiteFlow({
+      allReferences,
+      searchFn,
+      config: { limit: config.cli.tui.limit },
+      styleOptions,
+      showStyleSelect,
+    })
+  );
+
+  if (result.cancelled || result.identifiers.length === 0) {
+    setExitCode(ExitCode.SUCCESS);
+    return { results: [] };
+  }
+
+  const style = result.style ?? options.style;
+  return executeCite(
+    { ...options, ...(style && { style }), identifiers: result.identifiers },
+    context
+  );
 }
 
 /**

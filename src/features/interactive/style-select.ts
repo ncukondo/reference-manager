@@ -7,7 +7,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { render } from "ink";
+import { render, useApp } from "ink";
 import { createElement } from "react";
 import type React from "react";
 import { BUILTIN_STYLES } from "../../config/csl-styles.js";
@@ -134,11 +134,23 @@ interface StyleSelectAppProps {
  * StyleSelectApp component - wraps Select for style selection
  */
 function StyleSelectApp({ options, onSelect, onCancel }: StyleSelectAppProps): React.ReactElement {
+  const { exit } = useApp();
+
+  const handleSelect = (value: string): void => {
+    onSelect(value);
+    exit();
+  };
+
+  const handleCancel = (): void => {
+    onCancel();
+    exit();
+  };
+
   return createElement(Select<string>, {
     options,
     message: "Select citation style:",
-    onSelect,
-    onCancel,
+    onSelect: handleSelect,
+    onCancel: handleCancel,
   });
 }
 
@@ -157,38 +169,41 @@ export async function runStyleSelect(options: StyleSelectOptions): Promise<Style
 
   // Create a promise to capture the result
   return new Promise<StyleSelectResult>((resolve) => {
+    let result: StyleSelectResult = { cancelled: true };
+
     const handleSelect = (value: string): void => {
-      resolve({
+      result = {
         style: value,
         cancelled: false,
-      });
+      };
     };
 
     const handleCancel = (): void => {
-      resolve({
+      result = {
         cancelled: true,
-      });
+      };
     };
 
     // Render the Ink app
-    const { waitUntilExit } = render(
+    const { waitUntilExit, clear } = render(
       createElement(StyleSelectApp, {
         options: choices,
-        onSelect: (value) => {
-          handleSelect(value);
-        },
-        onCancel: () => {
-          handleCancel();
-        },
+        onSelect: handleSelect,
+        onCancel: handleCancel,
       })
     );
 
-    // Wait for the app to exit
-    waitUntilExit().catch(() => {
-      // Handle any errors during exit
-      resolve({
-        cancelled: true,
+    // Wait for the app to exit, clear the screen, then resolve
+    waitUntilExit()
+      .then(() => {
+        clear();
+        resolve(result);
+      })
+      .catch(() => {
+        clear();
+        resolve({
+          cancelled: true,
+        });
       });
-    });
   });
 }

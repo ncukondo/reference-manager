@@ -256,13 +256,14 @@ async function executeInteractiveEdit(
   context: ExecutionContext,
   config: Config
 ): Promise<EditCommandResult> {
+  const { withAlternateScreen } = await import("../../features/interactive/alternate-screen.js");
   const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
 
   const allReferences = await context.library.getAll();
-  const identifiers = await selectReferencesOrExit(
-    allReferences,
-    { multiSelect: true },
-    config.cli.tui
+
+  // Run TUI session in alternate screen to preserve terminal scrollback
+  const identifiers = await withAlternateScreen(() =>
+    selectReferencesOrExit(allReferences, { multiSelect: true }, config.cli.tui)
   );
 
   const format = options.format ?? config.cli.edit.defaultFormat;
