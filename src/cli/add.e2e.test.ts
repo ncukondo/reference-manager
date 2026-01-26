@@ -464,7 +464,7 @@ ER  - `;
   });
 });
 
-const CLI_PATH = path.resolve("bin/reference-manager.js");
+const CLI_PATH = path.resolve("bin/cli.js");
 
 /**
  * Run CLI command with stdin input

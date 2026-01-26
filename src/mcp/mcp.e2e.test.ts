@@ -14,7 +14,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-const CLI_PATH = path.resolve("bin/reference-manager.js");
+const CLI_PATH = path.resolve("bin/cli.js");
 
 describe("MCP Server E2E", () => {
   let tempDir: string;
