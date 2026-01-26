@@ -9,6 +9,8 @@ import { Box, Text, useFocus, useInput, useStdout } from "ink";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import cliTruncate from "cli-truncate";
+
 export interface Choice<T = unknown> {
   /** Unique identifier for the choice */
   id: string;
@@ -149,8 +151,7 @@ function defaultFilter<T>(query: string, choices: Choice<T>[]): Choice<T>[] {
  * Truncate text to fit within maxWidth
  */
 function truncate(text: string, maxWidth: number): string {
-  if (text.length <= maxWidth) return text;
-  return `${text.slice(0, maxWidth - 1)}…`;
+  return cliTruncate(text, maxWidth, { position: "end" });
 }
 
 /**
@@ -296,13 +297,12 @@ function ScrollIndicator({
   direction: "up" | "down";
   count: number;
   visible: boolean;
-}): React.ReactElement | null {
-  if (!visible) return null;
+}): React.ReactElement {
   const arrow = direction === "up" ? "↑" : "↓";
   const label = direction === "up" ? "more above" : "more below";
   return (
     <Box height={1}>
-      {count > 0 ? (
+      {visible && count > 0 ? (
         <Text dimColor>
           {" "}
           {arrow} {count} {label}
@@ -605,33 +605,35 @@ export function SearchableMultiSelect<T>({
         </Box>
       </Box>
 
-      {/* Sort menu (replaces list when shown) */}
-      {showSortMenu ? (
-        <SortMenu
-          options={availableSortOptions}
-          focusIndex={sortMenuIndex}
-          currentSort={sortOption}
-        />
-      ) : (
-        <>
-          <ScrollIndicator direction="up" count={scrollOffset} visible={showScrollIndicator} />
-          <ChoiceList
-            choices={visibleChoices}
-            selectedIds={selectedIds}
-            focusIndex={focusIndex}
-            scrollOffset={scrollOffset}
-            contentWidth={contentWidth}
+      {/* Sort menu (replaces list when shown) - fixed height to prevent layout shift */}
+      <Box flexDirection="column" height={visibleCount * itemHeight + 2}>
+        {showSortMenu ? (
+          <SortMenu
+            options={availableSortOptions}
+            focusIndex={sortMenuIndex}
+            currentSort={sortOption}
           />
-          <ScrollIndicator
-            direction="down"
-            count={totalItems - scrollOffset - visibleCount}
-            visible={showScrollIndicator}
-          />
-          <Box marginTop={1}>
-            <Text dimColor>{footerText}</Text>
-          </Box>
-        </>
-      )}
+        ) : (
+          <>
+            <ScrollIndicator direction="up" count={scrollOffset} visible={showScrollIndicator} />
+            <ChoiceList
+              choices={visibleChoices}
+              selectedIds={selectedIds}
+              focusIndex={focusIndex}
+              scrollOffset={scrollOffset}
+              contentWidth={contentWidth}
+            />
+            <ScrollIndicator
+              direction="down"
+              count={totalItems - scrollOffset - visibleCount}
+              visible={showScrollIndicator}
+            />
+          </>
+        )}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>{footerText}</Text>
+      </Box>
     </Box>
   );
 }
