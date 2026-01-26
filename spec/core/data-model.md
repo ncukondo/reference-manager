@@ -92,3 +92,44 @@ This ensures:
 | `ISBN` | 10 or 13 digits | Normalized: hyphens removed, X uppercase |
 | `URL` | URL string | Primary URL |
 | `keyword` | Semicolon-separated string | Parsed to array in memory |
+
+## Operation Results
+
+### UpdateResult
+
+Result of a reference update operation:
+
+```typescript
+interface UpdateResult {
+  updated: boolean;
+  item?: CslItem;
+  idChanged?: boolean;
+  newId?: string;
+  errorType?: 'not_found' | 'id_collision';
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `updated` | `true` if data was actually changed |
+| `item` | The item (returned when reference is found, regardless of changes) |
+| `idChanged` | `true` if ID was changed due to collision resolution |
+| `newId` | The new ID after collision resolution |
+| `errorType` | Error type: `'not_found'` or `'id_collision'` |
+
+**State interpretation:**
+
+| State | updated | item | errorType |
+|-------|---------|------|-----------|
+| Changed | `true` | present | - |
+| No changes | `false` | present | - |
+| Not found | `false` | - | `'not_found'` |
+| ID collision | `false` | - | `'id_collision'` |
+
+### Change Detection
+
+Updates only occur when data actually changes:
+
+- **Changed fields**: Comparison excludes `custom.timestamp`, `custom.uuid`, `custom.created_at`
+- **No changes**: Returns `updated: false` with `item` present
+- **timestamp**: Only updated when actual changes are made

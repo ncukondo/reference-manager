@@ -251,15 +251,71 @@ default_format = "yaml"    # Default format: yaml, json
 | `$VISUAL` | Preferred visual editor |
 | `$EDITOR` | Fallback editor |
 
+## Command Result
+
+### EditCommandResult
+
+```typescript
+type EditItemState = 'updated' | 'unchanged' | 'not_found' | 'id_collision';
+
+interface EditItemResult {
+  id: string;
+  state: EditItemState;
+  item?: CslItem;      // Current/updated item (when reference is found)
+  oldItem?: CslItem;   // Item before update (for diff calculation)
+}
+
+interface EditCommandResult {
+  success: boolean;
+  results: EditItemResult[];
+  parseError?: string;
+  aborted?: boolean;
+}
+```
+
+### State Descriptions
+
+| State | Description | item | oldItem |
+|-------|-------------|------|---------|
+| `updated` | Reference was modified | Updated item | Original item |
+| `unchanged` | No changes detected | Current item | - |
+| `not_found` | Reference not found in library | - | - |
+| `id_collision` | New ID conflicts with existing | - | Original item |
+
+### Change Detection
+
+- Updates only occur when data actually changes
+- Comparison excludes protected fields: `custom.timestamp`, `custom.uuid`, `custom.created_at`
+- `timestamp` is only updated when actual changes are made
+
+### Output Format
+
+**Text output:**
+```
+Updated 2 of 3 references:
+  - smith-2024
+  - jones-2023
+Failed:
+  - doe-2024 (ID collision)
+```
+
+**With diff (future enhancement):**
+```
+Updated smith-2024:
+  title: "Old Title" → "New Title"
+  volume: "10" → "11"
+```
+
 ## Error Handling
 
 | Condition | Behavior |
 |-----------|----------|
 | Non-TTY environment | Error exit (code 1) |
-| Reference not found | Error message, exit (code 1) |
+| Reference not found | Included in results with `state: 'not_found'` |
+| ID collision | Included in results with `state: 'id_collision'` |
 | No editor configured | Use platform fallback |
 | Editor exit non-zero | Prompt: retry, restore, or abort |
-| Parse error | Show error, prompt: re-edit, restore, or abort |
+| Parse error | Show error, prompt: re-edit, restore, or abort (all items fail) |
 | Validation error | Show details, prompt: re-edit, restore, or abort |
 | Write conflict | Follow write-safety merge protocol |
 

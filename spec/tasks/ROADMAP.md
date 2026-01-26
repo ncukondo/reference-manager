@@ -80,7 +80,25 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-No active development phase. Next steps below.
+### Phase 27: Update Change Detection
+
+Add change detection to update operations for accurate reporting.
+
+**Task**: `20260126-01-update-change-detection.md`
+
+**Scope**:
+- Add change detection to `Library.updateReference`
+- Update `UpdateResult` interface (`errorType` field, remove `idCollision`)
+- Update `EditCommandResult` with detailed per-item results
+- Accurate "updated" vs "no changes" reporting for `ref update` and `ref edit`
+
+**Todos**:
+- [ ] Step 1: UpdateResult interface changes
+- [ ] Step 2: Change detection in Library.updateReference
+- [ ] Step 3: Update command output
+- [ ] Step 4: EditCommandResult interface
+- [ ] Step 5: Edit command change detection
+- [ ] Step 6: Edit command output
 
 ---
 
@@ -99,7 +117,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 27: Citation Enhancements
+### Phase 28: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -108,7 +126,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 28: Advanced Features
+### Phase 29: Advanced Features
 
 Additional features beyond core functionality:
 
