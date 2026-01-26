@@ -211,7 +211,7 @@ function validateInteractiveOptions(options: SearchCommandOptions): void {
 
 /**
  * Execute interactive search command.
- * Uses runSearchPrompt and runActionMenu from the interactive module.
+ * Uses runSearchFlow from the interactive module (Single App Pattern - ADR-015).
  *
  * @param options - Search command options with interactive flag
  * @param context - Execution context
@@ -225,10 +225,9 @@ export async function executeInteractiveSearch(
 ): Promise<InteractiveSearchResult> {
   validateInteractiveOptions(options);
 
-  // Import interactive modules dynamically to avoid loading Enquirer in non-interactive mode
+  // Import interactive modules dynamically to avoid loading React/Ink in non-interactive mode
   const { checkTTY } = await import("../../features/interactive/tty.js");
-  const { runSearchPrompt } = await import("../../features/interactive/search-prompt.js");
-  const { runActionMenu } = await import("../../features/interactive/action-menu.js");
+  const { runSearchFlow } = await import("../../features/interactive/apps/index.js");
   const { search } = await import("../../features/search/matcher.js");
   const { tokenize } = await import("../../features/search/tokenizer.js");
 
@@ -238,7 +237,7 @@ export async function executeInteractiveSearch(
   // Get all references for interactive search
   const allReferences = await context.library.getAll();
 
-  // Create search function for runSearchPrompt
+  // Create search function for runSearchFlow
   const searchFn = (query: string) => {
     const { tokens } = tokenize(query);
     return search(allReferences, tokens);
@@ -247,26 +246,14 @@ export async function executeInteractiveSearch(
   // Get TUI config from config
   const tuiConfig = config.cli.tui;
 
-  // Run search prompt
-  const searchResult = await runSearchPrompt(
-    allReferences,
-    searchFn,
-    {
-      limit: tuiConfig.limit,
-      debounceMs: tuiConfig.debounceMs,
-    },
-    options.query || ""
-  );
-
-  if (searchResult.cancelled || searchResult.selected.length === 0) {
-    return { output: "", cancelled: true };
-  }
-
-  // Run action menu with selected references
-  const actionResult = await runActionMenu(searchResult.selected);
+  // Run the search flow (search → action → style if needed)
+  const result = await runSearchFlow(allReferences, searchFn, {
+    limit: tuiConfig.limit,
+    debounceMs: tuiConfig.debounceMs,
+  });
 
   return {
-    output: actionResult.output,
-    cancelled: actionResult.cancelled,
+    output: result.output,
+    cancelled: result.cancelled,
   };
 }

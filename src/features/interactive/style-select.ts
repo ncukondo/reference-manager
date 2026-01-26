@@ -171,16 +171,14 @@ export async function runStyleSelect(options: StyleSelectOptions): Promise<Style
     };
 
     // Render the Ink app
-    const { unmount, waitUntilExit } = render(
+    const { waitUntilExit } = render(
       createElement(StyleSelectApp, {
         options: choices,
         onSelect: (value) => {
           handleSelect(value);
-          unmount();
         },
         onCancel: () => {
           handleCancel();
-          unmount();
         },
       })
     );

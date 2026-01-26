@@ -115,7 +115,7 @@ function StyleSelectApp({ options, onSelect, onCancel }: StyleSelectAppProps): R
 /**
  * Generate output for the given action and items.
  */
-function generateOutput(action: ActionType, items: CslItem[], style = "apa"): string {
+export function generateOutput(action: ActionType, items: CslItem[], style = "apa"): string {
   switch (action) {
     case "output-ids":
       return items.map((item) => item.id).join("\n");
@@ -159,16 +159,14 @@ export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
     };
 
     // Render the Ink app
-    const { unmount, waitUntilExit } = render(
+    const { waitUntilExit } = render(
       createElement(StyleSelectApp, {
         options: STYLE_CHOICES,
         onSelect: (value) => {
           handleSelect(value);
-          unmount();
         },
         onCancel: () => {
           handleCancel();
-          unmount();
         },
       })
     );
@@ -246,17 +244,15 @@ export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult>
     };
 
     // Render the Ink app
-    const { unmount, waitUntilExit } = render(
+    const { waitUntilExit } = render(
       createElement(ActionMenuApp, {
         message,
         options: ACTION_CHOICES,
         onSelect: (action) => {
-          unmount();
           handleSelect(action);
         },
         onCancel: () => {
           handleCancel();
-          unmount();
         },
       })
     );

@@ -167,35 +167,58 @@ Remove prototype directory and Enquirer dependency.
 - [ ] Update demo script path in package.json (`demo:ink` → use interactive/)
 - [ ] Verify all spec files reference React Ink (already done in ADR-014)
 
-## Session Handoff (2024-01-26)
+## Session Handoff (2026-01-26 Session 2)
 
-### Completed
-- Step 1-3: React Ink components migrated to `src/features/interactive/`
-- Step 4-5: CLI commands automatically use new React Ink implementation
-- Step 6: All E2E tests pass (2629 tests), unit tests pass (2371 tests)
-- Step 7: Cleanup complete - enquirer removed, interactive-ink deleted
+### Completed This Session
+- **ADR-015**: Created `spec/decisions/ADR-015-react-ink-single-app-pattern.md`
+  - Documents "1 Flow = 1 App = 1 render()" principle
+  - Explains why multiple render() calls cause screen clearing issues
+- **SearchFlowApp**: Created `src/features/interactive/apps/SearchFlowApp.tsx`
+  - Single App component for `search -t` flow
+  - Manages state transitions: search → action → style → exiting
+  - Uses React state management instead of multiple render() calls
+- **runSearchFlow**: Created `src/features/interactive/apps/runSearchFlow.ts`
+  - Runner function that calls render() once
+- **Fixed**: Screen transition from search to action menu works correctly
+- **Fixed**: Action menu clears when selecting an option (using "exiting" state with empty Box)
+- **Fixed**: reservedLines calculation (5 → 10) for proper header display
 
-### Pending: Manual Testing
-Test library prepared at `/tmp/ref-manual-test/references.json` (40 refs)
+### Remaining Issue
+**Terminal history not restored after Ink exit**
+- After exiting the Ink app, previous terminal commands are not restored
+- In the original demo (`feature/interactive-ink`), this worked correctly
+- The demo displayed results inside Ink component with "Press any key to exit"
+- Current implementation exits Ink and writes to stdout externally
 
-**Run commands with:**
+**Investigation needed**:
+- Compare demo's App.tsx behavior (git show 5bfc395:src/features/interactive-ink/App.tsx)
+- Demo used `setState("result")` to show output inside Ink before exit
+- May need to investigate Ink's alternate screen buffer behavior
+
+### Pending Work
+1. **Fix terminal history restoration** - investigate demo's approach
+2. **Apply Single App Pattern to `cite` command** - similar to SearchFlowApp
+3. **Manual testing** for all interactive commands
+4. **Step 8**: Documentation updates
+5. **Run tests**: unit, e2e, lint, typecheck
+
+### Test Environment
 ```bash
-REFERENCE_MANAGER_LIBRARY=/tmp/ref-manual-test/references.json node /workspaces/reference-manager/bin/cli.js <command>
+export REFERENCE_MANAGER_LIBRARY=/tmp/ref-manual-test/references.json
+alias ref="node /workspaces/reference-manager/bin/cli.js"
+ref search -t
 ```
 
-**Test checklist:**
-- [ ] `search -t` - TUI search with filtering, Tab selection, Ctrl+S sort, Esc cancel
-- [ ] `cite` (no args) - multi-select + style selection
-- [ ] `edit` (no args) - multi-select
-- [ ] `update` (no args) - single-select
-- [ ] `remove` (no args) - single-select + y/N confirmation
-
-### After Manual Testing
-1. Update Step 6 manual testing checklist in this file
-2. Complete Step 8 (documentation updates if needed)
-3. Update completion checklist
-4. Move task to `spec/tasks/completed/`
-5. Push changes
+### Key Files Modified
+- `src/features/interactive/apps/SearchFlowApp.tsx` (new)
+- `src/features/interactive/apps/runSearchFlow.ts` (new)
+- `src/features/interactive/apps/index.ts` (new)
+- `src/cli/commands/search.ts` (uses runSearchFlow)
+- `src/features/interactive/components/SearchableMultiSelect.tsx` (removed exit())
+- `src/features/interactive/components/Select.tsx` (removed exit())
+- `src/features/interactive/action-menu.ts` (exported generateOutput)
+- `src/features/interactive/search-prompt.ts` (reservedLines fix)
+- `spec/decisions/ADR-015-react-ink-single-app-pattern.md` (new)
 
 ## Completion Checklist
 

@@ -212,6 +212,7 @@ async function handleSearchAction(
         process.stdout.write(`${result.output}\n`);
       }
       setExitCode(ExitCode.SUCCESS);
+      return;
     }
 
     // Regular search mode
