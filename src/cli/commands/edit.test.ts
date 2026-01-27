@@ -393,6 +393,99 @@ describe("edit command", () => {
       expect(output).toContain("Updated 0 of 2 references");
       expect(output).toContain("No changes: 2");
     });
+
+    it("shows changed fields for updated items", () => {
+      const oldItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "Old Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "New Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-02T00:00:00.000Z",
+        },
+      };
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [{ id: "Smith-2024", state: "updated", oldItem, item: newItem }],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Smith-2024");
+      expect(output).toContain('title: "Old Title" → "New Title"');
+    });
+
+    it("shows changed fields for multiple updated items", () => {
+      const oldItem1: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "Old Title",
+        custom: {
+          uuid: "uuid-1",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem1: CslItem = {
+        ...oldItem1,
+        title: "New Title",
+        custom: { ...oldItem1.custom, timestamp: "2024-01-02T00:00:00.000Z" },
+      };
+      const oldItem2: CslItem = {
+        id: "Doe-2023",
+        type: "article",
+        title: "Another Article",
+        volume: "1",
+        custom: {
+          uuid: "uuid-2",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem2: CslItem = {
+        ...oldItem2,
+        volume: "2",
+        custom: { ...oldItem2.custom, timestamp: "2024-01-02T00:00:00.000Z" },
+      };
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 2,
+        updatedIds: ["Smith-2024", "Doe-2023"],
+        results: [
+          { id: "Smith-2024", state: "updated", oldItem: oldItem1, item: newItem1 },
+          { id: "Doe-2023", state: "updated", oldItem: oldItem2, item: newItem2 },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain('title: "Old Title" → "New Title"');
+      expect(output).toContain('volume: "1" → "2"');
+    });
+
+    it("does not show change details for items without oldItem", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [{ id: "Smith-2024", state: "updated" }],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Smith-2024");
+      expect(output).not.toContain("→");
+    });
   });
 
   describe("executeInteractiveEdit", () => {

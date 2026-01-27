@@ -123,7 +123,7 @@ Updated: [smith-2024] New Title
 - [x] Implement `getChangedFields` function
 - [x] Implement `formatFieldChange` function
 - [x] Update `formatUpdateOutput` with change details
-- [ ] Update `formatEditOutput` with change details
+- [x] Update `formatEditOutput` with change details
 - [ ] Update JSON output with `changes` field
 - [ ] Verify Green
 - [ ] Lint/Type check

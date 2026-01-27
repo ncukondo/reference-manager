@@ -9,6 +9,7 @@ import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
+import { formatChangeDetails } from "../../features/operations/change-details.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
   ExitCode,
@@ -310,7 +311,19 @@ export function formatEditOutput(result: EditCommandResult): string {
   if (totalCount === 0 && updatedCount === 0) return "No references were updated.";
 
   const lines: string[] = [formatSummaryHeader(updatedCount, totalCount)];
-  formatItemList(lines, "", updatedIds);
+
+  // Show updated items with change details
+  const updatedResults = result.results.filter((r) => r.state === "updated");
+  if (updatedResults.length > 0) {
+    for (const r of updatedResults) {
+      lines.push(`  - ${r.id}`);
+      if (r.oldItem && r.item) {
+        lines.push(...formatChangeDetails(r.oldItem, r.item).map((l) => `  ${l}`));
+      }
+    }
+  } else {
+    formatItemList(lines, "", updatedIds);
+  }
 
   if (totalCount > 0) {
     const unchanged = result.results.filter((r) => r.state === "unchanged");

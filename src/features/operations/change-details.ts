@@ -134,3 +134,27 @@ export function formatFieldChange(field: string, oldValue: unknown, newValue: un
   }
   return formatScalarChange(field, oldValue, newValue);
 }
+
+/**
+ * Get a field value from a CslItem, supporting dot notation for custom fields.
+ */
+export function getFieldValue(item: CslItem, field: string): unknown {
+  if (field.startsWith("custom.")) {
+    const customKey = field.slice("custom.".length);
+    return (item.custom as Record<string, unknown> | undefined)?.[customKey];
+  }
+  return item[field as keyof CslItem];
+}
+
+/**
+ * Format all change details for a pair of old/new items.
+ * Returns formatted change lines (indented with 2 spaces).
+ */
+export function formatChangeDetails(oldItem: CslItem, newItem: CslItem): string[] {
+  const changedFields = getChangedFields(oldItem, newItem);
+  return changedFields.map((field) => {
+    const oldVal = getFieldValue(oldItem, field);
+    const newVal = getFieldValue(newItem, field);
+    return `  ${formatFieldChange(field, oldVal, newVal)}`;
+  });
+}

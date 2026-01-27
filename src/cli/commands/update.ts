@@ -3,7 +3,7 @@ import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
-import { formatFieldChange, getChangedFields } from "../../features/operations/change-details.js";
+import { formatChangeDetails } from "../../features/operations/change-details.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
@@ -353,17 +353,6 @@ export async function executeUpdate(
  * @param identifier - The identifier that was used
  * @returns Formatted output string
  */
-/**
- * Get a field value from a CslItem, supporting dot notation for custom fields.
- */
-function getFieldValue(item: CslItem, field: string): unknown {
-  if (field.startsWith("custom.")) {
-    const customKey = field.slice("custom.".length);
-    return (item.custom as Record<string, unknown> | undefined)?.[customKey];
-  }
-  return item[field as keyof CslItem];
-}
-
 export function formatUpdateOutput(result: UpdateCommandResult, identifier: string): string {
   if (!result.updated) {
     if (result.errorType === "id_collision") {
@@ -391,12 +380,7 @@ export function formatUpdateOutput(result: UpdateCommandResult, identifier: stri
 
   // Show changed fields when oldItem is available
   if (result.oldItem && item) {
-    const changedFields = getChangedFields(result.oldItem, item);
-    for (const field of changedFields) {
-      const oldVal = getFieldValue(result.oldItem, field);
-      const newVal = getFieldValue(item, field);
-      parts.push(`  ${formatFieldChange(field, oldVal, newVal)}`);
-    }
+    parts.push(...formatChangeDetails(result.oldItem, item));
   }
 
   return parts.join("\n");
