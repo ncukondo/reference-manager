@@ -73,6 +73,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 24**: CLI Option Consistency (unified input/output options, --tui, config keys)
 - **Phase 25**: Attachments Architecture (per-reference directories, roles, attach command)
 - **Phase 26**: React Ink Migration (replaced Enquirer with React Ink for all TUI)
+- **Phase 27**: Update Change Detection (change details, accurate update/edit reporting)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -80,26 +81,82 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 27: Update Change Detection
+### Phase 28: Edit/Update ID Collision Auto-Resolution
 
-Add change detection to update operations for accurate reporting.
+Enable automatic ID collision resolution for `ref edit` and `ref update` CLI commands,
+aligning with existing server behavior.
 
-**Task**: `20260126-01-update-change-detection.md`
+**Task**: `20260127-04-edit-id-collision-resolution.md`
 
 **Scope**:
-- Add change detection to `Library.updateReference`
-- Update `UpdateResult` interface (`errorType` field, remove `idCollision`)
-- Update `EditCommandResult` with detailed per-item results
-- Accurate "updated" vs "no changes" reporting for `ref update` and `ref edit`
+- Add `idChanged`/`newId` fields to `EditItemResult`
+- Enable `onIdCollision: "suffix"` for both edit and update commands
+- Update output formatting to show resolved IDs
+- Align CLI behavior with HTTP server defaults
 
 **Todos**:
-- [x] Step 1: UpdateResult interface changes
-- [x] Step 2: Change detection in Library.updateReference
-- [x] Step 3: Update command output
-- [x] Step 4: EditCommandResult interface
-- [x] Step 5: Edit command change detection
-- [x] Step 6: Edit command output
-- [x] Step 7: Change details display
+- [ ] Step 1: Add `idChanged`/`newId` to EditItemResult
+- [ ] Step 2: Enable `onIdCollision: "suffix"` for edit command
+- [ ] Step 3: Update `formatEditOutput` for ID changes
+- [ ] Step 4: Enable `onIdCollision: "suffix"` for update command
+- [ ] Step 5: Update existing tests
+
+### PR #45 Follow-up Refactor
+
+Code quality improvements identified during PR #45 review.
+
+**Task**: `20260127-01-pr45-followup-refactor.md`
+
+**Scope**:
+- Extract duplicated `isEqual` to shared utility
+- Unify `PROTECTED_CUSTOM_FIELDS` with two-level architecture
+- Include `oldItem` in `id_collision` edit result
+- Fallback to ID-based update when UUID missing
+
+**Todos**:
+- [ ] Step 1: Extract `isEqual` to shared utility
+- [ ] Step 2: Share protected fields with two-level architecture
+- [ ] Step 3: Include `oldItem` in `id_collision` result
+- [ ] Step 4: Fallback to ID-based update when UUID missing
+
+### Remove `custom.fulltext`
+
+Remove all legacy `custom.fulltext` references from codebase and specs.
+
+**Task**: `20260127-02-remove-custom-fulltext.md`
+
+**Depends on**: PR #45 Follow-up Refactor (Step 2)
+
+**Scope**:
+- Remove `custom.fulltext` from production code
+- Remove `custom.fulltext` from tests
+- Remove `custom.fulltext` from specs
+
+**Todos**:
+- [ ] Step 1: Remove from production code
+- [ ] Step 2: Remove from tests
+- [ ] Step 3: Remove from specs
+
+### Phase 29: Edit Validation Pipeline
+
+Implement two-stage validation pipeline with error annotation and retry loop for the edit command.
+
+**Task**: `20260127-03-edit-validation.md`
+
+**Depends on**: PR #45 Follow-up Refactor (Step 2)
+
+**Scope**:
+- Edit-format date validator
+- CSL schema validation integration
+- Error annotation (YAML and JSON)
+- Retry loop in `executeEdit`
+
+**Todos**:
+- [ ] Step 1: Edit-format date validator
+- [ ] Step 2: CSL schema validation integration
+- [ ] Step 3: Error annotation — YAML
+- [ ] Step 4: Error annotation — JSON
+- [ ] Step 5: Retry loop in `executeEdit`
 
 ---
 
@@ -118,7 +175,7 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 28: Citation Enhancements
+### Phase 30: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
@@ -127,7 +184,7 @@ Post-MVP enhancements for citation functionality:
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 29: Advanced Features
+### Phase 31: Advanced Features
 
 Additional features beyond core functionality:
 
