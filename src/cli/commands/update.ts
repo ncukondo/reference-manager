@@ -3,6 +3,7 @@ import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
+import { formatFieldChange, getChangedFields } from "../../features/operations/change-details.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
@@ -352,6 +353,17 @@ export async function executeUpdate(
  * @param identifier - The identifier that was used
  * @returns Formatted output string
  */
+/**
+ * Get a field value from a CslItem, supporting dot notation for custom fields.
+ */
+function getFieldValue(item: CslItem, field: string): unknown {
+  if (field.startsWith("custom.")) {
+    const customKey = field.slice("custom.".length);
+    return (item.custom as Record<string, unknown> | undefined)?.[customKey];
+  }
+  return item[field as keyof CslItem];
+}
+
 export function formatUpdateOutput(result: UpdateCommandResult, identifier: string): string {
   if (!result.updated) {
     if (result.errorType === "id_collision") {
@@ -375,6 +387,16 @@ export function formatUpdateOutput(result: UpdateCommandResult, identifier: stri
 
   if (result.idChanged && result.newId) {
     parts.push(`ID changed to: ${result.newId}`);
+  }
+
+  // Show changed fields when oldItem is available
+  if (result.oldItem && item) {
+    const changedFields = getChangedFields(result.oldItem, item);
+    for (const field of changedFields) {
+      const oldVal = getFieldValue(result.oldItem, field);
+      const newVal = getFieldValue(item, field);
+      parts.push(`  ${formatFieldChange(field, oldVal, newVal)}`);
+    }
   }
 
   return parts.join("\n");
@@ -539,11 +561,6 @@ export async function handleUpdateAction(
     const identifier = await resolveUpdateIdentifier(identifierArg, hasSetOptions, context, config);
     const validatedUpdates = await parseUpdateInput(options.set, file);
 
-    const idType = options.uuid ? "uuid" : "id";
-    const beforeItem = options.full
-      ? await context.library.find(identifier, { idType })
-      : undefined;
-
     const updateOptions: UpdateCommandOptions = {
       identifier,
       updates: validatedUpdates,
@@ -555,7 +572,7 @@ export async function handleUpdateAction(
     if (outputFormat === "json") {
       const jsonOptions = {
         ...(options.full && { full: true }),
-        ...(beforeItem && { before: beforeItem }),
+        ...(result.oldItem && { before: result.oldItem }),
       };
       const jsonOutput = formatUpdateJsonOutput(result, identifier, jsonOptions);
       process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);

@@ -72,6 +72,8 @@ export interface UpdateResult {
   updated: boolean;
   /** The updated item (only when updated=true) */
   item?: CslItem;
+  /** The original item before update (when item is available) */
+  oldItem?: CslItem;
   /** Error type when update failed (only when updated=false) */
   errorType?: "not_found" | "id_collision";
   /** True if the ID was changed due to collision resolution */

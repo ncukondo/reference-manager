@@ -102,6 +102,70 @@ describe("update command", () => {
 
       expect(output).toBe("No changes: [Smith-2020] Test Title");
     });
+
+    it("should show changed fields when oldItem is available", () => {
+      const oldItem = createItem("Smith-2020", "Old Title");
+      const newItem = createItem("Smith-2020", "New Title");
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: newItem,
+        oldItem,
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toContain("Updated: [Smith-2020] New Title");
+      expect(output).toContain('  title: "Old Title" → "New Title"');
+    });
+
+    it("should show multiple changed fields", () => {
+      const oldItem = { ...createItem("Smith-2020", "Old Title"), volume: "1" };
+      const newItem = { ...createItem("Smith-2020", "New Title"), volume: "2" };
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: newItem,
+        oldItem,
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toContain('  title: "Old Title" → "New Title"');
+      expect(output).toContain('  volume: "1" → "2"');
+    });
+
+    it("should show author count change", () => {
+      const oldItem = {
+        ...createItem("Smith-2020", "Test Title"),
+        author: [{ family: "Smith", given: "John" }],
+      };
+      const newItem = {
+        ...createItem("Smith-2020", "Test Title"),
+        author: [
+          { family: "Smith", given: "John" },
+          { family: "Doe", given: "Jane" },
+        ],
+      };
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: newItem,
+        oldItem,
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toContain("  author: +1 entry");
+    });
+
+    it("should not show change details when oldItem is not available", () => {
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: createItem("Smith-2020", "New Title"),
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toBe("Updated: [Smith-2020] New Title");
+    });
   });
 
   describe("parseSetOption", () => {

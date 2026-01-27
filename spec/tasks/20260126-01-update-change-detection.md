@@ -119,10 +119,10 @@ Updated: [smith-2024] New Title
 - Update `formatEditOutput` to show changes per item
 - Update `formatUpdateJsonOutput` to include `changes` array
 
-- [ ] Write tests for change detection utilities
-- [ ] Implement `getChangedFields` function
-- [ ] Implement `formatFieldChange` function
-- [ ] Update `formatUpdateOutput` with change details
+- [x] Write tests for change detection utilities
+- [x] Implement `getChangedFields` function
+- [x] Implement `formatFieldChange` function
+- [x] Update `formatUpdateOutput` with change details
 - [ ] Update `formatEditOutput` with change details
 - [ ] Update JSON output with `changes` field
 - [ ] Verify Green

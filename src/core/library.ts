@@ -347,7 +347,7 @@ export class Library implements ILibrary {
     this.references[index] = newRef;
     this.addToIndices(newRef);
 
-    const result: UpdateResult = { updated: true, item: newRef.getItem() };
+    const result: UpdateResult = { updated: true, item: newRef.getItem(), oldItem: existingItem };
     if (idChanged) {
       result.idChanged = true;
       result.newId = newId;
