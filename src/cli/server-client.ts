@@ -153,7 +153,7 @@ export class ServerClient implements ILibraryOperations {
     // Return UpdateResult with item if available
     const updateResult: UpdateResult = { updated: result.updated };
     if (result.item !== undefined) updateResult.item = result.item;
-    if (result.idCollision !== undefined) updateResult.idCollision = result.idCollision;
+    if (result.errorType !== undefined) updateResult.errorType = result.errorType;
     if (result.idChanged !== undefined) updateResult.idChanged = result.idChanged;
     if (result.newId !== undefined) updateResult.newId = result.newId;
     return updateResult;

@@ -105,7 +105,6 @@ describe("OperationsLibrary", () => {
       const updateResult: UpdateResult = {
         updated: true,
         idChanged: false,
-        idCollision: false,
         item: mockItem,
       };
       vi.mocked(mockLibrary.update).mockResolvedValue(updateResult);

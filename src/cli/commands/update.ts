@@ -3,6 +3,7 @@ import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
+import { formatChangeDetails } from "../../features/operations/change-details.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
@@ -354,8 +355,12 @@ export async function executeUpdate(
  */
 export function formatUpdateOutput(result: UpdateCommandResult, identifier: string): string {
   if (!result.updated) {
-    if (result.idCollision) {
+    if (result.errorType === "id_collision") {
       return `Update failed: ID collision for ${identifier}`;
+    }
+    // No changes detected - item is present
+    if (result.item) {
+      return `No changes: [${result.item.id}] ${result.item.title || "(no title)"}`;
     }
     return `Reference not found: ${identifier}`;
   }
@@ -371,6 +376,11 @@ export function formatUpdateOutput(result: UpdateCommandResult, identifier: stri
 
   if (result.idChanged && result.newId) {
     parts.push(`ID changed to: ${result.newId}`);
+  }
+
+  // Show changed fields when oldItem is available
+  if (result.oldItem && item) {
+    parts.push(...formatChangeDetails(result.oldItem, item));
   }
 
   return parts.join("\n");
@@ -535,11 +545,6 @@ export async function handleUpdateAction(
     const identifier = await resolveUpdateIdentifier(identifierArg, hasSetOptions, context, config);
     const validatedUpdates = await parseUpdateInput(options.set, file);
 
-    const idType = options.uuid ? "uuid" : "id";
-    const beforeItem = options.full
-      ? await context.library.find(identifier, { idType })
-      : undefined;
-
     const updateOptions: UpdateCommandOptions = {
       identifier,
       updates: validatedUpdates,
@@ -551,7 +556,7 @@ export async function handleUpdateAction(
     if (outputFormat === "json") {
       const jsonOptions = {
         ...(options.full && { full: true }),
-        ...(beforeItem && { before: beforeItem }),
+        ...(result.oldItem && { before: result.oldItem }),
       };
       const jsonOutput = formatUpdateJsonOutput(result, identifier, jsonOptions);
       process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);

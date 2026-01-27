@@ -63,9 +63,13 @@ Editor resolution order (same as Git):
 3. **Write**: Create temporary file with appropriate extension (`.yaml` or `.json`)
 4. **Edit**: Open editor synchronously and wait for exit
 5. **Parse**: Read and parse edited content
-6. **Validate**: Validate against CSL-JSON schema using Zod
-7. **Update**: If valid, update references in library
-8. **Cleanup**: Delete temporary file
+6. **Validate**: Two-stage validation (see Validation Pipeline)
+7. **On error**: Insert error details into file, prompt user (see Validation Error Handling)
+   - Re-edit → go to step 4
+   - Restore original → go to step 2
+   - Abort → go to step 8
+8. **Update**: If all valid, update references in library
+9. **Cleanup**: Delete temporary file
 
 ### YAML Format (Default)
 
@@ -126,6 +130,20 @@ The following fields are transformed for better editability:
 
 On save, these are converted back to their internal/file formats.
 
+### Validation Pipeline
+
+Two-stage validation is applied after parsing edited content:
+
+**Stage 1 — Edit-format validation (pre-transform):**
+- Date fields (`issued`, `accessed`): if present and string, must match `ISO_DATE_REGEX` (`/^\d{4}(-\d{2})?(-\d{2})?$/`)
+- Error message: `"Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)"`
+
+**Stage 2 — CSL schema validation (post-transform):**
+- After date transformation, validate each item against `CslItemSchema` (Zod)
+- Reports Zod error paths and messages (e.g., `author: Expected array, received string`)
+
+Validation is per-item. If ANY item fails, all items are blocked until errors are resolved or user aborts.
+
 ### JSON Format
 
 ```json
@@ -166,26 +184,104 @@ Changes to protected fields are silently ignored.
 
 ### Validation Error Handling
 
-When validation fails after editing:
+When validation fails after editing, a three-part error recovery flow is triggered:
+
+#### Terminal Display
+
+Shown before the interactive prompt:
 
 ```
-Validation errors found:
-
-Entry 1 (Smith-2024):
-  - title: Required field is missing
-  - issued.date-parts: Invalid date format
+Validation errors (2 of 3 entries):
+  Entry 1 (Smith-2024): issued
+  Entry 3 (Doe-2023): author, type
 
 What would you like to do?
-❯ Re-edit (open editor again)
+❯ Re-edit (errors shown in file)
   Restore original (discard changes)
   Abort (exit without saving)
 ```
 
-**Options:**
+#### YAML Re-edit File Format
+
+When re-editing after validation failure, error details are inserted as comments:
+
+```yaml
+# ⚠ Validation Errors (2 of 3 entries)
+# ─────────────────────────────────────
+# Smith-2024: issued
+# Doe-2023: author, type
+# ─────────────────────────────────────
+---
+# ⚠ Errors:
+#   issued: Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)
+#
+# === Protected Fields (do not edit) ===
+# uuid: 550e8400-...
+- id: Smith-2024
+  issued: "hello"
+  ...
+---
+# === Protected Fields (do not edit) ===
+# uuid: 661f9500-...
+- id: Jones-2024
+  ...
+---
+# ⚠ Errors:
+#   author: Expected array, received string
+#   type: Required
+#
+# === Protected Fields (do not edit) ===
+# uuid: 772a0600-...
+- id: Doe-2023
+  author: John
+  ...
+```
+
+- File top: summary listing which entries have errors and which fields
+- Before each errored entry: detailed error messages as `# ⚠ Errors:` comment block
+- Entries without errors: no error comments, only protected field comments as usual
+- Error comments are stripped on re-parse (existing `#` comment stripping handles this)
+
+#### JSON Re-edit File Format
+
+When re-editing after validation failure, error details are added as `_errors` keys:
+
+```json
+[
+  {
+    "_errors": [
+      "issued: Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)"
+    ],
+    "_protected": { "uuid": "550e8400-..." },
+    "id": "Smith-2024",
+    "issued": "hello"
+  },
+  {
+    "_protected": { "uuid": "661f9500-..." },
+    "id": "Jones-2024"
+  },
+  {
+    "_errors": [
+      "author: Expected array, received string",
+      "type: Required"
+    ],
+    "_protected": { "uuid": "772a0600-..." },
+    "id": "Doe-2023",
+    "author": "John"
+  }
+]
+```
+
+- `_errors` key: array of error message strings, present only on items with errors
+- `_errors` is stripped on re-parse (alongside `_protected`)
+- No file-level summary in JSON (per-item `_errors` serves this purpose; terminal prompt shows the summary)
+
+#### Prompt Options
+
 | Choice | Behavior |
 |--------|----------|
-| Re-edit | Re-open editor with current (invalid) content |
-| Restore original | Re-open editor with original content |
+| Re-edit | Re-open editor with current (invalid) content + error annotations |
+| Restore original | Overwrite temp file with original content, re-open editor |
 | Abort | Exit without saving any changes |
 
 ### Multiple References
@@ -251,16 +347,85 @@ default_format = "yaml"    # Default format: yaml, json
 | `$VISUAL` | Preferred visual editor |
 | `$EDITOR` | Fallback editor |
 
+## Command Result
+
+### EditCommandResult
+
+```typescript
+type EditItemState = 'updated' | 'unchanged' | 'not_found' | 'id_collision';
+
+interface EditItemResult {
+  id: string;
+  state: EditItemState;
+  item?: CslItem;      // Current/updated item (when reference is found)
+  oldItem?: CslItem;   // Item before update (for diff calculation)
+  idChanged?: boolean;  // True if ID was changed due to collision resolution
+  newId?: string;       // Resolved ID after collision (when idChanged=true)
+}
+
+interface EditCommandResult {
+  success: boolean;
+  results: EditItemResult[];
+  parseError?: string;
+  aborted?: boolean;
+}
+```
+
+### State Descriptions
+
+| State | Description | item | oldItem | idChanged | newId |
+|-------|-------------|------|---------|-----------|-------|
+| `updated` | Reference was modified | Updated item | Original item | If resolved | Resolved ID |
+| `unchanged` | No changes detected | Current item | - | - | - |
+| `not_found` | Reference not found in library | - | - | - | - |
+| `id_collision` | New ID conflicts with existing (fail mode only) | - | Original item | - | - |
+
+### Change Detection
+
+- Updates only occur when data actually changes
+- Comparison excludes protected fields: `custom.timestamp`, `custom.uuid`, `custom.created_at`
+- `timestamp` is only updated when actual changes are made
+
+### Output Format
+
+**Text output (with change details):**
+```
+Updated 2 of 3 references:
+  - smith-2024a (was: smith-2024)
+    id: smith-2024 → smith-2024a
+    title: "Old Title" → "New Title"
+  - jones-2023
+    author: +1 entry
+No changes: 1
+  - unchanged-2024
+```
+
+When an edited ID collides with an existing ID, it is auto-resolved by appending a suffix (same as `ref add`).
+The resolved ID is shown with `(was: <original>)` notation.
+
+**Change detail format:**
+
+| Field Type | Format | Example |
+|------------|--------|---------|
+| String | `"old" → "new"` | `title: "Old" → "New"` |
+| Array (add) | `+N entries` | `author: +1 entry` |
+| Array (remove) | `-N entries` | `keyword: -2 entries` |
+| Array (mixed) | `+N/-M entries` | `author: +1/-1 entries` |
+| Long string | Truncate at 25 chars | `abstract: "Long text..." → "New long..."` |
+| Added field | `(added)` | `volume: (added) "10"` |
+| Removed field | `(removed)` | `issue: "5" (removed)` |
+
 ## Error Handling
 
 | Condition | Behavior |
 |-----------|----------|
 | Non-TTY environment | Error exit (code 1) |
-| Reference not found | Error message, exit (code 1) |
+| Reference not found | Included in results with `state: 'not_found'` |
+| ID collision | Auto-resolved with suffix (e.g., `Smith-2020a`); reported via `idChanged`/`newId` |
 | No editor configured | Use platform fallback |
 | Editor exit non-zero | Prompt: retry, restore, or abort |
-| Parse error | Show error, prompt: re-edit, restore, or abort |
-| Validation error | Show details, prompt: re-edit, restore, or abort |
+| Parse error | Show error, prompt: re-edit, restore, or abort (all items fail) |
+| Validation error | Show details in terminal, insert errors in file, prompt: re-edit, restore, or abort |
 | Write conflict | Follow write-safety merge protocol |
 
 ## Dependencies

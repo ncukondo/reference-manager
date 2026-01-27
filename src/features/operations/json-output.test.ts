@@ -360,7 +360,7 @@ describe("JSON output formatters", () => {
       it("should format ID collision error", () => {
         const result: UpdateOperationResult = {
           updated: false,
-          idCollision: true,
+          errorType: "id_collision",
         };
 
         const output = formatUpdateJsonOutput(result, "smith-2024", {});

@@ -23,8 +23,10 @@ export interface UpdateOperationResult {
   updated: boolean;
   /** The updated item (if successful) */
   item?: CslItem;
-  /** True if ID collision occurred (only when updated=false and onIdCollision='fail') */
-  idCollision?: boolean;
+  /** The original item before update (when item is available) */
+  oldItem?: CslItem;
+  /** Error type when update failed (only when updated=false) */
+  errorType?: "not_found" | "id_collision";
   /** True if the ID was changed due to collision resolution */
   idChanged?: boolean;
   /** The new ID after collision resolution (only when idChanged=true) */
@@ -49,8 +51,11 @@ export async function updateReference(
 
   if (!updateResult.updated) {
     const result: UpdateOperationResult = { updated: false };
-    if (updateResult.idCollision) {
-      result.idCollision = true;
+    if (updateResult.errorType) {
+      result.errorType = updateResult.errorType;
+    }
+    if (updateResult.item) {
+      result.item = updateResult.item;
     }
     return result;
   }
@@ -63,6 +68,10 @@ export async function updateReference(
 
   if (updateResult.item) {
     result.item = updateResult.item;
+  }
+
+  if (updateResult.oldItem) {
+    result.oldItem = updateResult.oldItem;
   }
 
   if (updateResult.idChanged && updateResult.newId) {

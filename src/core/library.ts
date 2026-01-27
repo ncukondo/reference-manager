@@ -328,7 +328,13 @@ export class Library implements ILibrary {
     );
 
     if (collision) {
-      return { updated: false, idCollision: true };
+      return { updated: false, errorType: "id_collision" };
+    }
+
+    // Check for actual changes (excluding protected fields like uuid, created_at, timestamp)
+    if (!this.hasChanges(existingItem, updates, newId)) {
+      // No changes detected - return the item without updating timestamp
+      return { updated: false, item: existingItem };
     }
 
     const updatedItem = this.buildUpdatedItem(existingItem, updates, newId);
@@ -341,7 +347,7 @@ export class Library implements ILibrary {
     this.references[index] = newRef;
     this.addToIndices(newRef);
 
-    const result: UpdateResult = { updated: true, item: newRef.getItem() };
+    const result: UpdateResult = { updated: true, item: newRef.getItem(), oldItem: existingItem };
     if (idChanged) {
       result.idChanged = true;
       result.newId = newId;
@@ -377,6 +383,64 @@ export class Library implements ILibrary {
     existingIds.delete(currentId);
     const resolvedId = this.resolveIdCollision(requestedId, existingIds);
     return { newId: resolvedId, idChanged: true, collision: false };
+  }
+
+  /** Protected custom fields that should not trigger change detection */
+  private static readonly PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp"]);
+
+  /**
+   * Check if there are actual changes between existing item and updates.
+   * Ignores protected fields (uuid, created_at, timestamp).
+   */
+  private hasChanges(existingItem: CslItem, updates: Partial<CslItem>, newId: string): boolean {
+    if (newId !== existingItem.id) return true;
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === "id") continue;
+      if (key === "custom") {
+        if (this.hasCustomFieldChanges(existingItem.custom, value as CslItem["custom"])) {
+          return true;
+        }
+        continue;
+      }
+      if (!this.isEqual(existingItem[key as keyof CslItem], value)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check if custom fields have changes (excluding protected fields).
+   */
+  private hasCustomFieldChanges(existing: CslItem["custom"], updates: CslItem["custom"]): boolean {
+    if (!updates) return false;
+    for (const [key, value] of Object.entries(updates)) {
+      if (Library.PROTECTED_CUSTOM_FIELDS.has(key)) continue;
+      if (!this.isEqual(existing?.[key], value)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Deep equality check for comparing values.
+   */
+  private isEqual(a: unknown, b: unknown): boolean {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (typeof a !== typeof b) return false;
+
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.length === b.length && a.every((item, i) => this.isEqual(item, b[i]));
+    }
+
+    if (typeof a === "object" && typeof b === "object") {
+      const aObj = a as Record<string, unknown>;
+      const bObj = b as Record<string, unknown>;
+      const aKeys = Object.keys(aObj);
+      if (aKeys.length !== Object.keys(bObj).length) return false;
+      return aKeys.every((key) => this.isEqual(aObj[key], bObj[key]));
+    }
+
+    return false;
   }
 
   /**

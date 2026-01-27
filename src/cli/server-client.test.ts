@@ -263,7 +263,7 @@ describe("ServerClient", () => {
 
     test("should return ID collision result for 409", async () => {
       const updates = { id: "existing-id" };
-      const updateResult = { updated: false, idCollision: true };
+      const updateResult = { updated: false, errorType: "id_collision" as const };
 
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,

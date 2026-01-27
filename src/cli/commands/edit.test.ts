@@ -205,6 +205,87 @@ describe("edit command", () => {
       expect(mockUpdate).toHaveBeenCalled();
       expect(mockSave).toHaveBeenCalled();
     });
+
+    it("returns unchanged state when no changes detected", async () => {
+      const unchangedItem = { ...sampleItem, title: "Same Title" };
+      mockFind.mockResolvedValue(unchangedItem);
+      mockUpdate.mockResolvedValue({ updated: false, item: unchangedItem });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Same Title",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.success).toBe(true);
+      expect(result.updatedCount).toBe(0);
+      expect(result.results.length).toBe(1);
+      expect(result.results[0].state).toBe("unchanged");
+      expect(result.results[0].item).toBeDefined();
+      expect(result.results[0].oldItem).toBeDefined();
+      expect(mockSave).not.toHaveBeenCalled();
+    });
+
+    it("returns detailed results for each edited item", async () => {
+      const item1 = {
+        ...sampleItem,
+        id: "Item-1",
+        custom: { ...sampleItem.custom, uuid: "uuid-1" },
+      };
+      const item2 = {
+        ...sampleItem,
+        id: "Item-2",
+        custom: { ...sampleItem.custom, uuid: "uuid-2" },
+      };
+
+      mockFind.mockImplementation((id) => {
+        if (id === "Item-1") return Promise.resolve(item1);
+        if (id === "Item-2") return Promise.resolve(item2);
+        return Promise.resolve(undefined);
+      });
+
+      mockUpdate.mockImplementation((uuid) => {
+        if (uuid === "uuid-1")
+          return Promise.resolve({ updated: true, item: { ...item1, title: "Updated 1" } });
+        if (uuid === "uuid-2") return Promise.resolve({ updated: false, item: item2 }); // No changes
+        return Promise.resolve({ updated: false });
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          { id: "Item-1", title: "Updated 1", _extractedUuid: "uuid-1" },
+          { id: "Item-2", title: item2.title, _extractedUuid: "uuid-2" },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Item-1", "Item-2"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.success).toBe(true);
+      expect(result.updatedCount).toBe(1);
+      expect(result.updatedIds).toEqual(["Item-1"]);
+      expect(result.results.length).toBe(2);
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[1].state).toBe("unchanged");
+    });
   });
 
   describe("formatEditOutput", () => {
@@ -213,6 +294,7 @@ describe("edit command", () => {
         success: true,
         updatedCount: 1,
         updatedIds: ["Smith-2024"],
+        results: [],
       };
 
       const output = formatEditOutput(result);
@@ -225,6 +307,7 @@ describe("edit command", () => {
         success: true,
         updatedCount: 3,
         updatedIds: ["Smith-2024", "Doe-2023", "Johnson-2022"],
+        results: [],
       };
 
       const output = formatEditOutput(result);
@@ -236,6 +319,7 @@ describe("edit command", () => {
         success: false,
         updatedCount: 0,
         updatedIds: [],
+        results: [],
         error: "Reference not found: Unknown-2024",
       };
 
@@ -249,11 +333,158 @@ describe("edit command", () => {
         success: false,
         updatedCount: 0,
         updatedIds: [],
+        results: [],
         aborted: true,
       };
 
       const output = formatEditOutput(result);
       expect(output).toContain("aborted");
+    });
+
+    it("formats output with unchanged items", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [
+          { id: "Smith-2024", state: "updated" },
+          { id: "Doe-2023", state: "unchanged" },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Updated 1 of 2 references");
+      expect(output).toContain("Smith-2024");
+      expect(output).toContain("No changes: 1");
+      expect(output).toContain("Doe-2023");
+    });
+
+    it("formats output with failed items", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [
+          { id: "Smith-2024", state: "updated" },
+          { id: "NotFound", state: "not_found" },
+          { id: "Collision", state: "id_collision" },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Updated 1 of 3 references");
+      expect(output).toContain("Failed: 2");
+      expect(output).toContain("NotFound (Not found)");
+      expect(output).toContain("Collision (ID collision)");
+    });
+
+    it("formats output when all items unchanged", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 0,
+        updatedIds: [],
+        results: [
+          { id: "Smith-2024", state: "unchanged" },
+          { id: "Doe-2023", state: "unchanged" },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Updated 0 of 2 references");
+      expect(output).toContain("No changes: 2");
+    });
+
+    it("shows changed fields for updated items", () => {
+      const oldItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "Old Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "New Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-02T00:00:00.000Z",
+        },
+      };
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [{ id: "Smith-2024", state: "updated", oldItem, item: newItem }],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Smith-2024");
+      expect(output).toContain('title: "Old Title" → "New Title"');
+    });
+
+    it("shows changed fields for multiple updated items", () => {
+      const oldItem1: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "Old Title",
+        custom: {
+          uuid: "uuid-1",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem1: CslItem = {
+        ...oldItem1,
+        title: "New Title",
+        custom: { ...oldItem1.custom, timestamp: "2024-01-02T00:00:00.000Z" },
+      };
+      const oldItem2: CslItem = {
+        id: "Doe-2023",
+        type: "article",
+        title: "Another Article",
+        volume: "1",
+        custom: {
+          uuid: "uuid-2",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem2: CslItem = {
+        ...oldItem2,
+        volume: "2",
+        custom: { ...oldItem2.custom, timestamp: "2024-01-02T00:00:00.000Z" },
+      };
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 2,
+        updatedIds: ["Smith-2024", "Doe-2023"],
+        results: [
+          { id: "Smith-2024", state: "updated", oldItem: oldItem1, item: newItem1 },
+          { id: "Doe-2023", state: "updated", oldItem: oldItem2, item: newItem2 },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain('title: "Old Title" → "New Title"');
+      expect(output).toContain('volume: "1" → "2"');
+    });
+
+    it("does not show change details for items without oldItem", () => {
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [{ id: "Smith-2024", state: "updated" }],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Smith-2024");
+      expect(output).not.toContain("→");
     });
   });
 

@@ -60,7 +60,7 @@ describe("update command", () => {
     it("should format ID collision result", () => {
       const result: UpdateOperationResult = {
         updated: false,
-        idCollision: true,
+        errorType: "id_collision",
       };
 
       const output = formatUpdateOutput(result, "Smith-2020");
@@ -89,6 +89,82 @@ describe("update command", () => {
       const output = formatUpdateOutput(result, "test-uuid");
 
       expect(output).toBe("Updated reference: test-uuid");
+    });
+
+    it("should format no changes result", () => {
+      const item = createItem("Smith-2020", "Test Title");
+      const result: UpdateOperationResult = {
+        updated: false,
+        item, // item present means reference found but no changes
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toBe("No changes: [Smith-2020] Test Title");
+    });
+
+    it("should show changed fields when oldItem is available", () => {
+      const oldItem = createItem("Smith-2020", "Old Title");
+      const newItem = createItem("Smith-2020", "New Title");
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: newItem,
+        oldItem,
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toContain("Updated: [Smith-2020] New Title");
+      expect(output).toContain('  title: "Old Title" → "New Title"');
+    });
+
+    it("should show multiple changed fields", () => {
+      const oldItem = { ...createItem("Smith-2020", "Old Title"), volume: "1" };
+      const newItem = { ...createItem("Smith-2020", "New Title"), volume: "2" };
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: newItem,
+        oldItem,
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toContain('  title: "Old Title" → "New Title"');
+      expect(output).toContain('  volume: "1" → "2"');
+    });
+
+    it("should show author count change", () => {
+      const oldItem = {
+        ...createItem("Smith-2020", "Test Title"),
+        author: [{ family: "Smith", given: "John" }],
+      };
+      const newItem = {
+        ...createItem("Smith-2020", "Test Title"),
+        author: [
+          { family: "Smith", given: "John" },
+          { family: "Doe", given: "Jane" },
+        ],
+      };
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: newItem,
+        oldItem,
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toContain("  author: +1 entry");
+    });
+
+    it("should not show change details when oldItem is not available", () => {
+      const result: UpdateOperationResult = {
+        updated: true,
+        item: createItem("Smith-2020", "New Title"),
+      };
+
+      const output = formatUpdateOutput(result, "Smith-2020");
+
+      expect(output).toBe("Updated: [Smith-2020] New Title");
     });
   });
 
@@ -522,6 +598,51 @@ describe("update command", () => {
         expect(output.success).toBe(true);
         expect(output.title).toBe("");
       });
+
+      it("should include changes array when oldItem is available", () => {
+        const oldItem = createItem("Smith-2020", "Old Title", "uuid-123");
+        const newItem = { ...createItem("Smith-2020", "New Title", "uuid-123"), volume: "42" };
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: newItem,
+          oldItem,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.success).toBe(true);
+        expect(output.changes).toContain("title");
+        expect(output.changes).toContain("volume");
+      });
+
+      it("should not include changes when oldItem is not available", () => {
+        const item = createItem("Smith-2020", "Updated Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.changes).toBeUndefined();
+      });
+
+      it("should include changes with ID change", () => {
+        const oldItem = createItem("Smith-2020", "Test Title", "uuid-123");
+        const newItem = createItem("Jones-2020", "Test Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: newItem,
+          oldItem,
+          idChanged: true,
+          newId: "Jones-2020",
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.changes).toContain("id");
+        expect(output.idChanged).toBe(true);
+      });
     });
 
     describe("error cases", () => {
@@ -542,7 +663,7 @@ describe("update command", () => {
       it("should format ID collision as JSON error", () => {
         const result: UpdateOperationResult = {
           updated: false,
-          idCollision: true,
+          errorType: "id_collision",
         };
 
         const output = formatUpdateJsonOutput(result, "Smith-2020", {});
@@ -566,6 +687,44 @@ describe("update command", () => {
         expect(output.title).toBeUndefined();
         expect(output.before).toBeUndefined();
         expect(output.after).toBeUndefined();
+      });
+
+      it("should format no changes result as JSON", () => {
+        const item = createItem("Smith-2020", "Same Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: false,
+          item, // item present means reference found but no changes
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output).toEqual({
+          success: true,
+          unchanged: true,
+          id: "Smith-2020",
+          uuid: "uuid-123",
+          title: "Same Title",
+        });
+      });
+
+      it("should format no changes result with --full option", () => {
+        const item = createItem("Smith-2020", "Same Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: false,
+          item,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", { full: true, before: item });
+
+        expect(output).toEqual({
+          success: true,
+          unchanged: true,
+          id: "Smith-2020",
+          uuid: "uuid-123",
+          title: "Same Title",
+          before: item,
+          after: item,
+        });
       });
     });
   });

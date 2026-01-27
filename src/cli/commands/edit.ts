@@ -9,6 +9,7 @@ import type { CslItem } from "../../core/csl-json/types.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
+import { formatChangeDetails } from "../../features/operations/change-details.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
   ExitCode,
@@ -33,12 +34,33 @@ export interface EditCommandOptions {
 }
 
 /**
+ * State of an individual item after edit operation.
+ */
+export type EditItemState = "updated" | "unchanged" | "not_found" | "id_collision";
+
+/**
+ * Result for a single item in the edit operation.
+ */
+export interface EditItemResult {
+  /** The identifier (id or uuid) used to locate this item */
+  id: string;
+  /** The state of this item after the edit operation */
+  state: EditItemState;
+  /** The updated item (when state is 'updated' or 'unchanged') */
+  item?: CslItem;
+  /** The original item before changes (when state is 'updated' or 'unchanged') */
+  oldItem?: CslItem;
+}
+
+/**
  * Result from edit command execution.
  */
 export interface EditCommandResult {
   success: boolean;
   updatedCount: number;
   updatedIds: string[];
+  /** Detailed results for each edited item */
+  results: EditItemResult[];
   error?: string;
   aborted?: boolean;
 }
@@ -113,6 +135,33 @@ async function resolveIdentifiers(
 }
 
 /**
+ * Convert UpdateResult to EditItemResult
+ */
+function toEditItemResult(
+  editedId: string,
+  result: import("../../core/library-interface.js").UpdateResult,
+  oldItem: CslItem
+): EditItemResult {
+  // No changes case: item present but not updated
+  if (!result.updated && result.item) {
+    return { id: editedId, state: "unchanged", item: result.item, oldItem };
+  }
+  // Error case: not updated and no item
+  if (!result.updated) {
+    return {
+      id: editedId,
+      state: result.errorType === "id_collision" ? "id_collision" : "not_found",
+    };
+  }
+  // Success case: updated with item
+  if (result.item) {
+    return { id: editedId, state: "updated", item: result.item, oldItem };
+  }
+  // Fallback: updated but no item (shouldn't happen, but be defensive)
+  return { id: editedId, state: "updated", oldItem };
+}
+
+/**
  * Update a single edited item in the library.
  */
 async function updateEditedItem(
@@ -120,30 +169,31 @@ async function updateEditedItem(
   items: CslItem[],
   uuidToOriginal: Map<string, CslItem>,
   context: ExecutionContext
-): Promise<string | undefined> {
+): Promise<EditItemResult> {
   const extractedUuid = editedItem._extractedUuid as string | undefined;
+  const editedId = editedItem.id as string;
   const original = extractedUuid ? uuidToOriginal.get(extractedUuid) : undefined;
 
   if (original && extractedUuid) {
     const updates = mergeWithProtectedFields(original, editedItem);
-    await context.library.update(extractedUuid, updates, { idType: "uuid" });
-    return editedItem.id as string;
+    const result = await context.library.update(extractedUuid, updates, { idType: "uuid" });
+    return toEditItemResult(editedId, result, original);
   }
 
   // Fallback: match by id
-  const matchedOriginal = items.find((item) => item.id === editedItem.id);
+  const matchedOriginal = items.find((item) => item.id === editedId);
   if (!matchedOriginal) {
-    return undefined;
+    return { id: editedId, state: "not_found" };
   }
 
   const matchedUuid = getUuidFromItem(matchedOriginal);
-  if (matchedUuid) {
-    const updates = mergeWithProtectedFields(matchedOriginal, editedItem);
-    await context.library.update(matchedUuid, updates, { idType: "uuid" });
-    return editedItem.id as string;
+  if (!matchedUuid) {
+    return { id: editedId, state: "not_found" };
   }
 
-  return undefined;
+  const updates = mergeWithProtectedFields(matchedOriginal, editedItem);
+  const result = await context.library.update(matchedUuid, updates, { idType: "uuid" });
+  return toEditItemResult(editedId, result, matchedOriginal);
 }
 
 /**
@@ -167,6 +217,7 @@ export async function executeEditCommand(
       success: false,
       updatedCount: 0,
       updatedIds: [],
+      results: [],
       error: resolved.error,
     };
   }
@@ -184,16 +235,19 @@ export async function executeEditCommand(
       success: false,
       updatedCount: 0,
       updatedIds: [],
+      results: [],
       error: editResult.error ?? "Edit failed",
     };
   }
 
   // 4. Update references
   const updatedIds: string[] = [];
+  const results: EditItemResult[] = [];
   for (const editedItem of editResult.editedItems) {
-    const updatedId = await updateEditedItem(editedItem, items, uuidToOriginal, context);
-    if (updatedId) {
-      updatedIds.push(updatedId);
+    const updateResult = await updateEditedItem(editedItem, items, uuidToOriginal, context);
+    results.push(updateResult);
+    if (updateResult.state === "updated") {
+      updatedIds.push(updateResult.id);
     }
   }
 
@@ -206,34 +260,82 @@ export async function executeEditCommand(
     success: true,
     updatedCount: updatedIds.length,
     updatedIds,
+    results,
   };
 }
 
 /**
+ * Format a list of items with a header
+ */
+function formatItemList(lines: string[], header: string, items: string[]): void {
+  if (items.length === 0) return;
+  if (header) lines.push(header);
+  for (const item of items) {
+    lines.push(`  - ${item}`);
+  }
+}
+
+/**
+ * Format failed items with their reasons
+ */
+function formatFailedItems(lines: string[], failed: EditItemResult[]): void {
+  if (failed.length === 0) return;
+  lines.push(`Failed: ${failed.length}`);
+  for (const r of failed) {
+    const reason = r.state === "id_collision" ? "ID collision" : "Not found";
+    lines.push(`  - ${r.id} (${reason})`);
+  }
+}
+
+/**
+ * Format the summary header line
+ */
+function formatSummaryHeader(updatedCount: number, totalCount: number): string {
+  if (totalCount === 0 || updatedCount === totalCount) {
+    const refWord = updatedCount === 1 ? "reference" : "references";
+    return `Updated ${updatedCount} ${refWord}:`;
+  }
+  return `Updated ${updatedCount} of ${totalCount} references:`;
+}
+
+/**
  * Format edit result for CLI output.
- *
- * @param result - Edit result
- * @returns Formatted output string
  */
 export function formatEditOutput(result: EditCommandResult): string {
-  if (result.aborted) {
-    return "Edit aborted.";
+  if (result.aborted) return "Edit aborted.";
+  if (!result.success) return `Error: ${result.error || "Unknown error"}`;
+
+  const totalCount = result.results.length;
+  const { updatedCount, updatedIds } = result;
+
+  if (totalCount === 0 && updatedCount === 0) return "No references were updated.";
+
+  const lines: string[] = [formatSummaryHeader(updatedCount, totalCount)];
+
+  // Show updated items with change details
+  const updatedResults = result.results.filter((r) => r.state === "updated");
+  if (updatedResults.length > 0) {
+    for (const r of updatedResults) {
+      lines.push(`  - ${r.id}`);
+      if (r.oldItem && r.item) {
+        lines.push(...formatChangeDetails(r.oldItem, r.item).map((l) => `  ${l}`));
+      }
+    }
+  } else {
+    formatItemList(lines, "", updatedIds);
   }
 
-  if (!result.success) {
-    return `Error: ${result.error || "Unknown error"}`;
-  }
-
-  const count = result.updatedCount;
-  const refWord = count === 1 ? "reference" : "references";
-
-  if (count === 0) {
-    return "No references were updated.";
-  }
-
-  const lines = [`Updated ${count} ${refWord}:`];
-  for (const id of result.updatedIds) {
-    lines.push(`  - ${id}`);
+  if (totalCount > 0) {
+    const unchanged = result.results.filter((r) => r.state === "unchanged");
+    const failed = result.results.filter(
+      (r) => r.state === "not_found" || r.state === "id_collision"
+    );
+    formatItemList(
+      lines,
+      `No changes: ${unchanged.length}`,
+      unchanged.map((r) => r.id)
+    );
+    formatFailedItems(lines, failed);
   }
 
   return lines.join("\n");

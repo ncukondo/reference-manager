@@ -40,12 +40,27 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 - [ ] Verify Green
 - [ ] Lint/Type check
 
+## Manual Verification
+
+<!-- Delete this section if not applicable. See spec/guidelines/testing.md for details. -->
+
+**Script**: `test-fixtures/test-<feature>.sh`
+
+Create a verification script following the pattern in `spec/guidelines/testing.md`.
+
+Non-TTY tests (automated):
+- [ ] [describe test and expected output]
+- [ ] [describe test and expected output]
+
+TTY-required tests (run manually in a terminal):
+- [ ] [describe test and expected output]
+
 ## Completion Checklist
 
 - [ ] All tests pass (`npm run test`)
 - [ ] Lint passes (`npm run lint`)
 - [ ] Type check passes (`npm run typecheck`)
 - [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification (if applicable)
+- [ ] Manual verification: `./test-fixtures/test-<feature>.sh` (if applicable)
 - [ ] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
