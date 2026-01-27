@@ -598,6 +598,51 @@ describe("update command", () => {
         expect(output.success).toBe(true);
         expect(output.title).toBe("");
       });
+
+      it("should include changes array when oldItem is available", () => {
+        const oldItem = createItem("Smith-2020", "Old Title", "uuid-123");
+        const newItem = { ...createItem("Smith-2020", "New Title", "uuid-123"), volume: "42" };
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: newItem,
+          oldItem,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.success).toBe(true);
+        expect(output.changes).toContain("title");
+        expect(output.changes).toContain("volume");
+      });
+
+      it("should not include changes when oldItem is not available", () => {
+        const item = createItem("Smith-2020", "Updated Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item,
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.changes).toBeUndefined();
+      });
+
+      it("should include changes with ID change", () => {
+        const oldItem = createItem("Smith-2020", "Test Title", "uuid-123");
+        const newItem = createItem("Jones-2020", "Test Title", "uuid-123");
+        const result: UpdateOperationResult = {
+          updated: true,
+          item: newItem,
+          oldItem,
+          idChanged: true,
+          newId: "Jones-2020",
+        };
+
+        const output = formatUpdateJsonOutput(result, "Smith-2020", {});
+
+        expect(output.changes).toContain("id");
+        expect(output.idChanged).toBe(true);
+      });
     });
 
     describe("error cases", () => {

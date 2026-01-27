@@ -9,6 +9,7 @@ import type { CslItem } from "../../core/csl-json/types.js";
 import type { DuplicateType } from "../duplicate/types.js";
 import type { FailureReason } from "../import/importer.js";
 import type { AddReferencesResult } from "./add.js";
+import { getChangedFields } from "./change-details.js";
 import type { RemoveResult } from "./remove.js";
 import type { UpdateOperationResult } from "./update.js";
 
@@ -74,6 +75,7 @@ export interface UpdateJsonOutput {
   uuid?: string;
   title?: string;
   unchanged?: boolean;
+  changes?: string[];
   idChanged?: boolean;
   previousId?: string;
   before?: CslItem;
@@ -250,6 +252,13 @@ function formatUpdateSuccessJson(
   const item = result.item as CslItem;
   const finalId = result.idChanged && result.newId ? result.newId : (item.id ?? originalId);
   const output = buildUpdateSuccessOutput(item, finalId);
+
+  if (result.oldItem) {
+    const changes = getChangedFields(result.oldItem, item);
+    if (changes.length > 0) {
+      output.changes = changes;
+    }
+  }
 
   if (result.idChanged && result.newId) {
     output.idChanged = true;

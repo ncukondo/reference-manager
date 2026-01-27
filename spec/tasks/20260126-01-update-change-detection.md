@@ -124,7 +124,7 @@ Updated: [smith-2024] New Title
 - [x] Implement `formatFieldChange` function
 - [x] Update `formatUpdateOutput` with change details
 - [x] Update `formatEditOutput` with change details
-- [ ] Update JSON output with `changes` field
+- [x] Update JSON output with `changes` field
 - [ ] Verify Green
 - [ ] Lint/Type check
 
