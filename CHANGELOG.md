@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Update Change Detection**: Added change detection to update and edit operations
+  - `ref update --set field=same_value` now reports "No changes" when value is unchanged
+  - `ref edit <id>` without changes shows "No changes" instead of "Updated"
+  - `UpdateResult.errorType` field replaces `idCollision` for cleaner error handling
+  - Edit command output shows "Updated X of Y references" with detailed breakdown
+  - JSON output includes `unchanged: true` field for unchanged items
+  - **Change details display**: Shows which fields changed in update/edit output
+    - Text output: `title: "Old Title" → "New Title"`, `author: +1 entry`
+    - JSON output: `changes` array with changed field names
+    - Supports all field types (strings, arrays, custom fields)
+
 ### Changed
 
 - **Interactive TUI**: Migrated from Enquirer to React Ink for all interactive components

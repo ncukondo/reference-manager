@@ -125,20 +125,20 @@ Updated: [smith-2024] New Title
 - [x] Update `formatUpdateOutput` with change details
 - [x] Update `formatEditOutput` with change details
 - [x] Update JSON output with `changes` field
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification:
   - [x] `ref edit <id>` without changes shows "No changes"
   - [x] `ref update --set title="same"` shows "No changes" when title is same
   - [x] `ref edit` with some changes shows correct counts
   - [ ] `ref update` shows changed fields
   - [ ] `ref edit` shows changed fields per item
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

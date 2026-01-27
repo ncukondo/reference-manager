@@ -93,12 +93,13 @@ Add change detection to update operations for accurate reporting.
 - Accurate "updated" vs "no changes" reporting for `ref update` and `ref edit`
 
 **Todos**:
-- [ ] Step 1: UpdateResult interface changes
-- [ ] Step 2: Change detection in Library.updateReference
-- [ ] Step 3: Update command output
-- [ ] Step 4: EditCommandResult interface
-- [ ] Step 5: Edit command change detection
-- [ ] Step 6: Edit command output
+- [x] Step 1: UpdateResult interface changes
+- [x] Step 2: Change detection in Library.updateReference
+- [x] Step 3: Update command output
+- [x] Step 4: EditCommandResult interface
+- [x] Step 5: Edit command change detection
+- [x] Step 6: Edit command output
+- [x] Step 7: Change details display
 
 ---
 
