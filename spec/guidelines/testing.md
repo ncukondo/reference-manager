@@ -90,6 +90,73 @@ npm run lint       # Linting
 npm run format     # Code formatting
 ```
 
+## Manual Verification
+
+Some features require CLI-level verification beyond unit/integration tests.
+When a task includes a **Manual Verification** section, follow the pattern below.
+
+### Pattern
+
+1. **Generate dummy data** using `test-fixtures/generate-dummy-library.mjs`
+2. **Build** with `npm run build`
+3. **Create a verification shell script** in `test-fixtures/test-<feature>.sh`
+4. **Run the script** and confirm all assertions pass
+
+### Verification Script Structure
+
+```bash
+#!/bin/bash
+# test-fixtures/test-<feature>.sh
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+TEST_DIR=$(mktemp -d)
+LIBRARY_FILE="$TEST_DIR/library.json"
+REF="node $PROJECT_DIR/bin/cli.js --library $LIBRARY_FILE"
+
+PASS=0; FAIL=0
+pass() { PASS=$((PASS + 1)); echo "  PASS: $1"; }
+fail() { FAIL=$((FAIL + 1)); echo "  FAIL: $1"; echo "        $2"; }
+
+# --- Setup ---
+node "$SCRIPT_DIR/generate-dummy-library.mjs" "$LIBRARY_FILE" 40
+
+# --- Tests ---
+echo "=== Test N: description ==="
+OUTPUT=$($REF <command> 2>&1 || true)
+if echo "$OUTPUT" | grep -q '<expected>'; then
+  pass "description"
+else
+  fail "description" "$OUTPUT"
+fi
+
+# JSON assertion example (using node inline):
+# JSON_OUT=$($REF <command> -o json 2>/dev/null || true)
+# if echo "$JSON_OUT" | node -e "
+#   const d=[];process.stdin.on('data',c=>d.push(c));
+#   process.stdin.on('end',()=>{
+#     const o=JSON.parse(d.join(''));
+#     process.exit(<condition> ? 0 : 1);
+#   })
+# "; then pass "..."; else fail "..." "$JSON_OUT"; fi
+
+# --- Cleanup & Summary ---
+rm -rf "$TEST_DIR"
+echo ""; echo "Results: $PASS passed, $FAIL failed"
+[ "$FAIL" -gt 0 ] && exit 1 || exit 0
+```
+
+### Guidelines
+
+- **Non-TTY tests** (update, add, remove, etc.) can be fully automated in the script
+- **TTY-required tests** (edit with EDITOR, search -t, etc.) should be documented as
+  manual steps in the task file, with a note that they require a real terminal
+- **`--library <path>`** flag isolates tests from the user's real library
+- **`REFERENCE_MANAGER_LIBRARY` env var** is an alternative to `--library`
+- Scripts live in `test-fixtures/` and are not gitignored
+- Dummy data generator: `node test-fixtures/generate-dummy-library.mjs [path] [count]`
+
 ## Required Test Coverage
 
 Required test areas:
