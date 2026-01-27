@@ -138,7 +138,7 @@ Updated: [smith-2024] New Title
   - [x] `ref edit <id>` without changes shows "No changes"
   - [x] `ref update --set title="same"` shows "No changes" when title is same
   - [x] `ref edit` with some changes shows correct counts
-  - [ ] `ref update` shows changed fields
-  - [ ] `ref edit` shows changed fields per item
+  - [x] `ref update` shows changed fields
+  - [x] `ref edit` shows changed fields per item
 - [x] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] Move this file to `spec/tasks/completed/`
