@@ -13,8 +13,10 @@ vi.mock("../../core/library.js");
 
 // Mock fs/promises
 const mockUnlink = vi.fn().mockResolvedValue(undefined);
+const mockRmdir = vi.fn().mockResolvedValue(undefined);
 vi.mock("node:fs/promises", () => ({
   unlink: (...args: unknown[]) => mockUnlink(...args),
+  rmdir: (...args: unknown[]) => mockRmdir(...args),
 }));
 
 describe("getFulltextAttachmentTypes", () => {
@@ -27,48 +29,7 @@ describe("getFulltextAttachmentTypes", () => {
     expect(getFulltextAttachmentTypes(item)).toEqual([]);
   });
 
-  it("should return empty array when fulltext is empty", () => {
-    const item: CslItem = {
-      id: "test",
-      type: "article-journal",
-      custom: { uuid: "uuid-1", created_at: "", timestamp: "", fulltext: {} },
-    };
-    expect(getFulltextAttachmentTypes(item)).toEqual([]);
-  });
-
-  it("should return ['pdf'] when only pdf exists", () => {
-    const item: CslItem = {
-      id: "test",
-      type: "article-journal",
-      custom: { uuid: "uuid-1", created_at: "", timestamp: "", fulltext: { pdf: "test.pdf" } },
-    };
-    expect(getFulltextAttachmentTypes(item)).toEqual(["pdf"]);
-  });
-
-  it("should return ['markdown'] when only markdown exists", () => {
-    const item: CslItem = {
-      id: "test",
-      type: "article-journal",
-      custom: { uuid: "uuid-1", created_at: "", timestamp: "", fulltext: { markdown: "test.md" } },
-    };
-    expect(getFulltextAttachmentTypes(item)).toEqual(["markdown"]);
-  });
-
-  it("should return ['pdf', 'markdown'] when both exist", () => {
-    const item: CslItem = {
-      id: "test",
-      type: "article-journal",
-      custom: {
-        uuid: "uuid-1",
-        created_at: "",
-        timestamp: "",
-        fulltext: { pdf: "test.pdf", markdown: "test.md" },
-      },
-    };
-    expect(getFulltextAttachmentTypes(item)).toEqual(["pdf", "markdown"]);
-  });
-
-  it("should return ['pdf'] when using new attachments format", () => {
+  it("should return ['pdf'] when using attachments format", () => {
     const item: CslItem = {
       id: "test",
       type: "article-journal",
@@ -85,7 +46,7 @@ describe("getFulltextAttachmentTypes", () => {
     expect(getFulltextAttachmentTypes(item)).toEqual(["pdf"]);
   });
 
-  it("should return ['markdown'] when using new attachments format with markdown", () => {
+  it("should return ['markdown'] when using attachments format with markdown", () => {
     const item: CslItem = {
       id: "test",
       type: "article-journal",
@@ -102,7 +63,7 @@ describe("getFulltextAttachmentTypes", () => {
     expect(getFulltextAttachmentTypes(item)).toEqual(["markdown"]);
   });
 
-  it("should return both types when using new attachments format with both pdf and markdown", () => {
+  it("should return both types when using attachments format with both pdf and markdown", () => {
     const item: CslItem = {
       id: "test",
       type: "article-journal",
@@ -246,7 +207,13 @@ describe("removeReference", () => {
         uuid: "uuid-1",
         created_at: "",
         timestamp: "",
-        fulltext: { pdf: "uuid-1.pdf", markdown: "uuid-1.md" },
+        attachments: {
+          directory: "uuid-1",
+          files: [
+            { filename: "fulltext.pdf", role: "fulltext" },
+            { filename: "fulltext.md", role: "fulltext" },
+          ],
+        },
       },
     };
 
@@ -302,8 +269,8 @@ describe("removeReference", () => {
       expect(result.removed).toBe(true);
       expect(result.deletedFulltextTypes).toEqual(["pdf", "markdown"]);
       expect(mockUnlink).toHaveBeenCalledTimes(2);
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1.pdf"));
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1.md"));
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1", "fulltext.pdf"));
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1", "fulltext.md"));
     });
 
     it("should return deletedFulltextTypes only when files exist", async () => {
@@ -313,7 +280,10 @@ describe("removeReference", () => {
           uuid: "uuid-1",
           created_at: "",
           timestamp: "",
-          fulltext: { pdf: "uuid-1.pdf" },
+          attachments: {
+            directory: "uuid-1",
+            files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+          },
         },
       };
       (mockLibrary.remove as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -332,7 +302,7 @@ describe("removeReference", () => {
       expect(result.removed).toBe(true);
       expect(result.deletedFulltextTypes).toEqual(["pdf"]);
       expect(mockUnlink).toHaveBeenCalledTimes(1);
-      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1.pdf"));
+      expect(mockUnlink).toHaveBeenCalledWith(path.join(fulltextDir, "uuid-1", "fulltext.pdf"));
     });
 
     it("should not include deletedFulltextTypes when item has no fulltext", async () => {

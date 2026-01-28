@@ -19,12 +19,6 @@ const CslDateSchema = z.object({
   literal: z.string().optional(),
 });
 
-// CSL-JSON Fulltext Metadata
-const CslFulltextSchema = z.object({
-  pdf: z.string().optional(),
-  markdown: z.string().optional(),
-});
-
 // CSL-JSON Custom Metadata
 // uuid, created_at, timestamp are optional in schema because:
 // 1. Other software (e.g., Zotero) may set custom fields without these
@@ -35,7 +29,6 @@ const CslCustomSchema = z
     created_at: z.string().optional(),
     timestamp: z.string().optional(),
     additional_urls: z.array(z.string()).optional(),
-    fulltext: CslFulltextSchema.optional(),
     tags: z.array(z.string()).optional(),
   })
   .passthrough();

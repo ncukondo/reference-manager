@@ -25,25 +25,6 @@ describe("serializeToJson", () => {
     expect(parsed[0]._protected.timestamp).toBe("2024-03-15T10:30:00.000Z");
   });
 
-  it("includes fulltext in _protected when present", () => {
-    const itemWithFulltext: CslItem = {
-      ...baseItem,
-      custom: {
-        uuid: baseItem.custom?.uuid ?? "",
-        created_at: baseItem.custom?.created_at ?? "",
-        timestamp: baseItem.custom?.timestamp ?? "",
-        fulltext: {
-          pdf: "Smith-2024-PMID12345678-550e8400.pdf",
-        },
-      },
-    };
-    const json = serializeToJson([itemWithFulltext]);
-    const parsed = JSON.parse(json);
-
-    expect(parsed[0]._protected.fulltext).toBeDefined();
-    expect(parsed[0]._protected.fulltext.pdf).toBe("Smith-2024-PMID12345678-550e8400.pdf");
-  });
-
   it("transforms date-parts to ISO string", () => {
     const itemWithDate: CslItem = {
       ...baseItem,

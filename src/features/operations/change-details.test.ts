@@ -104,25 +104,6 @@ describe("change-details", () => {
       expect(getChangedFields(oldItem, newItem)).toEqual(["type"]);
     });
 
-    it("should detect fulltext custom field change", () => {
-      const oldItem = createItem({
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-        },
-      });
-      const newItem = createItem({
-        custom: {
-          uuid: "test-uuid",
-          created_at: "2024-01-01T00:00:00.000Z",
-          timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: { pdf: "path/to/file.pdf" },
-        },
-      });
-      expect(getChangedFields(oldItem, newItem)).toEqual(["custom.fulltext"]);
-    });
-
     it("should ignore attachments custom field", () => {
       const oldItem = createItem({
         custom: {

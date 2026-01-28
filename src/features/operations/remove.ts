@@ -39,16 +39,7 @@ export interface RemoveResult {
 export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
   const types: FulltextType[] = [];
 
-  // Check legacy fulltext structure
-  const fulltext = item.custom?.fulltext;
-  if (fulltext?.pdf) {
-    types.push("pdf");
-  }
-  if (fulltext?.markdown) {
-    types.push("markdown");
-  }
-
-  // Check new attachments structure
+  // Check attachments structure
   const attachments = item.custom?.attachments as Attachments | undefined;
   const fulltextFiles = findFulltextFiles(attachments);
   for (const file of fulltextFiles) {
@@ -69,16 +60,7 @@ export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
 async function deleteFulltextFiles(item: CslItem, fulltextDirectory: string): Promise<void> {
   const filesToDelete: string[] = [];
 
-  // Check legacy fulltext structure
-  const fulltext = item.custom?.fulltext;
-  if (fulltext?.pdf) {
-    filesToDelete.push(join(fulltextDirectory, fulltext.pdf));
-  }
-  if (fulltext?.markdown) {
-    filesToDelete.push(join(fulltextDirectory, fulltext.markdown));
-  }
-
-  // Check new attachments structure
+  // Check attachments structure
   const attachments = item.custom?.attachments as Attachments | undefined;
   if (attachments?.directory) {
     const fulltextFiles = findFulltextFiles(attachments);

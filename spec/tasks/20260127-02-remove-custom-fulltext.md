@@ -47,14 +47,14 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
    - Remove `FulltextManager`, `FulltextIOError`, `FulltextNotAttachedError`,
      `AttachOptions`, `AttachResult`, `DetachOptions`, `DetachResult` exports
 
-- [ ] Update `json-serializer.ts`
-- [ ] Update `yaml-serializer.ts`
-- [ ] Update `remove.ts` (remove legacy blocks, keep attachments blocks)
-- [ ] Update `types.ts`
-- [ ] Delete `manager.ts` (dead code)
-- [ ] Update `fulltext/index.ts` exports
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `json-serializer.ts`
+- [x] Update `yaml-serializer.ts`
+- [x] Update `remove.ts` (remove legacy blocks, keep attachments blocks)
+- [x] Update `types.ts`
+- [x] Delete `manager.ts` (dead code)
+- [x] Update `fulltext/index.ts` exports
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Remove `custom.fulltext` from tests
 
@@ -75,13 +75,13 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 5. `src/features/fulltext/manager.test.ts`:
    - Delete entire file
 
-- [ ] Update `validator.test.ts`
-- [ ] Update `json-serializer.test.ts`
-- [ ] Update `yaml-serializer.test.ts`
-- [ ] Update `change-details.test.ts`
-- [ ] Delete `manager.test.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `validator.test.ts`
+- [x] Update `json-serializer.test.ts`
+- [x] Update `yaml-serializer.test.ts`
+- [x] Update `change-details.test.ts`
+- [x] Delete `manager.test.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Remove `custom.fulltext` from specs
 

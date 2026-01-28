@@ -87,8 +87,9 @@ describe("remove command", () => {
           uuid: "test-uuid",
           created_at: "2024-01-01T00:00:00.000Z",
           timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            pdf: "Smith-2024-uuid.pdf",
+          attachments: {
+            directory: "test-uuid",
+            files: [{ filename: "fulltext.pdf", role: "fulltext" }],
           },
         },
       };
@@ -106,8 +107,9 @@ describe("remove command", () => {
           uuid: "test-uuid",
           created_at: "2024-01-01T00:00:00.000Z",
           timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            markdown: "Smith-2024-uuid.md",
+          attachments: {
+            directory: "test-uuid",
+            files: [{ filename: "fulltext.md", role: "fulltext" }],
           },
         },
       };
@@ -125,9 +127,12 @@ describe("remove command", () => {
           uuid: "test-uuid",
           created_at: "2024-01-01T00:00:00.000Z",
           timestamp: "2024-01-01T00:00:00.000Z",
-          fulltext: {
-            pdf: "Smith-2024-uuid.pdf",
-            markdown: "Smith-2024-uuid.md",
+          attachments: {
+            directory: "test-uuid",
+            files: [
+              { filename: "fulltext.pdf", role: "fulltext" },
+              { filename: "fulltext.md", role: "fulltext" },
+            ],
           },
         },
       };

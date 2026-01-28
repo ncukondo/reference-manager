@@ -24,7 +24,7 @@ function getChangedCustomFields(
 
 /**
  * Compare two CSL items and return the list of changed field names.
- * Excludes protected custom fields (uuid, created_at, timestamp, fulltext).
+ * Excludes protected custom fields (uuid, created_at, timestamp).
  */
 export function getChangedFields(oldItem: CslItem, newItem: CslItem): string[] {
   const changed: string[] = [];
