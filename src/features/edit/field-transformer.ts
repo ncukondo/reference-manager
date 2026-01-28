@@ -1,4 +1,9 @@
 /**
+ * Regex for validating ISO partial date strings (YYYY, YYYY-MM, YYYY-MM-DD).
+ */
+export const ISO_DATE_REGEX = /^\d{4}(-\d{2})?(-\d{2})?$/;
+
+/**
  * Transforms CSL-JSON date fields between internal and edit formats.
  * Internal: { "date-parts": [[2024, 3, 15]] }
  * Edit: "2024-03-15"

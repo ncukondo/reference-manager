@@ -1,7 +1,6 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
-import { transformDateFromEdit, transformDateToEdit } from "./field-transformer.js";
-const ISO_DATE_REGEX = /^\d{4}(-\d{2})?(-\d{2})?$/;
+import { ISO_DATE_REGEX, transformDateFromEdit, transformDateToEdit } from "./field-transformer.js";
 
 interface ProtectedFields {
   uuid?: string;
