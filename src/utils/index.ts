@@ -8,5 +8,5 @@ export {
   listBackups,
   type BackupOptions,
 } from "./backup";
-export { pickDefined } from "./object";
+export { pickDefined, isEqual } from "./object";
 export { getOpenerCommand, openWithSystemApp } from "./opener";

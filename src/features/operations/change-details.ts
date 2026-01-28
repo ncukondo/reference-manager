@@ -1,4 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import { isEqual } from "../../utils/object.js";
 
 /**
  * Protected custom fields that should be excluded from change detection.
@@ -6,29 +7,6 @@ import type { CslItem } from "../../core/csl-json/types.js";
 const PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp", "fulltext"]);
 
 const MAX_DISPLAY_LENGTH = 40;
-
-/**
- * Deep equality check for comparing CSL item field values.
- */
-function isEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a == null || b == null) return false;
-  if (typeof a !== typeof b) return false;
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((item, i) => isEqual(item, b[i]));
-  }
-
-  if (typeof a === "object" && typeof b === "object") {
-    const aObj = a as Record<string, unknown>;
-    const bObj = b as Record<string, unknown>;
-    const aKeys = Object.keys(aObj);
-    if (aKeys.length !== Object.keys(bObj).length) return false;
-    return aKeys.every((key) => isEqual(aObj[key], bObj[key]));
-  }
-
-  return false;
-}
 
 /**
  * Compare custom fields and return changed custom field names (with "custom." prefix).

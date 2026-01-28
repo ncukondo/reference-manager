@@ -37,13 +37,13 @@ Extract identical `isEqual` implementations from `library.ts` and `change-detail
 - Identical primitives, different types, null/undefined handling
 - Flat and nested arrays, flat and nested objects, mixed structures
 
-- [ ] Add `isEqual` to `src/utils/object.ts`
-- [ ] Re-export from `src/utils/index.ts`
-- [ ] Create `src/utils/object.test.ts`
-- [ ] Update `src/core/library.ts`: import `isEqual`, remove private method
-- [ ] Update `src/features/operations/change-details.ts`: import `isEqual`, remove local function
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add `isEqual` to `src/utils/object.ts`
+- [x] Re-export from `src/utils/index.ts`
+- [x] Create `src/utils/object.test.ts`
+- [x] Update `src/core/library.ts`: import `isEqual`, remove private method
+- [x] Update `src/features/operations/change-details.ts`: import `isEqual`, remove local function
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Share protected fields with two-level architecture
 
