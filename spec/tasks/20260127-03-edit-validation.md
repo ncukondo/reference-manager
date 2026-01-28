@@ -49,10 +49,10 @@ interface EditValidationResult {
 - Partial: only `issued` invalid, `accessed` valid → error on `issued` only
 - Multiple items: mixed valid and invalid → correct per-item errors
 
-- [ ] Create `src/features/edit/edit-validator.ts`
-- [ ] Create `src/features/edit/edit-validator.test.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Create `src/features/edit/edit-validator.ts`
+- [x] Create `src/features/edit/edit-validator.test.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: CSL schema validation integration
 
