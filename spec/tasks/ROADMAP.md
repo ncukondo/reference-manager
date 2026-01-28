@@ -103,11 +103,11 @@ aligning with existing server behavior.
 - [ ] Step 4: Enable `onIdCollision: "suffix"` for update command
 - [ ] Step 5: Update existing tests
 
-### PR #45 Follow-up Refactor
+### PR #45 Follow-up Refactor (Completed)
 
 Code quality improvements identified during PR #45 review.
 
-**Task**: `20260127-01-pr45-followup-refactor.md`
+**Task**: `completed/20260127-01-pr45-followup-refactor.md`
 
 **Scope**:
 - Extract duplicated `isEqual` to shared utility
@@ -116,10 +116,10 @@ Code quality improvements identified during PR #45 review.
 - Fallback to ID-based update when UUID missing
 
 **Todos**:
-- [ ] Step 1: Extract `isEqual` to shared utility
-- [ ] Step 2: Share protected fields with two-level architecture
-- [ ] Step 3: Include `oldItem` in `id_collision` result
-- [ ] Step 4: Fallback to ID-based update when UUID missing
+- [x] Step 1: Extract `isEqual` to shared utility
+- [x] Step 2: Share protected fields with two-level architecture
+- [x] Step 3: Include `oldItem` in `id_collision` result
+- [x] Step 4: Fallback to ID-based update when UUID missing
 
 ### Remove `custom.fulltext`
 

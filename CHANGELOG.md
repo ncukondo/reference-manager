@@ -29,6 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All interactive commands (`search -t`, `cite`, `edit`, `remove`, `fulltext open`, `attach open`) now use React Ink
   - **Known limitation**: Terminal resize may cause header/status to scroll off-screen
 
+### Fixed
+
+- **Edit command**: `id_collision` error result now includes `oldItem` for consistency
+- **Edit command**: UUID-less items fall back to ID-based update instead of returning `not_found`
+
+### Refactored
+
+- Extract `isEqual` deep equality utility to `src/utils/object.ts` (shared by library and change-details)
+- Unify protected field constants with two-level architecture (`PROTECTED_CUSTOM_FIELDS` and `MANAGED_CUSTOM_FIELDS`)
+
 ### Removed
 
 - **Enquirer dependency**: Replaced with React Ink and readline for confirmations
