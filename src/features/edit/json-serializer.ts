@@ -79,22 +79,55 @@ export function serializeToJson(items: CslItem[]): string {
 }
 
 /**
- * Serializes CSL items to JSON with _errors annotations for re-edit.
+ * Strips internal fields (like _extractedUuid) from edited item.
+ */
+function stripInternalFields(item: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (!key.startsWith("_")) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Serializes edited items to JSON with _errors annotations for re-edit.
+ *
+ * @param editedItems - User's edited items (preserves their changes)
+ * @param errors - Validation errors per item index
+ * @param originalItems - Original items for protected fields (optional)
  */
 export function serializeToJsonWithErrors(
-  items: CslItem[],
-  errors: Map<number, EditValidationError[]>
+  editedItems: Record<string, unknown>[],
+  errors: Map<number, EditValidationError[]>,
+  originalItems?: CslItem[]
 ): string {
-  const transformed = items.map((item, index) => {
-    const result = transformItemForJson(item);
+  const transformed = editedItems.map((editedItem, index) => {
+    const originalItem = originalItems?.[index];
+    const protectedFields = originalItem
+      ? extractProtectedFields(originalItem.custom as Record<string, unknown>)
+      : {};
+
+    // Start with _errors if present
     const itemErrors = errors.get(index);
+    const result: Record<string, unknown> = {};
+
     if (itemErrors) {
-      // Insert _errors before other keys
-      return {
-        _errors: itemErrors.map((e) => `${e.field}: ${e.message}`),
-        ...result,
-      };
+      result._errors = itemErrors.map((e) => `${e.field}: ${e.message}`);
     }
+
+    // Add _protected if available
+    if (Object.keys(protectedFields).length > 0) {
+      result._protected = protectedFields;
+    }
+
+    // Copy edited item fields (excluding internal fields)
+    const cleanItem = stripInternalFields(editedItem);
+    for (const [key, value] of Object.entries(cleanItem)) {
+      result[key] = value;
+    }
+
     return result;
   });
   return JSON.stringify(transformed, null, 2);

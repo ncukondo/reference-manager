@@ -102,15 +102,33 @@ export function serializeToYaml(items: CslItem[]): string {
 }
 
 /**
- * Serializes CSL items to YAML with error annotations for re-edit.
+ * Removes internal fields (like _extractedUuid) from edited item.
+ */
+function stripInternalFields(item: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (!key.startsWith("_")) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Serializes edited items to YAML with error annotations for re-edit.
  * Adds file-top summary and per-entry error blocks.
+ *
+ * @param editedItems - User's edited items (preserves their changes)
+ * @param errors - Validation errors per item index
+ * @param originalItems - Original items for protected fields comments (optional)
  */
 export function serializeToYamlWithErrors(
-  items: CslItem[],
-  errors: Map<number, EditValidationError[]>
+  editedItems: Record<string, unknown>[],
+  errors: Map<number, EditValidationError[]>,
+  originalItems?: CslItem[]
 ): string {
   const errorCount = errors.size;
-  const totalCount = items.length;
+  const totalCount = editedItems.length;
 
   // File-top summary
   const summaryLines: string[] = [
@@ -118,8 +136,8 @@ export function serializeToYamlWithErrors(
     "# ─────────────────────────────────────",
   ];
   for (const [index, itemErrors] of errors) {
-    const item = items[index];
-    const id = item?.id ?? `Entry ${index + 1}`;
+    const item = editedItems[index];
+    const id = (item?.id as string) ?? `Entry ${index + 1}`;
     const fields = itemErrors.map((e) => e.field).join(", ");
     summaryLines.push(`# ${id}: ${fields}`);
   }
@@ -127,8 +145,9 @@ export function serializeToYamlWithErrors(
 
   const sections: string[] = [];
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i] as CslItem;
+  for (let i = 0; i < editedItems.length; i++) {
+    const editedItem = editedItems[i] ?? {};
+    const originalItem = originalItems?.[i];
     const itemErrors = errors.get(i);
 
     // Error block (only for errored entries)
@@ -142,14 +161,14 @@ export function serializeToYamlWithErrors(
       errorBlock = `${errorLines.join("\n")}\n`;
     }
 
-    // Protected fields comment
-    const protectedComment = createProtectedComment(item);
+    // Protected fields comment (from original item if available)
+    const protectedComment = originalItem ? createProtectedComment(originalItem) : "";
 
-    // Transform item for editing
-    const editableItem = transformItemForEdit(item);
+    // Strip internal fields and serialize
+    const cleanItem = stripInternalFields(editedItem);
 
     // Serialize to YAML
-    const yamlContent = yaml.dump([editableItem], {
+    const yamlContent = yaml.dump([cleanItem], {
       lineWidth: -1,
       quotingType: '"',
       forceQuotes: false,

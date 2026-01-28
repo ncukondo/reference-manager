@@ -1,6 +1,9 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
 import { isEqual } from "../../utils/object.js";
+import { transformDateToEdit } from "../edit/field-transformer.js";
+
+const DATE_FIELDS = new Set(["issued", "accessed"]);
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -94,6 +97,31 @@ function formatScalarChange(field: string, oldValue: unknown, newValue: unknown)
 }
 
 /**
+ * Format a date field value for display.
+ */
+function formatDateValue(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const isoDate = transformDateToEdit(value as { "date-parts"?: number[][] });
+  return isoDate ?? JSON.stringify(value);
+}
+
+/**
+ * Format a date field change.
+ */
+function formatDateChange(field: string, oldValue: unknown, newValue: unknown): string {
+  const oldStr = formatDateValue(oldValue);
+  const newStr = formatDateValue(newValue);
+
+  if (oldStr == null && newStr != null) {
+    return `${field}: → "${newStr}"`;
+  }
+  if (oldStr != null && newStr == null) {
+    return `${field}: "${oldStr}" → (removed)`;
+  }
+  return `${field}: "${oldStr ?? ""}" → "${newStr ?? ""}"`;
+}
+
+/**
  * Format a single field change for display.
  *
  * Examples:
@@ -101,8 +129,12 @@ function formatScalarChange(field: string, oldValue: unknown, newValue: unknown)
  *   author: +1 entry
  *   volume: → "42"
  *   volume: "42" → (removed)
+ *   issued: "2024-03-15" → "2024-04-01"
  */
 export function formatFieldChange(field: string, oldValue: unknown, newValue: unknown): string {
+  if (DATE_FIELDS.has(field)) {
+    return formatDateChange(field, oldValue, newValue);
+  }
   if (Array.isArray(oldValue) || Array.isArray(newValue)) {
     return formatArrayChange(field, oldValue, newValue);
   }

@@ -151,21 +151,21 @@ Restructure `executeEdit` to support validation failure → error display → pr
 - Validation fails → abort → no update, result has `aborted: true`
 - Multiple validation failures → loop continues until resolve or abort
 
-- [ ] Add validation call after parse in `executeEdit`
-- [ ] Add terminal error display
-- [ ] Add interactive prompt (re-edit / restore / abort)
-- [ ] Handle re-edit with error annotations (YAML and JSON)
-- [ ] Handle restore original
-- [ ] Handle abort
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add validation call after parse in `executeEdit`
+- [x] Add terminal error display
+- [x] Add interactive prompt (re-edit / restore / abort)
+- [x] Handle re-edit with error annotations (YAML and JSON)
+- [x] Handle restore original
+- [x] Handle abort
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

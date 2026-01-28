@@ -6,17 +6,31 @@ vi.mock("./edit-session.js", () => ({
   createTempFile: vi.fn(),
   openEditor: vi.fn(),
   readTempFile: vi.fn(),
+  writeTempFile: vi.fn(),
   deleteTempFile: vi.fn(),
 }));
 
-import { createTempFile, deleteTempFile, openEditor, readTempFile } from "./edit-session.js";
+vi.mock("./validation-prompt.js", () => ({
+  runValidationPrompt: vi.fn(),
+}));
+
+import {
+  createTempFile,
+  deleteTempFile,
+  openEditor,
+  readTempFile,
+  writeTempFile,
+} from "./edit-session.js";
 import { executeEdit } from "./index.js";
+import { runValidationPrompt } from "./validation-prompt.js";
 
 describe("edit feature entry point", () => {
   const mockCreateTempFile = vi.mocked(createTempFile);
   const mockOpenEditor = vi.mocked(openEditor);
   const mockReadTempFile = vi.mocked(readTempFile);
+  const mockWriteTempFile = vi.mocked(writeTempFile);
   const mockDeleteTempFile = vi.mocked(deleteTempFile);
+  const mockRunValidationPrompt = vi.mocked(runValidationPrompt);
 
   const sampleItem: CslItem = {
     id: "Smith-2024",
@@ -202,6 +216,203 @@ describe("edit feature entry point", () => {
       expect(result.editedItems).toHaveLength(1);
       // UUID should be preserved from comment
       expect(result.editedItems[0]._extractedUuid).toBe("550e8400-e29b-41d4-a716-446655440000");
+    });
+  });
+
+  describe("validation retry loop", () => {
+    it("validation passes on first try - no prompt shown", async () => {
+      const validYaml = `- id: Smith-2024
+  type: article-journal
+  title: Updated Title
+`;
+      mockReadTempFile.mockReturnValue(validYaml);
+
+      const result = await executeEdit([sampleItem], {
+        format: "yaml",
+        editor: "vim",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.editedItems).toHaveLength(1);
+      expect(result.editedItems[0].title).toBe("Updated Title");
+      expect(mockRunValidationPrompt).not.toHaveBeenCalled();
+    });
+
+    it("validation fails → re-edit → passes on second try", async () => {
+      // First read: invalid date format
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "invalid-date"
+`;
+      // Second read: valid date format
+      const validYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "2024-03-15"
+`;
+      mockReadTempFile.mockReturnValueOnce(invalidYaml).mockReturnValueOnce(validYaml);
+      mockRunValidationPrompt.mockResolvedValue("re-edit");
+
+      const result = await executeEdit([sampleItem], {
+        format: "yaml",
+        editor: "vim",
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockRunValidationPrompt).toHaveBeenCalledTimes(1);
+      expect(mockWriteTempFile).toHaveBeenCalled();
+      expect(mockOpenEditor).toHaveBeenCalledTimes(2);
+    });
+
+    it("validation fails → restore original → passes", async () => {
+      // First read: invalid
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "bad"
+`;
+      // Second read: valid (after restore)
+      const validYaml = `- id: Smith-2024
+  type: article-journal
+  title: Test Article
+`;
+      mockReadTempFile.mockReturnValueOnce(invalidYaml).mockReturnValueOnce(validYaml);
+      mockRunValidationPrompt.mockResolvedValue("restore");
+
+      const result = await executeEdit([sampleItem], {
+        format: "yaml",
+        editor: "vim",
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockRunValidationPrompt).toHaveBeenCalledTimes(1);
+      expect(mockWriteTempFile).toHaveBeenCalled();
+      // Should have re-serialized original items (without error annotations)
+      const writeCall = mockWriteTempFile.mock.calls[0];
+      expect(writeCall[1]).not.toContain("⚠");
+    });
+
+    it("validation fails → abort → returns aborted result", async () => {
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "invalid"
+`;
+      mockReadTempFile.mockReturnValue(invalidYaml);
+      mockRunValidationPrompt.mockResolvedValue("abort");
+
+      const result = await executeEdit([sampleItem], {
+        format: "yaml",
+        editor: "vim",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.aborted).toBe(true);
+      expect(result.editedItems).toHaveLength(0);
+      expect(mockOpenEditor).toHaveBeenCalledTimes(1);
+    });
+
+    it("multiple validation failures → loop until abort", async () => {
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "bad"
+`;
+      mockReadTempFile.mockReturnValue(invalidYaml);
+      mockRunValidationPrompt
+        .mockResolvedValueOnce("re-edit")
+        .mockResolvedValueOnce("re-edit")
+        .mockResolvedValueOnce("abort");
+
+      const result = await executeEdit([sampleItem], {
+        format: "yaml",
+        editor: "vim",
+      });
+
+      expect(result.aborted).toBe(true);
+      expect(mockRunValidationPrompt).toHaveBeenCalledTimes(3);
+      expect(mockOpenEditor).toHaveBeenCalledTimes(3);
+    });
+
+    it("multiple validation failures → loop until passes", async () => {
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "bad"
+`;
+      const validYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "2024"
+`;
+      mockReadTempFile
+        .mockReturnValueOnce(invalidYaml)
+        .mockReturnValueOnce(invalidYaml)
+        .mockReturnValueOnce(validYaml);
+      mockRunValidationPrompt.mockResolvedValueOnce("re-edit").mockResolvedValueOnce("re-edit");
+
+      const result = await executeEdit([sampleItem], {
+        format: "yaml",
+        editor: "vim",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.aborted).toBeUndefined();
+      expect(mockRunValidationPrompt).toHaveBeenCalledTimes(2);
+      expect(mockOpenEditor).toHaveBeenCalledTimes(3);
+    });
+
+    it("JSON format - validates and handles errors", async () => {
+      const invalidJson = `[{"id": "Smith-2024", "type": "article-journal", "issued": "bad"}]`;
+      const validJson = `[{"id": "Smith-2024", "type": "article-journal", "issued": "2024"}]`;
+
+      mockCreateTempFile.mockReturnValue("/tmp/ref-edit-123.json");
+      mockReadTempFile.mockReturnValueOnce(invalidJson).mockReturnValueOnce(validJson);
+      mockRunValidationPrompt.mockResolvedValue("re-edit");
+
+      const result = await executeEdit([sampleItem], {
+        format: "json",
+        editor: "vim",
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockRunValidationPrompt).toHaveBeenCalledTimes(1);
+      // Check that JSON error annotation was used
+      const writeCall = mockWriteTempFile.mock.calls[0];
+      expect(writeCall[1]).toContain("_errors");
+    });
+
+    it("YAML re-edit includes error annotations", async () => {
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "bad-date"
+`;
+      const validYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "2024"
+`;
+      mockReadTempFile.mockReturnValueOnce(invalidYaml).mockReturnValueOnce(validYaml);
+      mockRunValidationPrompt.mockResolvedValue("re-edit");
+
+      await executeEdit([sampleItem], { format: "yaml", editor: "vim" });
+
+      const writeCall = mockWriteTempFile.mock.calls[0];
+      const content = writeCall[1];
+      expect(content).toContain("⚠ Validation Errors");
+      expect(content).toContain("issued");
+      expect(content).toContain("Invalid date format");
+    });
+
+    it("passes validation errors to prompt", async () => {
+      const invalidYaml = `- id: Smith-2024
+  type: article-journal
+  issued: "bad"
+`;
+      mockReadTempFile.mockReturnValue(invalidYaml);
+      mockRunValidationPrompt.mockResolvedValue("abort");
+
+      await executeEdit([sampleItem], { format: "yaml", editor: "vim" });
+
+      expect(mockRunValidationPrompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          valid: false,
+        }),
+        expect.any(Array)
+      );
     });
   });
 });

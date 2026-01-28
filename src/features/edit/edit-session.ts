@@ -50,6 +50,13 @@ export function readTempFile(filePath: string): string {
 }
 
 /**
+ * Writes content to an existing temporary file.
+ */
+export function writeTempFile(filePath: string, content: string): void {
+  fs.writeFileSync(filePath, content, "utf-8");
+}
+
+/**
  * Deletes the temporary file.
  */
 export function deleteTempFile(filePath: string): void {
