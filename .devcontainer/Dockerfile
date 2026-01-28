@@ -13,8 +13,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y nodejs=24.4.1-1nodesource1
 
 
-# Install Claude CLI
-RUN npm install -g @anthropic-ai/claude-code
+# Install Claude CLI (native binary)
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Set up non-root user
 ARG USERNAME=vscode
