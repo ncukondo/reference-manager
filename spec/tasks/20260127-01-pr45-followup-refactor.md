@@ -101,10 +101,10 @@ if (!result.updated) {
 }
 ```
 
-- [ ] Update `toEditItemResult` in `edit.ts`
-- [ ] Add test in `edit.test.ts` verifying `id_collision` result includes `oldItem`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `toEditItemResult` in `edit.ts`
+- [x] Add test in `edit.test.ts` verifying `id_collision` result includes `oldItem`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Fallback to ID-based update when UUID missing
 

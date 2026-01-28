@@ -146,6 +146,7 @@ function toEditItemResult(
     return {
       id: editedId,
       state: result.errorType === "id_collision" ? "id_collision" : "not_found",
+      oldItem,
     };
   }
   // Success case: updated with item
