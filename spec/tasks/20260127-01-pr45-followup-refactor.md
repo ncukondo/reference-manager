@@ -73,16 +73,16 @@ Key decisions:
 - `src/features/edit/json-serializer.ts` — import `MANAGED_CUSTOM_FIELDS`, use `.has()` in `filterCustomFields`
 - `src/features/edit/yaml-serializer.ts` — import `MANAGED_CUSTOM_FIELDS`, use `.has()` in `filterCustomFields`
 
-- [ ] Add constants to `library-interface.ts`
-- [ ] Update `library.ts`
-- [ ] Update `change-details.ts`
-- [ ] Update `edit.ts`
-- [ ] Update `update.ts`
-- [ ] Update `json-serializer.ts`
-- [ ] Update `yaml-serializer.ts`
-- [ ] Add `attachments` ignore test in `change-details.test.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add constants to `library-interface.ts`
+- [x] Update `library.ts`
+- [x] Update `change-details.ts`
+- [x] Update `edit.ts`
+- [x] Update `update.ts`
+- [x] Update `json-serializer.ts`
+- [x] Update `yaml-serializer.ts`
+- [x] Add `attachments` ignore test in `change-details.test.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Include `oldItem` in `id_collision` result
 

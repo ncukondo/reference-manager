@@ -6,7 +6,7 @@
 
 import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { IdentifierType } from "../../core/library-interface.js";
+import { type IdentifierType, MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import { type EditFormat, executeEdit, resolveEditor } from "../../features/edit/index.js";
 import { formatChangeDetails } from "../../features/operations/change-details.js";
@@ -66,11 +66,6 @@ export interface EditCommandResult {
 }
 
 /**
- * Protected fields that should not be updated from edited content.
- */
-const PROTECTED_FIELDS = new Set(["uuid", "created_at", "timestamp", "fulltext"]);
-
-/**
  * Merge edited item with original, preserving protected fields.
  */
 function mergeWithProtectedFields(
@@ -89,7 +84,7 @@ function mergeWithProtectedFields(
     const mergedCustom: Record<string, unknown> = { ...(editedCustom || {}) };
 
     // Copy protected fields from original
-    for (const field of PROTECTED_FIELDS) {
+    for (const field of MANAGED_CUSTOM_FIELDS) {
       if (field in originalCustom) {
         mergedCustom[field] = originalCustom[field];
       }

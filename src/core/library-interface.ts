@@ -83,6 +83,18 @@ export interface UpdateResult {
 }
 
 /**
+ * Custom fields excluded from library change detection.
+ * These fields are managed internally and should not trigger "no changes" results.
+ */
+export const PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp"]);
+
+/**
+ * Custom fields excluded from user display/edit.
+ * Superset of PROTECTED_CUSTOM_FIELDS — also hides fields that users should not manually edit.
+ */
+export const MANAGED_CUSTOM_FIELDS = new Set([...PROTECTED_CUSTOM_FIELDS, "attachments"]);
+
+/**
  * Common interface for library implementations.
  */
 export interface ILibrary {

@@ -1,10 +1,6 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
 import { isEqual } from "../../utils/object.js";
-
-/**
- * Protected custom fields that should be excluded from change detection.
- */
-const PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp", "fulltext"]);
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -18,7 +14,7 @@ function getChangedCustomFields(
   const changed: string[] = [];
   const customKeys = new Set([...Object.keys(oldCustom), ...Object.keys(newCustom)]);
   for (const ck of customKeys) {
-    if (PROTECTED_CUSTOM_FIELDS.has(ck)) continue;
+    if (MANAGED_CUSTOM_FIELDS.has(ck)) continue;
     if (!isEqual(oldCustom[ck], newCustom[ck])) {
       changed.push(`custom.${ck}`);
     }
