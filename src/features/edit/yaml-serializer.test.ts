@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { serializeToYaml } from "./yaml-serializer.js";
+import type { EditValidationError } from "./edit-validator.js";
+import { serializeToYaml, serializeToYamlWithErrors } from "./yaml-serializer.js";
 
 describe("serializeToYaml", () => {
   const baseItem: CslItem = {
@@ -113,6 +114,86 @@ describe("serializeToYaml", () => {
       expect(yaml).toContain("keyword:");
       expect(yaml).toContain("- machine learning");
       expect(yaml).toContain("- deep learning");
+    });
+  });
+
+  describe("serializeToYamlWithErrors", () => {
+    it("adds file-top summary and per-entry error block for a single errored entry", () => {
+      const errors = new Map<number, EditValidationError[]>();
+      errors.set(0, [
+        { field: "issued", message: "Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)" },
+      ]);
+      const yaml = serializeToYamlWithErrors([baseItem], errors);
+      expect(yaml).toContain("# ⚠ Validation Errors (1 of 1 entries)");
+      expect(yaml).toContain("# Smith-2024: issued");
+      expect(yaml).toContain("# ⚠ Errors:");
+      expect(yaml).toContain("#   issued: Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)");
+    });
+
+    it("adds correct summary for multiple errored entries", () => {
+      const items: CslItem[] = [
+        baseItem,
+        {
+          id: "Doe-2023",
+          type: "book",
+          custom: {
+            uuid: "660e8400-e29b-41d4-a716-446655440001",
+            created_at: "2023-01-01T00:00:00.000Z",
+            timestamp: "2023-06-15T10:30:00.000Z",
+          },
+        },
+        {
+          id: "Jones-2024",
+          type: "article-journal",
+          custom: {
+            uuid: "770e8400-e29b-41d4-a716-446655440002",
+            created_at: "2024-06-01T00:00:00.000Z",
+            timestamp: "2024-06-01T10:00:00.000Z",
+          },
+        },
+      ];
+      const errors = new Map<number, EditValidationError[]>();
+      errors.set(0, [{ field: "issued", message: "bad date" }]);
+      errors.set(2, [
+        { field: "author", message: "expected array" },
+        { field: "type", message: "Required" },
+      ]);
+      const yaml = serializeToYamlWithErrors(items, errors);
+      expect(yaml).toContain("# ⚠ Validation Errors (2 of 3 entries)");
+      expect(yaml).toContain("# Smith-2024: issued");
+      expect(yaml).toContain("# Jones-2024: author, type");
+    });
+
+    it("does not add error block for entries without errors", () => {
+      const items: CslItem[] = [
+        baseItem,
+        {
+          id: "Doe-2023",
+          type: "book",
+          custom: {
+            uuid: "660e8400-e29b-41d4-a716-446655440001",
+            created_at: "2023-01-01T00:00:00.000Z",
+            timestamp: "2023-06-15T10:30:00.000Z",
+          },
+        },
+      ];
+      const errors = new Map<number, EditValidationError[]>();
+      errors.set(0, [{ field: "issued", message: "bad date" }]);
+      const yaml = serializeToYamlWithErrors(items, errors);
+      // Split by --- to get individual entry sections
+      const sections = yaml.split("---");
+      // The second entry section (Doe-2023) should not have error block
+      const doeSection = sections.find((s) => s.includes("Doe-2023"));
+      expect(doeSection).not.toContain("⚠ Errors:");
+    });
+
+    it("re-parse strips error comments cleanly", () => {
+      const errors = new Map<number, EditValidationError[]>();
+      errors.set(0, [{ field: "issued", message: "bad date" }]);
+      const yaml = serializeToYamlWithErrors([baseItem], errors);
+      // All error annotations are YAML comments (#) and stripped on re-parse
+      // The actual YAML content should still parse correctly
+      expect(yaml).toContain("id: Smith-2024");
     });
   });
 

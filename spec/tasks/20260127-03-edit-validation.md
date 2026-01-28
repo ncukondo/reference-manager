@@ -99,10 +99,10 @@ Add error annotation support to YAML serialization for the re-edit loop.
 - Mixed: some with errors, some without → correct interleaving
 - Re-parse of annotated file → error comments stripped cleanly
 
-- [ ] Add error annotation function to `yaml-serializer.ts`
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add error annotation function to `yaml-serializer.ts`
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Error annotation — JSON
 

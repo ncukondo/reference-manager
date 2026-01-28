@@ -1,6 +1,7 @@
 import * as yaml from "js-yaml";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
+import type { EditValidationError } from "./edit-validator.js";
 import { transformDateToEdit } from "./field-transformer.js";
 
 /**
@@ -98,4 +99,68 @@ export function serializeToYaml(items: CslItem[]): string {
   }
 
   return sections.join("\n---\n\n");
+}
+
+/**
+ * Serializes CSL items to YAML with error annotations for re-edit.
+ * Adds file-top summary and per-entry error blocks.
+ */
+export function serializeToYamlWithErrors(
+  items: CslItem[],
+  errors: Map<number, EditValidationError[]>
+): string {
+  const errorCount = errors.size;
+  const totalCount = items.length;
+
+  // File-top summary
+  const summaryLines: string[] = [
+    `# ⚠ Validation Errors (${errorCount} of ${totalCount} entries)`,
+    "# ─────────────────────────────────────",
+  ];
+  for (const [index, itemErrors] of errors) {
+    const item = items[index];
+    const id = item?.id ?? `Entry ${index + 1}`;
+    const fields = itemErrors.map((e) => e.field).join(", ");
+    summaryLines.push(`# ${id}: ${fields}`);
+  }
+  summaryLines.push("# ─────────────────────────────────────");
+
+  const sections: string[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] as CslItem;
+    const itemErrors = errors.get(i);
+
+    // Error block (only for errored entries)
+    let errorBlock = "";
+    if (itemErrors) {
+      const errorLines = ["# ⚠ Errors:"];
+      for (const err of itemErrors) {
+        errorLines.push(`#   ${err.field}: ${err.message}`);
+      }
+      errorLines.push("#");
+      errorBlock = `${errorLines.join("\n")}\n`;
+    }
+
+    // Protected fields comment
+    const protectedComment = createProtectedComment(item);
+
+    // Transform item for editing
+    const editableItem = transformItemForEdit(item);
+
+    // Serialize to YAML
+    const yamlContent = yaml.dump([editableItem], {
+      lineWidth: -1,
+      quotingType: '"',
+      forceQuotes: false,
+    });
+
+    // Combine parts
+    const parts = [errorBlock, protectedComment ? `${protectedComment}\n` : "", yamlContent]
+      .filter(Boolean)
+      .join("\n");
+    sections.push(parts);
+  }
+
+  return `${summaryLines.join("\n")}\n---\n${sections.join("---\n")}`;
 }
