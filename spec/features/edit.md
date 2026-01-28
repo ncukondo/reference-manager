@@ -178,7 +178,6 @@ The following fields are managed internally and cannot be edited:
 | `custom.uuid` | Internal identifier for merge operations |
 | `custom.created_at` | Immutable creation timestamp |
 | `custom.timestamp` | Auto-updated on modification |
-| `custom.fulltext` | Managed by `fulltext` command |
 
 Changes to protected fields are silently ignored.
 

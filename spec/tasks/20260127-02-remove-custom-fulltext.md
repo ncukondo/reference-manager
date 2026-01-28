@@ -93,8 +93,8 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 2. `spec/architecture/cli.md`:
    - Remove `custom.fulltext` from protected fields list (line 216)
 
-- [ ] Update `spec/features/edit.md`
-- [ ] Update `spec/architecture/cli.md`
+- [x] Update `spec/features/edit.md`
+- [x] Update `spec/architecture/cli.md`
 
 ## Completion Checklist
 

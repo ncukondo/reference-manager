@@ -213,7 +213,7 @@ ref update [identifier] [file] [options]
 - Date: `issued.raw`, `accessed.raw`
 
 **Not settable via --set:**
-- `custom.uuid`, `custom.created_at`, `custom.timestamp`, `custom.fulltext`
+- `custom.uuid`, `custom.created_at`, `custom.timestamp`
 - Complex date with `date-parts` (use JSON file)
 
 **Note:** `--set` and `[file]` are mutually exclusive.
