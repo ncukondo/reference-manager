@@ -74,11 +74,11 @@ Add post-transform validation against the CSL schema.
 - Stage 1 failure short-circuits Stage 2 → only edit-format errors returned
 - All valid → `{ valid: true, errors: empty }`
 
-- [ ] Add `validateCslItems` to `edit-validator.ts`
-- [ ] Add `validateEditedItems` to `edit-validator.ts`
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add `validateCslItems` to `edit-validator.ts`
+- [x] Add `validateEditedItems` to `edit-validator.ts`
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Error annotation — YAML
 
