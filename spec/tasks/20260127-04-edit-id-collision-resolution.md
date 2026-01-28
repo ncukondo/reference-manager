@@ -6,6 +6,10 @@ Enable automatic ID collision resolution for `ref edit` (and align `ref update` 
 When a user edits a reference's ID to one that already exists, the system should auto-resolve
 by appending a suffix (e.g., `Smith-2020a`) instead of failing, and clearly report the change.
 
+## Prerequisites
+
+- `20260127-01-pr45-followup-refactor.md` Steps 3 & 4 should be completed first (they modify `toEditItemResult` and `updateEditedItem` in `edit.ts`, which this task also modifies)
+
 ## References
 
 - Spec: `spec/features/edit.md` (EditItemResult, Output Format, Error Handling)

@@ -88,6 +88,8 @@ aligning with existing server behavior.
 
 **Task**: `20260127-04-edit-id-collision-resolution.md`
 
+**Depends on**: PR #45 Follow-up Refactor (Steps 3 & 4 modify the same functions in `edit.ts`)
+
 **Scope**:
 - Add `idChanged`/`newId` fields to `EditItemResult`
 - Enable `onIdCollision: "suffix"` for both edit and update commands
