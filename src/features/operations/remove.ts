@@ -34,7 +34,6 @@ export interface RemoveResult {
 
 /**
  * Get fulltext attachment types from a CSL item.
- * Supports both legacy fulltext structure and new attachments structure.
  */
 export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
   const types: FulltextType[] = [];
@@ -55,7 +54,6 @@ export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
 
 /**
  * Delete fulltext files associated with an item.
- * Supports both legacy fulltext structure and new attachments structure.
  */
 async function deleteFulltextFiles(item: CslItem, fulltextDirectory: string): Promise<void> {
   const filesToDelete: string[] = [];
