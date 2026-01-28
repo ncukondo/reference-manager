@@ -167,5 +167,5 @@ Restructure `executeEdit` to support validation failure → error display → pr
 - [x] Lint passes (`npm run lint`)
 - [x] Type check passes (`npm run typecheck`)
 - [x] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

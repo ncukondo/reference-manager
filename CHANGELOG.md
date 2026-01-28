@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Edit Validation Pipeline**: Two-stage validation with retry loop for the edit command
+  - Stage 1: Validates edit-format fields (date formats: YYYY, YYYY-MM, YYYY-MM-DD)
+  - Stage 2: Validates against CSL-JSON schema after field transformation
+  - Validation errors display as terminal summary with affected entries and fields
+  - Interactive prompt on validation failure: re-edit (with error annotations) / restore original / abort
+  - YAML error annotations: file-top summary + per-entry error blocks
+  - JSON error annotations: `_errors` array (stripped on re-parse)
+
 - **Update Change Detection**: Added change detection to update and edit operations
   - `ref update --set field=same_value` now reports "No changes" when value is unchanged
   - `ref edit <id>` without changes shows "No changes" instead of "Updated"
