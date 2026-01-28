@@ -121,13 +121,11 @@ Code quality improvements identified during PR #45 review.
 - [x] Step 3: Include `oldItem` in `id_collision` result
 - [x] Step 4: Fallback to ID-based update when UUID missing
 
-### Remove `custom.fulltext`
+### Remove `custom.fulltext` (Completed)
 
 Remove all legacy `custom.fulltext` references from codebase and specs.
 
-**Task**: `20260127-02-remove-custom-fulltext.md`
-
-**Depends on**: PR #45 Follow-up Refactor (Step 2)
+**Task**: `completed/20260127-02-remove-custom-fulltext.md`
 
 **Scope**:
 - Remove `custom.fulltext` from production code
@@ -135,9 +133,9 @@ Remove all legacy `custom.fulltext` references from codebase and specs.
 - Remove `custom.fulltext` from specs
 
 **Todos**:
-- [ ] Step 1: Remove from production code
-- [ ] Step 2: Remove from tests
-- [ ] Step 3: Remove from specs
+- [x] Step 1: Remove from production code
+- [x] Step 2: Remove from tests
+- [x] Step 3: Remove from specs
 
 ### Phase 29: Edit Validation Pipeline
 

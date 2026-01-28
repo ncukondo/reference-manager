@@ -7,7 +7,6 @@ interface ProtectedFields {
   uuid?: string;
   created_at?: string;
   timestamp?: string;
-  fulltext?: { pdf?: string; markdown?: string };
 }
 
 /**
@@ -20,9 +19,6 @@ function extractProtectedFields(custom: Record<string, unknown> | undefined): Pr
   if (custom.uuid) result.uuid = custom.uuid as string;
   if (custom.created_at) result.created_at = custom.created_at as string;
   if (custom.timestamp) result.timestamp = custom.timestamp as string;
-  if (custom.fulltext) {
-    result.fulltext = custom.fulltext as { pdf?: string; markdown?: string };
-  }
 
   return result;
 }

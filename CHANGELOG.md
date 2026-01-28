@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- **Legacy `custom.fulltext`**: Removed all references to the legacy fulltext metadata structure (`custom.fulltext.pdf`, `custom.fulltext.markdown`), replaced by the attachments system
+- **`FulltextManager` class**: Deleted dead code that was no longer instantiated in production
 - **Enquirer dependency**: Replaced with React Ink and readline for confirmations
 
 ### Added

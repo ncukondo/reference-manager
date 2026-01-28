@@ -56,23 +56,6 @@ describe("serializeToYaml", () => {
       expect(yaml).toContain("# timestamp: 2024-03-15T10:30:00.000Z");
     });
 
-    it("shows fulltext in comment block when present", () => {
-      const itemWithFulltext: CslItem = {
-        ...baseItem,
-        custom: {
-          uuid: baseItem.custom?.uuid ?? "",
-          created_at: baseItem.custom?.created_at ?? "",
-          timestamp: baseItem.custom?.timestamp ?? "",
-          fulltext: {
-            pdf: "Smith-2024-PMID12345678-550e8400.pdf",
-          },
-        },
-      };
-      const yaml = serializeToYaml([itemWithFulltext]);
-      expect(yaml).toContain("# fulltext:");
-      expect(yaml).toContain("#   pdf: Smith-2024-PMID12345678-550e8400.pdf");
-    });
-
     it("does not include protected fields in editable content", () => {
       const yaml = serializeToYaml([baseItem]);
       // The uuid should only appear in comments, not in the editable content

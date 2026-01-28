@@ -23,16 +23,6 @@ function createProtectedComment(item: CslItem): string {
   if (custom.timestamp) {
     lines.push(`# timestamp: ${custom.timestamp}`);
   }
-  if (custom.fulltext) {
-    lines.push("# fulltext:");
-    if (custom.fulltext.pdf) {
-      lines.push(`#   pdf: ${custom.fulltext.pdf}`);
-    }
-    if (custom.fulltext.markdown) {
-      lines.push(`#   markdown: ${custom.fulltext.markdown}`);
-    }
-  }
-
   lines.push("# ========================================");
   return lines.join("\n");
 }
