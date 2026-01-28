@@ -239,6 +239,73 @@ describe("edit command", () => {
       expect(mockSave).not.toHaveBeenCalled();
     });
 
+    it("falls back to ID-based update when item has no UUID", async () => {
+      const itemWithoutUuid: CslItem = {
+        id: "Smith-2024",
+        type: "article-journal",
+        title: "Test Article",
+      };
+
+      mockFind.mockResolvedValue(itemWithoutUuid);
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: { ...itemWithoutUuid, title: "Updated Title" },
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Updated Title",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.success).toBe(true);
+      expect(result.updatedCount).toBe(1);
+      expect(mockUpdate).toHaveBeenCalledWith(
+        "Smith-2024",
+        expect.any(Object),
+        expect.objectContaining({ idType: "id" })
+      );
+    });
+
+    it("includes oldItem in id_collision result", async () => {
+      mockUpdate.mockResolvedValue({ updated: false, errorType: "id_collision" });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Updated Title",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.results[0].state).toBe("id_collision");
+      expect(result.results[0].oldItem).toBeDefined();
+      expect(result.results[0].oldItem?.id).toBe("Smith-2024");
+    });
+
     it("returns detailed results for each edited item", async () => {
       const item1 = {
         ...sampleItem,

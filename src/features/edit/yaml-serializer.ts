@@ -1,12 +1,7 @@
 import * as yaml from "js-yaml";
 import type { CslItem } from "../../core/csl-json/types.js";
+import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
 import { transformDateToEdit } from "./field-transformer.js";
-
-/**
- * Protected fields that cannot be edited.
- * These are shown as comments in the YAML output.
- */
-const PROTECTED_FIELDS = ["uuid", "created_at", "timestamp", "fulltext"] as const;
 
 /**
  * Creates the protected fields comment block for a single item.
@@ -48,7 +43,7 @@ function createProtectedComment(item: CslItem): string {
 function filterCustomFields(customValue: Record<string, unknown>): Record<string, unknown> | null {
   const filteredCustom: Record<string, unknown> = {};
   for (const [customKey, customVal] of Object.entries(customValue)) {
-    if (!PROTECTED_FIELDS.includes(customKey as (typeof PROTECTED_FIELDS)[number])) {
+    if (!MANAGED_CUSTOM_FIELDS.has(customKey)) {
       filteredCustom[customKey] = customVal;
     }
   }

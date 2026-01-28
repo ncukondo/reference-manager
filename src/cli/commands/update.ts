@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Config } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { IdentifierType } from "../../core/library-interface.js";
+import { type IdentifierType, MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import { formatChangeDetails } from "../../features/operations/change-details.js";
 import type { UpdateOperationResult } from "../../features/operations/update.js";
@@ -59,12 +59,7 @@ export function parseSetOption(input: string): SetOperation {
 /**
  * Protected fields that cannot be set via --set option.
  */
-const PROTECTED_FIELDS = new Set([
-  "custom.uuid",
-  "custom.created_at",
-  "custom.timestamp",
-  "custom.fulltext",
-]);
+const PROTECTED_FIELDS = new Set([...MANAGED_CUSTOM_FIELDS].map((f) => `custom.${f}`));
 
 /**
  * Simple string fields that can be set directly.

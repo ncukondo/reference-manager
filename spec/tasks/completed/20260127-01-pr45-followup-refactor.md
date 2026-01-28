@@ -37,13 +37,13 @@ Extract identical `isEqual` implementations from `library.ts` and `change-detail
 - Identical primitives, different types, null/undefined handling
 - Flat and nested arrays, flat and nested objects, mixed structures
 
-- [ ] Add `isEqual` to `src/utils/object.ts`
-- [ ] Re-export from `src/utils/index.ts`
-- [ ] Create `src/utils/object.test.ts`
-- [ ] Update `src/core/library.ts`: import `isEqual`, remove private method
-- [ ] Update `src/features/operations/change-details.ts`: import `isEqual`, remove local function
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add `isEqual` to `src/utils/object.ts`
+- [x] Re-export from `src/utils/index.ts`
+- [x] Create `src/utils/object.test.ts`
+- [x] Update `src/core/library.ts`: import `isEqual`, remove private method
+- [x] Update `src/features/operations/change-details.ts`: import `isEqual`, remove local function
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Share protected fields with two-level architecture
 
@@ -73,16 +73,16 @@ Key decisions:
 - `src/features/edit/json-serializer.ts` — import `MANAGED_CUSTOM_FIELDS`, use `.has()` in `filterCustomFields`
 - `src/features/edit/yaml-serializer.ts` — import `MANAGED_CUSTOM_FIELDS`, use `.has()` in `filterCustomFields`
 
-- [ ] Add constants to `library-interface.ts`
-- [ ] Update `library.ts`
-- [ ] Update `change-details.ts`
-- [ ] Update `edit.ts`
-- [ ] Update `update.ts`
-- [ ] Update `json-serializer.ts`
-- [ ] Update `yaml-serializer.ts`
-- [ ] Add `attachments` ignore test in `change-details.test.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add constants to `library-interface.ts`
+- [x] Update `library.ts`
+- [x] Update `change-details.ts`
+- [x] Update `edit.ts`
+- [x] Update `update.ts`
+- [x] Update `json-serializer.ts`
+- [x] Update `yaml-serializer.ts`
+- [x] Add `attachments` ignore test in `change-details.test.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Include `oldItem` in `id_collision` result
 
@@ -101,10 +101,10 @@ if (!result.updated) {
 }
 ```
 
-- [ ] Update `toEditItemResult` in `edit.ts`
-- [ ] Add test in `edit.test.ts` verifying `id_collision` result includes `oldItem`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `toEditItemResult` in `edit.ts`
+- [x] Add test in `edit.test.ts` verifying `id_collision` result includes `oldItem`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Fallback to ID-based update when UUID missing
 
@@ -127,16 +127,16 @@ const result = await context.library.update(editedId, updates, { idType: "id" })
 return toEditItemResult(editedId, result, matchedOriginal);
 ```
 
-- [ ] Update `updateEditedItem` in `edit.ts`
-- [ ] Add test in `edit.test.ts` with UUID-less item, verify `idType: "id"` fallback
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `updateEditedItem` in `edit.ts`
+- [x] Add test in `edit.test.ts` with UUID-less item, verify `idType: "id"` fallback
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

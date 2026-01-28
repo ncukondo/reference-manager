@@ -1,7 +1,6 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
 import { transformDateFromEdit, transformDateToEdit } from "./field-transformer.js";
-
-const PROTECTED_FIELDS = ["uuid", "created_at", "timestamp", "fulltext"] as const;
 const ISO_DATE_REGEX = /^\d{4}(-\d{2})?(-\d{2})?$/;
 
 interface ProtectedFields {
@@ -34,7 +33,7 @@ function extractProtectedFields(custom: Record<string, unknown> | undefined): Pr
 function filterCustomFields(custom: Record<string, unknown>): Record<string, unknown> | null {
   const filtered: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(custom)) {
-    if (!PROTECTED_FIELDS.includes(key as (typeof PROTECTED_FIELDS)[number])) {
+    if (!MANAGED_CUSTOM_FIELDS.has(key)) {
       filtered[key] = value;
     }
   }

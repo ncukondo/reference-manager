@@ -1,34 +1,8 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-
-/**
- * Protected custom fields that should be excluded from change detection.
- */
-const PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp", "fulltext"]);
+import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
+import { isEqual } from "../../utils/object.js";
 
 const MAX_DISPLAY_LENGTH = 40;
-
-/**
- * Deep equality check for comparing CSL item field values.
- */
-function isEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a == null || b == null) return false;
-  if (typeof a !== typeof b) return false;
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((item, i) => isEqual(item, b[i]));
-  }
-
-  if (typeof a === "object" && typeof b === "object") {
-    const aObj = a as Record<string, unknown>;
-    const bObj = b as Record<string, unknown>;
-    const aKeys = Object.keys(aObj);
-    if (aKeys.length !== Object.keys(bObj).length) return false;
-    return aKeys.every((key) => isEqual(aObj[key], bObj[key]));
-  }
-
-  return false;
-}
 
 /**
  * Compare custom fields and return changed custom field names (with "custom." prefix).
@@ -40,7 +14,7 @@ function getChangedCustomFields(
   const changed: string[] = [];
   const customKeys = new Set([...Object.keys(oldCustom), ...Object.keys(newCustom)]);
   for (const ck of customKeys) {
-    if (PROTECTED_CUSTOM_FIELDS.has(ck)) continue;
+    if (MANAGED_CUSTOM_FIELDS.has(ck)) continue;
     if (!isEqual(oldCustom[ck], newCustom[ck])) {
       changed.push(`custom.${ck}`);
     }

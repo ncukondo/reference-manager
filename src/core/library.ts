@@ -2,16 +2,18 @@ import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { computeFileHash } from "../utils/hash";
+import { isEqual } from "../utils/object";
 import { parseCslJson } from "./csl-json/parser";
 import { writeCslJson } from "./csl-json/serializer";
 import type { CslItem } from "./csl-json/types";
-import type {
-  FindOptions,
-  ILibrary,
-  RemoveOptions,
-  RemoveResult,
-  UpdateOptions,
-  UpdateResult,
+import {
+  type FindOptions,
+  type ILibrary,
+  PROTECTED_CUSTOM_FIELDS,
+  type RemoveOptions,
+  type RemoveResult,
+  type UpdateOptions,
+  type UpdateResult,
 } from "./library-interface.js";
 import { Reference } from "./reference";
 
@@ -385,9 +387,6 @@ export class Library implements ILibrary {
     return { newId: resolvedId, idChanged: true, collision: false };
   }
 
-  /** Protected custom fields that should not trigger change detection */
-  private static readonly PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp"]);
-
   /**
    * Check if there are actual changes between existing item and updates.
    * Ignores protected fields (uuid, created_at, timestamp).
@@ -403,7 +402,7 @@ export class Library implements ILibrary {
         }
         continue;
       }
-      if (!this.isEqual(existingItem[key as keyof CslItem], value)) return true;
+      if (!isEqual(existingItem[key as keyof CslItem], value)) return true;
     }
     return false;
   }
@@ -414,32 +413,9 @@ export class Library implements ILibrary {
   private hasCustomFieldChanges(existing: CslItem["custom"], updates: CslItem["custom"]): boolean {
     if (!updates) return false;
     for (const [key, value] of Object.entries(updates)) {
-      if (Library.PROTECTED_CUSTOM_FIELDS.has(key)) continue;
-      if (!this.isEqual(existing?.[key], value)) return true;
+      if (PROTECTED_CUSTOM_FIELDS.has(key)) continue;
+      if (!isEqual(existing?.[key], value)) return true;
     }
-    return false;
-  }
-
-  /**
-   * Deep equality check for comparing values.
-   */
-  private isEqual(a: unknown, b: unknown): boolean {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (typeof a !== typeof b) return false;
-
-    if (Array.isArray(a) && Array.isArray(b)) {
-      return a.length === b.length && a.every((item, i) => this.isEqual(item, b[i]));
-    }
-
-    if (typeof a === "object" && typeof b === "object") {
-      const aObj = a as Record<string, unknown>;
-      const bObj = b as Record<string, unknown>;
-      const aKeys = Object.keys(aObj);
-      if (aKeys.length !== Object.keys(bObj).length) return false;
-      return aKeys.every((key) => this.isEqual(aObj[key], bObj[key]));
-    }
-
     return false;
   }
 
