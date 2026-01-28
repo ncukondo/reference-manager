@@ -120,11 +120,11 @@ Add error annotation support to JSON serialization for the re-edit loop.
 - No-error items → no `_errors` key present
 - Deserialization strips `_errors` → parsed items have no `_errors`
 
-- [ ] Add error annotation function to `json-serializer.ts`
-- [ ] Update `deserializeFromJson` to strip `_errors`
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add error annotation function to `json-serializer.ts`
+- [x] Update `deserializeFromJson` to strip `_errors`
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Retry loop in executeEdit
 

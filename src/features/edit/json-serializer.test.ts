@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { deserializeFromJson, serializeToJson } from "./json-serializer.js";
+import type { EditValidationError } from "./edit-validator.js";
+import {
+  deserializeFromJson,
+  serializeToJson,
+  serializeToJsonWithErrors,
+} from "./json-serializer.js";
 
 describe("serializeToJson", () => {
   const baseItem: CslItem = {
@@ -135,5 +140,90 @@ describe("deserializeFromJson", () => {
 
   it("throws error for invalid JSON", () => {
     expect(() => deserializeFromJson("invalid json")).toThrow();
+  });
+
+  it("strips _errors key from parsed items", () => {
+    const json = JSON.stringify([
+      {
+        _errors: ["issued: bad date"],
+        _protected: { uuid: "550e8400-e29b-41d4-a716-446655440000" },
+        id: "Smith-2024",
+        type: "article-journal",
+      },
+    ]);
+    const result = deserializeFromJson(json);
+    expect((result[0] as Record<string, unknown>)._errors).toBeUndefined();
+    expect(result[0]?.id).toBe("Smith-2024");
+  });
+});
+
+describe("serializeToJsonWithErrors", () => {
+  const baseItem: CslItem = {
+    id: "Smith-2024",
+    type: "article-journal",
+    title: "Test Article",
+    custom: {
+      uuid: "550e8400-e29b-41d4-a716-446655440000",
+      created_at: "2024-01-01T00:00:00.000Z",
+      timestamp: "2024-03-15T10:30:00.000Z",
+    },
+  };
+
+  it("adds _errors array for a single errored item", () => {
+    const errors = new Map<number, EditValidationError[]>();
+    errors.set(0, [
+      { field: "issued", message: "Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)" },
+    ]);
+    const json = serializeToJsonWithErrors([baseItem], errors);
+    const parsed = JSON.parse(json);
+    expect(parsed[0]._errors).toEqual([
+      "issued: Invalid date format (use YYYY, YYYY-MM, or YYYY-MM-DD)",
+    ]);
+  });
+
+  it("adds _errors for multiple errored items", () => {
+    const items: CslItem[] = [
+      baseItem,
+      {
+        id: "Doe-2023",
+        type: "book",
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440001",
+          created_at: "2023-01-01T00:00:00.000Z",
+          timestamp: "2023-06-15T10:30:00.000Z",
+        },
+      },
+    ];
+    const errors = new Map<number, EditValidationError[]>();
+    errors.set(0, [{ field: "issued", message: "bad date" }]);
+    errors.set(1, [
+      { field: "author", message: "expected array" },
+      { field: "type", message: "Required" },
+    ]);
+    const json = serializeToJsonWithErrors(items, errors);
+    const parsed = JSON.parse(json);
+    expect(parsed[0]._errors).toEqual(["issued: bad date"]);
+    expect(parsed[1]._errors).toEqual(["author: expected array", "type: Required"]);
+  });
+
+  it("does not add _errors for items without errors", () => {
+    const items: CslItem[] = [
+      baseItem,
+      {
+        id: "Doe-2023",
+        type: "book",
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440001",
+          created_at: "2023-01-01T00:00:00.000Z",
+          timestamp: "2023-06-15T10:30:00.000Z",
+        },
+      },
+    ];
+    const errors = new Map<number, EditValidationError[]>();
+    errors.set(0, [{ field: "issued", message: "bad date" }]);
+    const json = serializeToJsonWithErrors(items, errors);
+    const parsed = JSON.parse(json);
+    expect(parsed[0]._errors).toBeDefined();
+    expect(parsed[1]._errors).toBeUndefined();
   });
 });

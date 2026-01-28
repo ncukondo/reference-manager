@@ -1,5 +1,6 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
+import type { EditValidationError } from "./edit-validator.js";
 import { ISO_DATE_REGEX, transformDateFromEdit, transformDateToEdit } from "./field-transformer.js";
 
 interface ProtectedFields {
@@ -78,6 +79,28 @@ export function serializeToJson(items: CslItem[]): string {
 }
 
 /**
+ * Serializes CSL items to JSON with _errors annotations for re-edit.
+ */
+export function serializeToJsonWithErrors(
+  items: CslItem[],
+  errors: Map<number, EditValidationError[]>
+): string {
+  const transformed = items.map((item, index) => {
+    const result = transformItemForJson(item);
+    const itemErrors = errors.get(index);
+    if (itemErrors) {
+      // Insert _errors before other keys
+      return {
+        _errors: itemErrors.map((e) => `${e.field}: ${e.message}`),
+        ...result,
+      };
+    }
+    return result;
+  });
+  return JSON.stringify(transformed, null, 2);
+}
+
+/**
  * Transforms date fields from ISO strings back to date-parts format.
  */
 function transformDateFields(item: Record<string, unknown>): Record<string, unknown> {
@@ -108,8 +131,8 @@ export function deserializeFromJson(jsonContent: string): Record<string, unknown
     const protectedData = item._protected as ProtectedFields | undefined;
     const uuid = protectedData?.uuid;
 
-    // Remove _protected from item
-    const { _protected, ...rest } = item;
+    // Remove _protected and _errors from item
+    const { _protected, _errors, ...rest } = item;
 
     // Transform date fields
     const transformed = transformDateFields(rest);
