@@ -10,6 +10,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import cliTruncate from "cli-truncate";
+import { ITEM_HEIGHT, RESERVED_LINES } from "./layout.js";
 
 export interface Choice<T = unknown> {
   /** Unique identifier for the choice */
@@ -437,13 +438,9 @@ export function SearchableMultiSelect<T>({
   const contentWidth = terminalWidth - 8; // Reserve space for checkbox and padding
 
   // Calculate visible count based on terminal height
-  // Each item takes 3 lines (title + subtitle + meta)
-  // Reserve lines for: header(2) + search(3) + status(1) + scroll indicators(2) + footer(2) = 10
-  const itemHeight = 3;
-  const reservedLines = 10;
   const calculatedVisibleCount = Math.max(
     1,
-    Math.floor((terminalHeight - reservedLines) / itemHeight)
+    Math.floor((terminalHeight - RESERVED_LINES) / ITEM_HEIGHT)
   );
   const visibleCount = visibleCountProp ?? calculatedVisibleCount;
 
@@ -606,7 +603,7 @@ export function SearchableMultiSelect<T>({
       </Box>
 
       {/* Sort menu (replaces list when shown) - fixed height to prevent layout shift */}
-      <Box flexDirection="column" height={visibleCount * itemHeight + 2}>
+      <Box flexDirection="column" height={visibleCount * ITEM_HEIGHT + 2}>
         {showSortMenu ? (
           <SortMenu
             options={availableSortOptions}

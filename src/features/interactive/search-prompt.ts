@@ -10,7 +10,14 @@ import { createElement } from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { SearchResult } from "../search/types.js";
 import { restoreStdinAfterInk } from "./alternate-screen.js";
-import { type Choice, SearchableMultiSelect, type SortOption } from "./components/index.js";
+import {
+  type Choice,
+  SearchableMultiSelect,
+  type SortOption,
+  calculateEffectiveLimit,
+  getTerminalHeight,
+  getTerminalWidth,
+} from "./components/index.js";
 import { formatAuthors } from "./format.js";
 
 /**
@@ -38,35 +45,7 @@ export interface SearchPromptResult {
   cancelled: boolean;
 }
 
-/**
- * Gets terminal width, falling back to 80 if not available
- */
-export function getTerminalWidth(): number {
-  return process.stdout.columns ?? 80;
-}
-
-/**
- * Gets terminal height, falling back to 24 if not available
- */
-export function getTerminalHeight(): number {
-  return process.stdout.rows ?? 24;
-}
-
-/**
- * Calculates the effective limit for the autocomplete list
- * based on terminal height to prevent input field from being hidden.
- * Reserves space for: prompt header (1), input line (1), footer hint (1), and padding (2)
- * Each item displays up to 3 lines (author/year, title, identifiers)
- */
-export function calculateEffectiveLimit(configLimit: number): number {
-  const terminalHeight = getTerminalHeight();
-  // Reserve lines for: header(2) + search box(3) + status(1) + scroll indicators(2) + footer(2) = 10
-  const reservedLines = 10;
-  const linesPerItem = 3; // each search result shows up to 3 lines
-  const availableLines = terminalHeight - reservedLines;
-  const maxVisibleChoices = Math.max(1, Math.floor(availableLines / linesPerItem));
-  return configLimit > 0 ? Math.min(configLimit, maxVisibleChoices) : maxVisibleChoices;
-}
+export { calculateEffectiveLimit, getTerminalHeight, getTerminalWidth };
 
 /**
  * Extract year from CSL item

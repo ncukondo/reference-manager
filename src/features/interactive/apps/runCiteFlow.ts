@@ -9,7 +9,12 @@ import { createElement } from "react";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { SearchResult } from "../../search/types.js";
 import { restoreStdinAfterInk } from "../alternate-screen.js";
-import type { Choice, SelectOption, SortOption } from "../components/index.js";
+import {
+  type Choice,
+  type SelectOption,
+  type SortOption,
+  calculateEffectiveLimit,
+} from "../components/index.js";
 import { formatAuthors } from "../format.js";
 import { CiteFlowApp, type CiteFlowResult } from "./CiteFlowApp.js";
 
@@ -25,26 +30,6 @@ export interface CiteFlowConfig {
  * Search function type for filtering references
  */
 export type SearchFunction = (query: string) => SearchResult[];
-
-/**
- * Gets terminal height, falling back to 24 if not available
- */
-function getTerminalHeight(): number {
-  return process.stdout.rows ?? 24;
-}
-
-/**
- * Calculates the effective limit for the autocomplete list
- */
-function calculateEffectiveLimit(configLimit: number): number {
-  const terminalHeight = getTerminalHeight();
-  // Reserve lines for: header(2) + search box(3) + status(1) + scroll indicators(2) + footer(2) = 10
-  const reservedLines = 10;
-  const linesPerItem = 3;
-  const availableLines = terminalHeight - reservedLines;
-  const maxVisibleChoices = Math.max(1, Math.floor(availableLines / linesPerItem));
-  return configLimit > 0 ? Math.min(configLimit, maxVisibleChoices) : maxVisibleChoices;
-}
 
 /**
  * Extract year from CSL item
