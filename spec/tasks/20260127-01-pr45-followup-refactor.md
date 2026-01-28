@@ -127,10 +127,10 @@ const result = await context.library.update(editedId, updates, { idType: "id" })
 return toEditItemResult(editedId, result, matchedOriginal);
 ```
 
-- [ ] Update `updateEditedItem` in `edit.ts`
-- [ ] Add test in `edit.test.ts` with UUID-less item, verify `idType: "id"` fallback
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `updateEditedItem` in `edit.ts`
+- [x] Add test in `edit.test.ts` with UUID-less item, verify `idType: "id"` fallback
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 
