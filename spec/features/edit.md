@@ -390,8 +390,8 @@ interface EditCommandResult {
 **Text output (with change details):**
 ```
 Updated 2 of 3 references:
-  - smith-2024a (was: smith-2024)
-    id: smith-2024 → smith-2024a
+  - smith-2024a (ID collision resolved: smith-2024 → smith-2024a)
+    id: "smith-2024" → "smith-2024a"
     title: "Old Title" → "New Title"
   - jones-2023
     author: +1 entry
@@ -400,7 +400,7 @@ No changes: 1
 ```
 
 When an edited ID collides with an existing ID, it is auto-resolved by appending a suffix (same as `ref add`).
-The resolved ID is shown with `(was: <original>)` notation.
+The resolved ID is shown with `(ID collision resolved: <requested> → <resolved>)` notation.
 
 **Change detail format:**
 
