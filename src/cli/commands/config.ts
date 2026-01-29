@@ -7,7 +7,6 @@ import { dirname } from "node:path";
 import type { Command } from "commander";
 import { getDefaultUserConfigPath } from "../../config/defaults.js";
 import { getEnvOverrideInfo } from "../../config/env-override.js";
-import { loadConfig } from "../../config/loader.js";
 import { parseValueForKey } from "../../config/value-validator.js";
 import { createConfigTemplate, getConfigEditTarget } from "../../features/config/edit.js";
 import { getConfigValue } from "../../features/config/get.js";
@@ -19,7 +18,7 @@ import { unsetConfigValue } from "../../features/config/unset.js";
 import { resolveWriteTarget } from "../../features/config/write-target.js";
 import { openEditor } from "../../features/edit/edit-session.js";
 import { resolveEditor } from "../../features/edit/editor-resolver.js";
-import { ExitCode, setExitCode } from "../helpers.js";
+import { ExitCode, loadConfigWithOverrides, setExitCode } from "../helpers.js";
 
 /**
  * Register 'config' command with all subcommands
@@ -36,7 +35,8 @@ export function registerConfigCommand(program: Command): void {
     .option("--sources", "Include source information for each value")
     .action(async (options) => {
       try {
-        const config = loadConfig();
+        const globalOpts = program.opts();
+        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
         const output = showConfig(config, {
           json: options.output === "json",
           section: options.section,
@@ -57,7 +57,8 @@ export function registerConfigCommand(program: Command): void {
     .option("--config-only", "Return only the config file value (ignore env vars)")
     .action(async (key: string, options) => {
       try {
-        const config = loadConfig();
+        const globalOpts = program.opts();
+        const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
         const envOverrideValue = options.configOnly
           ? null
           : (getEnvOverrideInfo(key)?.value ?? null);

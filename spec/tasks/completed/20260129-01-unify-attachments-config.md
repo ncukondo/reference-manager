@@ -150,11 +150,11 @@ Update specification documents and READMEs to reflect the unified configuration.
 After implementation, verify the following:
 
 Non-TTY tests (automated):
-- [ ] `ref config show` displays `[attachments]` section (not `[fulltext]`)
-- [ ] `ref config get attachments.directory` returns correct path
-- [ ] `ref config set attachments.directory /tmp/test` updates config
-- [ ] `ref --attachments-dir /tmp/test fulltext get <id>` uses override path
-- [ ] `REFERENCE_MANAGER_ATTACHMENTS_DIR=/tmp/test ref config show` shows override
+- [x] `ref config show` displays `[attachments]` section (not `[fulltext]`)
+- [x] `ref config get attachments.directory` returns correct path
+- [x] `ref config set attachments.directory /tmp/test` updates config
+- [x] `ref --attachments-dir /tmp/test fulltext get <id>` uses override path
+- [x] `REFERENCE_MANAGER_ATTACHMENTS_DIR=/tmp/test ref config show` shows override
 
 ## Completion Checklist
 
