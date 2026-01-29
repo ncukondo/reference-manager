@@ -47,15 +47,6 @@ export function getDefaultCslDirectory(): string {
 }
 
 /**
- * Get the default fulltext directory
- * @deprecated Use getDefaultAttachmentsDirectory() instead.
- * Fulltext is now stored in the attachments directory.
- */
-export function getDefaultFulltextDirectory(): string {
-  return getDefaultAttachmentsDirectory();
-}
-
-/**
  * Get the default attachments directory
  * Uses platform-specific data path + attachments/
  */
@@ -93,9 +84,6 @@ export const defaultConfig: Config = {
   pubmed: {
     email: undefined,
     apiKey: undefined,
-  },
-  fulltext: {
-    directory: getDefaultAttachmentsDirectory(),
   },
   attachments: {
     directory: getDefaultAttachmentsDirectory(),

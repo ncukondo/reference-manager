@@ -107,6 +107,12 @@ describe("loadConfigWithOverrides", () => {
     expect(config.backup.enabled).toBe(false);
     expect(config.backup.directory).toBe("/custom/backup");
   });
+
+  it("should override attachments directory", async () => {
+    const options = { attachmentsDir: "/custom/attachments" };
+    const config = await loadConfigWithOverrides(options);
+    expect(config.attachments.directory).toBe("/custom/attachments");
+  });
 });
 
 describe("getOutputFormat", () => {

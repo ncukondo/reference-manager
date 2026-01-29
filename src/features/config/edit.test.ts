@@ -71,7 +71,7 @@ describe("config edit", () => {
       expect(template).toContain("[server]");
       expect(template).toContain("[citation]");
       expect(template).toContain("[pubmed]");
-      expect(template).toContain("[fulltext]");
+      expect(template).toContain("[attachments]");
       expect(template).toContain("[cli]");
       expect(template).toContain("[cli.tui]");
       expect(template).toContain("[cli.edit]");

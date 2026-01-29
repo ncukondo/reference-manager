@@ -55,8 +55,8 @@ function toSnakeCaseConfig(config: Config): Record<string, unknown> {
     api_key: config.pubmed.apiKey,
   };
 
-  result.fulltext = {
-    directory: config.fulltext.directory,
+  result.attachments = {
+    directory: config.attachments.directory,
   };
 
   result.cli = {

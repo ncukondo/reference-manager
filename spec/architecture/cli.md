@@ -383,7 +383,7 @@ Paths follow platform conventions using XDG Base Directory Specification on Linu
 | User config | `{config}/config.toml` |
 | Library | `{data}/library.json` |
 | CSL styles | `{data}/csl/` |
-| Fulltext | `{data}/fulltext/` |
+| Attachments | `{data}/attachments/` |
 | Backups | `{cache}/backups/` |
 
 ### Core Settings
@@ -409,7 +409,7 @@ default_style = "apa"
 default_locale = "en-US"
 default_format = "text"
 
-# fulltext.directory defaults to {data}/fulltext
+# attachments.directory defaults to {data}/attachments
 [cli]
 default_limit = 0          # 0 = unlimited
 default_sort = "updated"
@@ -455,6 +455,8 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 --quiet / -q          Suppress non-error output
 --verbose / -v        Enable verbose output
 --no-backup           Disable backup for this operation
+--backup-dir <path>   Override backup directory
+--attachments-dir <path>  Override attachments directory
 --help / -h           Display help
 --version / -V        Display version
 ```

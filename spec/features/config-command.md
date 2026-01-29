@@ -242,7 +242,7 @@ citation.default_format      enum      Default format (text, html, rtf)
 pubmed.email                 string    Email for PubMed API
 pubmed.api_key               string    API key for PubMed
 
-fulltext.directory           string    Fulltext storage directory
+attachments.directory        string    Attachments storage directory
 
 cli.default_limit            integer   Default result limit (0 = unlimited)
 cli.default_sort             enum      Default sort field
@@ -315,8 +315,8 @@ Open a configuration file in the default editor.
 # email = ""
 # api_key = ""
 
-[fulltext]
-# directory = "~/.local/share/reference-manager/fulltext"
+[attachments]
+# directory = "~/.local/share/reference-manager/attachments"
 
 [cli]
 # default_limit = 0  # 0 = unlimited
@@ -355,7 +355,7 @@ All configuration keys can be read and written via `config get/set`:
 | `citation.default_format` | enum | `text` | Format: `text`, `html`, `rtf` |
 | `pubmed.email` | string | (none) | PubMed API email |
 | `pubmed.api_key` | string | (none) | PubMed API key |
-| `fulltext.directory` | string | `{data}/fulltext` | Fulltext storage |
+| `attachments.directory` | string | `{data}/attachments` | Attachments storage |
 | `cli.default_limit` | integer | `0` | Default result limit |
 | `cli.default_sort` | enum | `updated` | Sort: `created`, `updated`, `published`, `author`, `title` |
 | `cli.default_order` | enum | `desc` | Order: `asc`, `desc` |
@@ -376,7 +376,7 @@ The following environment variables override config file values:
 | Environment Variable | Config Key |
 |---------------------|------------|
 | `REFERENCE_MANAGER_LIBRARY` | `library` |
-| `REFERENCE_MANAGER_FULLTEXT_DIR` | `fulltext.directory` |
+| `REFERENCE_MANAGER_ATTACHMENTS_DIR` | `attachments.directory` |
 | `REFERENCE_MANAGER_CLI_DEFAULT_LIMIT` | `cli.default_limit` |
 | `REFERENCE_MANAGER_MCP_DEFAULT_LIMIT` | `mcp.default_limit` |
 | `PUBMED_EMAIL` | `pubmed.email` |

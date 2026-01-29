@@ -77,7 +77,8 @@ export function createProgram(): Command {
     .option("--quiet", "Suppress all non-error output")
     .option("--verbose", "Enable verbose output")
     .option("--no-backup", "Disable backup creation")
-    .option("--backup-dir <path>", "Override backup directory");
+    .option("--backup-dir <path>", "Override backup directory")
+    .option("--attachments-dir <path>", "Override attachments directory");
 
   // Register commands
   registerListCommand(program);

@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import {
   getDefaultBackupDirectory,
   getDefaultCslDirectory,
-  getDefaultFulltextDirectory,
   getDefaultLibraryPath,
   getDefaultUserConfigPath,
 } from "./defaults.js";
@@ -27,13 +26,6 @@ describe("default paths", () => {
     const cslDir = getDefaultCslDirectory();
     expect(cslDir).toContain(paths.data);
     expect(cslDir).toMatch(/csl$/);
-  });
-
-  test("getDefaultFulltextDirectory() uses attachments directory (deprecated)", () => {
-    // getDefaultFulltextDirectory is deprecated and now returns attachments directory
-    const fulltextDir = getDefaultFulltextDirectory();
-    expect(fulltextDir).toContain(paths.data);
-    expect(fulltextDir).toMatch(/attachments$/);
   });
 
   test("getDefaultBackupDirectory() uses cache path", () => {

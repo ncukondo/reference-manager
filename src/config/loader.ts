@@ -87,7 +87,7 @@ function mergeConfigs(
     "server",
     "citation",
     "pubmed",
-    "fulltext",
+    "attachments",
     "mcp",
   ] as const;
 
@@ -147,7 +147,6 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     },
     citation: fillCitationDefaults(partial.citation),
     pubmed: fillPubmedDefaults(partial.pubmed),
-    fulltext: fillFulltextDefaults(partial.fulltext),
     attachments: fillAttachmentsDefaults(partial.attachments),
     cli: fillCliDefaults(partial.cli),
     mcp: fillMcpDefaults(partial.mcp),
@@ -189,23 +188,6 @@ function expandTilde(path: string): string {
     return join(homedir(), path.slice(2));
   }
   return path;
-}
-
-/**
- * Fill fulltext config with defaults
- *
- * @deprecated Fulltext now uses attachments directory.
- * Priority:
- * 1. Environment variable REFERENCE_MANAGER_ATTACHMENTS_DIR
- * 2. Config file setting
- * 3. Default value (same as attachments.directory)
- */
-function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
-  const envDir = process.env.REFERENCE_MANAGER_ATTACHMENTS_DIR;
-  const directory = envDir ?? partial?.directory ?? defaultConfig.fulltext.directory;
-  return {
-    directory: expandTilde(directory),
-  };
 }
 
 /**

@@ -584,9 +584,9 @@ log_level = "info"
 max_generations = 50
 max_age_days = 365
 
-[fulltext]
-# フルテキストディレクトリを上書き（デフォルトは{data}/fulltext）
-directory = "~/references/fulltext"
+[attachments]
+# 添付ファイルディレクトリを上書き（デフォルトは{data}/attachments）
+directory = "~/references/attachments"
 
 [server]
 auto_start = true
@@ -635,7 +635,7 @@ ref config edit --local           # プロジェクトローカル設定を編�
 - `server.*` — HTTPサーバー設定
 - `citation.*` — 引用のデフォルト（スタイル、ロケール、フォーマット）
 - `pubmed.*` — PubMed API認証情報
-- `fulltext.*` — フルテキスト保存先
+- `attachments.*` — 添付ファイル保存先
 - `cli.*` — CLI動作（制限、ソート、TUIモード）
 - `mcp.*` — MCPサーバー設定
 
