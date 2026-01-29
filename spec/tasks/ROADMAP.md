@@ -209,21 +209,40 @@ Submit to Anthropic's official extension registry when ready.
   - Submit via Anthropic extension form
   - Address review feedback if any
 
+### Phase 31: Clipboard Support
+
+Add clipboard auto-copy for CLI output, controlled via config, environment variable, and CLI flag.
+
+**Task**: `20260129-04-clipboard-support.md`
+
+**Scope**:
+- Clipboard utility module (OS command detection: `pbcopy`, `clip.exe`, `wl-copy`, `xclip`)
+- Config setting: `cli.tui.clipboard_auto_copy` (TUI output only)
+- Environment variable: `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` (all output commands)
+- Global CLI option: `--clipboard` / `--no-clipboard` (all output commands)
+- Centralized output helper (stdout + clipboard, graceful degradation)
+- Spec updates
+
+**Todos**:
+- [ ] Step 1: Clipboard utility module
+- [ ] Step 2: Config schema and defaults
+- [ ] Step 3: CLI global option `--clipboard` / `--no-clipboard`
+- [ ] Step 4: Integrate clipboard into output path
+- [ ] Step 5: Update specs
+
 ---
 
 ## Future Phases
 
-### Phase 31: Citation Enhancements
+### Phase 32: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
-- Clipboard support (`--clipboard`)
-- Clipboard auto-copy setting for output commands
 - Pandoc cite key generation (`--cite-key`)
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 32: Advanced Features
+### Phase 33: Advanced Features
 
 Additional features beyond core functionality:
 
