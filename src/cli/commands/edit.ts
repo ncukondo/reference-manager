@@ -50,6 +50,10 @@ export interface EditItemResult {
   item?: CslItem;
   /** The original item before changes (when state is 'updated' or 'unchanged') */
   oldItem?: CslItem;
+  /** True if the ID was changed due to collision resolution */
+  idChanged?: boolean;
+  /** The new ID after collision resolution (only when idChanged=true) */
+  newId?: string;
 }
 
 /**
@@ -151,7 +155,17 @@ function toEditItemResult(
   }
   // Success case: updated with item
   if (result.item) {
-    return { id: editedId, state: "updated", item: result.item, oldItem };
+    const editResult: EditItemResult = {
+      id: editedId,
+      state: "updated",
+      item: result.item,
+      oldItem,
+    };
+    if (result.idChanged && result.newId) {
+      editResult.idChanged = true;
+      editResult.newId = result.newId;
+    }
+    return editResult;
   }
   // Fallback: updated but no item (shouldn't happen, but be defensive)
   return { id: editedId, state: "updated", oldItem };

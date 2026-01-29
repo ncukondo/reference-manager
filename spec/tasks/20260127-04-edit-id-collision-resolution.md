@@ -51,10 +51,10 @@ Extend `EditItemResult` interface and update `toEditItemResult` to propagate
 **Tests:**
 - `src/cli/commands/edit.test.ts`: Test `toEditItemResult` returns `idChanged`/`newId` when present in `UpdateResult`
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Enable `onIdCollision: "suffix"` for edit command
 

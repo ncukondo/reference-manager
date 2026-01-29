@@ -279,6 +279,69 @@ describe("edit command", () => {
       );
     });
 
+    it("propagates idChanged/newId from UpdateResult", async () => {
+      const resolvedItem = { ...sampleItem, id: "Smith-2024a" };
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: resolvedItem,
+        idChanged: true,
+        newId: "Smith-2024a",
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Test Article",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[0].idChanged).toBe(true);
+      expect(result.results[0].newId).toBe("Smith-2024a");
+    });
+
+    it("does not include idChanged/newId when not present in UpdateResult", async () => {
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: sampleItem,
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Updated Title",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[0].idChanged).toBeUndefined();
+      expect(result.results[0].newId).toBeUndefined();
+    });
+
     it("includes oldItem in id_collision result", async () => {
       mockUpdate.mockResolvedValue({ updated: false, errorType: "id_collision" });
 
