@@ -137,6 +137,19 @@ Remove all legacy `custom.fulltext` references from codebase and specs.
 - [x] Step 2: Remove from tests
 - [x] Step 3: Remove from specs
 
+### Unify Attachments Directory Configuration (Completed)
+
+Remove dead `[fulltext]` config section and unify under `[attachments]`.
+Add `--attachments-dir` CLI global option.
+
+**Task**: `completed/20260129-01-unify-attachments-config.md`
+
+**Todos**:
+- [x] Step 1: Remove `[fulltext]` config section
+- [x] Step 2: Add `--attachments-dir` CLI global option
+- [x] Step 3: Fix config command UI (show/set/init)
+- [x] Step 4: Update specs and documentation
+
 ### Phase 29: Edit Validation Pipeline
 
 Implement two-stage validation pipeline with error annotation and retry loop for the edit command.
