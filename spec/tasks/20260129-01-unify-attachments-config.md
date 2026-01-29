@@ -108,14 +108,15 @@ Update user-facing config tools to use `attachments.directory` instead of `fullt
    - Replace `[fulltext]` template section with `[attachments]` section
    - Update comment: `# directory = "~/.local/share/reference-manager/attachments"`
 
-- [ ] Update `show.ts`
-- [ ] Update `key-parser.ts`
-- [ ] Update `toml-writer.ts`
-- [ ] Update tests: `src/features/config/show.test.ts` (if exists)
-- [ ] Update tests: `src/config/key-parser.test.ts`
-- [ ] Update tests: `src/config/toml-writer.test.ts`
-- [ ] Verify Green: `npm run test:unit -- show.test key-parser.test toml-writer.test`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Update `show.ts` (done in Step 1)
+- [x] Update `key-parser.ts`
+- [x] Update `toml-writer.ts`
+- [x] Update `edit.ts` (config init template)
+- [x] Update tests: `src/features/config/show.test.ts` (done in Step 1)
+- [x] Update tests: `src/config/key-parser.test.ts` (no fulltext references)
+- [x] Update tests: `src/config/toml-writer.test.ts`
+- [x] Verify Green: `npm run test:unit -- show.test key-parser.test toml-writer.test`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update specs and documentation
 

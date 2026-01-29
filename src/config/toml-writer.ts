@@ -167,8 +167,8 @@ export function createConfigTemplate(): string {
 # email = ""
 # api_key = ""
 
-[fulltext]
-# directory = "~/.local/share/reference-manager/fulltext"
+[attachments]
+# directory = "~/.local/share/reference-manager/attachments"
 
 [cli]
 # default_limit = 0  # 0 = unlimited

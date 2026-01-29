@@ -74,8 +74,8 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
   { key: "pubmed.email", type: "string", description: "Email for PubMed API", optional: true },
   { key: "pubmed.api_key", type: "string", description: "API key for PubMed", optional: true },
 
-  // fulltext section
-  { key: "fulltext.directory", type: "string", description: "Fulltext storage directory" },
+  // attachments section
+  { key: "attachments.directory", type: "string", description: "Attachments storage directory" },
 
   // cli section
   {
