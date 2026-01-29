@@ -82,10 +82,10 @@ Show `(was: <original>)` notation for items where ID was auto-resolved.
 **Tests:**
 - `src/cli/commands/edit.test.ts`: Test output formatting with `idChanged` items
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Enable `onIdCollision: "suffix"` for update command
 

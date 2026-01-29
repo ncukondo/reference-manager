@@ -269,7 +269,7 @@ export async function executeEditCommand(
     const updateResult = await updateEditedItem(editedItem, items, uuidToOriginal, context);
     results.push(updateResult);
     if (updateResult.state === "updated") {
-      updatedIds.push(updateResult.id);
+      updatedIds.push(updateResult.newId ?? updateResult.id);
     }
   }
 
@@ -321,6 +321,27 @@ function formatSummaryHeader(updatedCount: number, totalCount: number): string {
 }
 
 /**
+ * Format updated items with change details and ID change notation
+ */
+function formatUpdatedItems(
+  lines: string[],
+  updatedResults: EditItemResult[],
+  updatedIds: string[]
+): void {
+  if (updatedResults.length > 0) {
+    for (const r of updatedResults) {
+      const displayId = r.idChanged && r.newId ? `${r.newId} (was: ${r.id})` : r.id;
+      lines.push(`  - ${displayId}`);
+      if (r.oldItem && r.item) {
+        lines.push(...formatChangeDetails(r.oldItem, r.item).map((l) => `  ${l}`));
+      }
+    }
+  } else {
+    formatItemList(lines, "", updatedIds);
+  }
+}
+
+/**
  * Format edit result for CLI output.
  */
 export function formatEditOutput(result: EditCommandResult): string {
@@ -334,18 +355,8 @@ export function formatEditOutput(result: EditCommandResult): string {
 
   const lines: string[] = [formatSummaryHeader(updatedCount, totalCount)];
 
-  // Show updated items with change details
   const updatedResults = result.results.filter((r) => r.state === "updated");
-  if (updatedResults.length > 0) {
-    for (const r of updatedResults) {
-      lines.push(`  - ${r.id}`);
-      if (r.oldItem && r.item) {
-        lines.push(...formatChangeDetails(r.oldItem, r.item).map((l) => `  ${l}`));
-      }
-    }
-  } else {
-    formatItemList(lines, "", updatedIds);
-  }
+  formatUpdatedItems(lines, updatedResults, updatedIds);
 
   if (totalCount > 0) {
     const unchanged = result.results.filter((r) => r.state === "unchanged");
