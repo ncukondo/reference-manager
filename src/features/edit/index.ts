@@ -18,6 +18,7 @@ import {
   readTempFile,
   writeTempFile,
 } from "./edit-session.js";
+import type { EditValidationError } from "./edit-validator.js";
 import { validateEditedItems } from "./edit-validator.js";
 import {
   deserializeFromJson,
@@ -66,7 +67,7 @@ function deserialize(content: string, format: EditFormat): Record<string, unknow
  */
 function serializeWithErrors(
   editedItems: Record<string, unknown>[],
-  errors: Map<number, import("./edit-validator.js").EditValidationError[]>,
+  errors: Map<number, EditValidationError[]>,
   format: EditFormat,
   originalItems?: CslItem[]
 ): string {
