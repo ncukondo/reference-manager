@@ -101,13 +101,6 @@ export const pubmedConfigSchema = z.object({
 });
 
 /**
- * Fulltext storage configuration schema
- */
-export const fulltextConfigSchema = z.object({
-  directory: z.string().min(1),
-});
-
-/**
  * Attachments storage configuration schema
  */
 export const attachmentsConfigSchema = z.object({
@@ -125,7 +118,6 @@ export const configSchema = z.object({
   server: serverConfigSchema,
   citation: citationConfigSchema,
   pubmed: pubmedConfigSchema,
-  fulltext: fulltextConfigSchema,
   attachments: attachmentsConfigSchema,
   cli: cliConfigSchema,
   mcp: mcpConfigSchema,
@@ -188,11 +180,6 @@ export const partialConfigSchema = z
         api_key: z.string().optional(),
       })
       .optional(),
-    fulltext: z
-      .object({
-        directory: z.string().min(1).optional(),
-      })
-      .optional(),
     attachments: z
       .object({
         directory: z.string().min(1).optional(),
@@ -240,7 +227,6 @@ export type ServerConfig = z.infer<typeof serverConfigSchema>;
 export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
-export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type TuiConfig = z.infer<typeof tuiConfigSchema>;
 export type EditConfigFormat = z.infer<typeof editFormatSchema>;
@@ -261,7 +247,6 @@ export type DeepPartialConfig = {
   server?: Partial<ServerConfig>;
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
-  fulltext?: Partial<FulltextConfig>;
   attachments?: Partial<AttachmentsConfig>;
   cli?: Partial<Omit<CliConfig, "tui" | "edit">> & {
     tui?: Partial<TuiConfig>;
@@ -441,7 +426,6 @@ const sectionNormalizers = {
   server: normalizeServerConfig,
   citation: normalizeCitationConfig,
   pubmed: normalizePubmedConfig,
-  fulltext: normalizeFulltextConfig,
   attachments: normalizeAttachmentsConfig,
   cli: normalizeCliConfig,
   mcp: normalizeMcpConfig,
@@ -488,21 +472,6 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
   }
 
   return normalized;
-}
-
-/**
- * Normalize fulltext configuration
- */
-function normalizeFulltextConfig(fulltext: {
-  directory?: string | undefined;
-}): Partial<FulltextConfig> | undefined {
-  const normalized: Partial<FulltextConfig> = {};
-
-  if (fulltext.directory !== undefined) {
-    normalized.directory = fulltext.directory;
-  }
-
-  return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
 /**

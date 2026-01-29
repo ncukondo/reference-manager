@@ -53,13 +53,16 @@ Remove the fulltext config section from schema, defaults, and loader. All consum
    - Remove `fulltext` from config assembly in `buildConfig` (or equivalent)
    - Remove `"fulltext"` from `SECTION_KEYS` array
 
-- [ ] Update `schema.ts`
-- [ ] Update `defaults.ts`
-- [ ] Update `loader.ts`
-- [ ] Update tests: `src/config/loader.test.ts` (remove fulltext-specific tests)
-- [ ] Update tests: `src/config/defaults.test.ts` (remove `getDefaultFulltextDirectory` tests)
-- [ ] Verify Green: `npm run test:unit -- src/config/`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Update `schema.ts`
+- [x] Update `defaults.ts`
+- [x] Update `loader.ts`
+- [x] Update tests: `src/config/loader.test.ts` (remove fulltext-specific tests)
+- [x] Update tests: `src/config/defaults.test.ts` (remove `getDefaultFulltextDirectory` tests)
+- [x] Update `show.ts` (also fixed `config.fulltext` → `config.attachments` for compilation)
+- [x] Update `show.test.ts` (updated mock config and assertions)
+- [x] Fixed bug: added `attachments` to `mergeConfigs` sectionKeys (was missing)
+- [x] Verify Green: `npm run test:unit -- src/config/`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Add `--attachments-dir` CLI global option
 

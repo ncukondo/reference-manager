@@ -31,8 +31,8 @@ const mockConfig: Config = {
     email: "test@example.com",
     apiKey: undefined,
   },
-  fulltext: {
-    directory: "/test/fulltext",
+  attachments: {
+    directory: "/test/attachments",
   },
   cli: {
     defaultLimit: 0,
@@ -67,7 +67,7 @@ describe("showConfig", () => {
       expect(result).toContain("[server]");
       expect(result).toContain("[citation]");
       expect(result).toContain("[pubmed]");
-      expect(result).toContain("[fulltext]");
+      expect(result).toContain("[attachments]");
       expect(result).toContain("[cli]");
       expect(result).toContain("[cli.tui]");
       expect(result).toContain("[cli.edit]");
