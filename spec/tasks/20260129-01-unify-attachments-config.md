@@ -140,10 +140,10 @@ Update specification documents and READMEs to reflect the unified configuration.
 4. `README_ja.md`:
    - Same changes as README.md
 
-- [ ] Update `spec/features/config-command.md`
-- [ ] Update `spec/architecture/cli.md`
-- [ ] Update `README.md`
-- [ ] Update `README_ja.md`
+- [x] Update `spec/features/config-command.md`
+- [x] Update `spec/architecture/cli.md`
+- [x] Update `README.md`
+- [x] Update `README_ja.md`
 
 ## Manual Verification
 

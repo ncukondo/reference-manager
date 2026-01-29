@@ -582,9 +582,9 @@ log_level = "info"
 max_generations = 50
 max_age_days = 365
 
-[fulltext]
-# Override fulltext directory (defaults to {data}/fulltext)
-directory = "~/references/fulltext"
+[attachments]
+# Override attachments directory (defaults to {data}/attachments)
+directory = "~/references/attachments"
 
 [server]
 auto_start = true
@@ -633,7 +633,7 @@ ref config edit --local           # Edit project-local config
 - `server.*` — HTTP server settings
 - `citation.*` — Citation defaults (style, locale, format)
 - `pubmed.*` — PubMed API credentials
-- `fulltext.*` — Fulltext storage
+- `attachments.*` — Attachments storage
 - `cli.*` — CLI behavior (limits, sorting, TUI mode)
 - `mcp.*` — MCP server settings
 
