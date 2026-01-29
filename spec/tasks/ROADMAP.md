@@ -171,6 +171,31 @@ Implement two-stage validation pipeline with error annotation and retry loop for
 - [ ] Step 4: Error annotation — JSON
 - [ ] Step 5: Retry loop in `executeEdit`
 
+### Phase 30: TUI Action Menu Enhancement
+
+Expand the TUI search action menu with dynamic actions based on selection count,
+new side-effect actions (Open fulltext, Manage attachments, Edit, Remove),
+output format submenu, and config-driven default citation style.
+
+**Task**: `20260129-03-tui-action-menu.md`
+
+**Scope**:
+- Dynamic action menu (single vs. multiple entry selection)
+- New actions: Open fulltext, Manage attachments, Edit reference(s), Remove
+- Output format submenu (IDs, CSL-JSON, BibTeX, YAML)
+- Default citation style from `config.citation.defaultStyle`
+- Side-effect action execution architecture
+
+**Todos**:
+- [ ] Step 1: Refactor ActionType and dynamic action choices
+- [ ] Step 2: Add Output format submenu
+- [ ] Step 3: Use default citation style from config
+- [ ] Step 4: Side-effect action architecture
+- [ ] Step 5: Implement Open fulltext action
+- [ ] Step 6: Implement Manage attachments action
+- [ ] Step 7: Implement Edit action
+- [ ] Step 8: Implement Remove action
+
 ---
 
 ## Next Steps
@@ -188,16 +213,17 @@ Submit to Anthropic's official extension registry when ready.
 
 ## Future Phases
 
-### Phase 30: Citation Enhancements
+### Phase 31: Citation Enhancements
 
 Post-MVP enhancements for citation functionality:
 
 - Clipboard support (`--clipboard`)
+- Clipboard auto-copy setting for output commands
 - Pandoc cite key generation (`--cite-key`)
 - Group by field (`--group-by <field>`)
 - Batch citation generation from file
 
-### Phase 31: Advanced Features
+### Phase 32: Advanced Features
 
 Additional features beyond core functionality:
 

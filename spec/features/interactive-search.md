@@ -85,31 +85,92 @@ Display format (detailed view):
 
 ### Action Menu
 
-After pressing Enter with selection:
+After pressing Enter with selection, the action menu is displayed. Available actions
+vary based on the number of selected entries: single-entry selection shows additional
+actions not available for multiple entries.
+
+#### Single Entry Selected
 
 ```
-? Action for 3 selected references:
-❯ Output IDs (citation keys)
-  Output as CSL-JSON
-  Output as BibTeX
-  Generate citation (APA)
+? Action for 1 selected reference:
+❯ Generate citation
   Generate citation (choose style)
+  Open fulltext
+  Manage attachments
+  Edit reference
+  Output (choose format)
+  Remove
   Cancel
 ```
 
-**Actions:**
+#### Multiple Entries Selected
+
+```
+? Action for 3 selected references:
+❯ Generate citation
+  Generate citation (choose style)
+  Edit references
+  Output (choose format)
+  Remove
+  Cancel
+```
+
+#### Output Format Submenu
+
+When "Output (choose format)" is selected:
+
+```
+? Output format:
+❯ IDs (citation keys)
+  CSL-JSON
+  BibTeX
+  YAML
+  Cancel
+```
+
+#### Action Categories
+
+**Output actions** — generate text to `stdout`, then exit:
+
 | Action | Output |
 |--------|--------|
-| Output IDs | Citation keys, one per line |
-| Output as CSL-JSON | JSON array of selected references |
-| Output as BibTeX | BibTeX entries |
-| Generate citation (APA) | Formatted citations in APA style |
+| Generate citation | Formatted citations using `config.citation.defaultStyle` |
 | Generate citation (choose) | Prompt for style, then generate |
-| Cancel | Return to search |
+| Output IDs | Citation keys, one per line |
+| Output CSL-JSON | JSON array of selected references |
+| Output BibTeX | BibTeX entries |
+| Output YAML | YAML formatted references |
+
+**Side-effect actions** — perform an operation, then exit:
+
+| Action | Behavior | Selection |
+|--------|----------|-----------|
+| Open fulltext | Open fulltext file in system viewer | Single only |
+| Manage attachments | Open attachment directory, then sync | Single only |
+| Edit reference(s) | Open editor with selected items | Single & multi |
+| Remove | Delete with confirmation prompt | Single & multi |
+
+**Other:**
+
+| Action | Behavior |
+|--------|----------|
+| Cancel | Return to search screen |
+
+#### Action Execution Flow
+
+All actions exit the TUI after execution:
+
+1. User selects action from menu
+2. TUI exits (alternate screen restored)
+3. Action is executed:
+   - **Output actions**: result written to `stdout`
+   - **Side-effect actions**: operation performed with output to `stderr`
+4. Process terminates
 
 ### Output
 
-- All output goes to `stdout`
+- Output actions send result to `stdout`
+- Side-effect actions send status messages to `stderr`
 - Suitable for piping: `ref search -t | xargs ref cite`
 
 ## Technical Specifications
@@ -177,13 +238,15 @@ debounce_ms = 200       # Debounce delay in milliseconds
 
 ## Future Extensions
 
-Not in initial scope, may be added later:
+Not in current scope, may be added later:
 
 - **Buffer mode**: Accumulate selections across multiple searches
 - **Preview pane**: Show full reference details
 - **Configurable default action**: Skip action menu
 - **Custom display format**: Configure which fields to show
 - **Keyboard shortcuts**: Direct actions without menu (e.g., `c` for cite)
+- **Clipboard auto-copy**: Automatically copy output to clipboard (controlled by config setting)
+- **Open specific attachment**: Open a specific attached file (not just directory)
 
 ## Dependencies
 
