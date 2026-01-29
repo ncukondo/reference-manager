@@ -85,10 +85,10 @@ Add `--attachments-dir <path>` global option following the `--backup-dir` patter
      }
      ```
 
-- [ ] Write test: `src/cli/helpers.test.ts` (add test for `--attachments-dir` override)
-- [ ] Implement: Update `helpers.ts` and `index.ts`
-- [ ] Verify Green: `npm run test:unit -- src/cli/helpers`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/cli/helpers.test.ts` (add test for `--attachments-dir` override)
+- [x] Implement: Update `helpers.ts` and `index.ts`
+- [x] Verify Green: `npm run test:unit -- src/cli/helpers`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Fix `config` command UI (show/set/init)
 

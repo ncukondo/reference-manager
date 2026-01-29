@@ -28,6 +28,7 @@ export interface CliOptions {
   idsOnly?: boolean;
   uuid?: boolean;
   bibtex?: boolean;
+  attachmentsDir?: string;
 }
 
 /**
@@ -107,6 +108,14 @@ export async function loadConfigWithOverrides(options: CliOptions): Promise<Conf
       ...config.backup,
       ...(options.backup !== undefined && { enabled: options.backup }),
       ...(options.backupDir && { directory: options.backupDir }),
+    };
+  }
+
+  // Attachments directory
+  if (options.attachmentsDir) {
+    overrides.attachments = {
+      ...config.attachments,
+      directory: options.attachmentsDir,
     };
   }
 
