@@ -42,10 +42,10 @@ since interactive selection is not available. With identifier, `--print` should 
 
 ### Step 1: Add Default Action to `attach` Parent Command
 
-- [ ] Write test: `src/cli/commands/attach.test.ts` — test that `ref attach` delegates to open behavior
-- [ ] Implement: Add `[identifier]` argument and action to `attachCmd` in `registerAttachCommand`
-- [ ] Verify: existing `attach open/add/list/get/detach/sync` subcommands still work correctly
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/cli/index.test.ts` — test that `ref attach` parent has identifier arg, options, and subcommands
+- [x] Implement: Add `[identifier]` argument and action to `attachCmd` in `registerAttachCommand`
+- [x] Verify: existing `attach open/add/list/get/detach/sync` subcommands still work correctly
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Manual Verification
 
