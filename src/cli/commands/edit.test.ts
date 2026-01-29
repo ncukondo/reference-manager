@@ -674,7 +674,7 @@ describe("edit command", () => {
       expect(output).toContain('volume: "1" → "2"');
     });
 
-    it("shows (was: original) for items with idChanged", () => {
+    it("shows ID collision resolved notation for items with idChanged", () => {
       const oldItem: CslItem = {
         id: "Smith-2024",
         type: "article",

@@ -112,10 +112,10 @@ else
   fail "normal update shows Updated" "$OUTPUT"
 fi
 
-if echo "$OUTPUT" | grep -q "ID changed to:"; then
-  fail "normal update should NOT show ID changed" "$OUTPUT"
+if echo "$OUTPUT" | grep -q "ID collision resolved:"; then
+  fail "normal update should NOT show ID collision resolved" "$OUTPUT"
 else
-  pass "normal update does not show ID changed"
+  pass "normal update does not show ID collision resolved"
 fi
 
 # =============================================================================
