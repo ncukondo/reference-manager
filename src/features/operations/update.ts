@@ -57,6 +57,10 @@ export async function updateReference(
     if (updateResult.item) {
       result.item = updateResult.item;
     }
+    if (updateResult.idChanged && updateResult.newId) {
+      result.idChanged = true;
+      result.newId = updateResult.newId;
+    }
     return result;
   }
 

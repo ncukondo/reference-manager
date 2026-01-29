@@ -231,12 +231,17 @@ function buildUpdateSuccessOutput(item: CslItem, id: string): UpdateJsonOutput {
  * Format no-changes result as JSON output
  */
 function formatUnchangedJson(
-  item: CslItem,
+  result: UpdateOperationResult,
   originalId: string,
   options: FormatUpdateJsonOptions
 ): UpdateJsonOutput {
+  const item = result.item as CslItem;
   const output = buildUpdateSuccessOutput(item, item.id ?? originalId);
   output.unchanged = true;
+  if (result.idChanged && result.newId) {
+    output.idChanged = true;
+    output.previousId = originalId;
+  }
   if (options.full) addFullOutputFields(output, item, options.before);
   return output;
 }
@@ -283,7 +288,7 @@ export function formatUpdateJsonOutput(
 
   // Handle no changes case (item present but not updated)
   if (!result.updated && result.item) {
-    return formatUnchangedJson(result.item, originalId, options);
+    return formatUnchangedJson(result, originalId, options);
   }
 
   // Handle success case

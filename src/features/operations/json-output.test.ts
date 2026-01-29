@@ -342,6 +342,28 @@ describe("JSON output formatters", () => {
       });
     });
 
+    describe("unchanged with ID collision resolution", () => {
+      it("should include idChanged/previousId when collision resolved to same ID", () => {
+        const item = createCslItem("smith-2024a", "uuid-1", "Article");
+        const result: UpdateOperationResult = {
+          updated: false,
+          item,
+          idChanged: true,
+          newId: "smith-2024a",
+        };
+
+        const output = formatUpdateJsonOutput(result, "smith-2024", {});
+
+        expect(output).toMatchObject({
+          success: true,
+          id: "smith-2024a",
+          unchanged: true,
+          idChanged: true,
+          previousId: "smith-2024",
+        });
+      });
+    });
+
     describe("failure case", () => {
       it("should format not found error", () => {
         const result: UpdateOperationResult = {
