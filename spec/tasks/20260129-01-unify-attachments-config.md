@@ -1,0 +1,162 @@
+# Task: Unify Attachments Directory Configuration
+
+## Purpose
+
+Remove the dead `[fulltext]` config section and unify all attachment/fulltext directory configuration under `[attachments]`. Add `--attachments-dir` CLI global option for runtime override. This eliminates the current inconsistency where `config show` displays `fulltext.directory` but all operations use `attachments.directory`.
+
+Pre-release phase: no backward compatibility needed.
+
+## Background
+
+The `fulltext` command is a shorthand for `attach --role fulltext`. Since Phase 25 (Attachments Architecture), all fulltext operations internally use `config.attachments.directory`. However, the `[fulltext]` config section remains as dead code:
+
+- `config show` displays `fulltext.directory` (not actually used by any operation)
+- `config set` only supports `fulltext.directory` (not `attachments.directory`)
+- `config init` template generates `[fulltext]` section (not `[attachments]`)
+- No CLI global option exists for overriding the attachments directory
+
+## References
+
+- Spec: `spec/features/config-command.md`, `spec/architecture/cli.md`
+- Related: `src/config/schema.ts`, `src/config/defaults.ts`, `src/config/loader.ts`
+- Related: `src/config/key-parser.ts`, `src/config/toml-writer.ts`
+- Related: `src/cli/helpers.ts`, `src/cli/index.ts`
+- Related: `src/features/config/show.ts`
+
+## TDD Workflow
+
+For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing.md`).
+
+## Steps
+
+### Step 1: Remove `[fulltext]` config section
+
+Remove the fulltext config section from schema, defaults, and loader. All consumers already use `config.attachments.directory`.
+
+**Files to modify:**
+
+1. `src/config/schema.ts`:
+   - Remove `fulltextConfigSchema` constant
+   - Remove `fulltext` from `configSchema`
+   - Remove `fulltext` from `partialConfigSchema`
+   - Remove `FulltextConfig` type export
+   - Remove `fulltext` from `DeepPartialConfig`
+   - Remove `normalizeFulltextConfig` function
+   - Remove `fulltext` from `sectionNormalizers`
+
+2. `src/config/defaults.ts`:
+   - Remove `getDefaultFulltextDirectory()` function
+   - Remove `fulltext` property from `defaultConfig`
+
+3. `src/config/loader.ts`:
+   - Remove `fillFulltextDefaults()` function
+   - Remove `fulltext` from config assembly in `buildConfig` (or equivalent)
+   - Remove `"fulltext"` from `SECTION_KEYS` array
+
+- [ ] Update `schema.ts`
+- [ ] Update `defaults.ts`
+- [ ] Update `loader.ts`
+- [ ] Update tests: `src/config/loader.test.ts` (remove fulltext-specific tests)
+- [ ] Update tests: `src/config/defaults.test.ts` (remove `getDefaultFulltextDirectory` tests)
+- [ ] Verify Green: `npm run test:unit -- src/config/`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 2: Add `--attachments-dir` CLI global option
+
+Add `--attachments-dir <path>` global option following the `--backup-dir` pattern.
+
+**Files to modify:**
+
+1. `src/cli/index.ts`:
+   - Add `.option("--attachments-dir <path>", "Override attachments directory")` after `--backup-dir`
+
+2. `src/cli/helpers.ts`:
+   - Add `attachmentsDir?: string` to `CliOptions` interface
+   - Add attachments override logic to `loadConfigWithOverrides`:
+     ```
+     if (options.attachmentsDir) {
+       overrides.attachments = {
+         ...config.attachments,
+         directory: options.attachmentsDir,
+       };
+     }
+     ```
+
+- [ ] Write test: `src/cli/helpers.test.ts` (add test for `--attachments-dir` override)
+- [ ] Implement: Update `helpers.ts` and `index.ts`
+- [ ] Verify Green: `npm run test:unit -- src/cli/helpers`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 3: Fix `config` command UI (show/set/init)
+
+Update user-facing config tools to use `attachments.directory` instead of `fulltext.directory`.
+
+**Files to modify:**
+
+1. `src/features/config/show.ts` (`toSnakeCaseConfig`):
+   - Replace `result.fulltext = { directory: config.fulltext.directory }` with
+     `result.attachments = { directory: config.attachments.directory }`
+
+2. `src/config/key-parser.ts`:
+   - Replace `{ key: "fulltext.directory", ... }` with
+     `{ key: "attachments.directory", type: "string", description: "Attachments storage directory" }`
+
+3. `src/config/toml-writer.ts`:
+   - Replace `[fulltext]` template section with `[attachments]` section
+   - Update comment: `# directory = "~/.local/share/reference-manager/attachments"`
+
+- [ ] Update `show.ts`
+- [ ] Update `key-parser.ts`
+- [ ] Update `toml-writer.ts`
+- [ ] Update tests: `src/features/config/show.test.ts` (if exists)
+- [ ] Update tests: `src/config/key-parser.test.ts`
+- [ ] Update tests: `src/config/toml-writer.test.ts`
+- [ ] Verify Green: `npm run test:unit -- show.test key-parser.test toml-writer.test`
+- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+
+### Step 4: Update specs and documentation
+
+Update specification documents and READMEs to reflect the unified configuration.
+
+**Files to modify:**
+
+1. `spec/features/config-command.md`:
+   - Replace `fulltext.directory` → `attachments.directory` in config key tables
+   - Remove `REFERENCE_MANAGER_FULLTEXT_DIR` from environment variable table
+   - Update `[fulltext]` config example → `[attachments]`
+
+2. `spec/architecture/cli.md`:
+   - Add `--attachments-dir` to global options table
+   - Update directory table: `Fulltext | {data}/fulltext/` → `Attachments | {data}/attachments/`
+
+3. `README.md`:
+   - Replace `[fulltext]` config section example with `[attachments]`
+   - Update `fulltext.*` config reference to `attachments.*`
+
+4. `README_ja.md`:
+   - Same changes as README.md
+
+- [ ] Update `spec/features/config-command.md`
+- [ ] Update `spec/architecture/cli.md`
+- [ ] Update `README.md`
+- [ ] Update `README_ja.md`
+
+## Manual Verification
+
+After implementation, verify the following:
+
+Non-TTY tests (automated):
+- [ ] `ref config show` displays `[attachments]` section (not `[fulltext]`)
+- [ ] `ref config get attachments.directory` returns correct path
+- [ ] `ref config set attachments.directory /tmp/test` updates config
+- [ ] `ref --attachments-dir /tmp/test fulltext get <id>` uses override path
+- [ ] `REFERENCE_MANAGER_ATTACHMENTS_DIR=/tmp/test ref config show` shows override
+
+## Completion Checklist
+
+- [ ] All tests pass (`npm run test`)
+- [ ] Lint passes (`npm run lint`)
+- [ ] Type check passes (`npm run typecheck`)
+- [ ] Build succeeds (`npm run build`)
+- [ ] CHANGELOG.md updated
+- [ ] Move this file to `spec/tasks/completed/`
