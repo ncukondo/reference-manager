@@ -345,6 +345,23 @@ export async function executeUpdate(
 }
 
 /**
+ * Format non-updated result for CLI output.
+ */
+function formatNotUpdated(result: UpdateCommandResult, identifier: string): string {
+  if (result.errorType === "id_collision") {
+    return `Update failed: ID collision for ${identifier}`;
+  }
+  if (result.item) {
+    const noChangeMsg = `No changes: [${result.item.id}] ${result.item.title || "(no title)"}`;
+    if (result.idChanged && result.newId) {
+      return `${noChangeMsg}\nID collision resolved: requested ID already exists → kept ${result.newId}`;
+    }
+    return noChangeMsg;
+  }
+  return `Reference not found: ${identifier}`;
+}
+
+/**
  * Format update result for CLI output.
  *
  * @param result - Update result
@@ -353,14 +370,7 @@ export async function executeUpdate(
  */
 export function formatUpdateOutput(result: UpdateCommandResult, identifier: string): string {
   if (!result.updated) {
-    if (result.errorType === "id_collision") {
-      return `Update failed: ID collision for ${identifier}`;
-    }
-    // No changes detected - item is present
-    if (result.item) {
-      return `No changes: [${result.item.id}] ${result.item.title || "(no title)"}`;
-    }
-    return `Reference not found: ${identifier}`;
+    return formatNotUpdated(result, identifier);
   }
 
   const item = result.item;
@@ -373,10 +383,9 @@ export function formatUpdateOutput(result: UpdateCommandResult, identifier: stri
   }
 
   if (result.idChanged && result.newId) {
-    parts.push(`ID changed to: ${result.newId}`);
+    parts.push(`ID collision resolved: ${identifier} → ${result.newId}`);
   }
 
-  // Show changed fields when oldItem is available
   if (result.oldItem && item) {
     parts.push(...formatChangeDetails(result.oldItem, item));
   }

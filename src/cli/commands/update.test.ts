@@ -79,7 +79,9 @@ describe("update command", () => {
 
       const output = formatUpdateOutput(result, "Smith-2020");
 
-      expect(output).toBe("Updated: [Smith-2020-1] Test Title\nID changed to: Smith-2020-1");
+      expect(output).toBe(
+        "Updated: [Smith-2020-1] Test Title\nID collision resolved: Smith-2020 → Smith-2020-1"
+      );
     });
 
     it("should format update without item details", () => {

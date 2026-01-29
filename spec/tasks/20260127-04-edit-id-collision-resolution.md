@@ -114,15 +114,49 @@ Update tests that expect `id_collision` failure behavior to reflect new auto-res
 - `src/features/operations/update.test.ts`: `updateReference` collision tests (default changes)
 - `src/features/operations/json-output.test.ts`: JSON collision error tests
 
-- [ ] Update tests
-- [ ] Verify Green: `npm test`
-- [ ] Lint/Type check
+- [x] Update tests (no changes needed: existing tests remain valid)
+- [x] Verify Green: `npm test`
+- [x] Lint/Type check
+
+## Handover Notes (未完了の作業)
+
+### 実施済み
+- Steps 1–5 のコード変更は全て完了、テスト・lint・typecheck 合格
+- マニュアルテストで edit/update 両方の衝突自動解決を確認済み
+- `test-fixtures/test-id-collision-resolution.sh` 作成済み（自動テスト6件 全PASS）
+
+### マニュアルテスト後に追加した修正（未コミット）
+以下の修正がワーキングツリーに残っている：
+
+1. **衝突解決メッセージの改善**（Step 3–4 の発展）
+   - `formatEditOutput`: `(was: X)` → `(ID collision resolved: X → Y)` に変更
+   - `formatUpdateOutput`: `ID changed to: X` → `ID collision resolved: X → Y` に変更
+   - `formatNotUpdated` ヘルパー抽出（cognitive complexity 対策）
+
+2. **衝突解決後に元IDと同じになるケースの対応**
+   - `src/core/library.ts` `updateReference`: no-changes パスでも `idChanged`/`newId` を返すように修正
+   - `src/cli/commands/edit.ts` `toEditItemResult`: unchanged ケースでも `idChanged`/`newId` を伝搬
+   - `src/cli/commands/update.ts` `formatNotUpdated`: unchanged + 衝突解決時に理由を表示
+   - `src/cli/commands/edit.ts` `formatEditOutput`: unchanged リストでも衝突情報を表示
+   - 例: `No changes: [Moore-2018ea] ...\nID collision resolved: requested ID already exists → kept Moore-2018ea`
+
+3. **テストスクリプト**: `test-fixtures/test-id-collision-resolution.sh` のアサーションを新メッセージに合わせて更新済み
+
+### 残りの作業
+- [ ] `npm run build` 確認
+- [ ] `npm test` 全件合格確認
+- [ ] `bash test-fixtures/test-id-collision-resolution.sh` 再実行
+- [ ] TTY マニュアルテスト再実行（衝突解決後に同じIDになるケースの表示確認）
+- [ ] CHANGELOG.md 更新
+- [ ] コミット・push
+- [ ] spec の出力例を更新（`(was: X)` → `(ID collision resolved: ...)` に合わせる）
+- [ ] タスクファイルを `spec/tasks/completed/` に移動
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
 - [ ] Build succeeds (`npm run build`)
 - [ ] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

@@ -143,7 +143,17 @@ function toEditItemResult(
 ): EditItemResult {
   // No changes case: item present but not updated
   if (!result.updated && result.item) {
-    return { id: editedId, state: "unchanged", item: result.item, oldItem };
+    const editResult: EditItemResult = {
+      id: editedId,
+      state: "unchanged",
+      item: result.item,
+      oldItem,
+    };
+    if (result.idChanged && result.newId) {
+      editResult.idChanged = true;
+      editResult.newId = result.newId;
+    }
+    return editResult;
   }
   // Error case: not updated and no item
   if (!result.updated) {
@@ -330,7 +340,8 @@ function formatUpdatedItems(
 ): void {
   if (updatedResults.length > 0) {
     for (const r of updatedResults) {
-      const displayId = r.idChanged && r.newId ? `${r.newId} (was: ${r.id})` : r.id;
+      const displayId =
+        r.idChanged && r.newId ? `${r.newId} (ID collision resolved: ${r.id} → ${r.newId})` : r.id;
       lines.push(`  - ${displayId}`);
       if (r.oldItem && r.item) {
         lines.push(...formatChangeDetails(r.oldItem, r.item).map((l) => `  ${l}`));
@@ -366,7 +377,12 @@ export function formatEditOutput(result: EditCommandResult): string {
     formatItemList(
       lines,
       `No changes: ${unchanged.length}`,
-      unchanged.map((r) => r.id)
+      unchanged.map((r) => {
+        if (r.idChanged && r.newId) {
+          return `${r.id} (ID collision resolved: requested ID already exists → kept ${r.newId})`;
+        }
+        return r.id;
+      })
     );
     formatFailedItems(lines, failed);
   }

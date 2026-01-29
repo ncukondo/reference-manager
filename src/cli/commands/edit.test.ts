@@ -712,7 +712,7 @@ describe("edit command", () => {
       };
 
       const output = formatEditOutput(result);
-      expect(output).toContain("Smith-2024a (was: Smith-2024)");
+      expect(output).toContain("Smith-2024a (ID collision resolved: Smith-2024 → Smith-2024a)");
     });
 
     it("does not show (was:) when id is not changed", () => {
@@ -745,7 +745,7 @@ describe("edit command", () => {
 
       const output = formatEditOutput(result);
       expect(output).toContain("  - Smith-2024");
-      expect(output).not.toContain("(was:");
+      expect(output).not.toContain("(ID collision resolved:");
     });
 
     it("does not show change details for items without oldItem", () => {
