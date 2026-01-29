@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `config init`/`config edit` templates use `[attachments]` section
   - Environment variable `REFERENCE_MANAGER_ATTACHMENTS_DIR` overrides `attachments.directory`
   - Fixed bug: `attachments` config was missing from merge logic (config file values were ignored)
+  - Fixed bug: `config show`/`config get` now reflect CLI global option overrides (`--attachments-dir`, `--backup-dir`, `--library`, etc.)
 
 - **Interactive TUI**: Migrated from Enquirer to React Ink for all interactive components
   - Improved declarative UI model with better state management
