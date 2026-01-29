@@ -99,10 +99,10 @@ Pass `onIdCollision: "suffix"` in update command's `executeUpdate`.
 - `src/cli/commands/update.test.ts`: Test that ID collision is resolved with suffix
 - `src/cli/commands/update.test.ts`: Update existing collision error tests
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Update existing tests
 

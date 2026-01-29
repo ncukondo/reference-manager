@@ -331,7 +331,10 @@ export async function executeUpdate(
     ) as Partial<CslItem>;
   }
 
-  const result = await context.library.update(identifier, updates, { idType });
+  const result = await context.library.update(identifier, updates, {
+    idType,
+    onIdCollision: "suffix",
+  });
 
   // Save the library if update was successful
   if (result.updated) {
