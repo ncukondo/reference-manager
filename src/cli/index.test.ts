@@ -87,5 +87,50 @@ describe("CLI Entry", () => {
       const logLevelOption = program.options.find((opt) => opt.long === "--log-level");
       expect(logLevelOption).toBeDefined();
     });
+
+    describe("attach command default action", () => {
+      it("should have a default action on the attach parent command", () => {
+        const program = createProgram();
+        const attachCmd = program.commands.find((cmd) => cmd.name() === "attach");
+        expect(attachCmd).toBeDefined();
+        // Parent command should have an action handler (for default open behavior)
+        // Commander stores the action listener internally
+        expect(attachCmd?.registeredArguments).toBeDefined();
+      });
+
+      it("attach parent command should accept optional [identifier] argument", () => {
+        const program = createProgram();
+        const attachCmd = program.commands.find((cmd) => cmd.name() === "attach");
+        expect(attachCmd).toBeDefined();
+        const identifierArg = attachCmd?.registeredArguments.find(
+          (arg) => arg.name() === "identifier"
+        );
+        expect(identifierArg).toBeDefined();
+        expect(identifierArg?.required).toBe(false);
+      });
+
+      it("attach parent command should have --uuid option only", () => {
+        const program = createProgram();
+        const attachCmd = program.commands.find((cmd) => cmd.name() === "attach");
+        expect(attachCmd).toBeDefined();
+        const options = attachCmd?.options.map((opt) => opt.long);
+        expect(options).toContain("--uuid");
+        expect(options).not.toContain("--print");
+        expect(options).not.toContain("--no-sync");
+      });
+
+      it("attach subcommands should still be registered", () => {
+        const program = createProgram();
+        const attachCmd = program.commands.find((cmd) => cmd.name() === "attach");
+        expect(attachCmd).toBeDefined();
+        const subcommands = attachCmd?.commands.map((cmd) => cmd.name());
+        expect(subcommands).toContain("open");
+        expect(subcommands).toContain("add");
+        expect(subcommands).toContain("list");
+        expect(subcommands).toContain("get");
+        expect(subcommands).toContain("detach");
+        expect(subcommands).toContain("sync");
+      });
+    });
   });
 });

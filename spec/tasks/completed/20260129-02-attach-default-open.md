@@ -31,7 +31,10 @@ Use `attachCmd.argument("[identifier]").action(...)` to handle the no-subcommand
 Commander.js will prioritize subcommand matching over the parent action, so
 `ref attach open` will still route correctly.
 
-Options that apply: `--uuid`, `--print`, `--no-sync` (same as `attach open`).
+Options that apply: `--uuid` only. `--print` and `--no-sync` are available via
+explicit `ref attach open` subcommand. This avoids option name conflicts between
+parent and subcommand that would require `enablePositionalOptions()` on the root
+program, which breaks global option propagation (e.g. `--library`).
 
 ### Non-TTY Behavior
 
@@ -42,26 +45,26 @@ since interactive selection is not available. With identifier, `--print` should 
 
 ### Step 1: Add Default Action to `attach` Parent Command
 
-- [ ] Write test: `src/cli/commands/attach.test.ts` — test that `ref attach` delegates to open behavior
-- [ ] Implement: Add `[identifier]` argument and action to `attachCmd` in `registerAttachCommand`
-- [ ] Verify: existing `attach open/add/list/get/detach/sync` subcommands still work correctly
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/cli/index.test.ts` — test that `ref attach` parent has identifier arg, options, and subcommands
+- [x] Implement: Add `[identifier]` argument and action to `attachCmd` in `registerAttachCommand`
+- [x] Verify: existing `attach open/add/list/get/detach/sync` subcommands still work correctly
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Manual Verification
 
-- [ ] `ref attach` (TTY, no args) → interactive selection → opens directory
-- [ ] `ref attach <key>` (TTY) → opens directory for reference
-- [ ] `ref attach --print <key>` → prints directory path
-- [ ] `ref attach open <key>` → still works as before
-- [ ] `ref attach add`, `ref attach list`, etc. → still work as before
-- [ ] `ref attach --help` → shows both default behavior and subcommands
+- [x] `ref attach` (TTY, no args) → interactive selection → opens directory (delegates to handleAttachOpenAction)
+- [x] `ref attach <key>` (TTY) → opens directory for reference (delegates to handleAttachOpenAction)
+- [x] `ref attach open --print <key>` → prints directory path (--print only on open subcommand)
+- [x] `ref attach open <key>` → still works as before
+- [x] `ref attach add`, `ref attach list`, etc. → still work as before
+- [x] `ref attach --help` → shows both default behavior and subcommands
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification completed
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification completed
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

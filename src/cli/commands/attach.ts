@@ -678,6 +678,7 @@ export async function handleAttachOpenAction(
     if (options.print) {
       process.stdout.write(`${result.path}\n`);
       setExitCode(ExitCode.SUCCESS);
+      return;
     }
 
     if (shouldUseInteractive) {

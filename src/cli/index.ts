@@ -593,6 +593,14 @@ function registerMcpCommand(program: Command): void {
 function registerAttachCommand(program: Command): void {
   const attachCmd = program.command("attach").description("Manage file attachments for references");
 
+  // Default action: `ref attach [identifier]` delegates to open behavior
+  attachCmd
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleAttachOpenAction(identifier, undefined, options, program.opts());
+    });
+
   attachCmd
     .command("open")
     .description("Open attachments directory or specific file")

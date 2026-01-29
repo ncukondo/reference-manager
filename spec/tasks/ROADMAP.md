@@ -150,6 +150,16 @@ Add `--attachments-dir` CLI global option.
 - [x] Step 3: Fix config command UI (show/set/init)
 - [x] Step 4: Update specs and documentation
 
+### Attach Default Open Behavior (Completed)
+
+Make `ref attach` (without subcommand) behave like `ref attach open`.
+
+**Task**: `completed/20260129-02-attach-default-open.md`
+
+**Todos**:
+- [x] Step 1: Add default action to `attach` parent command
+- [x] Step 2: Manual verification
+
 ### Phase 29: Edit Validation Pipeline
 
 Implement two-stage validation pipeline with error annotation and retry loop for the edit command.
