@@ -1,6 +1,7 @@
 import * as yaml from "js-yaml";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
+import type { EditValidationError } from "./edit-validator.js";
 import { transformDateToEdit } from "./field-transformer.js";
 
 /**
@@ -98,4 +99,87 @@ export function serializeToYaml(items: CslItem[]): string {
   }
 
   return sections.join("\n---\n\n");
+}
+
+/**
+ * Removes internal fields (like _extractedUuid) from edited item.
+ */
+function stripInternalFields(item: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (!key.startsWith("_")) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Serializes edited items to YAML with error annotations for re-edit.
+ * Adds file-top summary and per-entry error blocks.
+ *
+ * @param editedItems - User's edited items (preserves their changes)
+ * @param errors - Validation errors per item index
+ * @param originalItems - Original items for protected fields comments (optional)
+ */
+export function serializeToYamlWithErrors(
+  editedItems: Record<string, unknown>[],
+  errors: Map<number, EditValidationError[]>,
+  originalItems?: CslItem[]
+): string {
+  const errorCount = errors.size;
+  const totalCount = editedItems.length;
+
+  // File-top summary
+  const summaryLines: string[] = [
+    `# ⚠ Validation Errors (${errorCount} of ${totalCount} entries)`,
+    "# ─────────────────────────────────────",
+  ];
+  for (const [index, itemErrors] of errors) {
+    const item = editedItems[index];
+    const id = (item?.id as string) ?? `Entry ${index + 1}`;
+    const fields = itemErrors.map((e) => e.field).join(", ");
+    summaryLines.push(`# ${id}: ${fields}`);
+  }
+  summaryLines.push("# ─────────────────────────────────────");
+
+  const sections: string[] = [];
+
+  for (let i = 0; i < editedItems.length; i++) {
+    const editedItem = editedItems[i] ?? {};
+    const originalItem = originalItems?.[i];
+    const itemErrors = errors.get(i);
+
+    // Error block (only for errored entries)
+    let errorBlock = "";
+    if (itemErrors) {
+      const errorLines = ["# ⚠ Errors:"];
+      for (const err of itemErrors) {
+        errorLines.push(`#   ${err.field}: ${err.message}`);
+      }
+      errorLines.push("#");
+      errorBlock = `${errorLines.join("\n")}\n`;
+    }
+
+    // Protected fields comment (from original item if available)
+    const protectedComment = originalItem ? createProtectedComment(originalItem) : "";
+
+    // Strip internal fields and serialize
+    const cleanItem = stripInternalFields(editedItem);
+
+    // Serialize to YAML
+    const yamlContent = yaml.dump([cleanItem], {
+      lineWidth: -1,
+      quotingType: '"',
+      forceQuotes: false,
+    });
+
+    // Combine parts
+    const parts = [errorBlock, protectedComment ? `${protectedComment}\n` : "", yamlContent]
+      .filter(Boolean)
+      .join("\n");
+    sections.push(parts);
+  }
+
+  return `${summaryLines.join("\n")}\n---\n${sections.join("---\n")}`;
 }

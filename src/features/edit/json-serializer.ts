@@ -1,7 +1,7 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import { MANAGED_CUSTOM_FIELDS } from "../../core/library-interface.js";
-import { transformDateFromEdit, transformDateToEdit } from "./field-transformer.js";
-const ISO_DATE_REGEX = /^\d{4}(-\d{2})?(-\d{2})?$/;
+import type { EditValidationError } from "./edit-validator.js";
+import { ISO_DATE_REGEX, transformDateFromEdit, transformDateToEdit } from "./field-transformer.js";
 
 interface ProtectedFields {
   uuid?: string;
@@ -79,6 +79,61 @@ export function serializeToJson(items: CslItem[]): string {
 }
 
 /**
+ * Strips internal fields (like _extractedUuid) from edited item.
+ */
+function stripInternalFields(item: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (!key.startsWith("_")) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Serializes edited items to JSON with _errors annotations for re-edit.
+ *
+ * @param editedItems - User's edited items (preserves their changes)
+ * @param errors - Validation errors per item index
+ * @param originalItems - Original items for protected fields (optional)
+ */
+export function serializeToJsonWithErrors(
+  editedItems: Record<string, unknown>[],
+  errors: Map<number, EditValidationError[]>,
+  originalItems?: CslItem[]
+): string {
+  const transformed = editedItems.map((editedItem, index) => {
+    const originalItem = originalItems?.[index];
+    const protectedFields = originalItem
+      ? extractProtectedFields(originalItem.custom as Record<string, unknown>)
+      : {};
+
+    // Start with _errors if present
+    const itemErrors = errors.get(index);
+    const result: Record<string, unknown> = {};
+
+    if (itemErrors) {
+      result._errors = itemErrors.map((e) => `${e.field}: ${e.message}`);
+    }
+
+    // Add _protected if available
+    if (Object.keys(protectedFields).length > 0) {
+      result._protected = protectedFields;
+    }
+
+    // Copy edited item fields (excluding internal fields)
+    const cleanItem = stripInternalFields(editedItem);
+    for (const [key, value] of Object.entries(cleanItem)) {
+      result[key] = value;
+    }
+
+    return result;
+  });
+  return JSON.stringify(transformed, null, 2);
+}
+
+/**
  * Transforms date fields from ISO strings back to date-parts format.
  */
 function transformDateFields(item: Record<string, unknown>): Record<string, unknown> {
@@ -109,8 +164,8 @@ export function deserializeFromJson(jsonContent: string): Record<string, unknown
     const protectedData = item._protected as ProtectedFields | undefined;
     const uuid = protectedData?.uuid;
 
-    // Remove _protected from item
-    const { _protected, ...rest } = item;
+    // Remove _protected and _errors from item
+    const { _protected, _errors, ...rest } = item;
 
     // Transform date fields
     const transformed = transformDateFields(rest);

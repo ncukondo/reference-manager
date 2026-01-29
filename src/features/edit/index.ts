@@ -16,10 +16,18 @@ import {
   deleteTempFile,
   openEditor,
   readTempFile,
+  writeTempFile,
 } from "./edit-session.js";
-import { deserializeFromJson, serializeToJson } from "./json-serializer.js";
+import type { EditValidationError } from "./edit-validator.js";
+import { validateEditedItems } from "./edit-validator.js";
+import {
+  deserializeFromJson,
+  serializeToJson,
+  serializeToJsonWithErrors,
+} from "./json-serializer.js";
+import { runValidationPrompt } from "./validation-prompt.js";
 import { deserializeFromYaml } from "./yaml-deserializer.js";
-import { serializeToYaml } from "./yaml-serializer.js";
+import { serializeToYaml, serializeToYamlWithErrors } from "./yaml-serializer.js";
 
 export type { EditFormat };
 
@@ -32,6 +40,7 @@ export interface EditResult {
   success: boolean;
   editedItems: Record<string, unknown>[];
   error?: string;
+  aborted?: boolean;
 }
 
 /**
@@ -49,7 +58,26 @@ function deserialize(content: string, format: EditFormat): Record<string, unknow
 }
 
 /**
- * Executes the edit workflow.
+ * Serializes edited items with error annotations based on format.
+ *
+ * @param editedItems - User's edited items (preserves their changes)
+ * @param errors - Validation errors per item index
+ * @param format - Output format (yaml or json)
+ * @param originalItems - Original items for protected fields (optional)
+ */
+function serializeWithErrors(
+  editedItems: Record<string, unknown>[],
+  errors: Map<number, EditValidationError[]>,
+  format: EditFormat,
+  originalItems?: CslItem[]
+): string {
+  return format === "yaml"
+    ? serializeToYamlWithErrors(editedItems, errors, originalItems)
+    : serializeToJsonWithErrors(editedItems, errors, originalItems);
+}
+
+/**
+ * Executes the edit workflow with validation retry loop.
  *
  * @param items - The CSL items to edit
  * @param options - Edit options (format, editor)
@@ -66,36 +94,79 @@ export async function executeEdit(items: CslItem[], options: EditOptions): Promi
     // 2. Create temp file
     tempFilePath = createTempFile(serialized, format);
 
-    // 3. Open editor and wait
-    const exitCode = openEditor(editor, tempFilePath);
+    // Edit-validate loop
+    while (true) {
+      // 3. Open editor and wait
+      const exitCode = openEditor(editor, tempFilePath);
 
-    if (exitCode !== 0) {
-      return {
-        success: false,
-        editedItems: [],
-        error: `Editor exited with code ${exitCode}`,
-      };
+      if (exitCode !== 0) {
+        return {
+          success: false,
+          editedItems: [],
+          error: `Editor exited with code ${exitCode}`,
+        };
+      }
+
+      // 4. Read edited content
+      const editedContent = readTempFile(tempFilePath);
+
+      // 5. Parse edited content
+      let editedItems: Record<string, unknown>[];
+      try {
+        editedItems = deserialize(editedContent, format);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          editedItems: [],
+          error: `Parse error: ${message}`,
+        };
+      }
+
+      // 6. Validate edited items
+      const validationResult = validateEditedItems(editedItems);
+
+      if (validationResult.valid) {
+        // Validation passed - return success
+        return {
+          success: true,
+          editedItems,
+        };
+      }
+
+      // 7. Validation failed - prompt user
+      const choice = await runValidationPrompt(validationResult, items);
+
+      switch (choice) {
+        case "re-edit": {
+          // Re-serialize edited items (preserving user changes) with error annotations
+          const annotated = serializeWithErrors(
+            editedItems,
+            validationResult.errors,
+            format,
+            items // Pass original items for protected fields
+          );
+          writeTempFile(tempFilePath, annotated);
+          // Continue loop to re-open editor
+          break;
+        }
+        case "restore": {
+          // Re-serialize original items (without errors)
+          const original = serialize(items, format);
+          writeTempFile(tempFilePath, original);
+          // Continue loop to re-open editor
+          break;
+        }
+        case "abort":
+          return {
+            success: false,
+            editedItems: [],
+            aborted: true,
+          };
+      }
     }
-
-    // 4. Read edited content
-    const editedContent = readTempFile(tempFilePath);
-
-    // 5. Parse edited content
-    const editedItems = deserialize(editedContent, format);
-
-    return {
-      success: true,
-      editedItems,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      editedItems: [],
-      error: `Parse error: ${message}`,
-    };
   } finally {
-    // 6. Cleanup
+    // Cleanup
     if (tempFilePath) {
       deleteTempFile(tempFilePath);
     }

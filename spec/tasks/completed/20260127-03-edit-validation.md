@@ -49,10 +49,10 @@ interface EditValidationResult {
 - Partial: only `issued` invalid, `accessed` valid → error on `issued` only
 - Multiple items: mixed valid and invalid → correct per-item errors
 
-- [ ] Create `src/features/edit/edit-validator.ts`
-- [ ] Create `src/features/edit/edit-validator.test.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Create `src/features/edit/edit-validator.ts`
+- [x] Create `src/features/edit/edit-validator.test.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: CSL schema validation integration
 
@@ -74,11 +74,11 @@ Add post-transform validation against the CSL schema.
 - Stage 1 failure short-circuits Stage 2 → only edit-format errors returned
 - All valid → `{ valid: true, errors: empty }`
 
-- [ ] Add `validateCslItems` to `edit-validator.ts`
-- [ ] Add `validateEditedItems` to `edit-validator.ts`
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add `validateCslItems` to `edit-validator.ts`
+- [x] Add `validateEditedItems` to `edit-validator.ts`
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Error annotation — YAML
 
@@ -99,10 +99,10 @@ Add error annotation support to YAML serialization for the re-edit loop.
 - Mixed: some with errors, some without → correct interleaving
 - Re-parse of annotated file → error comments stripped cleanly
 
-- [ ] Add error annotation function to `yaml-serializer.ts`
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add error annotation function to `yaml-serializer.ts`
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Error annotation — JSON
 
@@ -120,11 +120,11 @@ Add error annotation support to JSON serialization for the re-edit loop.
 - No-error items → no `_errors` key present
 - Deserialization strips `_errors` → parsed items have no `_errors`
 
-- [ ] Add error annotation function to `json-serializer.ts`
-- [ ] Update `deserializeFromJson` to strip `_errors`
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add error annotation function to `json-serializer.ts`
+- [x] Update `deserializeFromJson` to strip `_errors`
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Retry loop in executeEdit
 
@@ -151,21 +151,21 @@ Restructure `executeEdit` to support validation failure → error display → pr
 - Validation fails → abort → no update, result has `aborted: true`
 - Multiple validation failures → loop continues until resolve or abort
 
-- [ ] Add validation call after parse in `executeEdit`
-- [ ] Add terminal error display
-- [ ] Add interactive prompt (re-edit / restore / abort)
-- [ ] Handle re-edit with error annotations (YAML and JSON)
-- [ ] Handle restore original
-- [ ] Handle abort
-- [ ] Add tests
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Add validation call after parse in `executeEdit`
+- [x] Add terminal error display
+- [x] Add interactive prompt (re-edit / restore / abort)
+- [x] Handle re-edit with error annotations (YAML and JSON)
+- [x] Handle restore original
+- [x] Handle abort
+- [x] Add tests
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`
