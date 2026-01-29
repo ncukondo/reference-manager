@@ -67,7 +67,8 @@ export function createProgram(): Command {
   program
     .name("reference-manager")
     .version(packageJson.version)
-    .description(packageJson.description);
+    .description(packageJson.description)
+    .enablePositionalOptions();
 
   // Global options
   program
@@ -591,7 +592,11 @@ function registerMcpCommand(program: Command): void {
  * Register 'attach' command with subcommands
  */
 function registerAttachCommand(program: Command): void {
-  const attachCmd = program.command("attach").description("Manage file attachments for references");
+  const attachCmd = program
+    .command("attach")
+    .description("Manage file attachments for references")
+    .enablePositionalOptions()
+    .passThroughOptions();
 
   // Default action: `ref attach [identifier]` delegates to open behavior
   attachCmd
