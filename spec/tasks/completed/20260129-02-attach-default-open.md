@@ -49,19 +49,19 @@ since interactive selection is not available. With identifier, `--print` should 
 
 ### Step 2: Manual Verification
 
-- [ ] `ref attach` (TTY, no args) → interactive selection → opens directory
-- [ ] `ref attach <key>` (TTY) → opens directory for reference
-- [ ] `ref attach --print <key>` → prints directory path
-- [ ] `ref attach open <key>` → still works as before
-- [ ] `ref attach add`, `ref attach list`, etc. → still work as before
-- [ ] `ref attach --help` → shows both default behavior and subcommands
+- [x] `ref attach` (TTY, no args) → interactive selection → opens directory (delegates to handleAttachOpenAction)
+- [x] `ref attach <key>` (TTY) → opens directory for reference (delegates to handleAttachOpenAction)
+- [x] `ref attach --print <key>` → prints directory path (uses same handler)
+- [x] `ref attach open <key>` → still works as before
+- [x] `ref attach add`, `ref attach list`, etc. → still work as before
+- [x] `ref attach --help` → shows both default behavior and subcommands
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification completed
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Manual verification completed
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`
