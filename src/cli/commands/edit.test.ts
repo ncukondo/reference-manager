@@ -312,6 +312,45 @@ describe("edit command", () => {
       expect(result.results[0].newId).toBe("Smith-2024a");
     });
 
+    it("passes onIdCollision: suffix to library.update", async () => {
+      const resolvedItem = { ...sampleItem, id: "Smith-2024a" };
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: resolvedItem,
+        idChanged: true,
+        newId: "Smith-2024a",
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Test Article",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      // Verify onIdCollision: "suffix" is passed
+      expect(mockUpdate).toHaveBeenCalledWith(
+        "550e8400-e29b-41d4-a716-446655440000",
+        expect.any(Object),
+        expect.objectContaining({ idType: "uuid", onIdCollision: "suffix" })
+      );
+      // ID collision is resolved, not failed
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[0].idChanged).toBe(true);
+    });
+
     it("does not include idChanged/newId when not present in UpdateResult", async () => {
       mockUpdate.mockResolvedValue({
         updated: true,

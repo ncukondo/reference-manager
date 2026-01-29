@@ -66,10 +66,10 @@ Pass `onIdCollision: "suffix"` in `updateEditedItem` calls to `library.update()`
 **Tests:**
 - `src/cli/commands/edit.test.ts`: Test that ID collision is resolved (state is `"updated"` with `idChanged: true`)
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Update `formatEditOutput` for ID changes
 
