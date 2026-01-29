@@ -29,3 +29,4 @@ Follow `spec/meta/development-process.md` for complete workflow:
 - Pre-release phase: breaking changes acceptable
 - All specs written in English to minimize token usage
 - Refer to relevant spec files when in doubt
+- Read `package.json` as needed to check test commands, build scripts, CLI entry points, etc.
