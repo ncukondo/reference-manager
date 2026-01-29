@@ -13,9 +13,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y nodejs=24.4.1-1nodesource1
 
 
-# Install Claude CLI (native binary)
-RUN curl -fsSL https://claude.ai/install.sh | bash
-
 # Set up non-root user
 ARG USERNAME=vscode
 ARG USER_UID=1000
@@ -38,6 +35,9 @@ COPY --from=ghcr.io/astral-sh/uv:0.8.3 /uv /uvx /bin/
 
 # Switch to non-root user and set up uv for them
 USER $USERNAME
+
+# Install Claude CLI (native binary) as non-root user
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Configure npm global install directory for non-root user
 RUN mkdir -p /home/$USERNAME/.npm-global
