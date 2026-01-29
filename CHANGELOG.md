@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`--attachments-dir` CLI global option**: Override attachments directory at runtime (e.g., `ref --attachments-dir /tmp/test fulltext get <id>`)
+
 - **Edit/Update ID Collision Auto-Resolution**: Automatic ID collision resolution for `ref edit` and `ref update` CLI commands
   - When an edited/updated ID collides with an existing entry, a suffix is appended (e.g., `Smith-2024a`) instead of failing
   - `EditItemResult` includes `idChanged`/`newId` fields to report resolved IDs
@@ -36,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Supports all field types (strings, arrays, custom fields)
 
 ### Changed
+
+- **Config: Unified attachments directory**: Replaced `[fulltext]` config section with `[attachments]`
+  - `config show` now displays `[attachments]` section instead of `[fulltext]`
+  - `config set/get attachments.directory` replaces `fulltext.directory`
+  - `config init`/`config edit` templates use `[attachments]` section
+  - Environment variable `REFERENCE_MANAGER_ATTACHMENTS_DIR` overrides `attachments.directory`
+  - Fixed bug: `attachments` config was missing from merge logic (config file values were ignored)
 
 - **Interactive TUI**: Migrated from Enquirer to React Ink for all interactive components
   - Improved declarative UI model with better state management
