@@ -109,14 +109,14 @@ describe("CLI Entry", () => {
         expect(identifierArg?.required).toBe(false);
       });
 
-      it("attach parent command should have --uuid, --print, and --no-sync options", () => {
+      it("attach parent command should have --uuid option only", () => {
         const program = createProgram();
         const attachCmd = program.commands.find((cmd) => cmd.name() === "attach");
         expect(attachCmd).toBeDefined();
         const options = attachCmd?.options.map((opt) => opt.long);
         expect(options).toContain("--uuid");
-        expect(options).toContain("--print");
-        expect(options).toContain("--no-sync");
+        expect(options).not.toContain("--print");
+        expect(options).not.toContain("--no-sync");
       });
 
       it("attach subcommands should still be registered", () => {

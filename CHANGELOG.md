@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`ref attach` default open behavior**: `ref attach` (without subcommand) now behaves like `ref attach open`
   - `ref attach` (TTY, no args) → interactive ID selection → open attachments directory
   - `ref attach <identifier>` → open attachments directory for that reference
-  - Supports `--uuid`, `--print`, `--no-sync` options (same as `attach open`)
+  - Supports `--uuid` option; use explicit `ref attach open` for `--print` / `--no-sync`
   - All existing subcommands (`open`, `add`, `list`, `get`, `detach`, `sync`) continue to work
 
 - **`--attachments-dir` CLI global option**: Override attachments directory at runtime (e.g., `ref --attachments-dir /tmp/test fulltext get <id>`)

@@ -31,7 +31,10 @@ Use `attachCmd.argument("[identifier]").action(...)` to handle the no-subcommand
 Commander.js will prioritize subcommand matching over the parent action, so
 `ref attach open` will still route correctly.
 
-Options that apply: `--uuid`, `--print`, `--no-sync` (same as `attach open`).
+Options that apply: `--uuid` only. `--print` and `--no-sync` are available via
+explicit `ref attach open` subcommand. This avoids option name conflicts between
+parent and subcommand that would require `enablePositionalOptions()` on the root
+program, which breaks global option propagation (e.g. `--library`).
 
 ### Non-TTY Behavior
 
@@ -51,7 +54,7 @@ since interactive selection is not available. With identifier, `--print` should 
 
 - [x] `ref attach` (TTY, no args) → interactive selection → opens directory (delegates to handleAttachOpenAction)
 - [x] `ref attach <key>` (TTY) → opens directory for reference (delegates to handleAttachOpenAction)
-- [x] `ref attach --print <key>` → prints directory path (uses same handler)
+- [x] `ref attach open --print <key>` → prints directory path (--print only on open subcommand)
 - [x] `ref attach open <key>` → still works as before
 - [x] `ref attach add`, `ref attach list`, etc. → still work as before
 - [x] `ref attach --help` → shows both default behavior and subcommands

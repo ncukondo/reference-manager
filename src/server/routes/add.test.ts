@@ -24,7 +24,7 @@ describe("Add Route", () => {
   beforeEach(async () => {
     // Create test library
     const tmpDir = os.tmpdir();
-    testLibraryPath = path.join(tmpDir, `test-library-${Date.now()}.json`);
+    testLibraryPath = path.join(tmpDir, `test-library-${Date.now()}-${crypto.randomUUID()}.json`);
 
     // Initialize with empty library file
     await fs.writeFile(testLibraryPath, "[]", "utf-8");
