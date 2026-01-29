@@ -336,7 +336,13 @@ export class Library implements ILibrary {
     // Check for actual changes (excluding protected fields like uuid, created_at, timestamp)
     if (!this.hasChanges(existingItem, updates, newId)) {
       // No changes detected - return the item without updating timestamp
-      return { updated: false, item: existingItem };
+      // But if collision resolution occurred, report it so the user knows their requested ID was taken
+      const result: UpdateResult = { updated: false, item: existingItem };
+      if (idChanged) {
+        result.idChanged = true;
+        result.newId = newId;
+      }
+      return result;
     }
 
     const updatedItem = this.buildUpdatedItem(existingItem, updates, newId);

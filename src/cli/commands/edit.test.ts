@@ -279,6 +279,139 @@ describe("edit command", () => {
       );
     });
 
+    it("propagates idChanged/newId from UpdateResult", async () => {
+      const resolvedItem = { ...sampleItem, id: "Smith-2024a" };
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: resolvedItem,
+        idChanged: true,
+        newId: "Smith-2024a",
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Test Article",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[0].idChanged).toBe(true);
+      expect(result.results[0].newId).toBe("Smith-2024a");
+    });
+
+    it("uses newId for updatedIds when ID was auto-resolved", async () => {
+      const resolvedItem = { ...sampleItem, id: "Smith-2024a" };
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: resolvedItem,
+        idChanged: true,
+        newId: "Smith-2024a",
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Test Article",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.updatedIds).toEqual(["Smith-2024a"]);
+    });
+
+    it("passes onIdCollision: suffix to library.update", async () => {
+      const resolvedItem = { ...sampleItem, id: "Smith-2024a" };
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: resolvedItem,
+        idChanged: true,
+        newId: "Smith-2024a",
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Test Article",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      // Verify onIdCollision: "suffix" is passed
+      expect(mockUpdate).toHaveBeenCalledWith(
+        "550e8400-e29b-41d4-a716-446655440000",
+        expect.any(Object),
+        expect.objectContaining({ idType: "uuid", onIdCollision: "suffix" })
+      );
+      // ID collision is resolved, not failed
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[0].idChanged).toBe(true);
+    });
+
+    it("does not include idChanged/newId when not present in UpdateResult", async () => {
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item: sampleItem,
+      });
+
+      vi.mocked(executeEdit).mockResolvedValue({
+        success: true,
+        editedItems: [
+          {
+            id: "Smith-2024",
+            type: "article-journal",
+            title: "Updated Title",
+            _extractedUuid: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+      });
+
+      const options: EditCommandOptions = {
+        identifiers: ["Smith-2024"],
+        format: "yaml",
+      };
+
+      const result = await executeEditCommand(options, createContext());
+
+      expect(result.results[0].state).toBe("updated");
+      expect(result.results[0].idChanged).toBeUndefined();
+      expect(result.results[0].newId).toBeUndefined();
+    });
+
     it("includes oldItem in id_collision result", async () => {
       mockUpdate.mockResolvedValue({ updated: false, errorType: "id_collision" });
 
@@ -539,6 +672,80 @@ describe("edit command", () => {
       const output = formatEditOutput(result);
       expect(output).toContain('title: "Old Title" → "New Title"');
       expect(output).toContain('volume: "1" → "2"');
+    });
+
+    it("shows ID collision resolved notation for items with idChanged", () => {
+      const oldItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "Test Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem: CslItem = {
+        id: "Smith-2024a",
+        type: "article",
+        title: "Test Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-02T00:00:00.000Z",
+        },
+      };
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024a"],
+        results: [
+          {
+            id: "Smith-2024",
+            state: "updated",
+            oldItem,
+            item: newItem,
+            idChanged: true,
+            newId: "Smith-2024a",
+          },
+        ],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("Smith-2024a (ID collision resolved: Smith-2024 → Smith-2024a)");
+    });
+
+    it("does not show (was:) when id is not changed", () => {
+      const oldItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "Old Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      const newItem: CslItem = {
+        id: "Smith-2024",
+        type: "article",
+        title: "New Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-02T00:00:00.000Z",
+        },
+      };
+      const result: EditCommandResult = {
+        success: true,
+        updatedCount: 1,
+        updatedIds: ["Smith-2024"],
+        results: [{ id: "Smith-2024", state: "updated", oldItem, item: newItem }],
+      };
+
+      const output = formatEditOutput(result);
+      expect(output).toContain("  - Smith-2024");
+      expect(output).not.toContain("(ID collision resolved:");
     });
 
     it("does not show change details for items without oldItem", () => {

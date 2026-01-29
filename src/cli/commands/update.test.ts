@@ -5,6 +5,7 @@ import type { UpdateOperationResult } from "../../features/operations/update.js"
 import {
   type SetOperation,
   applySetOperations,
+  executeUpdate,
   formatUpdateOutput,
   parseSetOption,
   resolveArrayOperations,
@@ -78,7 +79,9 @@ describe("update command", () => {
 
       const output = formatUpdateOutput(result, "Smith-2020");
 
-      expect(output).toBe("Updated: [Smith-2020-1] Test Title\nID changed to: Smith-2020-1");
+      expect(output).toBe(
+        "Updated: [Smith-2020-1] Test Title\nID collision resolved: Smith-2020 → Smith-2020-1"
+      );
     });
 
     it("should format update without item details", () => {
@@ -726,6 +729,49 @@ describe("update command", () => {
           after: item,
         });
       });
+    });
+  });
+
+  describe("executeUpdate", () => {
+    it("should pass onIdCollision: suffix to library.update", async () => {
+      const mockUpdate = vi.fn();
+      const mockSave = vi.fn().mockResolvedValue(undefined);
+      const mockFind = vi.fn();
+      const context = {
+        mode: "local",
+        library: { update: mockUpdate, save: mockSave, find: mockFind },
+      } as unknown as import("../execution-context.js").ExecutionContext;
+
+      const item: CslItem = {
+        id: "Smith-2020a",
+        type: "article",
+        title: "Test Title",
+        custom: {
+          uuid: "test-uuid",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+      mockUpdate.mockResolvedValue({
+        updated: true,
+        item,
+        idChanged: true,
+        newId: "Smith-2020a",
+      });
+
+      const result = await executeUpdate(
+        { identifier: "Smith-2020", updates: { id: "Smith-2020" } },
+        context
+      );
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        "Smith-2020",
+        { id: "Smith-2020" },
+        expect.objectContaining({ onIdCollision: "suffix" })
+      );
+      expect(result.updated).toBe(true);
+      expect(result.idChanged).toBe(true);
+      expect(result.newId).toBe("Smith-2020a");
     });
   });
 

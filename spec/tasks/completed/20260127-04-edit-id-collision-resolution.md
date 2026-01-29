@@ -51,10 +51,10 @@ Extend `EditItemResult` interface and update `toEditItemResult` to propagate
 **Tests:**
 - `src/cli/commands/edit.test.ts`: Test `toEditItemResult` returns `idChanged`/`newId` when present in `UpdateResult`
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Enable `onIdCollision: "suffix"` for edit command
 
@@ -66,10 +66,10 @@ Pass `onIdCollision: "suffix"` in `updateEditedItem` calls to `library.update()`
 **Tests:**
 - `src/cli/commands/edit.test.ts`: Test that ID collision is resolved (state is `"updated"` with `idChanged: true`)
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Update `formatEditOutput` for ID changes
 
@@ -82,10 +82,10 @@ Show `(was: <original>)` notation for items where ID was auto-resolved.
 **Tests:**
 - `src/cli/commands/edit.test.ts`: Test output formatting with `idChanged` items
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Enable `onIdCollision: "suffix"` for update command
 
@@ -99,10 +99,10 @@ Pass `onIdCollision: "suffix"` in update command's `executeUpdate`.
 - `src/cli/commands/update.test.ts`: Test that ID collision is resolved with suffix
 - `src/cli/commands/update.test.ts`: Update existing collision error tests
 
-- [ ] Write test
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Update existing tests
 
@@ -114,15 +114,15 @@ Update tests that expect `id_collision` failure behavior to reflect new auto-res
 - `src/features/operations/update.test.ts`: `updateReference` collision tests (default changes)
 - `src/features/operations/json-output.test.ts`: JSON collision error tests
 
-- [ ] Update tests
-- [ ] Verify Green: `npm test`
-- [ ] Lint/Type check
+- [x] Update tests (no changes needed: existing tests remain valid)
+- [x] Verify Green: `npm test`
+- [x] Lint/Type check
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Move this file to `spec/tasks/completed/`

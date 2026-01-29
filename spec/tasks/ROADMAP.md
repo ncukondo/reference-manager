@@ -86,7 +86,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 Enable automatic ID collision resolution for `ref edit` and `ref update` CLI commands,
 aligning with existing server behavior.
 
-**Task**: `20260127-04-edit-id-collision-resolution.md`
+**Task**: `completed/20260127-04-edit-id-collision-resolution.md`
 
 **Depends on**: PR #45 Follow-up Refactor (Steps 3 & 4 modify the same functions in `edit.ts`)
 
@@ -97,11 +97,11 @@ aligning with existing server behavior.
 - Align CLI behavior with HTTP server defaults
 
 **Todos**:
-- [ ] Step 1: Add `idChanged`/`newId` to EditItemResult
-- [ ] Step 2: Enable `onIdCollision: "suffix"` for edit command
-- [ ] Step 3: Update `formatEditOutput` for ID changes
-- [ ] Step 4: Enable `onIdCollision: "suffix"` for update command
-- [ ] Step 5: Update existing tests
+- [x] Step 1: Add `idChanged`/`newId` to EditItemResult
+- [x] Step 2: Enable `onIdCollision: "suffix"` for edit command
+- [x] Step 3: Update `formatEditOutput` for ID changes
+- [x] Step 4: Enable `onIdCollision: "suffix"` for update command
+- [x] Step 5: Update existing tests
 
 ### PR #45 Follow-up Refactor (Completed)
 

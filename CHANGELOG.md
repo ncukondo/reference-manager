@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Edit/Update ID Collision Auto-Resolution**: Automatic ID collision resolution for `ref edit` and `ref update` CLI commands
+  - When an edited/updated ID collides with an existing entry, a suffix is appended (e.g., `Smith-2024a`) instead of failing
+  - `EditItemResult` includes `idChanged`/`newId` fields to report resolved IDs
+  - Output shows collision resolution details (e.g., `ID collision resolved: Smith-2024 → Smith-2024a`)
+  - JSON output includes `idChanged`/`previousId` for both updated and unchanged results
+  - Aligns CLI behavior with HTTP server defaults (`onIdCollision: "suffix"`)
+
 - **Edit Validation Pipeline**: Two-stage validation with retry loop for the edit command
   - Stage 1: Validates edit-format fields (date formats: YYYY, YYYY-MM, YYYY-MM-DD)
   - Stage 2: Validates against CSL-JSON schema after field transformation
