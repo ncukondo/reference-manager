@@ -45,7 +45,7 @@ Specifies output format. Available values depend on command.
 | Command | Values | Default |
 |---------|--------|---------|
 | `add`, `remove`, `update` | `json`, `text` | `text` |
-| `list`, `search` | `pretty`, `json`, `bibtex`, `ids`, `uuid` | `pretty` |
+| `list`, `search` | `pretty`, `json`, `bibtex`, `ids`, `uuid`, `pandoc-key`, `latex-key` | `pretty` |
 | `export` | `json`, `yaml`, `bibtex` | `json` |
 | `cite` | `text`, `html`, `rtf` | `text` |
 | `config show` | `text`, `json` | `text` |
@@ -59,6 +59,7 @@ These are aliases for `--output`:
 | `--json` | `--output json` |
 | `--bibtex` | `--output bibtex` |
 | `--ids-only` | `--output ids` |
+| `--key` | `--output <pandoc-key\|latex-key>` (uses `citation.default_key_format`) |
 | `--uuid-only` | `--output uuid` |
 
 ### UUID Interpretation (`--uuid`)
@@ -82,6 +83,7 @@ When specified, interprets identifier arguments as UUIDs instead of citation key
 | `update <id>` | Update a reference |
 | `cite <id>...` | Generate formatted citations |
 | `edit [ids...]` | Edit references in external editor |
+| `url [ids...]` | Show/open reference URLs (DOI, PubMed, etc.) |
 | `fulltext <subcommand>` | Manage full-text files (attach/get/detach/open) |
 | `config <subcommand>` | Manage configuration (show/get/set/edit) |
 | `server start\|stop\|status` | Manage HTTP server |
@@ -247,6 +249,27 @@ ref cite [id-or-uuid...] [options]
 | `--output <format>` | `-o` | Output format: text\|html\|rtf |
 | `--in-text` | | Generate in-text citations |
 
+### url
+
+```
+ref url [ids...] [options]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--uuid` | Interpret identifiers as UUIDs |
+| `--default` | Output single best URL by priority (DOI > URL > PMID > PMCID > additional_urls) |
+| `--doi` | Output DOI URL only |
+| `--pubmed` | Output PubMed URL only |
+| `--pmcid` | Output PMC URL only |
+| `--open` | Open URL in browser (implies `--default` when used alone) |
+
+**Output behavior:**
+- Single ID, no filter: All URLs, one per line
+- Multiple IDs, no filter: TSV format (id\turl)
+- With type filter (`--default`, `--doi`, etc.): Plain URL, one per line
+- Interactive selection if identifier omitted (TTY only)
+
 ### fulltext
 
 ```
@@ -408,6 +431,7 @@ api_key = ""
 default_style = "apa"
 default_locale = "en-US"
 default_format = "text"
+default_key_format = "pandoc"  # "pandoc" | "latex"
 
 # attachments.directory defaults to {data}/attachments
 [cli]

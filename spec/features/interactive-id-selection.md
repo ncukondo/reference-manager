@@ -23,6 +23,7 @@ Enable users to interactively select references when they invoke commands withou
 
 | Command | Current Argument | Interactive Behavior |
 |---------|------------------|---------------------|
+| `url` | `[ids...]` optional | Single-select → show/open URLs |
 | `update` | `<identifier>` required | Single-select → update flow |
 | `fulltext attach` | `<identifier>` required | Single-select → attach flow |
 | `fulltext get` | `<identifier>` required | Single-select → get path |

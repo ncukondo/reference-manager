@@ -93,8 +93,10 @@ actions not available for multiple entries.
 
 ```
 ? Action for 1 selected reference:
-❯ Generate citation
+❯ Citation key (Pandoc)
+  Generate citation
   Generate citation (choose style)
+  Open URL
   Open fulltext
   Manage attachments
   Edit reference
@@ -103,11 +105,16 @@ actions not available for multiple entries.
   Cancel
 ```
 
+The "Citation key" label shows the current format from `config.citation.defaultKeyFormat`:
+- `"pandoc"` → `Citation key (Pandoc)`
+- `"latex"` → `Citation key (LaTeX)`
+
 #### Multiple Entries Selected
 
 ```
 ? Action for 3 selected references:
-❯ Generate citation
+❯ Citation keys (Pandoc)
+  Generate citation
   Generate citation (choose style)
   Edit references
   Output (choose format)
@@ -134,6 +141,7 @@ When "Output (choose format)" is selected:
 
 | Action | Output |
 |--------|--------|
+| Citation key | Pandoc: `@id` (single), `@id1; @id2` (multi). LaTeX: `\cite{id}` (single), `\cite{id1,id2}` (multi) |
 | Generate citation | Formatted citations using `config.citation.defaultStyle` |
 | Generate citation (choose) | Prompt for style, then generate |
 | Output IDs | Citation keys, one per line |
@@ -145,6 +153,7 @@ When "Output (choose format)" is selected:
 
 | Action | Behavior | Selection |
 |--------|----------|-----------|
+| Open URL | Open DOI/PubMed page in browser | Single only |
 | Open fulltext | Open fulltext file in system viewer | Single only |
 | Manage attachments | Open attachment directory, then sync | Single only |
 | Edit reference(s) | Open editor with selected items | Single & multi |

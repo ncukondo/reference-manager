@@ -4,11 +4,16 @@
 
 Enhance the TUI search action menu (`ref search -t`) with:
 - Dynamic menu based on selection count (single vs. multiple entries)
-- New side-effect actions: Open fulltext, Manage attachments, Edit, Remove
+- Citation key action (Pandoc/LaTeX, config-driven)
+- New side-effect actions: Open URL, Open fulltext, Manage attachments, Edit, Remove
 - Output format submenu (IDs, CSL-JSON, BibTeX, YAML)
 - Default citation style from `config.citation.defaultStyle`
 
 See `spec/features/interactive-search.md` (Action Menu section) for full specification.
+
+**Depends on:**
+- `20260130-01-citation-key-format.md` (citation key format, config, generateOutput)
+- `20260130-02-url-command.md` (URL resolution module)
 
 ## References
 
@@ -17,6 +22,8 @@ See `spec/features/interactive-search.md` (Action Menu section) for full specifi
 - Search flow app: `src/features/interactive/apps/SearchFlowApp.tsx`
 - Search command: `src/cli/commands/search.ts` (`executeInteractiveSearch`, `handleSearchAction`)
 - Caller: `src/cli/index.ts` (`handleSearchAction`)
+- URL resolution: `src/features/operations/url.ts` (from url-command task)
+- Citation key format: `src/features/format/items.ts` (from citation-key-format task)
 
 ## Architecture Notes
 
@@ -29,19 +36,58 @@ See `spec/features/interactive-search.md` (Action Menu section) for full specifi
 
 ### Required Changes
 
-1. **Dynamic action choices**: `ACTION_CHOICES` → `getActionChoices(count: number)` function
+1. **Dynamic action choices**: `ACTION_CHOICES` → `getActionChoices(count, config)` function
 2. **New flow state**: `output-format` state for the output format submenu
 3. **Side-effect action pattern**: `executeInteractiveSearch` must handle actions that don't produce stdout output
    - Output actions: return `{ output, cancelled: false }` as before
    - Side-effect actions: execute the operation within `executeInteractiveSearch`, return `{ output: "", cancelled: false }`
    - This keeps `handleSearchAction` simple — it doesn't need to know about action details
-4. **Config access**: `executeInteractiveSearch` already receives `config`, pass `config.citation.defaultStyle` to SearchFlowApp/action menu
+4. **Config access**: `executeInteractiveSearch` already receives `config`, pass `config.citation.defaultStyle` and `config.citation.defaultKeyFormat` to SearchFlowApp/action menu
 5. **Selected items access**: Side-effect actions need the selected `CslItem[]` and `ExecutionContext` — these are available in `executeInteractiveSearch`
+
+### Action Menu Structure
+
+**Single entry selected:**
+
+```
+? Action for 1 selected reference:
+❯ Citation key (Pandoc)           ← label changes with config.citation.defaultKeyFormat
+  Generate citation
+  Generate citation (choose style)
+  Open URL                        ← opens DOI/PubMed page in browser
+  Open fulltext                   ← opens local PDF
+  Manage attachments
+  Edit reference
+  Output (choose format)          ← submenu: IDs, CSL-JSON, BibTeX, YAML
+  Remove
+  Cancel
+```
+
+**Multiple entries selected:**
+
+```
+? Action for 3 selected references:
+❯ Citation keys (Pandoc)
+  Generate citation
+  Generate citation (choose style)
+  Edit references
+  Output (choose format)
+  Remove
+  Cancel
+```
+
+### Citation Key TUI Output Format
+
+| Config | Single | Multiple |
+|--------|--------|----------|
+| `pandoc` | `@smith2023` | `@smith2023; @jones2024` |
+| `latex` | `\cite{smith2023}` | `\cite{smith2023,jones2024}` |
 
 ### Underlying Functions for Side-Effect Actions
 
 | Action | Function | Module |
 |--------|----------|--------|
+| Open URL | `resolveDefaultUrl()` + `openWithSystemApp()` | `src/features/operations/url.ts`, `src/utils/opener.ts` |
 | Open fulltext | `executeFulltextOpen()` | `src/cli/commands/fulltext.ts` |
 | Manage attachments | `executeAttachOpen()` + `runInteractiveMode()` | `src/cli/commands/attach.ts` |
 | Edit | `executeEditCommand()` | `src/cli/commands/edit.ts` |
@@ -58,11 +104,12 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 Extend `ActionType` with new values and make action choices dynamic.
 
 **Changes:**
-- Add to `ActionType`: `"open-fulltext"`, `"manage-attachments"`, `"edit"`, `"remove"`, `"output-format"`
-- Create `getActionChoices(count: number): SelectOption<ActionType>[]`
-  - Single (count === 1): Generate citation, Generate citation (choose style), Open fulltext, Manage attachments, Edit reference, Output (choose format), Remove, Cancel
-  - Multiple (count > 1): Generate citation, Generate citation (choose style), Edit references, Output (choose format), Remove, Cancel
-- Update `SearchFlowApp` to call `getActionChoices(selectedItems.length)` instead of using `ACTION_CHOICES`
+- Add to `ActionType`: `"key-default"`, `"open-url"`, `"open-fulltext"`, `"manage-attachments"`, `"edit"`, `"remove"`, `"output-format"`
+- Create `getActionChoices(count: number, config: { defaultKeyFormat: string }): SelectOption<ActionType>[]`
+  - Single (count === 1): Citation key (Pandoc/LaTeX), Generate citation, Generate citation (choose style), Open URL, Open fulltext, Manage attachments, Edit reference, Output (choose format), Remove, Cancel
+  - Multiple (count > 1): Citation keys (Pandoc/LaTeX), Generate citation, Generate citation (choose style), Edit references, Output (choose format), Remove, Cancel
+- Dynamic label for citation key: `"pandoc"` → `"Citation key (Pandoc)"`, `"latex"` → `"Citation key (LaTeX)"`
+- Update `SearchFlowApp` to call `getActionChoices(selectedItems.length, config)` instead of using `ACTION_CHOICES`
 
 **Files:**
 - `src/features/interactive/action-menu.ts`
@@ -70,6 +117,7 @@ Extend `ActionType` with new values and make action choices dynamic.
 
 **Tests:**
 - [ ] Write test: `src/features/interactive/action-menu.test.ts` — `getActionChoices` returns correct items for count=1 and count>1
+- [ ] Write test: `getActionChoices` uses config to set citation key label
 - [ ] Implement
 - [ ] Verify Green
 - [ ] Lint/Type check
@@ -140,7 +188,37 @@ Extend `executeInteractiveSearch` to handle actions that perform operations rath
 - [ ] Verify Green
 - [ ] Lint/Type check
 
-### Step 5: Implement Open Fulltext Action
+### Step 5: Implement Citation Key Action
+
+Output citation key(s) using config-driven format. Uses `generateOutput("key-default")` from citation-key-format task.
+
+**Files:**
+- `src/features/interactive/action-menu.ts` (already handled by Step 4 of citation-key-format task)
+
+**Tests:**
+- [ ] Write test: verify citation key output in TUI format (pandoc `;` / latex `,`)
+- [ ] Verify Green
+- [ ] Lint/Type check
+
+### Step 6: Implement Open URL Action
+
+Single-entry only. Opens the reference's web page in browser.
+
+**Changes:**
+- In side-effect handler: call `resolveDefaultUrl()` from URL module, then `openWithSystemApp()` with the URL
+- If no URL available: output error message to stderr
+
+**Files:**
+- `src/cli/commands/search.ts` (side-effect handler)
+
+**Tests:**
+- [ ] Write test: verify `resolveDefaultUrl` + `openWithSystemApp` is called
+- [ ] Write test: verify error when no URL available
+- [ ] Implement
+- [ ] Verify Green
+- [ ] Lint/Type check
+
+### Step 7: Implement Open Fulltext Action
 
 Single-entry only. Opens the fulltext file in the system viewer.
 
@@ -157,7 +235,7 @@ Single-entry only. Opens the fulltext file in the system viewer.
 - [ ] Verify Green
 - [ ] Lint/Type check
 
-### Step 6: Implement Manage Attachments Action
+### Step 8: Implement Manage Attachments Action
 
 Single-entry only. Opens the attachment directory and runs sync.
 
@@ -174,7 +252,7 @@ Single-entry only. Opens the attachment directory and runs sync.
 - [ ] Verify Green
 - [ ] Lint/Type check
 
-### Step 7: Implement Edit Action
+### Step 9: Implement Edit Action
 
 Available for single and multiple entries. Opens editor with selected items.
 
@@ -192,7 +270,7 @@ Available for single and multiple entries. Opens editor with selected items.
 - [ ] Verify Green
 - [ ] Lint/Type check
 
-### Step 8: Implement Remove Action
+### Step 10: Implement Remove Action
 
 Available for single and multiple entries. Deletes with confirmation.
 
@@ -217,11 +295,14 @@ Available for single and multiple entries. Deletes with confirmation.
 **Script**: `test-fixtures/test-tui-action-menu.sh`
 
 TTY-required tests (run manually in a terminal):
-- [ ] `ref search -t` → select 1 entry → verify all 8 actions shown (including Open fulltext, Manage attachments, Edit, Output, Remove)
-- [ ] `ref search -t` → select 3 entries → verify 6 actions shown (no Open fulltext, no Manage attachments)
+- [ ] `ref search -t` → select 1 entry → verify all 10 actions shown
+- [ ] `ref search -t` → select 3 entries → verify 7 actions shown (no Open URL, Open fulltext, Manage attachments)
+- [ ] Select 1 → Citation key → verify output matches config (Pandoc: `@id` / LaTeX: `\cite{id}`)
+- [ ] Select 3 → Citation keys → verify multi-cite format (Pandoc: `@id1; @id2; @id3` / LaTeX: `\cite{id1,id2,id3}`)
 - [ ] Select 1 → Generate citation → verify default style from config is used
 - [ ] Select 1 → Output (choose format) → verify submenu with IDs, CSL-JSON, BibTeX, YAML
 - [ ] Select 1 → Output → YAML → verify YAML output
+- [ ] Select 1 → Open URL → verify browser opens DOI/PubMed page
 - [ ] Select 1 → Open fulltext → verify PDF opens in system viewer
 - [ ] Select 1 → Manage attachments → verify directory opens and sync prompt appears
 - [ ] Select 1 → Edit reference → verify editor opens with reference data
@@ -238,5 +319,6 @@ TTY-required tests (run manually in a terminal):
 - [ ] Type check passes (`npm run typecheck`)
 - [ ] Build succeeds (`npm run build`)
 - [ ] Manual verification completed
+- [ ] Spec updated: `spec/features/interactive-search.md`
 - [ ] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

@@ -181,17 +181,58 @@ Implement two-stage validation pipeline with error annotation and retry loop for
 - [ ] Step 4: Error annotation — JSON
 - [ ] Step 5: Retry loop in `executeEdit`
 
-### Phase 30: TUI Action Menu Enhancement
+### Phase 30a: Citation Key Output Format
+
+Add Pandoc and LaTeX citation key output formats to `list`/`search` commands,
+with configurable default for the `--key` convenience flag and TUI action menu.
+
+**Task**: `20260130-01-citation-key-format.md`
+
+**Scope**:
+- Extend `ItemFormat` with `pandoc-key` / `latex-key`
+- Add `--key`, `--pandoc-key`, `--latex-key` flags to `list`/`search`
+- Add `citation.default_key_format` config setting
+- Add `"key-default"` to TUI action menu `generateOutput`
+
+**Todos**:
+- [ ] Step 1: Extend ItemFormat and formatItems
+- [ ] Step 2: Add --key flag and --output values to search/list
+- [ ] Step 3: Add citation.default_key_format config
+- [ ] Step 4: Add citation key to TUI action menu generateOutput
+
+### Phase 30b: URL Command
+
+Add `ref url` command for resolving and displaying reference URLs,
+with type filters and browser opening support.
+
+**Task**: `20260130-02-url-command.md`
+
+**Scope**:
+- URL resolution module (DOI > URL > PMID > PMCID > additional_urls)
+- `ref url` command with `--default`, `--doi`, `--pubmed`, `--pmcid`, `--open`
+- Single ID: URLs only; Multiple IDs: TSV (id\turl); With filter: plain URL
+- Interactive ID selection fallback
+
+**Todos**:
+- [ ] Step 1: URL resolution module
+- [ ] Step 2: URL command execution
+- [ ] Step 3: Register CLI command
+- [ ] Step 4: Interactive ID selection fallback
+
+### Phase 30c: TUI Action Menu Enhancement
 
 Expand the TUI search action menu with dynamic actions based on selection count,
-new side-effect actions (Open fulltext, Manage attachments, Edit, Remove),
-output format submenu, and config-driven default citation style.
+citation key (Pandoc/LaTeX), Open URL, Open fulltext, Manage attachments,
+Edit, Remove, output format submenu, and config-driven defaults.
 
 **Task**: `20260129-03-tui-action-menu.md`
 
+**Depends on**: Phase 30a (citation key format), Phase 30b (URL command)
+
 **Scope**:
 - Dynamic action menu (single vs. multiple entry selection)
-- New actions: Open fulltext, Manage attachments, Edit reference(s), Remove
+- Citation key action with config-driven format label
+- New actions: Open URL, Open fulltext, Manage attachments, Edit reference(s), Remove
 - Output format submenu (IDs, CSL-JSON, BibTeX, YAML)
 - Default citation style from `config.citation.defaultStyle`
 - Side-effect action execution architecture
@@ -201,10 +242,12 @@ output format submenu, and config-driven default citation style.
 - [ ] Step 2: Add Output format submenu
 - [ ] Step 3: Use default citation style from config
 - [ ] Step 4: Side-effect action architecture
-- [ ] Step 5: Implement Open fulltext action
-- [ ] Step 6: Implement Manage attachments action
-- [ ] Step 7: Implement Edit action
-- [ ] Step 8: Implement Remove action
+- [ ] Step 5: Implement Citation key action
+- [ ] Step 6: Implement Open URL action
+- [ ] Step 7: Implement Open fulltext action
+- [ ] Step 8: Implement Manage attachments action
+- [ ] Step 9: Implement Edit action
+- [ ] Step 10: Implement Remove action
 
 ---
 
@@ -244,15 +287,7 @@ Add clipboard auto-copy for CLI output, controlled via config, environment varia
 
 ## Future Phases
 
-### Phase 32: Citation Enhancements
-
-Post-MVP enhancements for citation functionality:
-
-- Pandoc cite key generation (`--cite-key`)
-- Group by field (`--group-by <field>`)
-- Batch citation generation from file
-
-### Phase 33: Advanced Features
+### Phase 32: Advanced Features
 
 Additional features beyond core functionality:
 
