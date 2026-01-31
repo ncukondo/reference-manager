@@ -201,6 +201,15 @@ function generateItems(count) {
     if (Math.random() > 0.3) {
       item.DOI = `10.${1000 + Math.floor(Math.random() * 9000)}/test.${year}.${i}`;
     }
+    if (Math.random() > 0.5) {
+      item.URL = `https://example.com/articles/${id}`;
+    }
+    if (Math.random() > 0.6) {
+      item.PMID = String(10000000 + Math.floor(Math.random() * 90000000));
+    }
+    if (Math.random() > 0.7) {
+      item.PMCID = `PMC${1000000 + Math.floor(Math.random() * 9000000)}`;
+    }
     if (Math.random() > 0.4) {
       item.abstract = `This study presents ${title.toLowerCase()}. We analyzed data from ${50 + Math.floor(Math.random() * 950)} participants.`;
     }
