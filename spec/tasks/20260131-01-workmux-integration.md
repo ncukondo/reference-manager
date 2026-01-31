@@ -64,28 +64,28 @@ Define the inter-agent communication protocol:
 
 Rewrite as workmux orchestration controller:
 
-- [ ] Prerequisite checks (workmux, tmux, IPC directory)
-- [ ] ROADMAP analysis → identify parallel tasks
-- [ ] Worker spawn: `workmux add feature/<name> -b -p "/code-with-task-local <keyword>"`
+- [x] Prerequisite checks (workmux, tmux, IPC directory)
+- [x] ROADMAP analysis → identify parallel tasks
+- [x] Worker spawn: `workmux add feature/<name> -b -p "/code-with-task <keyword>"`
   - `-b` for background (don't switch window)
   - `-p` for passing initial prompt to agent
-  - Include IPC status file instructions in prompt
-- [ ] Monitoring loop:
+- [x] Monitoring loop:
   - Poll IPC status files (~30s interval)
   - `workmux list` for overview
   - `tmux capture-pane` for stalled workers
-- [ ] Completion handling:
+- [x] Completion handling:
   - PR review → CI wait → `gh pr merge --merge`
   - ROADMAP update on main
   - `workmux remove <handle>` + IPC cleanup
-- [ ] Failure handling:
+- [x] Failure handling:
   - `tmux capture-pane` to inspect error
   - `tmux send-keys` for retry (if agent is idle)
   - `workmux remove` for unrecoverable cases
-- [ ] Idle detection:
+- [x] Idle detection:
   - Check `updated_at` staleness
   - `tmux capture-pane` to verify prompt state
   - `tmux send-keys` for continuation instructions
+- [x] Fallback: manual worktree workflow preserved for non-workmux environments
 
 File: `.claude/commands/implement.md`
 
