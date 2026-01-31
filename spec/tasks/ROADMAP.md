@@ -195,10 +195,10 @@ with configurable default for the `--key` convenience flag and TUI action menu.
 - Add `"key-default"` to TUI action menu `generateOutput`
 
 **Todos**:
-- [ ] Step 1: Extend ItemFormat and formatItems
-- [ ] Step 2: Add --key flag and --output values to search/list
-- [ ] Step 3: Add citation.default_key_format config
-- [ ] Step 4: Add citation key to TUI action menu generateOutput
+- [x] Step 1: Extend ItemFormat and formatItems
+- [x] Step 2: Add --key flag and --output values to search/list
+- [x] Step 3: Add citation.default_key_format config
+- [x] Step 4: Add citation key to TUI action menu generateOutput
 
 ### Phase 30b: URL Command
 
