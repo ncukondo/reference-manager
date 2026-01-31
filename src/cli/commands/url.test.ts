@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { type UrlCommandResult, executeUrlCommand, formatUrlOutput } from "./url.js";
+import {
+  type UrlCommandResult,
+  executeUrlCommand,
+  formatUrlErrors,
+  formatUrlOutput,
+  getUrlExitCode,
+} from "./url.js";
 
 // Mock openWithSystemApp
 vi.mock("../../utils/opener.js", () => ({
@@ -330,5 +336,71 @@ describe("formatUrlOutput", () => {
 
     const output = formatUrlOutput(result, { default: true });
     expect(output).toBe("https://doi.org/10.1000/example");
+  });
+});
+
+describe("formatUrlErrors", () => {
+  it("formats error results for stderr", () => {
+    const result: UrlCommandResult = {
+      results: [
+        { id: "smith2023", urls: [], error: "Reference not found: smith2023" },
+        { id: "jones2024", urls: ["https://doi.org/10.2000/other"] },
+      ],
+    };
+
+    const errors = formatUrlErrors(result);
+    expect(errors).toBe("Error: Reference not found: smith2023");
+  });
+
+  it("returns empty string when no errors", () => {
+    const result: UrlCommandResult = {
+      results: [{ id: "smith2023", urls: ["https://doi.org/10.1000/example"] }],
+    };
+
+    const errors = formatUrlErrors(result);
+    expect(errors).toBe("");
+  });
+
+  it("formats multiple errors", () => {
+    const result: UrlCommandResult = {
+      results: [
+        { id: "smith2023", urls: [], error: "No DOI URL for smith2023" },
+        { id: "jones2024", urls: [], error: "Reference not found: jones2024" },
+      ],
+    };
+
+    const errors = formatUrlErrors(result);
+    expect(errors).toBe("Error: No DOI URL for smith2023\nError: Reference not found: jones2024");
+  });
+});
+
+describe("getUrlExitCode", () => {
+  it("returns 0 when all results succeed", () => {
+    const result: UrlCommandResult = {
+      results: [{ id: "smith2023", urls: ["https://doi.org/10.1000/example"] }],
+    };
+    expect(getUrlExitCode(result)).toBe(0);
+  });
+
+  it("returns 0 when at least one result succeeds (partial success)", () => {
+    const result: UrlCommandResult = {
+      results: [
+        { id: "smith2023", urls: ["https://doi.org/10.1000/example"] },
+        { id: "missing", urls: [], error: "Reference not found: missing" },
+      ],
+    };
+    expect(getUrlExitCode(result)).toBe(0);
+  });
+
+  it("returns 1 when all results have errors", () => {
+    const result: UrlCommandResult = {
+      results: [{ id: "missing", urls: [], error: "Reference not found: missing" }],
+    };
+    expect(getUrlExitCode(result)).toBe(1);
+  });
+
+  it("returns 0 when results are empty", () => {
+    const result: UrlCommandResult = { results: [] };
+    expect(getUrlExitCode(result)).toBe(0);
   });
 });
