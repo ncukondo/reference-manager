@@ -157,6 +157,29 @@ Edit, Remove, output format submenu, and config-driven defaults.
 
 ## Next Steps
 
+### DevOps: workmux Integration
+
+Integrate workmux for tmux-based parallel agent orchestration and monitoring.
+
+**Task**: `20260131-01-workmux-integration.md`
+
+**Scope**:
+- DevContainer: tmux + workmux installation
+- `.workmux.yaml` configuration
+- IPC status file convention
+- Command updates (implement, code-with-task, merge-pr, status)
+- Permissions and documentation
+
+**Todos**:
+- [ ] Step 1: DevContainer setup
+- [ ] Step 2: workmux configuration
+- [ ] Step 3: IPC status convention
+- [ ] Step 4: implement.md orchestration
+- [ ] Step 5: code-with-task updates
+- [ ] Step 6: merge-pr updates
+- [ ] Step 7: status updates
+- [ ] Step 8: Permissions and documentation
+
 ### MCPB Registry Submission
 
 Submit to Anthropic's official extension registry when ready.
