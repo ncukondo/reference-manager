@@ -30,11 +30,14 @@ const VALID_SEARCH_SORT_FIELDS = new Set([
  */
 export interface SearchCommandOptions {
   query: string;
-  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid";
+  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid" | "pandoc-key" | "latex-key";
   json?: boolean;
   idsOnly?: boolean;
   uuidOnly?: boolean;
   bibtex?: boolean;
+  key?: boolean;
+  pandocKey?: boolean;
+  latexKey?: boolean;
   sort?: SearchSortField;
   order?: SortOrder;
   limit?: number;
@@ -58,6 +61,9 @@ function getOutputFormat(options: SearchCommandOptions): ItemFormat {
     return options.output;
   }
   // Convenience flags as fallback
+  if (options.key) return "pandoc-key";
+  if (options.pandocKey) return "pandoc-key";
+  if (options.latexKey) return "latex-key";
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
   if (options.uuidOnly) return "uuid";
@@ -71,13 +77,19 @@ function getOutputFormat(options: SearchCommandOptions): ItemFormat {
  */
 function validateOptions(options: SearchCommandOptions): void {
   // Validate output format
-  const outputOptions = [options.json, options.idsOnly, options.uuidOnly, options.bibtex].filter(
-    Boolean
-  );
+  const outputOptions = [
+    options.json,
+    options.idsOnly,
+    options.uuidOnly,
+    options.bibtex,
+    options.key,
+    options.pandocKey,
+    options.latexKey,
+  ].filter(Boolean);
 
   if (outputOptions.length > 1) {
     throw new Error(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex can be used."
+      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex, --key, --pandoc-key, --latex-key can be used."
     );
   }
 
@@ -200,11 +212,14 @@ function validateInteractiveOptions(options: SearchCommandOptions): void {
     options.idsOnly,
     options.uuidOnly,
     options.bibtex,
+    options.key,
+    options.pandocKey,
+    options.latexKey,
   ].filter(Boolean);
 
   if (outputOptions.length > 0) {
     throw new Error(
-      "TUI mode cannot be combined with output format options (--output, --json, --ids-only, --uuid-only, --bibtex)"
+      "TUI mode cannot be combined with output format options (--output, --json, --ids-only, --uuid-only, --bibtex, --key, --pandoc-key, --latex-key)"
     );
   }
 }

@@ -128,11 +128,17 @@ function registerListCommand(program: Command): void {
   program
     .command("list")
     .description("List all references in the library")
-    .option("-o, --output <format>", "Output format: pretty|json|bibtex|ids|uuid")
+    .option(
+      "-o, --output <format>",
+      "Output format: pretty|json|bibtex|ids|uuid|pandoc-key|latex-key"
+    )
     .option("--json", "Alias for --output json")
     .option("--bibtex", "Alias for --output bibtex")
     .option("--ids-only", "Alias for --output ids")
     .option("--uuid-only", "Alias for --output uuid")
+    .option("-k, --key", "Output citation keys (uses citation.default_key_format config)")
+    .option("--pandoc-key", "Alias for --output pandoc-key")
+    .option("--latex-key", "Alias for --output latex-key")
     .option("--sort <field>", "Sort by field: created|updated|published|author|title")
     .option("--order <order>", "Sort order: asc|desc")
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
@@ -240,11 +246,17 @@ function registerSearchCommand(program: Command): void {
     .description("Search references")
     .argument("[query]", "Search query (required unless using --tui)")
     .option("-t, --tui", "Enable TUI (interactive) search mode")
-    .option("-o, --output <format>", "Output format: pretty|json|bibtex|ids|uuid")
+    .option(
+      "-o, --output <format>",
+      "Output format: pretty|json|bibtex|ids|uuid|pandoc-key|latex-key"
+    )
     .option("--json", "Alias for --output json")
     .option("--bibtex", "Alias for --output bibtex")
     .option("--ids-only", "Alias for --output ids")
     .option("--uuid-only", "Alias for --output uuid")
+    .option("-k, --key", "Output citation keys (uses citation.default_key_format config)")
+    .option("--pandoc-key", "Alias for --output pandoc-key")
+    .option("--latex-key", "Alias for --output latex-key")
     .option("--sort <field>", "Sort by field: created|updated|published|author|title|relevance")
     .option("--order <order>", "Sort order: asc|desc")
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
