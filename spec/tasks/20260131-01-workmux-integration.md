@@ -112,8 +112,8 @@ File: `.claude/commands/merge-pr.md`
 
 ### Step 7: Update `status.md`
 
-- [ ] Add `workmux list` output (fallback: `git worktree list`)
-- [ ] Add IPC status summary (read all `.ipc/*.status.json`)
+- [x] Add `workmux list` output (fallback: `git worktree list`)
+- [x] Add IPC status summary (read all `.ipc/*.status.json`)
 
 File: `.claude/commands/status.md`
 

@@ -6,8 +6,17 @@
 2. **テスト結果**: `npm run test:all` を実行
 3. **ビルド状況**: `npm run build` を実行
 4. **未コミットの変更**: `git status` で確認
-5. **worktree状況**: `git worktree list` で並列作業の状態を確認
-6. **PR状況**: `gh pr list` でオープンなPRを確認
+5. **workmux/worktree状況**:
+   - workmux がある場合: `workmux list` を実行
+   - フォールバック: `git worktree list` で確認
+6. **IPC ステータス**:
+   - `/workspaces/reference-manager--worktrees/.ipc/` ディレクトリが存在する場合:
+     ```bash
+     for f in /workspaces/reference-manager--worktrees/.ipc/*.status.json; do
+       [ -f "$f" ] && cat "$f" | jq -r '[.handle, .status, .current_step] | @tsv'
+     done
+     ```
+7. **PR状況**: `gh pr list` でオープンなPRを確認
 
 ## 出力フォーマット
 
@@ -30,8 +39,12 @@
 - ブランチ: xxx
 - 未コミットの変更: あり / なし
 
-### Worktree
-- (アクティブなworktreeの一覧)
+### Worktree / workmux
+- (workmux list 出力、または git worktree list)
+
+### エージェント (IPC)
+- (各ワーカーのハンドル、ステータス、現在のステップ)
+- (IPC ディレクトリが無い場合は省略)
 
 ### オープンPR
 - (PR一覧)
