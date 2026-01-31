@@ -1,1 +1,0 @@
-spec/_index.mdを起点として必要事項を確認後、roadmapに取り組んで下さい。Todos一つが完了する毎にroadmapを更新し、commit。残りのcontextを確認し、次の作業の完了までにcompactが必要になってしまいそうならその時点で作業を中断して下さい

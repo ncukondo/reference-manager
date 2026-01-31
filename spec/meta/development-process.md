@@ -72,24 +72,38 @@ When implementing tasks from `spec/tasks/`, use a dedicated git worktree to isol
 ### Create Worktree
 
 ```bash
-# Create worktree for a task (in /workspaces/ directory)
-git worktree add /workspaces/<task-name> -b <branch-name>
+# Create worktree in the dedicated directory
+git worktree add /workspaces/reference-manager--worktrees/<branch-name> -b <branch-name>
 
 # Example for task 20260108-01-new-feature.md
-git worktree add /workspaces/new-feature -b feature/new-feature
+git worktree add /workspaces/reference-manager--worktrees/feature/new-feature -b feature/new-feature
+
+# Run initial setup in the new worktree
+cd /workspaces/reference-manager--worktrees/<branch-name> && npm install
 ```
 
 ### Worktree Location
 
-- Place worktrees in `/workspaces/` (outside the main repository)
+- **All worktrees must be created under `/workspaces/reference-manager--worktrees/`**
+- This is enforced by the `validate-worktree-path.sh` hook in `.claude/hooks/`
 - The devcontainer is configured to allow this (`postCreateCommand` sets ownership)
-- Use task name or feature name as directory name
+- Use branch name as subdirectory name
+
+### Parallel Work Rules
+
+To avoid conflicts when multiple worktrees are active:
+
+- **In worktree**: Implementation, tests, and PR creation only
+- **On main branch (after merge)**: ROADMAP.md updates and moving task files to `completed/`
+
+This separation ensures that shared files (`ROADMAP.md`, `spec/tasks/`) are only modified on main, preventing merge conflicts between parallel branches.
 
 ### After Completion
 
 ```bash
-# After merging, remove worktree
-git worktree remove /workspaces/<task-name>
+# After merging, remove worktree and branch
+git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
+git branch -d <branch-name>
 ```
 
 ## 4. TDD Implementation Phase

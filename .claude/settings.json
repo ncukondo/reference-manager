@@ -8,6 +8,14 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/validate-vitest.sh",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/validate-worktree-path.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-force-push.sh"
           }
         ]
       }
