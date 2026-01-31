@@ -169,6 +169,35 @@ function pickN(arr, n) {
   return shuffled.slice(0, n);
 }
 
+function maybeSet(obj, key, probability, valueFn) {
+  if (Math.random() > probability) {
+    obj[key] = valueFn();
+  }
+}
+
+function addOptionalFields(item, id, year, title) {
+  maybeSet(
+    item,
+    "DOI",
+    0.3,
+    () => `10.${1000 + Math.floor(Math.random() * 9000)}/test.${year}.${item.id.length % 100}`
+  );
+  maybeSet(item, "URL", 0.5, () => `https://example.com/articles/${id}`);
+  maybeSet(item, "PMID", 0.6, () => String(10000000 + Math.floor(Math.random() * 90000000)));
+  maybeSet(item, "PMCID", 0.7, () => `PMC${1000000 + Math.floor(Math.random() * 9000000)}`);
+  maybeSet(
+    item,
+    "abstract",
+    0.4,
+    () =>
+      `This study presents ${title.toLowerCase()}. We analyzed data from ${50 + Math.floor(Math.random() * 950)} participants.`
+  );
+  maybeSet(item, "keyword", 0.5, () => pickN(topics, 2 + Math.floor(Math.random() * 3)));
+  if (Math.random() > 0.6) {
+    item.custom.tags = pickN(tagPool, 1 + Math.floor(Math.random() * 3));
+  }
+}
+
 function generateItems(count) {
   const items = [];
   for (let i = 0; i < count; i++) {
@@ -198,28 +227,7 @@ function generateItems(count) {
       },
     };
 
-    if (Math.random() > 0.3) {
-      item.DOI = `10.${1000 + Math.floor(Math.random() * 9000)}/test.${year}.${i}`;
-    }
-    if (Math.random() > 0.5) {
-      item.URL = `https://example.com/articles/${id}`;
-    }
-    if (Math.random() > 0.6) {
-      item.PMID = String(10000000 + Math.floor(Math.random() * 90000000));
-    }
-    if (Math.random() > 0.7) {
-      item.PMCID = `PMC${1000000 + Math.floor(Math.random() * 9000000)}`;
-    }
-    if (Math.random() > 0.4) {
-      item.abstract = `This study presents ${title.toLowerCase()}. We analyzed data from ${50 + Math.floor(Math.random() * 950)} participants.`;
-    }
-    if (Math.random() > 0.5) {
-      item.keyword = pickN(topics, 2 + Math.floor(Math.random() * 3));
-    }
-    if (Math.random() > 0.6) {
-      item.custom.tags = pickN(tagPool, 1 + Math.floor(Math.random() * 3));
-    }
-
+    addOptionalFields(item, id, year, title);
     items.push(item);
   }
   return items;
