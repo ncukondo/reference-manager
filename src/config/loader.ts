@@ -162,6 +162,7 @@ function fillCitationDefaults(partial: DeepPartialConfig["citation"]): Config["c
     cslDirectory: partial?.cslDirectory ?? defaultConfig.citation.cslDirectory,
     defaultLocale: partial?.defaultLocale ?? defaultConfig.citation.defaultLocale,
     defaultFormat: partial?.defaultFormat ?? defaultConfig.citation.defaultFormat,
+    defaultKeyFormat: partial?.defaultKeyFormat ?? defaultConfig.citation.defaultKeyFormat,
   };
 }
 

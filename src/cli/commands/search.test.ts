@@ -270,6 +270,20 @@ describe("search command", () => {
       expect(output).toBe("\\cite{ref1}\n\\cite{ref2}");
     });
 
+    it("should format items as latex keys when key option is true with latex defaultKeyFormat", () => {
+      const result: SearchCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatSearchOutput(result, { query: "", key: true }, "latex");
+
+      expect(output).toBe("\\cite{ref1}\n\\cite{ref2}");
+    });
+
     it("should add header line when limit is applied", () => {
       const result: SearchCommandResult = {
         items: [mockItems[0]],

@@ -69,6 +69,12 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "Default format",
     enumValues: ["text", "html", "rtf"],
   },
+  {
+    key: "citation.default_key_format",
+    type: "enum",
+    description: "Default citation key format",
+    enumValues: ["pandoc", "latex"],
+  },
 
   // pubmed section
   { key: "pubmed.email", type: "string", description: "Email for PubMed API", optional: true },

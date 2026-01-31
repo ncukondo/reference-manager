@@ -49,14 +49,14 @@ export type ListCommandResult = ListResult;
  * Convert CLI options to ItemFormat.
  * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
-function getOutputFormat(options: ListCommandOptions): ItemFormat {
+function getOutputFormat(options: ListCommandOptions, defaultKeyFormat?: string): ItemFormat {
   // --output takes precedence
   if (options.output) {
     if (options.output === "ids") return "ids-only";
     return options.output;
   }
   // Convenience flags as fallback
-  if (options.key) return "pandoc-key";
+  if (options.key) return defaultKeyFormat === "latex" ? "latex-key" : "pandoc-key";
   if (options.pandocKey) return "pandoc-key";
   if (options.latexKey) return "latex-key";
   if (options.json) return "json";
@@ -150,8 +150,12 @@ export async function executeList(
  * @param options - Command options to determine format
  * @returns Formatted output string
  */
-export function formatListOutput(result: ListCommandResult, options: ListCommandOptions): string {
-  const format = getOutputFormat(options);
+export function formatListOutput(
+  result: ListCommandResult,
+  options: ListCommandOptions,
+  defaultKeyFormat?: string
+): string {
+  const format = getOutputFormat(options, defaultKeyFormat);
 
   if (format === "json") {
     // JSON output includes pagination metadata
