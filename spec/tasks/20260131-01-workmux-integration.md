@@ -16,9 +16,9 @@ with file-based IPC for status tracking and tmux send-keys for sync when agents 
 
 ### Step 1: DevContainer — tmux + workmux installation
 
-- [ ] Add `tmux` to apt-get in `.devcontainer/Dockerfile`
-- [ ] Add workmux install script after Claude CLI install
-- [ ] Add `postStartCommand` to `.devcontainer/devcontainer.json` for tmux session auto-start
+- [x] Add `tmux` to apt-get in `.devcontainer/Dockerfile`
+- [x] Add workmux install script after Claude CLI install
+- [x] Add `postStartCommand` to `.devcontainer/devcontainer.json` for tmux session auto-start
 - [ ] Verify: Rebuild container, confirm `which workmux && which tmux` both succeed
 
 Files:
