@@ -199,27 +199,38 @@ describe("FileWatcher", () => {
       watcher.close();
     });
 
-    it("should debounce rapid changes", async () => {
-      const callback = vi.fn();
-      // Use longer debounce to ensure stability across different OS file systems
-      const watcher = new FileWatcher(tempDir, { debounceMs: 200 });
-      watcher.on("change", callback);
+    it("should debounce rapid changes", () => {
+      vi.useFakeTimers();
+      try {
+        const callback = vi.fn();
+        const watcher = new FileWatcher(tempDir, { debounceMs: 200 });
+        watcher.on("change", callback);
 
-      await watcher.start();
+        // Call handleFileChange directly to test debounce logic deterministically
+        // (bypassing chokidar's OS-dependent event timing)
+        // @ts-expect-error -- calling private method for deterministic debounce testing
+        watcher.handleFileChange(testFilePath);
+        vi.advanceTimersByTime(50);
 
-      // Rapidly modify the file multiple times within debounce window
-      await fs.writeFile(testFilePath, '[{"id": "test1"}]');
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await fs.writeFile(testFilePath, '[{"id": "test2"}]');
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await fs.writeFile(testFilePath, '[{"id": "test3"}]');
+        // @ts-expect-error -- calling private method for deterministic debounce testing
+        watcher.handleFileChange(testFilePath);
+        vi.advanceTimersByTime(50);
 
-      // Wait for debounced callback (debounce + buffer for OS variations)
-      await new Promise((resolve) => setTimeout(resolve, 400));
+        // @ts-expect-error -- calling private method for deterministic debounce testing
+        watcher.handleFileChange(testFilePath);
 
-      // Should only be called once due to debouncing
-      expect(callback).toHaveBeenCalledTimes(1);
-      watcher.close();
+        // Not yet fired — still within debounce window
+        expect(callback).not.toHaveBeenCalled();
+
+        // Advance past debounce window
+        vi.advanceTimersByTime(200);
+
+        // Should only be called once due to debouncing
+        expect(callback).toHaveBeenCalledTimes(1);
+        watcher.close();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("should use default debounce of 500ms", () => {
