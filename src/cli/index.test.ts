@@ -88,6 +88,38 @@ describe("CLI Entry", () => {
       expect(logLevelOption).toBeDefined();
     });
 
+    it("should register 'url' command", () => {
+      const program = createProgram();
+      const urlCmd = program.commands.find((cmd) => cmd.name() === "url");
+      expect(urlCmd).toBeDefined();
+    });
+
+    it("'url' command should have correct options", () => {
+      const program = createProgram();
+      const urlCmd = program.commands.find((cmd) => cmd.name() === "url");
+      expect(urlCmd).toBeDefined();
+
+      const options = urlCmd?.options.map((opt) => opt.long);
+      expect(options).toContain("--default");
+      expect(options).toContain("--doi");
+      expect(options).toContain("--pubmed");
+      expect(options).toContain("--pmcid");
+      expect(options).toContain("--open");
+      expect(options).toContain("--uuid");
+    });
+
+    it("'url' command should accept optional [identifiers...] argument", () => {
+      const program = createProgram();
+      const urlCmd = program.commands.find((cmd) => cmd.name() === "url");
+      expect(urlCmd).toBeDefined();
+      const identifiersArg = urlCmd?.registeredArguments.find(
+        (arg) => arg.name() === "identifiers"
+      );
+      expect(identifiersArg).toBeDefined();
+      expect(identifiersArg?.required).toBe(false);
+      expect(identifiersArg?.variadic).toBe(true);
+    });
+
     describe("attach command default action", () => {
       it("should have a default action on the attach parent command", () => {
         const program = createProgram();
