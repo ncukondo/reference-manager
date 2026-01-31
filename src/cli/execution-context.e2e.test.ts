@@ -8,6 +8,7 @@
  */
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
+import type { AddressInfo } from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 import { serve } from "@hono/node-server";
@@ -65,14 +66,15 @@ describe("ExecutionContext E2E", () => {
     // Load library for server
     library = await Library.load(libraryPath);
 
-    // Find available port for test server
-    serverPort = 30000 + Math.floor(Math.random() * 10000);
+    serverPort = 0;
   });
 
   afterEach(async () => {
     // Stop server if running
     if (server) {
-      server.close();
+      await new Promise<void>((resolve) => {
+        server?.close(() => resolve());
+      });
       server = null;
     }
 
@@ -98,7 +100,19 @@ describe("ExecutionContext E2E", () => {
   async function startServer(): Promise<void> {
     const config = loadConfig({ overrides: { library: libraryPath } });
     const app = createServer(library, config);
-    server = serve({ fetch: app.fetch, port: serverPort, hostname: "127.0.0.1" });
+    server = serve({ fetch: app.fetch, port: 0, hostname: "127.0.0.1" });
+
+    // Wait for the server to be listening and get the assigned port
+    await new Promise<void>((resolve) => {
+      if (server?.listening) {
+        resolve();
+      } else {
+        server?.on("listening", () => resolve());
+      }
+    });
+
+    const addr = server.address() as AddressInfo;
+    serverPort = addr.port;
 
     // Write portfile so CLI can detect the server
     const portfilePath = getPortfilePath();
@@ -250,15 +264,14 @@ describe("ExecutionContext E2E", () => {
 
       // Step 2: Stop server
       if (server) {
-        server.close();
+        await new Promise<void>((resolve) => {
+          server?.close(() => resolve());
+        });
         server = null;
       }
       // Remove portfile
       const portfilePath = getPortfilePath();
       await fs.rm(portfilePath, { force: true });
-
-      // Wait a moment for cleanup
-      await new Promise((r) => setTimeout(r, 100));
 
       // Step 3: Verify local mode works again
       result = await runCli(["list", "--library", libraryPath]);

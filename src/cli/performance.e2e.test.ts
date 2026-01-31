@@ -6,6 +6,7 @@
  */
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
+import type { AddressInfo } from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 import { serve } from "@hono/node-server";
@@ -47,12 +48,14 @@ describe("CLI Performance", () => {
     await fs.writeFile(libraryPath, JSON.stringify(sampleData), "utf-8");
 
     library = await Library.load(libraryPath);
-    serverPort = 30000 + Math.floor(Math.random() * 10000);
+    serverPort = 0;
   });
 
   afterAll(async () => {
     if (server) {
-      server.close();
+      await new Promise<void>((resolve) => {
+        server?.close(() => resolve());
+      });
       server = null;
     }
 
@@ -73,7 +76,19 @@ describe("CLI Performance", () => {
   async function startServer(): Promise<void> {
     const config = loadConfig({ overrides: { library: libraryPath } });
     const app = createServer(library, config);
-    server = serve({ fetch: app.fetch, port: serverPort, hostname: "127.0.0.1" });
+    server = serve({ fetch: app.fetch, port: 0, hostname: "127.0.0.1" });
+
+    // Wait for the server to be listening and get the assigned port
+    await new Promise<void>((resolve) => {
+      if (server?.listening) {
+        resolve();
+      } else {
+        server?.on("listening", () => resolve());
+      }
+    });
+
+    const addr = server.address() as AddressInfo;
+    serverPort = addr.port;
 
     const portfilePath = getPortfilePath();
     await writePortfile(
@@ -99,7 +114,9 @@ describe("CLI Performance", () => {
 
   async function stopServer(): Promise<void> {
     if (server) {
-      server.close();
+      await new Promise<void>((resolve) => {
+        server?.close(() => resolve());
+      });
       server = null;
     }
     try {
@@ -108,7 +125,6 @@ describe("CLI Performance", () => {
     } catch {
       // Ignore
     }
-    await new Promise((r) => setTimeout(r, 100));
   }
 
   async function measureCliTime(args: string[]): Promise<number> {
