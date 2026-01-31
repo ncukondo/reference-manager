@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import {
   type UrlCommandResult,
@@ -6,11 +6,38 @@ import {
   formatUrlErrors,
   formatUrlOutput,
   getUrlExitCode,
+  handleUrlAction,
 } from "./url.js";
 
 // Mock openWithSystemApp
 vi.mock("../../utils/opener.js", () => ({
   openWithSystemApp: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock CLI helpers
+vi.mock("../helpers.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../helpers.js")>();
+  return {
+    ...actual,
+    loadConfigWithOverrides: vi.fn().mockResolvedValue({
+      library: "/tmp/test-lib.json",
+      cli: { tui: { limit: 20, debounceMs: 200 } },
+    }),
+    isTTY: vi.fn().mockReturnValue(false),
+    readIdentifierFromStdin: vi.fn().mockResolvedValue(undefined),
+    exitWithError: vi.fn(),
+    setExitCode: vi.fn(),
+  };
+});
+
+// Mock execution context
+vi.mock("../execution-context.js", () => ({
+  createExecutionContext: vi.fn(),
+}));
+
+// Mock Library
+vi.mock("../../core/library.js", () => ({
+  Library: { load: vi.fn() },
 }));
 
 /**
@@ -402,5 +429,139 @@ describe("getUrlExitCode", () => {
   it("returns 0 when results are empty", () => {
     const result: UrlCommandResult = { results: [] };
     expect(getUrlExitCode(result)).toBe(0);
+  });
+});
+
+describe("executeUrlCommand --open failure", () => {
+  it("returns openError when openWithSystemApp throws", async () => {
+    const { openWithSystemApp } = await import("../../utils/opener.js");
+    vi.mocked(openWithSystemApp).mockRejectedValueOnce(new Error("wslview not found"));
+    const items = [makeItem("smith2023", { DOI: "10.1000/example" })];
+    const context = createMockContext(items);
+
+    const result = await executeUrlCommand(["smith2023"], { open: true }, context);
+
+    expect(result.openError).toBe("Failed to open URL: wslview not found");
+    expect(result.results[0].urls).toEqual(["https://doi.org/10.1000/example"]);
+  });
+
+  it("returns exit code 1 (ERROR) when --open fails", async () => {
+    const result: UrlCommandResult = {
+      results: [{ id: "smith2023", urls: ["https://doi.org/10.1000/example"] }],
+      openError: "Failed to open URL: wslview not found",
+    };
+    expect(getUrlExitCode(result)).toBe(1);
+  });
+
+  it("includes openError in formatted errors", () => {
+    const result: UrlCommandResult = {
+      results: [{ id: "smith2023", urls: ["https://doi.org/10.1000/example"] }],
+      openError: "Failed to open URL: wslview not found",
+    };
+    const errors = formatUrlErrors(result);
+    expect(errors).toBe("Error: Failed to open URL: wslview not found");
+  });
+
+  it("includes both resolution errors and openError", () => {
+    const result: UrlCommandResult = {
+      results: [
+        { id: "missing", urls: [], error: "Reference not found: missing" },
+        { id: "smith2023", urls: ["https://doi.org/10.1000/example"] },
+      ],
+      openError: "Failed to open URL: wslview not found",
+    };
+    const errors = formatUrlErrors(result);
+    expect(errors).toBe(
+      "Error: Reference not found: missing\nError: Failed to open URL: wslview not found"
+    );
+  });
+});
+
+describe("handleUrlAction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("calls exitWithError when no identifiers and non-TTY", async () => {
+    const { isTTY, readIdentifierFromStdin, exitWithError } = await import("../helpers.js");
+    const { createExecutionContext } = await import("../execution-context.js");
+
+    vi.mocked(isTTY).mockReturnValue(false);
+    vi.mocked(readIdentifierFromStdin).mockResolvedValue(undefined);
+    vi.mocked(createExecutionContext).mockResolvedValue(createMockContext([]) as never);
+
+    await handleUrlAction(undefined, {}, {});
+
+    expect(exitWithError).toHaveBeenCalledWith("Identifier is required");
+  });
+
+  it("reads identifier from stdin when non-TTY", async () => {
+    const { isTTY, readIdentifierFromStdin, setExitCode } = await import("../helpers.js");
+    const { createExecutionContext } = await import("../execution-context.js");
+
+    const items = [makeItem("smith2023", { DOI: "10.1000/example" })];
+    vi.mocked(isTTY).mockReturnValue(false);
+    vi.mocked(readIdentifierFromStdin).mockResolvedValue("smith2023");
+    vi.mocked(createExecutionContext).mockResolvedValue(createMockContext(items) as never);
+
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await handleUrlAction(undefined, {}, {});
+
+    expect(readIdentifierFromStdin).toHaveBeenCalled();
+    expect(setExitCode).toHaveBeenCalledWith(0);
+    expect(stdoutSpy).toHaveBeenCalledWith("https://doi.org/10.1000/example\n");
+
+    stdoutSpy.mockRestore();
+  });
+
+  it("uses provided identifiers directly without TTY check", async () => {
+    const { isTTY, setExitCode } = await import("../helpers.js");
+    const { createExecutionContext } = await import("../execution-context.js");
+
+    const items = [makeItem("smith2023", { DOI: "10.1000/example" })];
+    vi.mocked(createExecutionContext).mockResolvedValue(createMockContext(items) as never);
+
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await handleUrlAction(["smith2023"], {}, {});
+
+    expect(isTTY).not.toHaveBeenCalled();
+    expect(setExitCode).toHaveBeenCalledWith(0);
+    expect(stdoutSpy).toHaveBeenCalledWith("https://doi.org/10.1000/example\n");
+
+    stdoutSpy.mockRestore();
+  });
+
+  it("outputs errors to stderr and sets error exit code", async () => {
+    const { setExitCode } = await import("../helpers.js");
+    const { createExecutionContext } = await import("../execution-context.js");
+
+    vi.mocked(createExecutionContext).mockResolvedValue(createMockContext([]) as never);
+
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    await handleUrlAction(["nonexistent"], {}, {});
+
+    expect(setExitCode).toHaveBeenCalledWith(1);
+    expect(stderrSpy).toHaveBeenCalledWith("Error: Reference not found: nonexistent\n");
+
+    stderrSpy.mockRestore();
+  });
+
+  it("sets INTERNAL_ERROR exit code on unexpected exceptions", async () => {
+    const { setExitCode } = await import("../helpers.js");
+    const { createExecutionContext } = await import("../execution-context.js");
+
+    vi.mocked(createExecutionContext).mockRejectedValue(new Error("Config load failed"));
+
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    await handleUrlAction(["smith2023"], {}, {});
+
+    expect(setExitCode).toHaveBeenCalledWith(4);
+    expect(stderrSpy).toHaveBeenCalledWith("Error: Config load failed\n");
+
+    stderrSpy.mockRestore();
   });
 });

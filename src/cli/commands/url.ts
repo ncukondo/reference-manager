@@ -50,6 +50,7 @@ export interface UrlResult {
  */
 export interface UrlCommandResult {
   results: UrlResult[];
+  openError?: string;
 }
 
 /**
@@ -142,8 +143,15 @@ export async function executeUrlCommand(
   // Handle --open: open the first successful URL
   if (options.open) {
     const firstSuccess = results.find((r) => r.urls.length > 0);
-    if (firstSuccess) {
-      await openWithSystemApp(firstSuccess.urls[0] as string);
+    if (firstSuccess?.urls[0]) {
+      try {
+        await openWithSystemApp(firstSuccess.urls[0]);
+      } catch (error) {
+        return {
+          results,
+          openError: `Failed to open URL: ${error instanceof Error ? error.message : String(error)}`,
+        };
+      }
     }
   }
 
@@ -199,14 +207,18 @@ export function formatUrlOutput(result: UrlCommandResult, options: UrlCommandOpt
  * Format URL command errors for stderr.
  */
 export function formatUrlErrors(result: UrlCommandResult): string {
-  const errors = result.results.filter((r) => r.error);
-  return errors.map((r) => `Error: ${r.error}`).join("\n");
+  const errorMessages = result.results.filter((r) => r.error).map((r) => `Error: ${r.error}`);
+  if (result.openError) {
+    errorMessages.push(`Error: ${result.openError}`);
+  }
+  return errorMessages.join("\n");
 }
 
 /**
  * Get exit code for URL command result.
  */
 export function getUrlExitCode(result: UrlCommandResult): number {
+  if (result.openError) return ExitCode.ERROR;
   const hasSuccess = result.results.some((r) => r.urls.length > 0);
   const hasError = result.results.some((r) => r.error);
 
@@ -231,7 +243,8 @@ async function executeInteractiveSelect(
     selectReferencesOrExit(allReferences, { multiSelect: false }, config.cli.tui)
   );
 
-  return identifiers[0] as string;
+  // selectReferencesOrExit guarantees at least one result
+  return identifiers[0] ?? "";
 }
 
 /**

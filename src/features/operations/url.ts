@@ -78,7 +78,7 @@ export function resolveDefaultUrl(item: CslItem): string | null {
 
   const additionalUrls = item.custom?.additional_urls;
   if (additionalUrls && additionalUrls.length > 0) {
-    return additionalUrls[0] as string;
+    return additionalUrls[0] ?? null;
   }
 
   return null;
