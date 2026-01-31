@@ -91,12 +91,12 @@ File: `.claude/commands/implement.md`
 
 ### Step 5: Update `code-with-task.md` and `code-with-task-local.md`
 
-- [ ] Add worktree auto-detection (`git rev-parse --show-toplevel`)
+- [x] Add worktree auto-detection (`git rev-parse --show-toplevel`)
   - In worktree: skip worktree creation (already done by workmux)
   - On main: create worktree as before (fallback)
-- [ ] Add IPC status file writes when `.ipc/` directory exists
+- [x] Add IPC status file writes when `.ipc/` directory exists
   - Write on: start, each step, testing, PR creation, completion, error
-- [ ] Keep backward compatibility (works with or without workmux)
+- [x] Keep backward compatibility (works with or without workmux)
 
 Files:
 - `.claude/commands/code-with-task.md`
