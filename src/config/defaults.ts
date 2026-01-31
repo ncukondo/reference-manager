@@ -80,6 +80,7 @@ export const defaultConfig: Config = {
     cslDirectory: [getDefaultCslDirectory()],
     defaultLocale: "en-US",
     defaultFormat: "text",
+    defaultKeyFormat: "pandoc",
   },
   pubmed: {
     email: undefined,

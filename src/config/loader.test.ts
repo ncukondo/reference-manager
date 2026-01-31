@@ -427,6 +427,7 @@ log_level = "info"
       expect(config.citation.cslDirectory).toEqual([join(getPaths().data, "csl")]);
       expect(config.citation.defaultLocale).toBe("en-US");
       expect(config.citation.defaultFormat).toBe("text");
+      expect(config.citation.defaultKeyFormat).toBe("pandoc");
     });
 
     it("should load citation.default_style from config", () => {
@@ -532,6 +533,20 @@ default_format = "invalid"
       expect(() => loadConfig({ cwd: testDir })).toThrow();
     });
 
+    it("should load citation.default_key_format from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[citation]
+default_key_format = "latex"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.citation.defaultKeyFormat).toBe("latex");
+    });
+
     it("should merge partial citation config with defaults", () => {
       const configPath = join(testDir, ".reference-manager.config.toml");
       writeFileSync(
@@ -546,6 +561,7 @@ default_style = "harvard"
       expect(config.citation.defaultStyle).toBe("harvard");
       expect(config.citation.defaultLocale).toBe("en-US"); // Default
       expect(config.citation.defaultFormat).toBe("text"); // Default
+      expect(config.citation.defaultKeyFormat).toBe("pandoc"); // Default
     });
   });
 

@@ -60,6 +60,7 @@ describe("listConfigKeys", () => {
       expect(result).toContain("citation.csl_directory");
       expect(result).toContain("citation.default_locale");
       expect(result).toContain("citation.default_format");
+      expect(result).toContain("citation.default_key_format");
 
       // Should NOT include other sections
       expect(result).not.toContain("library ");
@@ -67,8 +68,8 @@ describe("listConfigKeys", () => {
       expect(result).not.toContain("cli.default_limit");
       expect(result).not.toContain("server.auto_start");
 
-      // Should have exactly 4 citation keys
-      expect(lines.length).toBe(4);
+      // Should have exactly 5 citation keys
+      expect(lines.length).toBe(5);
     });
 
     it("should filter by cli section including nested keys", () => {

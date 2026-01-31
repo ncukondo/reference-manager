@@ -8,13 +8,14 @@
 import { Box, useApp } from "ink";
 import type React from "react";
 import { createElement, useEffect, useState } from "react";
+import type { CitationKeyFormat } from "../../../config/schema.js";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import {
-  ACTION_CHOICES,
   type ActionMenuResult,
   type ActionType,
   STYLE_CHOICES,
   generateOutput,
+  getActionChoices,
 } from "../action-menu.js";
 import {
   type Choice,
@@ -40,6 +41,8 @@ export interface SearchFlowAppProps {
   visibleCount: number;
   /** Default sort option */
   defaultSort: SortOption;
+  /** Default citation key format */
+  defaultKeyFormat: CitationKeyFormat;
   /** Callback when flow completes */
   onComplete: (result: ActionMenuResult) => void;
   /** Callback when flow is cancelled */
@@ -56,6 +59,7 @@ export function SearchFlowApp({
   filterFn,
   visibleCount,
   defaultSort,
+  defaultKeyFormat,
   onComplete,
   onCancel,
 }: SearchFlowAppProps): React.ReactElement {
@@ -111,7 +115,7 @@ export function SearchFlowApp({
     }
 
     // Generate output and complete
-    const output = generateOutput(action, selectedItems);
+    const output = generateOutput(action, selectedItems, undefined, defaultKeyFormat);
     exitWith({ action, output, cancelled: false });
   };
 
@@ -122,7 +126,7 @@ export function SearchFlowApp({
 
   // Handle style selection
   const handleStyleSelect = (style: string) => {
-    const output = generateOutput("cite-choose", selectedItems, style);
+    const output = generateOutput("cite-choose", selectedItems, style, defaultKeyFormat);
     exitWith({ action: "cite-choose", output, cancelled: false });
   };
 
@@ -154,7 +158,7 @@ export function SearchFlowApp({
     const count = selectedItems.length;
     const refWord = count === 1 ? "reference" : "references";
     return createElement(Select<ActionType>, {
-      options: ACTION_CHOICES,
+      options: getActionChoices(defaultKeyFormat),
       message: `Action for ${count} selected ${refWord}:`,
       onSelect: handleActionSelect,
       onCancel: handleActionCancel,

@@ -1,4 +1,4 @@
-import type { Config } from "../../config/schema.js";
+import type { CitationKeyFormat, Config } from "../../config/schema.js";
 import { type ItemFormat, formatItems } from "../../features/format/index.js";
 import type { SearchResult } from "../../features/operations/search.js";
 import {
@@ -30,11 +30,14 @@ const VALID_SEARCH_SORT_FIELDS = new Set([
  */
 export interface SearchCommandOptions {
   query: string;
-  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid";
+  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid" | "pandoc-key" | "latex-key";
   json?: boolean;
   idsOnly?: boolean;
   uuidOnly?: boolean;
   bibtex?: boolean;
+  key?: boolean;
+  pandocKey?: boolean;
+  latexKey?: boolean;
   sort?: SearchSortField;
   order?: SortOrder;
   limit?: number;
@@ -51,13 +54,19 @@ export type SearchCommandResult = SearchResult;
  * Convert CLI options to ItemFormat.
  * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
-function getOutputFormat(options: SearchCommandOptions): ItemFormat {
+function getOutputFormat(
+  options: SearchCommandOptions,
+  defaultKeyFormat?: CitationKeyFormat
+): ItemFormat {
   // --output takes precedence
   if (options.output) {
     if (options.output === "ids") return "ids-only";
     return options.output;
   }
   // Convenience flags as fallback
+  if (options.key) return defaultKeyFormat === "latex" ? "latex-key" : "pandoc-key";
+  if (options.pandocKey) return "pandoc-key";
+  if (options.latexKey) return "latex-key";
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
   if (options.uuidOnly) return "uuid";
@@ -71,13 +80,19 @@ function getOutputFormat(options: SearchCommandOptions): ItemFormat {
  */
 function validateOptions(options: SearchCommandOptions): void {
   // Validate output format
-  const outputOptions = [options.json, options.idsOnly, options.uuidOnly, options.bibtex].filter(
-    Boolean
-  );
+  const outputOptions = [
+    options.json,
+    options.idsOnly,
+    options.uuidOnly,
+    options.bibtex,
+    options.key,
+    options.pandocKey,
+    options.latexKey,
+  ].filter(Boolean);
 
   if (outputOptions.length > 1) {
     throw new Error(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex can be used."
+      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex, --key, --pandoc-key, --latex-key can be used."
     );
   }
 
@@ -146,9 +161,10 @@ export async function executeSearch(
  */
 export function formatSearchOutput(
   result: SearchCommandResult,
-  options: SearchCommandOptions
+  options: SearchCommandOptions,
+  defaultKeyFormat?: CitationKeyFormat
 ): string {
-  const format = getOutputFormat(options);
+  const format = getOutputFormat(options, defaultKeyFormat);
 
   if (format === "json") {
     // JSON output includes pagination metadata
@@ -200,11 +216,14 @@ function validateInteractiveOptions(options: SearchCommandOptions): void {
     options.idsOnly,
     options.uuidOnly,
     options.bibtex,
+    options.key,
+    options.pandocKey,
+    options.latexKey,
   ].filter(Boolean);
 
   if (outputOptions.length > 0) {
     throw new Error(
-      "TUI mode cannot be combined with output format options (--output, --json, --ids-only, --uuid-only, --bibtex)"
+      "TUI mode cannot be combined with output format options (--output, --json, --ids-only, --uuid-only, --bibtex, --key, --pandoc-key, --latex-key)"
     );
   }
 }
@@ -252,6 +271,7 @@ export async function executeInteractiveSearch(
     runSearchFlow(allReferences, searchFn, {
       limit: tuiConfig.limit,
       debounceMs: tuiConfig.debounceMs,
+      defaultKeyFormat: config.citation.defaultKeyFormat,
     })
   );
 

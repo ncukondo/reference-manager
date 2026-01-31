@@ -10,7 +10,14 @@ import { formatPretty } from "./pretty.js";
 /**
  * Available output formats for items
  */
-export type ItemFormat = "json" | "bibtex" | "pretty" | "ids-only" | "uuid";
+export type ItemFormat =
+  | "json"
+  | "bibtex"
+  | "pretty"
+  | "ids-only"
+  | "uuid"
+  | "pandoc-key"
+  | "latex-key";
 
 /**
  * Format CslItem[] to the specified output format
@@ -37,6 +44,12 @@ export function formatItems(items: CslItem[], format: ItemFormat): string[] | Cs
           Boolean(item.custom?.uuid)
         )
         .map((item) => item.custom.uuid);
+
+    case "pandoc-key":
+      return items.map((item) => `@${item.id}`);
+
+    case "latex-key":
+      return items.map((item) => `\\cite{${item.id}}`);
 
     default:
       return items.map((item) => formatPretty([item]));

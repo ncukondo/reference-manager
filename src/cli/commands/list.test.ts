@@ -197,6 +197,90 @@ describe("list command", () => {
       expect(output).toBe("");
     });
 
+    it("should format items as pandoc keys when pandocKey option is true", () => {
+      const result: ListCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatListOutput(result, { pandocKey: true });
+
+      expect(output).toBe("@ref1\n@ref2");
+    });
+
+    it("should format items as latex keys when latexKey option is true", () => {
+      const result: ListCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatListOutput(result, { latexKey: true });
+
+      expect(output).toBe("\\cite{ref1}\n\\cite{ref2}");
+    });
+
+    it("should format items as pandoc keys when key option is true (default)", () => {
+      const result: ListCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatListOutput(result, { key: true });
+
+      expect(output).toBe("@ref1\n@ref2");
+    });
+
+    it("should format items as pandoc keys when output is pandoc-key", () => {
+      const result: ListCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatListOutput(result, { output: "pandoc-key" });
+
+      expect(output).toBe("@ref1\n@ref2");
+    });
+
+    it("should format items as latex keys when output is latex-key", () => {
+      const result: ListCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatListOutput(result, { output: "latex-key" });
+
+      expect(output).toBe("\\cite{ref1}\n\\cite{ref2}");
+    });
+
+    it("should format items as latex keys when key option is true with latex defaultKeyFormat", () => {
+      const result: ListCommandResult = {
+        items: mockItems,
+        total: 2,
+        limit: 0,
+        offset: 0,
+        nextOffset: null,
+      };
+
+      const output = formatListOutput(result, { key: true }, "latex");
+
+      expect(output).toBe("\\cite{ref1}\n\\cite{ref2}");
+    });
+
     it("should add header line when limit is applied", () => {
       const result: ListCommandResult = {
         items: [mockItems[0]],

@@ -74,91 +74,14 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 25**: Attachments Architecture (per-reference directories, roles, attach command)
 - **Phase 26**: React Ink Migration (replaced Enquirer with React Ink for all TUI)
 - **Phase 27**: Update Change Detection (change details, accurate update/edit reporting)
+- **Phase 28**: Edit/Update ID Collision Auto-Resolution
+- **Phase 30a**: Citation Key Output Format (Pandoc/LaTeX key flags, config, TUI action)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
 ## Current Phase
-
-### Phase 28: Edit/Update ID Collision Auto-Resolution
-
-Enable automatic ID collision resolution for `ref edit` and `ref update` CLI commands,
-aligning with existing server behavior.
-
-**Task**: `completed/20260127-04-edit-id-collision-resolution.md`
-
-**Depends on**: PR #45 Follow-up Refactor (Steps 3 & 4 modify the same functions in `edit.ts`)
-
-**Scope**:
-- Add `idChanged`/`newId` fields to `EditItemResult`
-- Enable `onIdCollision: "suffix"` for both edit and update commands
-- Update output formatting to show resolved IDs
-- Align CLI behavior with HTTP server defaults
-
-**Todos**:
-- [x] Step 1: Add `idChanged`/`newId` to EditItemResult
-- [x] Step 2: Enable `onIdCollision: "suffix"` for edit command
-- [x] Step 3: Update `formatEditOutput` for ID changes
-- [x] Step 4: Enable `onIdCollision: "suffix"` for update command
-- [x] Step 5: Update existing tests
-
-### PR #45 Follow-up Refactor (Completed)
-
-Code quality improvements identified during PR #45 review.
-
-**Task**: `completed/20260127-01-pr45-followup-refactor.md`
-
-**Scope**:
-- Extract duplicated `isEqual` to shared utility
-- Unify `PROTECTED_CUSTOM_FIELDS` with two-level architecture
-- Include `oldItem` in `id_collision` edit result
-- Fallback to ID-based update when UUID missing
-
-**Todos**:
-- [x] Step 1: Extract `isEqual` to shared utility
-- [x] Step 2: Share protected fields with two-level architecture
-- [x] Step 3: Include `oldItem` in `id_collision` result
-- [x] Step 4: Fallback to ID-based update when UUID missing
-
-### Remove `custom.fulltext` (Completed)
-
-Remove all legacy `custom.fulltext` references from codebase and specs.
-
-**Task**: `completed/20260127-02-remove-custom-fulltext.md`
-
-**Scope**:
-- Remove `custom.fulltext` from production code
-- Remove `custom.fulltext` from tests
-- Remove `custom.fulltext` from specs
-
-**Todos**:
-- [x] Step 1: Remove from production code
-- [x] Step 2: Remove from tests
-- [x] Step 3: Remove from specs
-
-### Unify Attachments Directory Configuration (Completed)
-
-Remove dead `[fulltext]` config section and unify under `[attachments]`.
-Add `--attachments-dir` CLI global option.
-
-**Task**: `completed/20260129-01-unify-attachments-config.md`
-
-**Todos**:
-- [x] Step 1: Remove `[fulltext]` config section
-- [x] Step 2: Add `--attachments-dir` CLI global option
-- [x] Step 3: Fix config command UI (show/set/init)
-- [x] Step 4: Update specs and documentation
-
-### Attach Default Open Behavior (Completed)
-
-Make `ref attach` (without subcommand) behave like `ref attach open`.
-
-**Task**: `completed/20260129-02-attach-default-open.md`
-
-**Todos**:
-- [x] Step 1: Add default action to `attach` parent command
-- [x] Step 2: Manual verification
 
 ### Phase 29: Edit Validation Pipeline
 
@@ -180,25 +103,6 @@ Implement two-stage validation pipeline with error annotation and retry loop for
 - [ ] Step 3: Error annotation — YAML
 - [ ] Step 4: Error annotation — JSON
 - [ ] Step 5: Retry loop in `executeEdit`
-
-### Phase 30a: Citation Key Output Format
-
-Add Pandoc and LaTeX citation key output formats to `list`/`search` commands,
-with configurable default for the `--key` convenience flag and TUI action menu.
-
-**Task**: `20260130-01-citation-key-format.md`
-
-**Scope**:
-- Extend `ItemFormat` with `pandoc-key` / `latex-key`
-- Add `--key`, `--pandoc-key`, `--latex-key` flags to `list`/`search`
-- Add `citation.default_key_format` config setting
-- Add `"key-default"` to TUI action menu `generateOutput`
-
-**Todos**:
-- [ ] Step 1: Extend ItemFormat and formatItems
-- [ ] Step 2: Add --key flag and --output values to search/list
-- [ ] Step 3: Add citation.default_key_format config
-- [ ] Step 4: Add citation key to TUI action menu generateOutput
 
 ### Phase 30b: URL Command
 
@@ -252,6 +156,29 @@ Edit, Remove, output format submenu, and config-driven defaults.
 ---
 
 ## Next Steps
+
+### DevOps: workmux Integration
+
+Integrate workmux for tmux-based parallel agent orchestration and monitoring.
+
+**Task**: `20260131-01-workmux-integration.md`
+
+**Scope**:
+- DevContainer: tmux + workmux installation
+- `.workmux.yaml` configuration
+- IPC status file convention
+- Command updates (implement, code-with-task, merge-pr, status)
+- Permissions and documentation
+
+**Todos**:
+- [ ] Step 1: DevContainer setup
+- [ ] Step 2: workmux configuration
+- [ ] Step 3: IPC status convention
+- [ ] Step 4: implement.md orchestration
+- [ ] Step 5: code-with-task updates
+- [ ] Step 6: merge-pr updates
+- [ ] Step 7: status updates
+- [ ] Step 8: Permissions and documentation
 
 ### MCPB Registry Submission
 
