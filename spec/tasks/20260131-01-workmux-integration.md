@@ -43,9 +43,9 @@ File: `.workmux.yaml` (new)
 
 Define the inter-agent communication protocol:
 
-- [ ] Directory: `/workspaces/reference-manager--worktrees/.ipc/`
-- [ ] File format: `<handle>.status.json`
-- [ ] Schema:
+- [x] Directory: `/workspaces/reference-manager--worktrees/.ipc/`
+- [x] File format: `<handle>.status.json`
+- [x] Schema:
   ```json
   {
     "handle": "<handle>",
@@ -58,7 +58,7 @@ Define the inter-agent communication protocol:
     "updated_at": "<ISO8601>"
   }
   ```
-- [ ] No .gitignore change needed (directory is outside repo root)
+- [x] No .gitignore change needed (directory is outside repo root)
 
 ### Step 4: Update `implement.md` — orchestration command
 
