@@ -1,3 +1,4 @@
+import type { CitationKeyFormat } from "../../config/schema.js";
 import { type ItemFormat, formatItems } from "../../features/format/index.js";
 import type { ListResult } from "../../features/operations/list.js";
 import {
@@ -26,11 +27,14 @@ const VALID_LIST_SORT_FIELDS = new Set([
  * Options for the list command.
  */
 export interface ListCommandOptions {
-  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid";
+  output?: "pretty" | "json" | "bibtex" | "ids" | "uuid" | "pandoc-key" | "latex-key";
   json?: boolean;
   idsOnly?: boolean;
   uuidOnly?: boolean;
   bibtex?: boolean;
+  key?: boolean;
+  pandocKey?: boolean;
+  latexKey?: boolean;
   sort?: SortField;
   order?: SortOrder;
   limit?: number;
@@ -46,13 +50,19 @@ export type ListCommandResult = ListResult;
  * Convert CLI options to ItemFormat.
  * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
-function getOutputFormat(options: ListCommandOptions): ItemFormat {
+function getOutputFormat(
+  options: ListCommandOptions,
+  defaultKeyFormat?: CitationKeyFormat
+): ItemFormat {
   // --output takes precedence
   if (options.output) {
     if (options.output === "ids") return "ids-only";
     return options.output;
   }
   // Convenience flags as fallback
+  if (options.key) return defaultKeyFormat === "latex" ? "latex-key" : "pandoc-key";
+  if (options.pandocKey) return "pandoc-key";
+  if (options.latexKey) return "latex-key";
   if (options.json) return "json";
   if (options.idsOnly) return "ids-only";
   if (options.uuidOnly) return "uuid";
@@ -66,13 +76,19 @@ function getOutputFormat(options: ListCommandOptions): ItemFormat {
  */
 function validateOptions(options: ListCommandOptions): void {
   // Validate output format
-  const outputOptions = [options.json, options.idsOnly, options.uuidOnly, options.bibtex].filter(
-    Boolean
-  );
+  const outputOptions = [
+    options.json,
+    options.idsOnly,
+    options.uuidOnly,
+    options.bibtex,
+    options.key,
+    options.pandocKey,
+    options.latexKey,
+  ].filter(Boolean);
 
   if (outputOptions.length > 1) {
     throw new Error(
-      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex can be used."
+      "Multiple output formats specified. Only one of --json, --ids-only, --uuid-only, --bibtex, --key, --pandoc-key, --latex-key can be used."
     );
   }
 
@@ -138,8 +154,12 @@ export async function executeList(
  * @param options - Command options to determine format
  * @returns Formatted output string
  */
-export function formatListOutput(result: ListCommandResult, options: ListCommandOptions): string {
-  const format = getOutputFormat(options);
+export function formatListOutput(
+  result: ListCommandResult,
+  options: ListCommandOptions,
+  defaultKeyFormat?: CitationKeyFormat
+): string {
+  const format = getOutputFormat(options, defaultKeyFormat);
 
   if (format === "json") {
     // JSON output includes pagination metadata

@@ -33,6 +33,7 @@ describe("key-parser", () => {
     it("returns true for valid nested keys", () => {
       expect(isValidConfigKey("citation.default_style")).toBe(true);
       expect(isValidConfigKey("citation.csl_directory")).toBe(true);
+      expect(isValidConfigKey("citation.default_key_format")).toBe(true);
       expect(isValidConfigKey("backup.max_generations")).toBe(true);
       expect(isValidConfigKey("server.auto_start")).toBe(true);
     });
@@ -139,6 +140,7 @@ describe("key-parser", () => {
 
       expect(citationKeys).toContain("citation.default_style");
       expect(citationKeys).toContain("citation.csl_directory");
+      expect(citationKeys).toContain("citation.default_key_format");
       expect(citationKeys).not.toContain("library");
       expect(citationKeys).not.toContain("cli.tui.limit");
     });

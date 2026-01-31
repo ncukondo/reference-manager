@@ -83,6 +83,11 @@ export const serverConfigSchema = z.object({
 export const citationFormatSchema = z.enum(["text", "html", "rtf"]);
 
 /**
+ * Citation key format schema
+ */
+export const citationKeyFormatSchema = z.enum(["pandoc", "latex"]);
+
+/**
  * Citation configuration schema
  */
 export const citationConfigSchema = z.object({
@@ -90,6 +95,7 @@ export const citationConfigSchema = z.object({
   cslDirectory: z.array(z.string()),
   defaultLocale: z.string(),
   defaultFormat: citationFormatSchema,
+  defaultKeyFormat: citationKeyFormatSchema,
 });
 
 /**
@@ -171,6 +177,8 @@ export const partialConfigSchema = z
         default_locale: z.string().optional(),
         defaultFormat: citationFormatSchema.optional(),
         default_format: citationFormatSchema.optional(),
+        defaultKeyFormat: citationKeyFormatSchema.optional(),
+        default_key_format: citationKeyFormatSchema.optional(),
       })
       .optional(),
     pubmed: z
@@ -225,6 +233,7 @@ export type BackupConfig = z.infer<typeof backupConfigSchema>;
 export type WatchConfig = z.infer<typeof watchConfigSchema>;
 export type ServerConfig = z.infer<typeof serverConfigSchema>;
 export type CitationFormat = z.infer<typeof citationFormatSchema>;
+export type CitationKeyFormat = z.infer<typeof citationKeyFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
@@ -365,6 +374,8 @@ function normalizeCitationConfig(
     default_locale?: string;
     defaultFormat?: CitationFormat;
     default_format?: CitationFormat;
+    defaultKeyFormat?: CitationKeyFormat;
+    default_key_format?: CitationKeyFormat;
   }>
 ): Partial<CitationConfig> | undefined {
   const normalized: Partial<CitationConfig> = {};
@@ -388,6 +399,13 @@ function normalizeCitationConfig(
   const defaultFormat = citation.defaultFormat ?? citation.default_format;
   if (defaultFormat !== undefined) {
     normalized.defaultFormat = defaultFormat;
+  }
+
+  const defaultKeyFormat =
+    (citation as Record<string, unknown>).defaultKeyFormat ??
+    (citation as Record<string, unknown>).default_key_format;
+  if (defaultKeyFormat !== undefined) {
+    normalized.defaultKeyFormat = defaultKeyFormat as CitationKeyFormat;
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

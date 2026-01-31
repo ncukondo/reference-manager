@@ -6,6 +6,7 @@
 
 import { render } from "ink";
 import { createElement } from "react";
+import type { CitationKeyFormat } from "../../../config/schema.js";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { SearchResult } from "../../search/types.js";
 import type { ActionMenuResult } from "../action-menu.js";
@@ -22,6 +23,8 @@ export interface SearchFlowConfig {
   limit: number;
   /** Debounce delay in milliseconds (not used, kept for API compatibility) */
   debounceMs: number;
+  /** Default citation key format */
+  defaultKeyFormat?: CitationKeyFormat;
 }
 
 /**
@@ -188,6 +191,7 @@ export async function runSearchFlow(
         filterFn,
         visibleCount: effectiveLimit,
         defaultSort,
+        defaultKeyFormat: config.defaultKeyFormat ?? "pandoc",
         onComplete: handleComplete,
         onCancel: handleCancel,
       })

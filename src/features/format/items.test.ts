@@ -129,6 +129,32 @@ describe("formatItems", () => {
     });
   });
 
+  describe("pandoc-key format", () => {
+    it("should format items as pandoc citation keys", () => {
+      const items = [sampleItem1, sampleItem2];
+      const result = formatItems(items, "pandoc-key");
+      expect(result).toEqual(["@smith-2023", "@jones-2022"]);
+    });
+
+    it("should return empty array for empty input", () => {
+      const result = formatItems([], "pandoc-key");
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("latex-key format", () => {
+    it("should format items as latex cite commands", () => {
+      const items = [sampleItem1, sampleItem2];
+      const result = formatItems(items, "latex-key");
+      expect(result).toEqual(["\\cite{smith-2023}", "\\cite{jones-2022}"]);
+    });
+
+    it("should return empty array for empty input", () => {
+      const result = formatItems([], "latex-key");
+      expect(result).toEqual([]);
+    });
+  });
+
   describe("default (unknown format)", () => {
     it("should fall back to pretty format for unknown format", () => {
       const items = [sampleItem1];
