@@ -1,4 +1,17 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(workmux:*)",
+      "Bash(tmux capture-pane:*)",
+      "Bash(tmux send-keys:*)",
+      "Bash(tmux list-windows:*)",
+      "Bash(tmux new-session:*)",
+      "Bash(tmux has-session:*)",
+      "Bash(which workmux)",
+      "Bash(which tmux)",
+      "Bash(sleep:*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {

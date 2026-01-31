@@ -119,10 +119,11 @@ File: `.claude/commands/status.md`
 
 ### Step 8: Permissions and documentation
 
-- [ ] Add workmux/tmux permissions to `.claude/settings.json`:
+- [x] Add workmux/tmux permissions to `.claude/settings.json`:
   - `Bash(workmux:*)`, `Bash(tmux capture-pane:*)`, `Bash(tmux send-keys:*)`
-  - `Bash(tmux list-windows:*)`, `Bash(tmux new-session:*)`, `Bash(which workmux)`, `Bash(sleep:*)`
-- [ ] Update `spec/meta/development-process.md`:
+  - `Bash(tmux list-windows:*)`, `Bash(tmux new-session:*)`, `Bash(tmux has-session:*)`
+  - `Bash(which workmux)`, `Bash(which tmux)`, `Bash(sleep:*)`
+- [x] Update `spec/meta/development-process.md`:
   - Add workmux as recommended approach
   - Keep manual worktree as fallback
   - Document IPC convention
@@ -151,9 +152,9 @@ Files:
 
 ## Completion Checklist
 
-- [ ] All modified commands work both with and without workmux (backward compatible)
-- [ ] `.workmux.yaml` uses correct `--worktrees` path convention
-- [ ] IPC status protocol documented
-- [ ] Permissions added to tracked settings.json
-- [ ] `spec/meta/development-process.md` updated
+- [x] All modified commands work both with and without workmux (backward compatible)
+- [x] `.workmux.yaml` uses correct `--worktrees` path convention
+- [x] IPC status protocol documented
+- [x] Permissions added to tracked settings.json
+- [x] `spec/meta/development-process.md` updated
 - [ ] CHANGELOG.md updated
