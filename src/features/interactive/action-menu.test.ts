@@ -18,7 +18,7 @@ vi.mock("../format/index.js", () => ({
   ),
 }));
 
-import { ACTION_CHOICES, STYLE_CHOICES } from "./action-menu.js";
+import { ACTION_CHOICES, STYLE_CHOICES, generateOutput } from "./action-menu.js";
 
 describe("ACTION_CHOICES", () => {
   it("has all required action types", () => {
@@ -29,11 +29,12 @@ describe("ACTION_CHOICES", () => {
     expect(actionTypes).toContain("output-bibtex");
     expect(actionTypes).toContain("cite-apa");
     expect(actionTypes).toContain("cite-choose");
+    expect(actionTypes).toContain("key-default");
     expect(actionTypes).toContain("cancel");
   });
 
-  it("has 6 choices", () => {
-    expect(ACTION_CHOICES).toHaveLength(6);
+  it("has 7 choices", () => {
+    expect(ACTION_CHOICES).toHaveLength(7);
   });
 
   it("uses SelectOption format with label and value", () => {
@@ -59,6 +60,50 @@ describe("STYLE_CHOICES", () => {
       expect(choice).toHaveProperty("label");
       expect(choice).toHaveProperty("value");
     }
+  });
+});
+
+describe("generateOutput", () => {
+  const mockItems: CslItem[] = [
+    {
+      id: "ref1",
+      type: "article-journal",
+      title: "Test Article 1",
+      author: [{ family: "Smith", given: "John" }],
+      issued: { "date-parts": [[2023]] },
+    },
+    {
+      id: "ref2",
+      type: "article-journal",
+      title: "Test Article 2",
+      author: [{ family: "Doe", given: "Jane" }],
+      issued: { "date-parts": [[2024]] },
+    },
+  ];
+
+  it("should generate pandoc citation keys by default for key-default action", () => {
+    const output = generateOutput("key-default", mockItems);
+    expect(output).toBe("@ref1; @ref2");
+  });
+
+  it("should generate pandoc citation keys when defaultKeyFormat is pandoc", () => {
+    const output = generateOutput("key-default", mockItems, "apa", "pandoc");
+    expect(output).toBe("@ref1; @ref2");
+  });
+
+  it("should generate latex citation keys when defaultKeyFormat is latex", () => {
+    const output = generateOutput("key-default", mockItems, "apa", "latex");
+    expect(output).toBe("\\cite{ref1,ref2}");
+  });
+
+  it("should generate output-ids correctly", () => {
+    const output = generateOutput("output-ids", mockItems);
+    expect(output).toBe("ref1\nref2");
+  });
+
+  it("should return empty string for cancel", () => {
+    const output = generateOutput("cancel", mockItems);
+    expect(output).toBe("");
   });
 });
 

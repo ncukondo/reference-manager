@@ -20,6 +20,7 @@ export type ActionType =
   | "output-bibtex"
   | "cite-apa"
   | "cite-choose"
+  | "key-default"
   | "cancel";
 
 /**
@@ -53,6 +54,7 @@ export const ACTION_CHOICES: SelectOption<ActionType>[] = [
   { label: "Output as BibTeX", value: "output-bibtex" },
   { label: "Generate citation (APA)", value: "cite-apa" },
   { label: "Generate citation (choose style)", value: "cite-choose" },
+  { label: "Citation key (Pandoc)", value: "key-default" },
   { label: "Cancel", value: "cancel" },
 ];
 
@@ -116,7 +118,12 @@ function StyleSelectApp({ options, onSelect, onCancel }: StyleSelectAppProps): R
 /**
  * Generate output for the given action and items.
  */
-export function generateOutput(action: ActionType, items: CslItem[], style = "apa"): string {
+export function generateOutput(
+  action: ActionType,
+  items: CslItem[],
+  style = "apa",
+  defaultKeyFormat = "pandoc"
+): string {
   switch (action) {
     case "output-ids":
       return items.map((item) => item.id).join("\n");
@@ -132,6 +139,12 @@ export function generateOutput(action: ActionType, items: CslItem[], style = "ap
 
     case "cite-choose":
       return formatBibliographyCSL(items, { style });
+
+    case "key-default":
+      if (defaultKeyFormat === "latex") {
+        return `\\cite{${items.map((i) => i.id).join(",")}}`;
+      }
+      return items.map((i) => `@${i.id}`).join("; ");
 
     case "cancel":
       return "";
