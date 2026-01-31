@@ -104,7 +104,7 @@ Files:
 
 ### Step 6: Update `merge-pr.md`
 
-- [ ] After existing merge steps, add:
+- [x] After existing merge steps, add:
   - `workmux remove <handle>` (with fallback to manual cleanup)
   - `rm -f /workspaces/reference-manager--worktrees/.ipc/<handle>.status.json`
 
