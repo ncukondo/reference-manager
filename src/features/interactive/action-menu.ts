@@ -6,6 +6,7 @@
 import { render } from "ink";
 import { createElement } from "react";
 import type React from "react";
+import type { CitationKeyFormat } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibliographyCSL, formatBibtex } from "../format/index.js";
 import { restoreStdinAfterInk } from "./alternate-screen.js";
@@ -46,17 +47,29 @@ export interface StyleSelectResult {
 }
 
 /**
- * Available action choices for the action menu.
+ * Generate action choices for the action menu.
+ * The label for "key-default" is dynamic based on the configured citation key format.
  */
-export const ACTION_CHOICES: SelectOption<ActionType>[] = [
-  { label: "Output IDs (citation keys)", value: "output-ids" },
-  { label: "Output as CSL-JSON", value: "output-csl-json" },
-  { label: "Output as BibTeX", value: "output-bibtex" },
-  { label: "Generate citation (APA)", value: "cite-apa" },
-  { label: "Generate citation (choose style)", value: "cite-choose" },
-  { label: "Citation key (Pandoc)", value: "key-default" },
-  { label: "Cancel", value: "cancel" },
-];
+export function getActionChoices(
+  defaultKeyFormat: CitationKeyFormat = "pandoc"
+): SelectOption<ActionType>[] {
+  const keyLabel = defaultKeyFormat === "latex" ? "Citation key (LaTeX)" : "Citation key (Pandoc)";
+  return [
+    { label: "Output IDs (citation keys)", value: "output-ids" },
+    { label: "Output as CSL-JSON", value: "output-csl-json" },
+    { label: "Output as BibTeX", value: "output-bibtex" },
+    { label: "Generate citation (APA)", value: "cite-apa" },
+    { label: "Generate citation (choose style)", value: "cite-choose" },
+    { label: keyLabel, value: "key-default" },
+    { label: "Cancel", value: "cancel" },
+  ];
+}
+
+/**
+ * Available action choices for the action menu.
+ * @deprecated Use getActionChoices(defaultKeyFormat) for dynamic labels.
+ */
+export const ACTION_CHOICES: SelectOption<ActionType>[] = getActionChoices();
 
 /**
  * Available style choices for citation style selection.
@@ -122,7 +135,7 @@ export function generateOutput(
   action: ActionType,
   items: CslItem[],
   style = "apa",
-  defaultKeyFormat = "pandoc"
+  defaultKeyFormat: CitationKeyFormat = "pandoc"
 ): string {
   switch (action) {
     case "output-ids":
@@ -201,7 +214,11 @@ export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
 /**
  * Process the selected action and generate result.
  */
-async function processAction(action: ActionType, items: CslItem[]): Promise<ActionMenuResult> {
+async function processAction(
+  action: ActionType,
+  items: CslItem[],
+  defaultKeyFormat: CitationKeyFormat = "pandoc"
+): Promise<ActionMenuResult> {
   // Handle cite-choose: prompt for style first
   if (action === "cite-choose") {
     const styleResult = await runStyleSelectPrompt();
@@ -214,7 +231,7 @@ async function processAction(action: ActionType, items: CslItem[]): Promise<Acti
     }
     return {
       action,
-      output: generateOutput(action, items, styleResult.style),
+      output: generateOutput(action, items, styleResult.style, defaultKeyFormat),
       cancelled: false,
     };
   }
@@ -231,7 +248,7 @@ async function processAction(action: ActionType, items: CslItem[]): Promise<Acti
   // Handle other actions
   return {
     action,
-    output: generateOutput(action, items),
+    output: generateOutput(action, items, undefined, defaultKeyFormat),
     cancelled: false,
   };
 }
@@ -240,12 +257,17 @@ async function processAction(action: ActionType, items: CslItem[]): Promise<Acti
  * Run the action menu for selected references.
  *
  * @param items - Selected references
+ * @param defaultKeyFormat - The configured citation key format
  * @returns Action result with output
  */
-export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult> {
+export async function runActionMenu(
+  items: CslItem[],
+  defaultKeyFormat: CitationKeyFormat = "pandoc"
+): Promise<ActionMenuResult> {
   const count = items.length;
   const refWord = count === 1 ? "reference" : "references";
   const message = `Action for ${count} selected ${refWord}:`;
+  const actionChoices = getActionChoices(defaultKeyFormat);
 
   return new Promise<ActionMenuResult>((resolve) => {
     let selectedAction: ActionType | null = null;
@@ -262,7 +284,7 @@ export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult>
     const { waitUntilExit } = render(
       createElement(ActionMenuApp, {
         message,
-        options: ACTION_CHOICES,
+        options: actionChoices,
         onSelect: handleSelect,
         onCancel: handleCancel,
       })
@@ -280,7 +302,7 @@ export async function runActionMenu(items: CslItem[]): Promise<ActionMenuResult>
             cancelled: true,
           });
         } else {
-          const result = await processAction(selectedAction, items);
+          const result = await processAction(selectedAction, items, defaultKeyFormat);
           resolve(result);
         }
       })

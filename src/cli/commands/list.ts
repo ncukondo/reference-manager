@@ -1,3 +1,4 @@
+import type { CitationKeyFormat } from "../../config/schema.js";
 import { type ItemFormat, formatItems } from "../../features/format/index.js";
 import type { ListResult } from "../../features/operations/list.js";
 import {
@@ -49,7 +50,10 @@ export type ListCommandResult = ListResult;
  * Convert CLI options to ItemFormat.
  * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
-function getOutputFormat(options: ListCommandOptions, defaultKeyFormat?: string): ItemFormat {
+function getOutputFormat(
+  options: ListCommandOptions,
+  defaultKeyFormat?: CitationKeyFormat
+): ItemFormat {
   // --output takes precedence
   if (options.output) {
     if (options.output === "ids") return "ids-only";
@@ -153,7 +157,7 @@ export async function executeList(
 export function formatListOutput(
   result: ListCommandResult,
   options: ListCommandOptions,
-  defaultKeyFormat?: string
+  defaultKeyFormat?: CitationKeyFormat
 ): string {
   const format = getOutputFormat(options, defaultKeyFormat);
 

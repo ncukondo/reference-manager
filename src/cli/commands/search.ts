@@ -1,4 +1,4 @@
-import type { Config } from "../../config/schema.js";
+import type { CitationKeyFormat, Config } from "../../config/schema.js";
 import { type ItemFormat, formatItems } from "../../features/format/index.js";
 import type { SearchResult } from "../../features/operations/search.js";
 import {
@@ -54,7 +54,10 @@ export type SearchCommandResult = SearchResult;
  * Convert CLI options to ItemFormat.
  * Priority: --output > convenience flags (--json, --ids-only, --uuid-only, --bibtex)
  */
-function getOutputFormat(options: SearchCommandOptions, defaultKeyFormat?: string): ItemFormat {
+function getOutputFormat(
+  options: SearchCommandOptions,
+  defaultKeyFormat?: CitationKeyFormat
+): ItemFormat {
   // --output takes precedence
   if (options.output) {
     if (options.output === "ids") return "ids-only";
@@ -159,7 +162,7 @@ export async function executeSearch(
 export function formatSearchOutput(
   result: SearchCommandResult,
   options: SearchCommandOptions,
-  defaultKeyFormat?: string
+  defaultKeyFormat?: CitationKeyFormat
 ): string {
   const format = getOutputFormat(options, defaultKeyFormat);
 
@@ -268,6 +271,7 @@ export async function executeInteractiveSearch(
     runSearchFlow(allReferences, searchFn, {
       limit: tuiConfig.limit,
       debounceMs: tuiConfig.debounceMs,
+      defaultKeyFormat: config.citation.defaultKeyFormat,
     })
   );
 

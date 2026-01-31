@@ -18,7 +18,7 @@ vi.mock("../format/index.js", () => ({
   ),
 }));
 
-import { ACTION_CHOICES, STYLE_CHOICES, generateOutput } from "./action-menu.js";
+import { ACTION_CHOICES, STYLE_CHOICES, generateOutput, getActionChoices } from "./action-menu.js";
 
 describe("ACTION_CHOICES", () => {
   it("has all required action types", () => {
@@ -104,6 +104,30 @@ describe("generateOutput", () => {
   it("should return empty string for cancel", () => {
     const output = generateOutput("cancel", mockItems);
     expect(output).toBe("");
+  });
+});
+
+describe("getActionChoices", () => {
+  it("should return Pandoc label by default", () => {
+    const choices = getActionChoices();
+    const keyChoice = choices.find((c) => c.value === "key-default");
+    expect(keyChoice?.label).toBe("Citation key (Pandoc)");
+  });
+
+  it("should return Pandoc label when defaultKeyFormat is pandoc", () => {
+    const choices = getActionChoices("pandoc");
+    const keyChoice = choices.find((c) => c.value === "key-default");
+    expect(keyChoice?.label).toBe("Citation key (Pandoc)");
+  });
+
+  it("should return LaTeX label when defaultKeyFormat is latex", () => {
+    const choices = getActionChoices("latex");
+    const keyChoice = choices.find((c) => c.value === "key-default");
+    expect(keyChoice?.label).toBe("Citation key (LaTeX)");
+  });
+
+  it("should have 7 choices", () => {
+    expect(getActionChoices()).toHaveLength(7);
   });
 });
 
