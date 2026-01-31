@@ -157,4 +157,4 @@ Files:
 - [x] IPC status protocol documented
 - [x] Permissions added to tracked settings.json
 - [x] `spec/meta/development-process.md` updated
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
