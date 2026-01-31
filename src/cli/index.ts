@@ -47,6 +47,7 @@ import {
 } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { collectSetOption, handleUpdateAction } from "./commands/update.js";
+import { handleUrlAction } from "./commands/url.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
 import type { CliOptions } from "./helpers.js";
@@ -93,6 +94,7 @@ export function createProgram(): Command {
   registerFulltextCommand(program);
   registerAttachCommand(program);
   registerMcpCommand(program);
+  registerUrlCommand(program);
   registerConfigCommand(program);
   registerCompletionCommand(program);
 
@@ -734,6 +736,26 @@ function registerFulltextCommand(program: Command): void {
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextOpenAction(identifier, options, program.opts());
+    });
+}
+
+/**
+ * Register 'url' command
+ */
+function registerUrlCommand(program: Command): void {
+  program
+    .command("url")
+    .description("Show URLs for references")
+    .argument("[identifiers...]", "Reference identifiers")
+    .option("--default", "Show only the best URL by priority")
+    .option("--doi", "Show only DOI URL")
+    .option("--pubmed", "Show only PubMed URL")
+    .option("--pmcid", "Show only PMC URL")
+    .option("--open", "Open URL in browser")
+    .option("--uuid", "Interpret identifiers as UUIDs")
+    .action(async (identifiers: string[], options) => {
+      const globalOpts = program.opts();
+      await handleUrlAction(identifiers.length > 0 ? identifiers : undefined, options, globalOpts);
     });
 }
 
