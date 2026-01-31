@@ -27,13 +27,14 @@ Files:
 
 ### Step 2: workmux configuration
 
-- [ ] Create `.workmux.yaml` at project root
+- [x] Create `.workmux.yaml` at project root
   - `worktree_dir: /workspaces/reference-manager--worktrees` (override default `__worktrees`)
   - `main_branch: main`
   - `window_prefix: rm-`
-  - `panes`: agent (focused) + shell (horizontal, 20%)
+  - `panes`: agent (focused) + shell (horizontal, 15 lines)
   - `post_create`: `npm install`
-  - `status_icons`: working/waiting/done
+  - `status_icons`: working/waiting/done (ASCII for terminal compatibility)
+  - `files.symlink`: node_modules (avoid duplicate installs)
 - [ ] Verify: `workmux add test-branch` creates worktree in `--worktrees/` + tmux window
 
 File: `.workmux.yaml` (new)
