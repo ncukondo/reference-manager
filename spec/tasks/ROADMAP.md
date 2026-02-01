@@ -76,33 +76,14 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 27**: Update Change Detection (change details, accurate update/edit reporting)
 - **Phase 28**: Edit/Update ID Collision Auto-Resolution
 - **Phase 30a**: Citation Key Output Format (Pandoc/LaTeX key flags, config, TUI action)
+- **Phase 29**: Edit Validation Pipeline (two-stage validation, error annotation, retry loop)
+- **DevOps**: workmux Integration (parallel agent orchestration with tmux)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
 ## Current Phase
-
-### Phase 29: Edit Validation Pipeline
-
-Implement two-stage validation pipeline with error annotation and retry loop for the edit command.
-
-**Task**: `20260127-03-edit-validation.md`
-
-**Depends on**: PR #45 Follow-up Refactor (Step 2)
-
-**Scope**:
-- Edit-format date validator
-- CSL schema validation integration
-- Error annotation (YAML and JSON)
-- Retry loop in `executeEdit`
-
-**Todos**:
-- [ ] Step 1: Edit-format date validator
-- [ ] Step 2: CSL schema validation integration
-- [ ] Step 3: Error annotation — YAML
-- [ ] Step 4: Error annotation — JSON
-- [ ] Step 5: Retry loop in `executeEdit`
 
 ### Phase 30b: URL Command
 
@@ -156,29 +137,6 @@ Edit, Remove, output format submenu, and config-driven defaults.
 ---
 
 ## Next Steps
-
-### DevOps: workmux Integration
-
-Integrate workmux for tmux-based parallel agent orchestration and monitoring.
-
-**Task**: `20260131-01-workmux-integration.md`
-
-**Scope**:
-- DevContainer: tmux + workmux installation
-- `.workmux.yaml` configuration
-- IPC status file convention
-- Command updates (implement, code-with-task, merge-pr, status)
-- Permissions and documentation
-
-**Todos**:
-- [x] Step 1: DevContainer setup
-- [x] Step 2: workmux configuration
-- [x] Step 3: IPC status convention
-- [x] Step 4: implement.md orchestration
-- [x] Step 5: code-with-task updates
-- [x] Step 6: merge-pr updates
-- [x] Step 7: status updates
-- [x] Step 8: Permissions and documentation
 
 ### MCPB Registry Submission
 
