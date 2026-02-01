@@ -161,7 +161,7 @@ Extend `ActionType` with new values and make action choices dynamic.
 | 担当 | 内容 |
 |------|------|
 | **AIエージェント** | ビルド、ダミーライブラリ生成、テスト用config作成、ディレクトリ準備、動作確認 (`list`) |
-| **ユーザー** | エイリアス設定、TUI操作（検索・選択・アクション実行）、目視確認 |
+| **ユーザー** | エイリアス設定（1行コピペ）、TUI操作（検索・選択・アクション実行）、目視確認 |
 
 TTY操作はエージェントから実行できないため、ユーザーが直接ターミナルで操作する必要がある。
 エージェントは準備完了後、以下の「ユーザー向けテスト手順」をそのまま案内すること。
@@ -215,20 +215,17 @@ node bin/cli.js --config /tmp/tui-test-config.toml list --limit 3
 # worktree に移動
 cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
 
-# ref コマンドのエイリアスを設定（セッション中のみ有効）
-alias ref="node $(pwd)/bin/cli.js"
-
-# 設定ファイルを短縮（各コマンドで毎回指定します）
-CFG=/tmp/tui-test-config.toml
+# ref コマンドのエイリアスを設定（--config 込み、セッション中のみ有効）
+alias ref="node $(pwd)/bin/cli.js --config /tmp/tui-test-config.toml"
 
 # 動作確認: リストが3件表示されれば OK
-ref --config $CFG list --limit 3
+ref list --limit 3
 ```
 
 #### A. アクションメニュー表示（単一選択）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 何も入力せず（全件表示の状態で）、**↑↓** で移動し **Space** で **1件だけ** 選択
@@ -253,7 +250,7 @@ ref search --tui --config $CFG
 #### B. アクションメニュー表示（複数選択）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. **Space** で **3件** 選択して **Enter**
@@ -274,7 +271,7 @@ ref search --tui --config $CFG
 #### C. Citation key（単一・Pandoc）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → Enter → **"Citation key (Pandoc)"** を選択
@@ -285,7 +282,7 @@ ref search --tui --config $CFG
 #### D. Citation keys（複数・Pandoc）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 3件選択 → Enter → **"Citation keys (Pandoc)"** を選択
@@ -298,11 +295,11 @@ ref search --tui --config $CFG
 config を一時的に latex に切り替え:
 
 ```bash
-sed -i 's/default_key_format = "pandoc"/default_key_format = "latex"/' $CFG
+sed -i 's/default_key_format = "pandoc"/default_key_format = "latex"/' /tmp/tui-test-config.toml
 ```
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Citation key (LaTeX)"** → **確認**: `\cite{<id>}` 形式
@@ -311,7 +308,7 @@ ref search --tui --config $CFG
 config を元に戻す:
 
 ```bash
-sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' $CFG
+sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' /tmp/tui-test-config.toml
 ```
 
 - [ ] LaTeX形式の単一・複数出力
@@ -319,7 +316,7 @@ sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' $CFG
 #### F. Generate citation（デフォルトスタイル）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Generate citation"**
@@ -330,7 +327,7 @@ ref search --tui --config $CFG
 #### G. Generate citation (choose style)
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Generate citation (choose style)"**
@@ -342,7 +339,7 @@ ref search --tui --config $CFG
 #### H. Output (choose format) サブメニュー
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Output (choose format)"**
@@ -367,7 +364,7 @@ ref search --tui --config $CFG
 #### I. Output format の Cancel
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Output (choose format)"** → **"Cancel"**
@@ -379,7 +376,7 @@ ref search --tui --config $CFG
 #### J. Open URL
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. DOI 付きのエントリを1件選択（検索欄に `DOI:` と入力すると絞りやすい）→ **"Open URL"**
@@ -392,7 +389,7 @@ ref search --tui --config $CFG
 #### K. Open fulltext
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Open fulltext"**
@@ -403,7 +400,7 @@ ref search --tui --config $CFG
 #### L. Manage attachments
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Manage attachments"**
@@ -414,7 +411,7 @@ ref search --tui --config $CFG
 #### M. Edit reference（単一）
 
 ```bash
-EDITOR=cat ref search --tui --config $CFG
+EDITOR=cat ref search --tui
 ```
 
 > `EDITOR=cat` を指定すると、エディタの代わりに内容が stdout に表示され、確認しやすい。
@@ -427,7 +424,7 @@ EDITOR=cat ref search --tui --config $CFG
 #### N. Edit references（複数）
 
 ```bash
-EDITOR=cat ref search --tui --config $CFG
+EDITOR=cat ref search --tui
 ```
 
 1. 3件選択 → **"Edit references"**
@@ -438,14 +435,14 @@ EDITOR=cat ref search --tui --config $CFG
 #### O. Remove（単一）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → **"Remove"**
 2. **確認**: 削除確認プロンプトが表示される → `y` で削除
 3. 確認:
    ```bash
-   ref --config $CFG list | wc -l
+   ref list | wc -l
    ```
    → 件数が1つ減っていれば OK
 
@@ -454,7 +451,7 @@ ref search --tui --config $CFG
 #### P. Remove（複数）
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 2件選択 → **"Remove"**
@@ -465,7 +462,7 @@ ref search --tui --config $CFG
 #### Q. ナビゲーション
 
 ```bash
-ref search --tui --config $CFG
+ref search --tui
 ```
 
 1. 1件選択 → Enter → アクションメニュー表示 → **Esc キー**
