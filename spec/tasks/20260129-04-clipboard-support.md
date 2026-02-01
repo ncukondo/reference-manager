@@ -174,6 +174,53 @@ TTY-required tests (run manually in a terminal):
 - [ ] Set `cli.tui.clipboard_auto_copy = true` in config → `ref search -t` → select + output action → verify clipboard contains output
 - [ ] `ref search -t --no-clipboard` → verify clipboard NOT updated despite config
 
+### Devcontainer Environment Setup
+
+This project's devcontainer (VS Code Remote Containers on WSL2) provides an X server (`DISPLAY=:3`) that enables real clipboard testing via `xclip`. Neither `pbcopy`, `clip.exe`, nor `wl-copy` are available in this environment.
+
+**Prerequisites:**
+
+```bash
+sudo apt-get update -qq && sudo apt-get install -y -qq xclip
+```
+
+**Verify clipboard round-trip:**
+
+```bash
+echo "clipboard-test" | xclip -selection clipboard
+xclip -selection clipboard -o  # should print "clipboard-test"
+```
+
+**Running manual verification:**
+
+After `npm run build`, all Non-TTY tests above can be executed in the devcontainer. Use `xclip -selection clipboard -o` to confirm clipboard contents after each command.
+
+```bash
+npm run build
+
+# Example: verify --clipboard flag
+ref search --clipboard --ids-only "test" 2>&1
+xclip -selection clipboard -o  # should match stdout output
+
+# Example: verify --no-clipboard flag
+echo "stale" | xclip -selection clipboard
+ref search --no-clipboard --ids-only "test" 2>/dev/null
+xclip -selection clipboard -o  # should still print "stale"
+```
+
+**Testing graceful degradation (no clipboard command):**
+
+```bash
+sudo apt-get remove -y xclip
+ref search --clipboard --ids-only "test" 2>&1  # should warn on stderr, stdout unaffected
+sudo apt-get install -y -qq xclip              # restore for further tests
+```
+
+**Notes:**
+- The detection order (`pbcopy` → `clip.exe` → `wl-copy` → `xclip`) means only the `xclip` path is exercised in this environment. Other paths are covered by unit tests with mocked `child_process`.
+- TTY-required tests can be run in VS Code's integrated terminal.
+- Whether the X clipboard propagates to the host OS clipboard depends on VS Code settings; for verification purposes, `xclip -o` round-trip within the container is sufficient.
+
 ## Completion Checklist
 
 - [ ] All tests pass (`npm run test`)
