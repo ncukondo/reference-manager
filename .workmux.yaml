@@ -1,0 +1,21 @@
+main_branch: main
+worktree_dir: /workspaces/reference-manager--worktrees/
+window_prefix: rm-
+
+panes:
+  - command: <agent>
+    focus: true
+  - split: horizontal
+    size: 15
+
+files:
+  symlink:
+    - node_modules
+
+post_create:
+  - npm install
+
+status_icons:
+  working: "W"
+  waiting: "?"
+  done: "D"

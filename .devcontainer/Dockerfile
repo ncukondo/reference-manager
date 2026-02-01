@@ -6,7 +6,9 @@ RUN apt-get update && apt-get install -y \
     git \
     build-essential \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    tmux \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/bash /bin/sh
 
 # Install Node.js v24.4.1
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
@@ -38,6 +40,9 @@ USER $USERNAME
 
 # Install Claude CLI (native binary) as non-root user
 RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Install workmux (tmux-based parallel agent orchestration)
+RUN curl -fsSL https://raw.githubusercontent.com/raine/workmux/main/scripts/install.sh | bash
 
 # Configure npm global install directory for non-root user
 RUN mkdir -p /home/$USERNAME/.npm-global

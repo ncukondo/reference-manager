@@ -106,6 +106,66 @@ git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
 git branch -d <branch-name>
 ```
 
+## workmux: Parallel Agent Orchestration (Recommended)
+
+[workmux](https://github.com/raine/workmux) automates worktree + tmux window management for parallel agent work.
+
+### Prerequisites
+
+- `tmux` and `workmux` (both installed via DevContainer)
+- Running inside a tmux session (`$TMUX` must be set)
+
+### Configuration
+
+Project config: `.workmux.yaml` (see file for details)
+
+### Spawning Workers
+
+```bash
+# From orchestrator on main branch
+mkdir -p /workspaces/reference-manager--worktrees/.ipc
+workmux add feature/<name> -b -p "/code-with-task <keyword>"
+```
+
+### IPC Status Protocol
+
+Workers write status to `/workspaces/reference-manager--worktrees/.ipc/<handle>.status.json`:
+
+```json
+{
+  "handle": "<handle>",
+  "branch": "<branch>",
+  "task_file": "<path>",
+  "status": "starting|in_progress|testing|creating_pr|completed|failed",
+  "current_step": "<description>",
+  "pr_number": null,
+  "error": null,
+  "updated_at": "<ISO8601>"
+}
+```
+
+Workers only write status files when the `.ipc/` directory exists (backward compatible).
+
+### Monitoring
+
+```bash
+workmux list                    # Overview of all workers
+cat .ipc/*.status.json | jq .   # Detailed status
+tmux capture-pane -t <window>   # Inspect stalled worker
+tmux send-keys -t <window> "..." Enter  # Resume idle worker
+```
+
+### Cleanup
+
+```bash
+workmux remove <handle>         # Removes worktree + tmux window + branch
+rm -f .ipc/<handle>.status.json # Clean IPC file
+```
+
+### Manual Worktree Fallback
+
+If workmux is not available, use the manual worktree workflow described above. All commands (`/implement`, `/code-with-task`, etc.) detect workmux availability and fall back automatically.
+
 ## 4. TDD Implementation Phase
 
 **Must follow** `spec/guidelines/testing.md` strictly.

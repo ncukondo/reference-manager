@@ -16,10 +16,10 @@ with file-based IPC for status tracking and tmux send-keys for sync when agents 
 
 ### Step 1: DevContainer — tmux + workmux installation
 
-- [ ] Add `tmux` to apt-get in `.devcontainer/Dockerfile`
-- [ ] Add workmux install script after Claude CLI install
-- [ ] Add `postStartCommand` to `.devcontainer/devcontainer.json` for tmux session auto-start
-- [ ] Verify: Rebuild container, confirm `which workmux && which tmux` both succeed
+- [x] Add `tmux` to apt-get in `.devcontainer/Dockerfile`
+- [x] Add workmux install script after Claude CLI install
+- [x] Add `postStartCommand` to `.devcontainer/devcontainer.json` for tmux session auto-start
+- [x] Verify: `which workmux && which tmux` both succeed
 
 Files:
 - `.devcontainer/Dockerfile`
@@ -27,14 +27,15 @@ Files:
 
 ### Step 2: workmux configuration
 
-- [ ] Create `.workmux.yaml` at project root
+- [x] Create `.workmux.yaml` at project root
   - `worktree_dir: /workspaces/reference-manager--worktrees` (override default `__worktrees`)
   - `main_branch: main`
   - `window_prefix: rm-`
-  - `panes`: agent (focused) + shell (horizontal, 20%)
+  - `panes`: agent (focused) + shell (horizontal, 15 lines)
   - `post_create`: `npm install`
-  - `status_icons`: working/waiting/done
-- [ ] Verify: `workmux add test-branch` creates worktree in `--worktrees/` + tmux window
+  - `status_icons`: working/waiting/done (ASCII for terminal compatibility)
+  - `files.symlink`: node_modules (avoid duplicate installs)
+- [x] Verify: `workmux add test-branch` creates worktree in `--worktrees/` + tmux window
 
 File: `.workmux.yaml` (new)
 
@@ -42,9 +43,9 @@ File: `.workmux.yaml` (new)
 
 Define the inter-agent communication protocol:
 
-- [ ] Directory: `/workspaces/reference-manager--worktrees/.ipc/`
-- [ ] File format: `<handle>.status.json`
-- [ ] Schema:
+- [x] Directory: `/workspaces/reference-manager--worktrees/.ipc/`
+- [x] File format: `<handle>.status.json`
+- [x] Schema:
   ```json
   {
     "handle": "<handle>",
@@ -57,45 +58,45 @@ Define the inter-agent communication protocol:
     "updated_at": "<ISO8601>"
   }
   ```
-- [ ] No .gitignore change needed (directory is outside repo root)
+- [x] No .gitignore change needed (directory is outside repo root)
 
 ### Step 4: Update `implement.md` — orchestration command
 
 Rewrite as workmux orchestration controller:
 
-- [ ] Prerequisite checks (workmux, tmux, IPC directory)
-- [ ] ROADMAP analysis → identify parallel tasks
-- [ ] Worker spawn: `workmux add feature/<name> -b -p "/code-with-task-local <keyword>"`
+- [x] Prerequisite checks (workmux, tmux, IPC directory)
+- [x] ROADMAP analysis → identify parallel tasks
+- [x] Worker spawn: `workmux add feature/<name> -b -p "/code-with-task <keyword>"`
   - `-b` for background (don't switch window)
   - `-p` for passing initial prompt to agent
-  - Include IPC status file instructions in prompt
-- [ ] Monitoring loop:
+- [x] Monitoring loop:
   - Poll IPC status files (~30s interval)
   - `workmux list` for overview
   - `tmux capture-pane` for stalled workers
-- [ ] Completion handling:
+- [x] Completion handling:
   - PR review → CI wait → `gh pr merge --merge`
   - ROADMAP update on main
   - `workmux remove <handle>` + IPC cleanup
-- [ ] Failure handling:
+- [x] Failure handling:
   - `tmux capture-pane` to inspect error
   - `tmux send-keys` for retry (if agent is idle)
   - `workmux remove` for unrecoverable cases
-- [ ] Idle detection:
+- [x] Idle detection:
   - Check `updated_at` staleness
   - `tmux capture-pane` to verify prompt state
   - `tmux send-keys` for continuation instructions
+- [x] Fallback: manual worktree workflow preserved for non-workmux environments
 
 File: `.claude/commands/implement.md`
 
 ### Step 5: Update `code-with-task.md` and `code-with-task-local.md`
 
-- [ ] Add worktree auto-detection (`git rev-parse --show-toplevel`)
+- [x] Add worktree auto-detection (`git rev-parse --show-toplevel`)
   - In worktree: skip worktree creation (already done by workmux)
   - On main: create worktree as before (fallback)
-- [ ] Add IPC status file writes when `.ipc/` directory exists
+- [x] Add IPC status file writes when `.ipc/` directory exists
   - Write on: start, each step, testing, PR creation, completion, error
-- [ ] Keep backward compatibility (works with or without workmux)
+- [x] Keep backward compatibility (works with or without workmux)
 
 Files:
 - `.claude/commands/code-with-task.md`
@@ -103,7 +104,7 @@ Files:
 
 ### Step 6: Update `merge-pr.md`
 
-- [ ] After existing merge steps, add:
+- [x] After existing merge steps, add:
   - `workmux remove <handle>` (with fallback to manual cleanup)
   - `rm -f /workspaces/reference-manager--worktrees/.ipc/<handle>.status.json`
 
@@ -111,17 +112,18 @@ File: `.claude/commands/merge-pr.md`
 
 ### Step 7: Update `status.md`
 
-- [ ] Add `workmux list` output (fallback: `git worktree list`)
-- [ ] Add IPC status summary (read all `.ipc/*.status.json`)
+- [x] Add `workmux list` output (fallback: `git worktree list`)
+- [x] Add IPC status summary (read all `.ipc/*.status.json`)
 
 File: `.claude/commands/status.md`
 
 ### Step 8: Permissions and documentation
 
-- [ ] Add workmux/tmux permissions to `.claude/settings.json`:
+- [x] Add workmux/tmux permissions to `.claude/settings.json`:
   - `Bash(workmux:*)`, `Bash(tmux capture-pane:*)`, `Bash(tmux send-keys:*)`
-  - `Bash(tmux list-windows:*)`, `Bash(tmux new-session:*)`, `Bash(which workmux)`, `Bash(sleep:*)`
-- [ ] Update `spec/meta/development-process.md`:
+  - `Bash(tmux list-windows:*)`, `Bash(tmux new-session:*)`, `Bash(tmux has-session:*)`
+  - `Bash(which workmux)`, `Bash(which tmux)`, `Bash(sleep:*)`
+- [x] Update `spec/meta/development-process.md`:
   - Add workmux as recommended approach
   - Keep manual worktree as fallback
   - Document IPC convention
@@ -132,11 +134,11 @@ Files:
 
 ## Manual Verification
 
-- [ ] In tmux: `workmux add test-feature -p "echo hello && exit"` → window created, agent starts
-- [ ] `workmux list` → shows test-feature with status icon
-- [ ] `workmux remove test-feature` → worktree + window + branch cleaned up
-- [ ] `/status` command includes workmux information
-- [ ] `/implement` detects workmux and reports readiness (or prompts install)
+- [x] `workmux add test-feature -b -H -F -C` → worktree + tmux window created
+- [x] `workmux list` → shows test-feature with MUX: ✓
+- [x] `workmux remove -f test-feature` → worktree + window + branch cleaned up
+- [x] `/status` command includes workmux information
+- [x] `/implement` detects workmux and reports readiness (or prompts install)
 
 ## Edge Cases
 
@@ -150,9 +152,9 @@ Files:
 
 ## Completion Checklist
 
-- [ ] All modified commands work both with and without workmux (backward compatible)
-- [ ] `.workmux.yaml` uses correct `--worktrees` path convention
-- [ ] IPC status protocol documented
-- [ ] Permissions added to tracked settings.json
-- [ ] `spec/meta/development-process.md` updated
-- [ ] CHANGELOG.md updated
+- [x] All modified commands work both with and without workmux (backward compatible)
+- [x] `.workmux.yaml` uses correct `--worktrees` path convention
+- [x] IPC status protocol documented
+- [x] Permissions added to tracked settings.json
+- [x] `spec/meta/development-process.md` updated
+- [x] CHANGELOG.md updated

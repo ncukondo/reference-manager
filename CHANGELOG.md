@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **workmux integration**: Parallel agent orchestration with tmux-based visual monitoring
+  - DevContainer: tmux and workmux pre-installed
+  - `.workmux.yaml`: Project-specific configuration for worktree management
+  - IPC status protocol: File-based inter-agent communication (`<handle>.status.json`)
+  - `/implement` command: workmux orchestration controller with monitoring loop
+  - `/code-with-task`: Worktree auto-detection and IPC status reporting
+  - `/merge-pr`: Automatic workmux cleanup after merge
+  - `/status`: workmux and IPC agent status display
+  - All commands maintain backward compatibility without workmux
+
 - **`ref attach` default open behavior**: `ref attach` (without subcommand) now behaves like `ref attach open`
   - `ref attach` (TTY, no args) → interactive ID selection → open attachments directory
   - `ref attach <identifier>` → open attachments directory for that reference
