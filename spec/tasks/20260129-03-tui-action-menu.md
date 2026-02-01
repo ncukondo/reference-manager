@@ -152,85 +152,101 @@ Extend `ActionType` with new values and make action choices dynamic.
 - [x] Step 9: Edit action (`executeEditCommand`)
 - [x] Step 10: Remove action (`executeRemove`)
 
+### Step 11: Fix `--config` CLI Flag (Bug)
+
+The `--config <path>` global CLI option is defined in Commander but not passed to `loadConfig()`.
+`loadConfigWithOverrides()` ignores `options.config` — the comment says so explicitly.
+
+**Root cause:**
+- `loadConfig()` accepts `LoadConfigOptions` which has no `configPath` field for CLI-specified config
+- `loadConfigWithOverrides()` calls `loadConfig()` with no arguments, ignoring `options.config`
+
+**Changes:**
+- Add `configPath?: string` to `LoadConfigOptions` in `src/config/loader.ts`
+- In `loadConfig()`, if `configPath` is provided, load it as the highest-priority file config (same level as env config, or higher)
+- In `loadConfigWithOverrides()`, pass `options.config` as `configPath` to `loadConfig()`
+- Remove the "currently ignored" comment
+
+**Files:**
+- `src/config/loader.ts`
+- `src/cli/helpers.ts`
+
+**Tests:**
+- [ ] Write test: `loadConfig({ configPath: "/path/to/config.toml" })` loads and applies the file
+- [ ] Write test: `configPath` has higher priority than env and user config
+- [ ] Write test: `loadConfigWithOverrides({ config: "/path" })` passes through to `loadConfig`
+- [ ] Implement
+- [ ] Verify Green
+- [ ] Lint/Type check
+
 ## Manual Verification
 
-**Status**: 未実施。PR #55 はCI全パス済み。次セッションでマニュアルテスト後にマージ判断。
+**Status**: Not yet performed. PR #55 has all CI checks passing. Manual test needed before merge.
 
-### 役割分担
+### Roles
 
-| 担当 | 内容 |
-|------|------|
-| **AIエージェント** | ビルド、ダミーライブラリ生成、テスト用config作成、ディレクトリ準備、動作確認 (`list`) |
-| **ユーザー** | エイリアス設定（1行コピペ）、TUI操作（検索・選択・アクション実行）、目視確認 |
+| Role | Responsibility |
+|------|----------------|
+| **AI Agent** | Build, generate dummy library, create directories, verify `list` works |
+| **User** | Set alias (one-line copy-paste), run TUI operations, visual verification |
 
-TTY操作はエージェントから実行できないため、ユーザーが直接ターミナルで操作する必要がある。
-エージェントは準備完了後、以下の「ユーザー向けテスト手順」をそのまま案内すること。
+TTY operations cannot be executed by the agent; the user must run them directly in the terminal.
+After preparation is complete, the agent should present the "User Test Procedure" below as-is.
 
-### エージェント準備手順
+### Agent Preparation
 
 ```bash
-# 1. worktree に移動してビルド
+# 1. Navigate to worktree and build
 cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
 npm run build
 
-# 2. ダミーライブラリ生成（DOI/PMID/URL付きの20件）
+# 2. Generate dummy library (20 entries with DOI/PMID/URL)
 node test-fixtures/generate-dummy-library.mjs /tmp/tui-test-library.json 20
 
-# 3. テスト用config作成
-cat > /tmp/tui-test-config.toml <<'TOML'
-library = "/tmp/tui-test-library.json"
-
-[citation]
-default_style = "vancouver"
-default_key_format = "pandoc"
-
-[attachments]
-directory = "/tmp/tui-test-attachments"
-
-[cli.tui]
-limit = 15
-
-[cli.edit]
-default_format = "yaml"
-TOML
-
-# 4. attachments ディレクトリ作成
+# 3. Create attachments directory
 mkdir -p /tmp/tui-test-attachments
 
-# 5. 動作確認（list が動くことを確認）
-node bin/cli.js --config /tmp/tui-test-config.toml list --limit 3
+# 4. Verify list command works
+node bin/cli.js --library /tmp/tui-test-library.json list --limit 3
 ```
 
-準備が完了したら、以下の「ユーザー向けテスト手順」をユーザーにそのまま提示する。
+After preparation, present the "User Test Procedure" below to the user.
+
+> **Note on `--config` flag**: The `--config` CLI flag is currently non-functional
+> (`loadConfigWithOverrides` ignores it). See Step 11 for the fix.
+> Manual tests use `--library` and default config values.
+> LaTeX key format test (E) and custom default style test require Step 11 to be
+> completed first, or the user config file at `~/.config/reference-manager/config.toml`
+> to be edited manually.
 
 ---
 
-### ユーザー向けテスト手順
+### User Test Procedure
 
-> 以下はターミナルで直接実行してください。
+> Run the following directly in your terminal.
 
-#### 0. 事前準備
+#### 0. Setup
 
 ```bash
-# worktree に移動
+# Navigate to worktree
 cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
 
-# ref コマンドのエイリアスを設定（--config 込み、セッション中のみ有効）
-alias ref="node $(pwd)/bin/cli.js --config /tmp/tui-test-config.toml"
+# Set up ref alias with --library (session-only)
+alias ref="node $(pwd)/bin/cli.js --library /tmp/tui-test-library.json --attachments-dir /tmp/tui-test-attachments"
 
-# 動作確認: リストが3件表示されれば OK
+# Verify: should display 3 entries
 ref list --limit 3
 ```
 
-#### A. アクションメニュー表示（単一選択）
+#### A. Action menu display (single selection)
 
 ```bash
 ref search --tui
 ```
 
-1. 何も入力せず（全件表示の状態で）、**↑↓** で移動し **Space** で **1件だけ** 選択
-2. **Enter** を押す
-3. **確認**: アクションメニューに以下の **10項目** が上から順に表示される
+1. Without typing a query (all entries visible), use **Up/Down** to move and **Space** to select **1 entry**
+2. Press **Enter**
+3. **Verify**: Action menu shows the following **10 items** in order:
    ```
    Citation key (Pandoc)
    Generate citation
@@ -238,91 +254,88 @@ ref search --tui
    Open URL
    Open fulltext
    Manage attachments
-   Edit reference          ← 単数形
+   Edit reference          ← singular
    Output (choose format)
    Remove
    Cancel
    ```
-4. **Cancel** を選んで終了
+4. Select **Cancel** to exit
 
-- [ ] 10項目表示される
+- [ ] 10 items displayed
 
-#### B. アクションメニュー表示（複数選択）
+#### B. Action menu display (multiple selection)
 
 ```bash
 ref search --tui
 ```
 
-1. **Space** で **3件** 選択して **Enter**
-2. **確認**: 以下の **7項目** が表示される（Open URL, Open fulltext, Manage attachments **がない**）
+1. Select **3 entries** with **Space**, then press **Enter**
+2. **Verify**: The following **7 items** are shown (Open URL, Open fulltext, Manage attachments **absent**):
    ```
-   Citation keys (Pandoc)  ← 複数形
+   Citation keys (Pandoc)  ← plural
    Generate citation
    Generate citation (choose style)
-   Edit references         ← 複数形
+   Edit references         ← plural
    Output (choose format)
    Remove
    Cancel
    ```
-3. **Cancel** を選んで終了
+3. Select **Cancel** to exit
 
-- [ ] 7項目表示（単数形→複数形の変化も確認）
+- [ ] 7 items displayed (singular → plural change confirmed)
 
-#### C. Citation key（単一・Pandoc）
-
-```bash
-ref search --tui
-```
-
-1. 1件選択 → Enter → **"Citation key (Pandoc)"** を選択
-2. **確認**: `@<citation-key>` 形式の文字列が stdout に出力される（例: `@Smith-2023`）
-
-- [ ] `@<id>` 形式で出力
-
-#### D. Citation keys（複数・Pandoc）
+#### C. Citation key (single, Pandoc)
 
 ```bash
 ref search --tui
 ```
 
-1. 3件選択 → Enter → **"Citation keys (Pandoc)"** を選択
-2. **確認**: `@id1; @id2; @id3` 形式（セミコロン区切り）で出力
+1. Select 1 entry → Enter → choose **"Citation key (Pandoc)"**
+2. **Verify**: Output in `@<citation-key>` format (e.g., `@Smith-2023`)
 
-- [ ] `@id1; @id2; @id3` 形式
+- [ ] `@<id>` format output
 
-#### E. LaTeX key 形式
-
-config を一時的に latex に切り替え:
-
-```bash
-sed -i 's/default_key_format = "pandoc"/default_key_format = "latex"/' /tmp/tui-test-config.toml
-```
+#### D. Citation keys (multiple, Pandoc)
 
 ```bash
 ref search --tui
 ```
 
-1. 1件選択 → **"Citation key (LaTeX)"** → **確認**: `\cite{<id>}` 形式
-2. 再度実行 → 3件選択 → **"Citation keys (LaTeX)"** → **確認**: `\cite{id1,id2,id3}` 形式
+1. Select 3 entries → Enter → choose **"Citation keys (Pandoc)"**
+2. **Verify**: Output in `@id1; @id2; @id3` format (semicolon-separated)
 
-config を元に戻す:
+- [ ] `@id1; @id2; @id3` format
 
-```bash
-sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' /tmp/tui-test-config.toml
-```
+#### E. LaTeX key format
 
-- [ ] LaTeX形式の単一・複数出力
-
-#### F. Generate citation（デフォルトスタイル）
+> **Prerequisite**: Requires `--config` fix (Step 11) or manual user config edit.
+> To test without Step 11, edit `~/.config/reference-manager/config.toml`:
+> ```toml
+> [citation]
+> default_key_format = "latex"
+> ```
 
 ```bash
 ref search --tui
 ```
 
-1. 1件選択 → **"Generate citation"**
-2. **確認**: 引用テキストが出力される（config で `default_style = "vancouver"` に設定しているため、Vancouver 形式）
+1. Select 1 entry → **"Citation key (LaTeX)"** → **Verify**: `\cite{<id>}` format
+2. Run again → Select 3 entries → **"Citation keys (LaTeX)"** → **Verify**: `\cite{id1,id2,id3}` format
 
-- [ ] config の defaultStyle が使われる
+Restore config after testing (remove the `[citation]` section or revert the change).
+
+- [ ] LaTeX single and multiple output
+
+#### F. Generate citation (default style)
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Generate citation"**
+2. **Verify**: Citation text is output (default style is APA unless config is overridden)
+
+- [ ] Default style citation output
 
 #### G. Generate citation (choose style)
 
@@ -330,20 +343,20 @@ ref search --tui
 ref search --tui
 ```
 
-1. 1件選択 → **"Generate citation (choose style)"**
-2. **確認**: スタイル選択メニューが表示される（APA / Vancouver / Harvard）
-3. いずれかを選択 → 選んだスタイルで引用が出力される
+1. Select 1 entry → **"Generate citation (choose style)"**
+2. **Verify**: Style selection menu appears (APA / Vancouver / Harvard)
+3. Select a style → citation in the chosen style is output
 
-- [ ] スタイル選択→出力
+- [ ] Style selection → output
 
-#### H. Output (choose format) サブメニュー
+#### H. Output (choose format) submenu
 
 ```bash
 ref search --tui
 ```
 
-1. 1件選択 → **"Output (choose format)"**
-2. **確認**: サブメニューが表示される
+1. Select 1 entry → **"Output (choose format)"**
+2. **Verify**: Submenu appears:
    ```
    IDs (citation keys)
    CSL-JSON
@@ -351,27 +364,27 @@ ref search --tui
    YAML
    Cancel
    ```
-3. **"YAML"** を選択 → YAML形式で出力されることを確認
+3. Select **"YAML"** → verify YAML output
 
-同様に IDs, CSL-JSON, BibTeX も試す（各回コマンド再実行が必要）。
+Also test IDs, CSL-JSON, BibTeX (requires re-running the command each time).
 
-- [ ] サブメニュー表示
-- [ ] YAML 出力（`id:`, `type:` 等のキーが含まれる）
-- [ ] IDs 出力（citation key が1行1件）
-- [ ] CSL-JSON 出力（JSONオブジェクト）
-- [ ] BibTeX 出力（`@article{...}` 形式）
+- [ ] Submenu displayed
+- [ ] YAML output (contains `id:`, `type:` keys)
+- [ ] IDs output (one citation key per line)
+- [ ] CSL-JSON output (JSON object)
+- [ ] BibTeX output (`@article{...}` format)
 
-#### I. Output format の Cancel
+#### I. Output format Cancel
 
 ```bash
 ref search --tui
 ```
 
-1. 1件選択 → **"Output (choose format)"** → **"Cancel"**
-2. **確認**: アクションメニューに戻る（プロセスが終了しない）
-3. **Cancel** で終了
+1. Select 1 entry → **"Output (choose format)"** → **"Cancel"**
+2. **Verify**: Returns to action menu (process does not exit)
+3. Select **Cancel** to exit
 
-- [ ] Cancel でアクションメニューに戻る
+- [ ] Cancel returns to action menu
 
 #### J. Open URL
 
@@ -379,12 +392,12 @@ ref search --tui
 ref search --tui
 ```
 
-1. DOI 付きのエントリを1件選択（検索欄に `DOI:` と入力すると絞りやすい）→ **"Open URL"**
-2. **確認**: ブラウザが開くか、WSL の場合は `wslview` 経由で URL が開く
-   - エラーが出る場合は「opener が呼ばれた」ことを確認できれば OK
+1. Select 1 entry with a DOI (type `DOI:` in search to filter) → **"Open URL"**
+2. **Verify**: Browser opens, or on WSL `wslview` is invoked
+   - If an error occurs, confirming the opener was called is sufficient
 
-- [ ] URL あり: ブラウザまたはopenerが動作
-- [ ] URL なし: `No URL available for <id>` がターミナルに表示
+- [ ] URL available: browser/opener invoked
+- [ ] URL unavailable: `No URL available for <id>` shown in terminal
 
 #### K. Open fulltext
 
@@ -392,10 +405,10 @@ ref search --tui
 ref search --tui
 ```
 
-1. 1件選択 → **"Open fulltext"**
-2. **確認**: ダミーデータには fulltext が無いため、エラーメッセージが表示される（想定動作）
+1. Select 1 entry → **"Open fulltext"**
+2. **Verify**: Error message displayed (expected — dummy data has no fulltext)
 
-- [ ] エラーメッセージ表示
+- [ ] Error message displayed
 
 #### L. Manage attachments
 
@@ -403,82 +416,82 @@ ref search --tui
 ref search --tui
 ```
 
-1. 1件選択 → **"Manage attachments"**
-2. **確認**: attachments ディレクトリ（`/tmp/tui-test-attachments/<id>/`）のオープンが試みられる
+1. Select 1 entry → **"Manage attachments"**
+2. **Verify**: Attempts to open attachments directory (`/tmp/tui-test-attachments/<id>/`)
 
-- [ ] ディレクトリオープン動作（またはエラー）
+- [ ] Directory open attempted (or error)
 
-#### M. Edit reference（単一）
-
-```bash
-EDITOR=cat ref search --tui
-```
-
-> `EDITOR=cat` を指定すると、エディタの代わりに内容が stdout に表示され、確認しやすい。
-
-1. 1件選択 → **"Edit reference"**
-2. **確認**: YAML形式の参照データが表示される
-
-- [ ] エディタ（cat）起動、データ表示
-
-#### N. Edit references（複数）
+#### M. Edit reference (single)
 
 ```bash
 EDITOR=cat ref search --tui
 ```
 
-1. 3件選択 → **"Edit references"**
-2. **確認**: 3件分のデータが表示される
+> `EDITOR=cat` shows content on stdout instead of opening an editor.
 
-- [ ] 複数件の表示
+1. Select 1 entry → **"Edit reference"**
+2. **Verify**: YAML-formatted reference data is displayed
 
-#### O. Remove（単一）
+- [ ] Editor (cat) invoked, data displayed
+
+#### N. Edit references (multiple)
+
+```bash
+EDITOR=cat ref search --tui
+```
+
+1. Select 3 entries → **"Edit references"**
+2. **Verify**: Data for all 3 entries is displayed
+
+- [ ] Multiple entries displayed
+
+#### O. Remove (single)
 
 ```bash
 ref search --tui
 ```
 
-1. 1件選択 → **"Remove"**
-2. **確認**: 削除確認プロンプトが表示される → `y` で削除
-3. 確認:
+1. Select 1 entry → **"Remove"**
+2. **Verify**: Confirmation prompt appears → confirm with `y`
+3. Check:
    ```bash
    ref list | wc -l
    ```
-   → 件数が1つ減っていれば OK
+   → Count should decrease by 1
 
-- [ ] 確認プロンプト→削除→件数減少
+- [ ] Confirmation prompt → deletion → count decreased
 
-#### P. Remove（複数）
-
-```bash
-ref search --tui
-```
-
-1. 2件選択 → **"Remove"**
-2. **確認**: 各エントリについて順次確認・削除が行われる
-
-- [ ] 複数件の逐次削除
-
-#### Q. ナビゲーション
+#### P. Remove (multiple)
 
 ```bash
 ref search --tui
 ```
 
-1. 1件選択 → Enter → アクションメニュー表示 → **Esc キー**
-2. **確認**: 検索画面に戻る（TUIは終了しない）
-3. 検索画面で **Esc キー**
-4. **確認**: TUI が終了し、通常のシェルに戻る
+1. Select 2 entries → **"Remove"**
+2. **Verify**: Sequential confirmation and deletion for each entry
 
-- [ ] アクションメニューで Esc → 検索に戻る
-- [ ] 検索画面で Esc → TUI 終了
+- [ ] Multiple entries deleted sequentially
+
+#### Q. Navigation
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → Enter → action menu appears → press **Esc**
+2. **Verify**: Returns to search screen (TUI does not exit)
+3. Press **Esc** on search screen
+4. **Verify**: TUI exits, returns to normal shell
+
+- [ ] Esc in action menu → returns to search
+- [ ] Esc in search screen → TUI exits
 
 ---
 
-### テスト後のクリーンアップ
+### Cleanup after testing
 
 ```bash
-rm -f /tmp/tui-test-library.json /tmp/tui-test-config.toml
+rm -f /tmp/tui-test-library.json
 rm -rf /tmp/tui-test-attachments
 unalias ref 2>/dev/null
 ```
@@ -490,8 +503,9 @@ unalias ref 2>/dev/null
 - [x] Type check passes (`npm run typecheck`)
 - [x] Build succeeds (`npm run build`)
 - [x] CI passes (ubuntu, macOS, Windows) — PR #55
-- [ ] Manual verification (TTY required) — 上記手順 A〜Q を実施
+- [ ] Step 11: Fix `--config` CLI flag
+- [ ] Manual verification (TTY required) — steps A through Q above
 - [x] Spec verified: `spec/features/interactive-search.md` (already up to date)
 - [x] CHANGELOG.md updated
-- [ ] PR #55 をマージ
-- [ ] main で ROADMAP 更新、タスクファイルを `completed/` に移動
+- [ ] Merge PR
+- [ ] On main: update ROADMAP, move task file to `completed/`
