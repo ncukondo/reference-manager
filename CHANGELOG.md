@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **TUI Action Menu Enhancement**: Expanded interactive search (`ref search -t`) action menu
+  - Dynamic action menu: different actions for single vs. multiple entry selection
+  - New side-effect actions: Open URL, Open fulltext, Manage attachments, Edit reference(s), Remove
+  - Output format submenu: IDs, CSL-JSON, BibTeX, YAML
+  - Default citation style from `config.citation.defaultStyle` (replaces hardcoded APA)
+  - Citation key action with config-driven Pandoc/LaTeX format label
+  - Side-effect action execution architecture in `executeInteractiveSearch`
+
 - **Citation Key Output Formats**: Pandoc and LaTeX citation key output for `list`/`search` commands
   - New output formats: `--output pandoc-key` (`@smith2023`), `--output latex-key` (`\cite{smith2023}`)
   - `--key` convenience flag: uses `citation.default_key_format` config setting

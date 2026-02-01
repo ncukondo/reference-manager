@@ -81,9 +81,10 @@ export function parseJsonInput(input: string): unknown {
  * @returns Config with overrides applied
  */
 export async function loadConfigWithOverrides(options: CliOptions): Promise<Config> {
-  // Load base config
-  // Note: options.config is currently ignored as loadConfig uses cwd and userConfigPath
-  const config = await loadConfig();
+  // Load base config, passing --config path if specified
+  const config = await loadConfig({
+    ...(options.config && { configPath: options.config }),
+  });
 
   // Apply CLI overrides
   const overrides: Partial<Config> = {};

@@ -113,6 +113,24 @@ describe("loadConfigWithOverrides", () => {
     const config = await loadConfigWithOverrides(options);
     expect(config.attachments.directory).toBe("/custom/attachments");
   });
+
+  it("should pass config path to loadConfig", async () => {
+    const { rmSync } = await import("node:fs");
+
+    const testDir = join(tmpdir(), `helpers-config-test-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+
+    try {
+      const configFile = join(testDir, "test-config.toml");
+      writeFileSync(configFile, 'library = "/from-config-flag/library.json"\n');
+
+      const options = { config: configFile };
+      const config = await loadConfigWithOverrides(options);
+      expect(config.library).toBe("/from-config-flag/library.json");
+    } finally {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("getOutputFormat", () => {
