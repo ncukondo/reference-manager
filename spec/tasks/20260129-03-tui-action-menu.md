@@ -116,179 +116,41 @@ Extend `ActionType` with new values and make action choices dynamic.
 - `src/features/interactive/apps/SearchFlowApp.tsx`
 
 **Tests:**
-- [ ] Write test: `src/features/interactive/action-menu.test.ts` — `getActionChoices` returns correct items for count=1 and count>1
-- [ ] Write test: `getActionChoices` uses config to set citation key label
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/interactive/action-menu.test.ts` — `getActionChoices` returns correct items for count=1 and count>1
+- [x] Write test: `getActionChoices` uses config to set citation key label
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
-### Step 2: Add Output Format Submenu
+### Step 2: Add Output Format Submenu ✅
 
-Add a submenu for selecting output format (IDs, CSL-JSON, BibTeX, YAML).
+- [x] Implemented `OutputFormatType` and `OUTPUT_FORMAT_CHOICES`
+- [x] Added `"output-format"` flow state to `SearchFlowApp`
+- [x] YAML output via `yaml` package `stringify`
+- [x] Tests pass
 
-**Changes:**
-- Define `OutputFormatType` and `OUTPUT_FORMAT_CHOICES` (IDs, CSL-JSON, BibTeX, YAML, Cancel)
-- Add `"output-format"` flow state to `SearchFlowApp`
-- When "Output (choose format)" is selected in action menu, transition to `"output-format"` state
-- When format is selected, generate output and exit
-- When cancelled, return to action menu
+### Step 3: Use Default Citation Style from Config ✅
 
-**Files:**
-- `src/features/interactive/action-menu.ts`
-- `src/features/interactive/apps/SearchFlowApp.tsx`
+- [x] `defaultStyle` passed through config chain
+- [x] `cite-default` uses `config.citation.defaultStyle`
+- [x] Tests pass
 
-**Tests:**
-- [ ] Write test: verify output format submenu choices
-- [ ] Write test: verify YAML output generation (`yaml` package `stringify`)
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+### Step 4: Side-Effect Action Architecture ✅
 
-### Step 3: Use Default Citation Style from Config
+- [x] `ActionMenuResult.selectedItems` added for side-effect actions
+- [x] `isSideEffectAction()` helper function
+- [x] `executeInteractiveSearch` handles side-effect results
+- [x] `executeSideEffectAction` dispatches to appropriate functions
+- [x] Tests pass
 
-Replace hardcoded "APA" with `config.citation.defaultStyle`.
+### Steps 5-10: All Actions Implemented ✅
 
-**Changes:**
-- Pass `defaultStyle` (from config) through to `SearchFlowApp` → action menu → `generateOutput`
-- Update "Generate citation" label (remove "(APA)" — the default style is now config-driven)
-- `generateOutput("cite-default", items)` uses `defaultStyle` from config
-
-**Files:**
-- `src/features/interactive/action-menu.ts`
-- `src/features/interactive/apps/SearchFlowApp.tsx`
-- `src/features/interactive/apps/runSearchFlow.ts`
-- `src/cli/commands/search.ts` (`executeInteractiveSearch` — pass config)
-
-**Tests:**
-- [ ] Write test: verify default style is used from config
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 4: Side-Effect Action Architecture
-
-Extend `executeInteractiveSearch` to handle actions that perform operations rather than producing stdout output.
-
-**Changes:**
-- Extend `ActionMenuResult` (or `InteractiveSearchResult`) to carry `action` and `selectedItems` when the action is a side-effect type
-- In `executeInteractiveSearch`, after `runSearchFlow` returns:
-  - If output action: return `{ output }` as before
-  - If side-effect action: execute the operation, return `{ output: "", cancelled: false }`
-- Side-effect execution needs `context` and `config` (already available in `executeInteractiveSearch`)
-
-**Files:**
-- `src/cli/commands/search.ts`
-- `src/features/interactive/apps/runSearchFlow.ts` (return type changes)
-- `src/features/interactive/apps/SearchFlowApp.tsx` (return selected items for side-effect actions)
-
-**Tests:**
-- [ ] Write test: verify side-effect action type is returned with selectedItems
-- [ ] Write test: verify executeInteractiveSearch handles side-effect results
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 5: Implement Citation Key Action
-
-Output citation key(s) using config-driven format. Uses `generateOutput("key-default")` from citation-key-format task.
-
-**Files:**
-- `src/features/interactive/action-menu.ts` (already handled by Step 4 of citation-key-format task)
-
-**Tests:**
-- [ ] Write test: verify citation key output in TUI format (pandoc `;` / latex `,`)
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 6: Implement Open URL Action
-
-Single-entry only. Opens the reference's web page in browser.
-
-**Changes:**
-- In side-effect handler: call `resolveDefaultUrl()` from URL module, then `openWithSystemApp()` with the URL
-- If no URL available: output error message to stderr
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify `resolveDefaultUrl` + `openWithSystemApp` is called
-- [ ] Write test: verify error when no URL available
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 7: Implement Open Fulltext Action
-
-Single-entry only. Opens the fulltext file in the system viewer.
-
-**Changes:**
-- In side-effect handler: call `executeFulltextOpen()` with the selected item's ID
-- Use `config.attachments.directory` for fulltext directory
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify `executeFulltextOpen` is called with correct options
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 8: Implement Manage Attachments Action
-
-Single-entry only. Opens the attachment directory and runs sync.
-
-**Changes:**
-- In side-effect handler: call `executeAttachOpen()` to open directory, then `runInteractiveMode()` for sync
-- The `runInteractiveMode` from `attach.ts` handles: display naming convention → wait for Enter → sync
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify attach open + sync flow is called
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 9: Implement Edit Action
-
-Available for single and multiple entries. Opens editor with selected items.
-
-**Changes:**
-- In side-effect handler: call `executeEditCommand()` with selected item IDs
-- Use `config.cli.edit.defaultFormat` for edit format
-- Output edit result to stderr
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify `executeEditCommand` is called with correct identifiers
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 10: Implement Remove Action
-
-Available for single and multiple entries. Deletes with confirmation.
-
-**Changes:**
-- In side-effect handler: for each selected item, call confirmation + `executeRemove()`
-- Use `config.attachments.directory` for fulltext directory
-- Output results to stderr
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-- May need to extract/refactor confirmation logic from `src/cli/commands/remove.ts`
-
-**Tests:**
-- [ ] Write test: verify confirmation is prompted and `executeRemove` is called
-- [ ] Write test: verify multiple items are removed sequentially
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Step 5: Citation key action (via `generateOutput("key-default")`)
+- [x] Step 6: Open URL action (`resolveDefaultUrl` + `openWithSystemApp`)
+- [x] Step 7: Open fulltext action (`executeFulltextOpen`)
+- [x] Step 8: Manage attachments action (`executeAttachOpen`)
+- [x] Step 9: Edit action (`executeEditCommand`)
+- [x] Step 10: Remove action (`executeRemove`)
 
 ## Manual Verification
 
@@ -314,11 +176,11 @@ TTY-required tests (run manually in a terminal):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification completed
-- [ ] Spec updated: `spec/features/interactive-search.md`
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [ ] Manual verification (TTY required)
+- [x] Spec verified: `spec/features/interactive-search.md` (already up to date)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

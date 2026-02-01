@@ -105,16 +105,16 @@ Edit, Remove, output format submenu, and config-driven defaults.
 - Side-effect action execution architecture
 
 **Todos**:
-- [ ] Step 1: Refactor ActionType and dynamic action choices
-- [ ] Step 2: Add Output format submenu
-- [ ] Step 3: Use default citation style from config
-- [ ] Step 4: Side-effect action architecture
-- [ ] Step 5: Implement Citation key action
-- [ ] Step 6: Implement Open URL action
-- [ ] Step 7: Implement Open fulltext action
-- [ ] Step 8: Implement Manage attachments action
-- [ ] Step 9: Implement Edit action
-- [ ] Step 10: Implement Remove action
+- [x] Step 1: Refactor ActionType and dynamic action choices
+- [x] Step 2: Add Output format submenu
+- [x] Step 3: Use default citation style from config
+- [x] Step 4: Side-effect action architecture
+- [x] Step 5: Implement Citation key action
+- [x] Step 6: Implement Open URL action
+- [x] Step 7: Implement Open fulltext action
+- [x] Step 8: Implement Manage attachments action
+- [x] Step 9: Implement Edit action
+- [x] Step 10: Implement Remove action
 
 ---
 
