@@ -154,33 +154,240 @@ Extend `ActionType` with new values and make action choices dynamic.
 
 ## Manual Verification
 
-**Script**: `test-fixtures/test-tui-action-menu.sh`
+**Status**: 未実施。PR #55 はCI全パス済み。次セッションでマニュアルテスト後にマージ判断。
 
-TTY-required tests (run manually in a terminal):
-- [ ] `ref search -t` → select 1 entry → verify all 10 actions shown
-- [ ] `ref search -t` → select 3 entries → verify 7 actions shown (no Open URL, Open fulltext, Manage attachments)
-- [ ] Select 1 → Citation key → verify output matches config (Pandoc: `@id` / LaTeX: `\cite{id}`)
-- [ ] Select 3 → Citation keys → verify multi-cite format (Pandoc: `@id1; @id2; @id3` / LaTeX: `\cite{id1,id2,id3}`)
-- [ ] Select 1 → Generate citation → verify default style from config is used
-- [ ] Select 1 → Output (choose format) → verify submenu with IDs, CSL-JSON, BibTeX, YAML
-- [ ] Select 1 → Output → YAML → verify YAML output
-- [ ] Select 1 → Open URL → verify browser opens DOI/PubMed page
-- [ ] Select 1 → Open fulltext → verify PDF opens in system viewer
-- [ ] Select 1 → Manage attachments → verify directory opens and sync prompt appears
-- [ ] Select 1 → Edit reference → verify editor opens with reference data
-- [ ] Select 1 → Remove → verify confirmation prompt and deletion
-- [ ] Select 3 → Edit references → verify editor opens with all 3 items
-- [ ] Select 3 → Remove → verify sequential confirmation and deletion
-- [ ] Esc in action menu → returns to search
-- [ ] Cancel in output format submenu → returns to action menu
+### 準備手順
+
+```bash
+# 1. worktree に移動
+cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
+
+# 2. ビルド
+npm run build
+
+# 3. エイリアス設定（このセッション中有効）
+alias ref="node $(pwd)/bin/cli.js"
+
+# 4. ダミーライブラリ生成
+node test-fixtures/generate-dummy-library.mjs /tmp/tui-test-library.json 20
+
+# 5. テスト用config作成（/tmp/tui-test-config.toml）
+cat > /tmp/tui-test-config.toml <<'TOML'
+library = "/tmp/tui-test-library.json"
+
+[citation]
+default_style = "vancouver"
+default_key_format = "pandoc"
+
+[attachments]
+directory = "/tmp/tui-test-attachments"
+
+[cli.tui]
+limit = 15
+
+[cli.edit]
+default_format = "yaml"
+TOML
+
+# 6. attachments ディレクトリ作成（Manage attachments テスト用）
+mkdir -p /tmp/tui-test-attachments
+
+# 7. 動作確認
+ref --config /tmp/tui-test-config.toml list --limit 3
+```
+
+### テスト手順
+
+**全テストで `--config /tmp/tui-test-config.toml` を付与する。**
+省略のため以下では `ref -t` = `ref search --tui --config /tmp/tui-test-config.toml` と表記。
+
+#### A. アクションメニュー表示（単一選択）
+
+```bash
+ref search --tui --config /tmp/tui-test-config.toml
+```
+
+1. 適当な検索語を入力し、1件だけ Space で選択して Enter
+2. **確認**: アクションメニューに以下の10項目が表示されること
+   - Citation key (Pandoc)
+   - Generate citation
+   - Generate citation (choose style)
+   - Open URL
+   - Open fulltext
+   - Manage attachments
+   - Edit reference
+   - Output (choose format)
+   - Remove
+   - Cancel
+
+- [ ] 10項目表示される
+
+#### B. アクションメニュー表示（複数選択）
+
+1. TUI で3件を Space で選択して Enter
+2. **確認**: 以下の7項目のみ表示（Open URL, Open fulltext, Manage attachments がない）
+   - Citation keys (Pandoc)
+   - Generate citation
+   - Generate citation (choose style)
+   - Edit references
+   - Output (choose format)
+   - Remove
+   - Cancel
+
+- [ ] 7項目表示される（単数形→複数形の変化も確認）
+
+#### C. Citation key (単一)
+
+1. 1件選択 → "Citation key (Pandoc)" を選択
+2. **確認**: `@<id>` 形式で出力される
+
+- [ ] Pandoc形式の出力
+
+#### D. Citation keys (複数)
+
+1. 3件選択 → "Citation keys (Pandoc)" を選択
+2. **確認**: `@id1; @id2; @id3` 形式で出力される
+
+- [ ] 複数Pandocキー出力
+
+#### E. LaTeX key 形式テスト
+
+```bash
+# config を latex に切り替え
+sed -i 's/default_key_format = "pandoc"/default_key_format = "latex"/' /tmp/tui-test-config.toml
+```
+
+1. 1件選択 → "Citation key (LaTeX)" を選択
+2. **確認**: `\cite{<id>}` 形式で出力される
+3. 3件選択 → "Citation keys (LaTeX)" を選択
+4. **確認**: `\cite{id1,id2,id3}` 形式で出力される
+
+```bash
+# 元に戻す
+sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' /tmp/tui-test-config.toml
+```
+
+- [ ] LaTeX形式の単一・複数出力
+
+#### F. Generate citation（デフォルトスタイル）
+
+1. 1件選択 → "Generate citation" を選択
+2. **確認**: vancouver スタイル（config の defaultStyle）でフォーマットされた引用が出力される
+
+- [ ] config の defaultStyle が使われる
+
+#### G. Generate citation (choose style)
+
+1. 1件選択 → "Generate citation (choose style)" を選択
+2. スタイル選択メニューが表示される（APA, Vancouver, Harvard）
+3. 任意のスタイルを選択
+4. **確認**: 選択したスタイルで引用が出力される
+
+- [ ] スタイル選択メニュー動作
+
+#### H. Output (choose format) サブメニュー
+
+1. 1件選択 → "Output (choose format)" を選択
+2. **確認**: サブメニューに IDs, CSL-JSON, BibTeX, YAML, Cancel が表示
+3. "IDs" → citation key が1行で出力
+4. 再度 → "CSL-JSON" → JSON形式で出力
+5. 再度 → "BibTeX" → BibTeX形式で出力
+6. 再度 → "YAML" → YAML形式で出力
+
+- [ ] 各フォーマット出力確認
+
+#### I. Output format の Cancel
+
+1. "Output (choose format)" → Cancel
+2. **確認**: アクションメニューに戻る（プロセスが終了しない）
+
+- [ ] Cancel でアクションメニューに戻る
+
+#### J. Open URL
+
+1. DOI またはPMIDを持つエントリを1件選択 → "Open URL"
+2. **確認**: ブラウザ（またはシステムデフォルト）でURLが開く
+   - WSL環境では `wslview` が使われる想定
+   - 開かない場合はエラーメッセージを確認
+3. URL を持たないエントリで試す → stderr に `No URL available for <id>` と出力
+
+- [ ] URL あり: ブラウザが開く（またはopenerが呼ばれる）
+- [ ] URL なし: エラーメッセージ
+
+#### K. Open fulltext
+
+1. 1件選択 → "Open fulltext"
+2. **確認**: fulltextファイルが存在しない場合はエラーメッセージ
+   - （ダミーデータにはfulltext未設定のため、エラーが想定動作）
+
+- [ ] エラーまたはファイルオープン動作
+
+#### L. Manage attachments
+
+1. 1件選択 → "Manage attachments"
+2. **確認**: attachments ディレクトリオープンが試みられる
+
+- [ ] ディレクトリオープン動作
+
+#### M. Edit reference（単一）
+
+1. 1件選択 → "Edit reference"
+2. **確認**: `$EDITOR` / `$VISUAL` が設定されていればエディタが開く
+   - `EDITOR=cat` とすると内容がstdoutに表示されて確認しやすい
+
+```bash
+EDITOR=cat ref search --tui --config /tmp/tui-test-config.toml
+```
+
+- [ ] エディタが起動する
+
+#### N. Edit references（複数）
+
+1. 3件選択 → "Edit references"
+2. **確認**: 3件分のデータがエディタに渡される
+
+- [ ] 複数件の編集
+
+#### O. Remove（単一）
+
+1. 1件選択 → "Remove"
+2. **確認**: 確認プロンプトが表示される
+3. 削除を確認し、`ref list --config /tmp/tui-test-config.toml` で消えていることを確認
+
+- [ ] 確認プロンプト→削除
+
+#### P. Remove（複数）
+
+1. 複数件選択 → "Remove"
+2. **確認**: 各エントリについて順次処理される
+
+- [ ] 複数件の逐次削除
+
+#### Q. ナビゲーション
+
+1. アクションメニューで Esc → **確認**: 検索画面に戻る
+2. 検索画面で Esc → **確認**: TUI が終了する
+
+- [ ] Esc で検索に戻る
+- [ ] 検索画面で Esc 終了
+
+### テスト後のクリーンアップ
+
+```bash
+rm -f /tmp/tui-test-library.json /tmp/tui-test-config.toml
+rm -rf /tmp/tui-test-attachments
+unalias ref 2>/dev/null
+```
 
 ## Completion Checklist
 
-- [x] All tests pass (`npm run test`)
+- [x] All tests pass (`npm run test`) — 2548 unit tests, 27 action-menu tests
 - [x] Lint passes (`npm run lint`)
 - [x] Type check passes (`npm run typecheck`)
 - [x] Build succeeds (`npm run build`)
-- [ ] Manual verification (TTY required)
+- [x] CI passes (ubuntu, macOS, Windows) — PR #55
+- [ ] Manual verification (TTY required) — 上記手順 A〜Q を実施
 - [x] Spec verified: `spec/features/interactive-search.md` (already up to date)
 - [x] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [ ] PR #55 をマージ
+- [ ] main で ROADMAP 更新、タスクファイルを `completed/` に移動
