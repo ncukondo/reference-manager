@@ -25,6 +25,8 @@ export interface SearchFlowConfig {
   debounceMs: number;
   /** Default citation key format */
   defaultKeyFormat?: CitationKeyFormat;
+  /** Default citation style */
+  defaultStyle?: string;
 }
 
 /**
@@ -192,6 +194,7 @@ export async function runSearchFlow(
         visibleCount: effectiveLimit,
         defaultSort,
         defaultKeyFormat: config.defaultKeyFormat ?? "pandoc",
+        defaultStyle: config.defaultStyle ?? "apa",
         onComplete: handleComplete,
         onCancel: handleCancel,
       })

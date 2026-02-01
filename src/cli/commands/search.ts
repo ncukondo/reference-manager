@@ -1,5 +1,7 @@
 import type { CitationKeyFormat, Config } from "../../config/schema.js";
+import type { CslItem } from "../../core/csl-json/types.js";
 import { type ItemFormat, formatItems } from "../../features/format/index.js";
+import type { ActionType } from "../../features/interactive/action-menu.js";
 import type { SearchResult } from "../../features/operations/search.js";
 import {
   type SearchSortField,
@@ -203,6 +205,10 @@ export function formatSearchOutput(
 export interface InteractiveSearchResult {
   output: string;
   cancelled: boolean;
+  /** Action type (for side-effect action handling) */
+  action?: string;
+  /** Selected items (for side-effect actions) */
+  selectedItems?: import("../../core/csl-json/types.js").CslItem[];
 }
 
 /**
@@ -272,11 +278,102 @@ export async function executeInteractiveSearch(
       limit: tuiConfig.limit,
       debounceMs: tuiConfig.debounceMs,
       defaultKeyFormat: config.citation.defaultKeyFormat,
+      defaultStyle: config.citation.defaultStyle,
     })
   );
+
+  // Handle side-effect actions
+  if (result.selectedItems && !result.cancelled) {
+    const { isSideEffectAction } = await import("../../features/interactive/action-menu.js");
+    if (isSideEffectAction(result.action)) {
+      await executeSideEffectAction(result.action, result.selectedItems, context, config);
+      return { output: "", cancelled: false, action: result.action };
+    }
+  }
 
   return {
     output: result.output,
     cancelled: result.cancelled,
+    action: result.action,
   };
+}
+
+/**
+ * Execute a side-effect action from the TUI action menu.
+ * These actions perform operations rather than producing stdout output.
+ */
+async function executeSideEffectAction(
+  action: ActionType,
+  items: CslItem[],
+  context: ExecutionContext,
+  config: Config
+): Promise<void> {
+  switch (action) {
+    case "open-url": {
+      const { resolveDefaultUrl } = await import("../../features/operations/url.js");
+      const { openWithSystemApp } = await import("../../utils/opener.js");
+      const item = items[0];
+      if (!item) return;
+      const url = resolveDefaultUrl(item);
+      if (url) {
+        await openWithSystemApp(url);
+      } else {
+        process.stderr.write(`No URL available for ${item.id}\n`);
+      }
+      break;
+    }
+    case "open-fulltext": {
+      const { executeFulltextOpen } = await import("./fulltext.js");
+      const item = items[0];
+      if (!item) return;
+      await executeFulltextOpen(
+        {
+          identifier: item.id,
+          fulltextDirectory: config.attachments.directory,
+        },
+        context
+      );
+      break;
+    }
+    case "manage-attachments": {
+      const { executeAttachOpen } = await import("./attach.js");
+      const item = items[0];
+      if (!item) return;
+      await executeAttachOpen(
+        {
+          identifier: item.id,
+          attachmentsDirectory: config.attachments.directory,
+        },
+        context
+      );
+      break;
+    }
+    case "edit": {
+      const { executeEditCommand } = await import("./edit.js");
+      await executeEditCommand(
+        {
+          identifiers: items.map((i) => i.id),
+          format: config.cli.edit.defaultFormat,
+        },
+        context
+      );
+      break;
+    }
+    case "remove": {
+      const { executeRemove } = await import("./remove.js");
+      for (const item of items) {
+        await executeRemove(
+          {
+            identifier: item.id,
+            fulltextDirectory: config.attachments.directory,
+            deleteFulltext: true,
+          },
+          context
+        );
+      }
+      break;
+    }
+    default:
+      break;
+  }
 }
