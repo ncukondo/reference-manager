@@ -206,9 +206,9 @@ export interface InteractiveSearchResult {
   output: string;
   cancelled: boolean;
   /** Action type (for side-effect action handling) */
-  action?: string;
+  action?: ActionType;
   /** Selected items (for side-effect actions) */
-  selectedItems?: import("../../core/csl-json/types.js").CslItem[];
+  selectedItems?: CslItem[];
 }
 
 /**
@@ -301,8 +301,9 @@ export async function executeInteractiveSearch(
 /**
  * Execute a side-effect action from the TUI action menu.
  * These actions perform operations rather than producing stdout output.
+ * @internal Exported for testing only.
  */
-async function executeSideEffectAction(
+export async function executeSideEffectAction(
   action: ActionType,
   items: CslItem[],
   context: ExecutionContext,

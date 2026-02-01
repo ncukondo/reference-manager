@@ -230,9 +230,9 @@ export function generateOutput(
     case "output-yaml":
       return yamlStringify(items).trimEnd();
 
+    // cite-default uses config.defaultStyle; cite-choose has its style
+    // overridden by the caller (processAction/SearchFlowApp) before reaching here.
     case "cite-default":
-      return formatBibliographyCSL(items, { style: defaultStyle });
-
     case "cite-choose":
       return formatBibliographyCSL(items, { style: defaultStyle });
 
