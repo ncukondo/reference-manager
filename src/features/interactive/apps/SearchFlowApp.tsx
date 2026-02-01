@@ -1,7 +1,7 @@
 /**
  * SearchFlowApp - Single App for search -t flow
  *
- * Manages state transitions: search → action → (style if needed)
+ * Manages state transitions: search → action → (style/output-format if needed)
  * Following React Ink Single App Pattern (ADR-015)
  */
 
@@ -13,9 +13,12 @@ import type { CslItem } from "../../../core/csl-json/types.js";
 import {
   type ActionMenuResult,
   type ActionType,
+  OUTPUT_FORMAT_CHOICES,
+  type OutputFormatType,
   STYLE_CHOICES,
   generateOutput,
   getActionChoices,
+  isSideEffectAction,
 } from "../action-menu.js";
 import {
   type Choice,
@@ -27,7 +30,7 @@ import {
 /**
  * Flow states for the search flow
  */
-type FlowState = "search" | "action" | "style" | "exiting";
+type FlowState = "search" | "action" | "style" | "output-format" | "exiting";
 
 /**
  * Props for SearchFlowApp
@@ -43,6 +46,8 @@ export interface SearchFlowAppProps {
   defaultSort: SortOption;
   /** Default citation key format */
   defaultKeyFormat: CitationKeyFormat;
+  /** Default citation style */
+  defaultStyle: string;
   /** Callback when flow completes */
   onComplete: (result: ActionMenuResult) => void;
   /** Callback when flow is cancelled */
@@ -52,7 +57,7 @@ export interface SearchFlowAppProps {
 /**
  * SearchFlowApp component
  *
- * Single App that manages search → action → style flow
+ * Single App that manages search → action → style/output-format flow
  */
 export function SearchFlowApp({
   choices,
@@ -60,6 +65,7 @@ export function SearchFlowApp({
   visibleCount,
   defaultSort,
   defaultKeyFormat,
+  defaultStyle,
   onComplete,
   onCancel,
 }: SearchFlowAppProps): React.ReactElement {
@@ -114,8 +120,23 @@ export function SearchFlowApp({
       return;
     }
 
+    // If output-format, go to output format submenu
+    if (action === "output-format") {
+      setState("output-format");
+      return;
+    }
+
+    // Handle side-effect actions
+    if (isSideEffectAction(action)) {
+      exitWith({ action, output: "", cancelled: false, selectedItems });
+      return;
+    }
+
     // Generate output and complete
-    const output = generateOutput(action, selectedItems, undefined, defaultKeyFormat);
+    const output = generateOutput(action, selectedItems, {
+      defaultKeyFormat,
+      defaultStyle,
+    });
     exitWith({ action, output, cancelled: false });
   };
 
@@ -126,12 +147,34 @@ export function SearchFlowApp({
 
   // Handle style selection
   const handleStyleSelect = (style: string) => {
-    const output = generateOutput("cite-choose", selectedItems, style, defaultKeyFormat);
+    const output = generateOutput("cite-choose", selectedItems, {
+      defaultKeyFormat,
+      defaultStyle: style,
+    });
     exitWith({ action: "cite-choose", output, cancelled: false });
   };
 
   // Handle style cancel (go back to action)
   const handleStyleCancel = () => {
+    setState("action");
+  };
+
+  // Handle output format selection
+  const handleOutputFormatSelect = (format: OutputFormatType) => {
+    if (format === "cancel") {
+      setState("action");
+      return;
+    }
+
+    const output = generateOutput(format, selectedItems, {
+      defaultKeyFormat,
+      defaultStyle,
+    });
+    exitWith({ action: "output-format", output, cancelled: false });
+  };
+
+  // Handle output format cancel (go back to action)
+  const handleOutputFormatCancel = () => {
     setState("action");
   };
 
@@ -158,15 +201,27 @@ export function SearchFlowApp({
     const count = selectedItems.length;
     const refWord = count === 1 ? "reference" : "references";
     return createElement(Select<ActionType>, {
-      options: getActionChoices(defaultKeyFormat),
+      key: "action",
+      options: getActionChoices(count, { defaultKeyFormat }),
       message: `Action for ${count} selected ${refWord}:`,
       onSelect: handleActionSelect,
       onCancel: handleActionCancel,
     });
   }
 
+  if (state === "output-format") {
+    return createElement(Select<OutputFormatType>, {
+      key: "output-format",
+      options: OUTPUT_FORMAT_CHOICES,
+      message: "Select output format:",
+      onSelect: handleOutputFormatSelect,
+      onCancel: handleOutputFormatCancel,
+    });
+  }
+
   // state === "style"
   return createElement(Select<string>, {
+    key: "style",
     options: STYLE_CHOICES,
     message: "Select citation style:",
     onSelect: handleStyleSelect,

@@ -6,6 +6,7 @@
 import { render } from "ink";
 import { createElement } from "react";
 import type React from "react";
+import { stringify as yamlStringify } from "yaml";
 import type { CitationKeyFormat } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibliographyCSL, formatBibtex } from "../format/index.js";
@@ -16,13 +17,44 @@ import { Select, type SelectOption } from "./components/index.js";
  * Action types available in the action menu.
  */
 export type ActionType =
+  | "key-default"
+  | "cite-default"
+  | "cite-choose"
+  | "open-url"
+  | "open-fulltext"
+  | "manage-attachments"
+  | "edit"
+  | "output-format"
+  | "remove"
+  | "cancel";
+
+/**
+ * Output format types for the output format submenu.
+ */
+export type OutputFormatType =
   | "output-ids"
   | "output-csl-json"
   | "output-bibtex"
-  | "cite-apa"
-  | "cite-choose"
-  | "key-default"
+  | "output-yaml"
   | "cancel";
+
+/**
+ * Side-effect action types that perform operations rather than producing stdout output.
+ */
+const SIDE_EFFECT_ACTIONS: ReadonlySet<ActionType> = new Set([
+  "open-url",
+  "open-fulltext",
+  "manage-attachments",
+  "edit",
+  "remove",
+]);
+
+/**
+ * Check if an action is a side-effect action.
+ */
+export function isSideEffectAction(action: ActionType): boolean {
+  return SIDE_EFFECT_ACTIONS.has(action);
+}
 
 /**
  * Result from action menu selection.
@@ -30,10 +62,12 @@ export type ActionType =
 export interface ActionMenuResult {
   /** Selected action type */
   action: ActionType;
-  /** Generated output (empty for cancel) */
+  /** Generated output (empty for cancel and side-effect actions) */
   output: string;
   /** Whether the prompt was cancelled */
   cancelled: boolean;
+  /** Selected items (for side-effect actions) */
+  selectedItems?: CslItem[];
 }
 
 /**
@@ -47,29 +81,74 @@ export interface StyleSelectResult {
 }
 
 /**
- * Generate action choices for the action menu.
- * The label for "key-default" is dynamic based on the configured citation key format.
+ * Config options for action choices.
  */
-export function getActionChoices(
-  defaultKeyFormat: CitationKeyFormat = "pandoc"
-): SelectOption<ActionType>[] {
-  const keyLabel = defaultKeyFormat === "latex" ? "Citation key (LaTeX)" : "Citation key (Pandoc)";
-  return [
-    { label: "Output IDs (citation keys)", value: "output-ids" },
-    { label: "Output as CSL-JSON", value: "output-csl-json" },
-    { label: "Output as BibTeX", value: "output-bibtex" },
-    { label: "Generate citation (APA)", value: "cite-apa" },
-    { label: "Generate citation (choose style)", value: "cite-choose" },
-    { label: keyLabel, value: "key-default" },
-    { label: "Cancel", value: "cancel" },
-  ];
+export interface ActionChoicesConfig {
+  defaultKeyFormat?: CitationKeyFormat | undefined;
 }
 
 /**
- * Available action choices for the action menu.
- * @deprecated Use getActionChoices(defaultKeyFormat) for dynamic labels.
+ * Config options for output generation.
  */
-export const ACTION_CHOICES: SelectOption<ActionType>[] = getActionChoices();
+export interface GenerateOutputConfig {
+  defaultKeyFormat?: CitationKeyFormat | undefined;
+  defaultStyle?: string | undefined;
+}
+
+/**
+ * Generate action choices for the action menu.
+ * Returns different choices based on the number of selected entries.
+ */
+export function getActionChoices(
+  count: number,
+  config: ActionChoicesConfig = {}
+): SelectOption<ActionType>[] {
+  const { defaultKeyFormat = "pandoc" } = config;
+  const isSingle = count === 1;
+  const formatLabel = defaultKeyFormat === "latex" ? "LaTeX" : "Pandoc";
+
+  const keyLabel = isSingle ? `Citation key (${formatLabel})` : `Citation keys (${formatLabel})`;
+
+  const choices: SelectOption<ActionType>[] = [
+    { label: keyLabel, value: "key-default" },
+    { label: "Generate citation", value: "cite-default" },
+    { label: "Generate citation (choose style)", value: "cite-choose" },
+  ];
+
+  if (isSingle) {
+    choices.push(
+      { label: "Open URL", value: "open-url" },
+      { label: "Open fulltext", value: "open-fulltext" },
+      { label: "Manage attachments", value: "manage-attachments" }
+    );
+  }
+
+  choices.push(
+    { label: isSingle ? "Edit reference" : "Edit references", value: "edit" },
+    { label: "Output (choose format)", value: "output-format" },
+    { label: "Remove", value: "remove" },
+    { label: "Cancel", value: "cancel" }
+  );
+
+  return choices;
+}
+
+/**
+ * Available action choices for the action menu (default, single entry).
+ * @deprecated Use getActionChoices(count, config) for dynamic choices.
+ */
+export const ACTION_CHOICES: SelectOption<ActionType>[] = getActionChoices(1);
+
+/**
+ * Output format choices for the output format submenu.
+ */
+export const OUTPUT_FORMAT_CHOICES: SelectOption<OutputFormatType>[] = [
+  { label: "IDs (citation keys)", value: "output-ids" },
+  { label: "CSL-JSON", value: "output-csl-json" },
+  { label: "BibTeX", value: "output-bibtex" },
+  { label: "YAML", value: "output-yaml" },
+  { label: "Cancel", value: "cancel" },
+];
 
 /**
  * Available style choices for citation style selection.
@@ -132,11 +211,12 @@ function StyleSelectApp({ options, onSelect, onCancel }: StyleSelectAppProps): R
  * Generate output for the given action and items.
  */
 export function generateOutput(
-  action: ActionType,
+  action: ActionType | OutputFormatType,
   items: CslItem[],
-  style = "apa",
-  defaultKeyFormat: CitationKeyFormat = "pandoc"
+  config: GenerateOutputConfig = {}
 ): string {
+  const { defaultKeyFormat = "pandoc", defaultStyle = "apa" } = config;
+
   switch (action) {
     case "output-ids":
       return items.map((item) => item.id).join("\n");
@@ -147,11 +227,14 @@ export function generateOutput(
     case "output-bibtex":
       return formatBibtex(items);
 
-    case "cite-apa":
-      return formatBibliographyCSL(items, { style: "apa" });
+    case "output-yaml":
+      return yamlStringify(items).trimEnd();
 
+    // cite-default uses config.defaultStyle; cite-choose has its style
+    // overridden by the caller (processAction/SearchFlowApp) before reaching here.
+    case "cite-default":
     case "cite-choose":
-      return formatBibliographyCSL(items, { style });
+      return formatBibliographyCSL(items, { style: defaultStyle });
 
     case "key-default":
       if (defaultKeyFormat === "latex") {
@@ -217,7 +300,7 @@ export async function runStyleSelectPrompt(): Promise<StyleSelectResult> {
 async function processAction(
   action: ActionType,
   items: CslItem[],
-  defaultKeyFormat: CitationKeyFormat = "pandoc"
+  config: GenerateOutputConfig = {}
 ): Promise<ActionMenuResult> {
   // Handle cite-choose: prompt for style first
   if (action === "cite-choose") {
@@ -231,7 +314,10 @@ async function processAction(
     }
     return {
       action,
-      output: generateOutput(action, items, styleResult.style, defaultKeyFormat),
+      output: generateOutput(action, items, {
+        ...config,
+        defaultStyle: styleResult.style,
+      }),
       cancelled: false,
     };
   }
@@ -245,10 +331,20 @@ async function processAction(
     };
   }
 
+  // Handle side-effect actions
+  if (isSideEffectAction(action)) {
+    return {
+      action,
+      output: "",
+      cancelled: false,
+      selectedItems: items,
+    };
+  }
+
   // Handle other actions
   return {
     action,
-    output: generateOutput(action, items, undefined, defaultKeyFormat),
+    output: generateOutput(action, items, config),
     cancelled: false,
   };
 }
@@ -257,17 +353,19 @@ async function processAction(
  * Run the action menu for selected references.
  *
  * @param items - Selected references
- * @param defaultKeyFormat - The configured citation key format
+ * @param config - Output generation config
  * @returns Action result with output
  */
 export async function runActionMenu(
   items: CslItem[],
-  defaultKeyFormat: CitationKeyFormat = "pandoc"
+  config: GenerateOutputConfig = {}
 ): Promise<ActionMenuResult> {
   const count = items.length;
   const refWord = count === 1 ? "reference" : "references";
   const message = `Action for ${count} selected ${refWord}:`;
-  const actionChoices = getActionChoices(defaultKeyFormat);
+  const actionChoices = getActionChoices(count, {
+    defaultKeyFormat: config.defaultKeyFormat,
+  });
 
   return new Promise<ActionMenuResult>((resolve) => {
     let selectedAction: ActionType | null = null;
@@ -302,7 +400,7 @@ export async function runActionMenu(
             cancelled: true,
           });
         } else {
-          const result = await processAction(selectedAction, items, defaultKeyFormat);
+          const result = await processAction(selectedAction, items, config);
           resolve(result);
         }
       })

@@ -124,7 +124,7 @@ export interface RemoveActionOptions {
 /**
  * Confirm removal if needed (TTY, not forced).
  */
-async function confirmRemoveIfNeeded(
+export async function confirmRemoveIfNeeded(
   item: CslItem,
   hasFulltext: boolean,
   force: boolean

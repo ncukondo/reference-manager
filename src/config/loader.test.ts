@@ -684,6 +684,79 @@ apiKey = "my-api-key"
     });
   });
 
+  describe("configPath option (--config flag)", () => {
+    it("should load config from configPath", () => {
+      const configFilePath = join(testDir, "custom-config.toml");
+      writeFileSync(
+        configFilePath,
+        `
+library = "/custom/library.json"
+log_level = "debug"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir, configPath: configFilePath });
+      expect(config.library).toBe("/custom/library.json");
+      expect(config.logLevel).toBe("debug");
+    });
+
+    it("should prioritize configPath over env config", () => {
+      const envConfigPath = join(testDir, "env-config.toml");
+      writeFileSync(envConfigPath, `library = "/env/library.json"\n`);
+      process.env.REFERENCE_MANAGER_CONFIG = envConfigPath;
+
+      const cliConfigPath = join(testDir, "cli-config.toml");
+      writeFileSync(cliConfigPath, `library = "/cli/library.json"\n`);
+
+      const config = loadConfig({ cwd: testDir, configPath: cliConfigPath });
+      expect(config.library).toBe("/cli/library.json");
+    });
+
+    it("should prioritize configPath over user config", () => {
+      const userConfigPath = join(testDir, "user-config.toml");
+      writeFileSync(userConfigPath, `library = "/user/library.json"\n`);
+
+      const cliConfigPath = join(testDir, "cli-config.toml");
+      writeFileSync(cliConfigPath, `library = "/cli/library.json"\n`);
+
+      const config = loadConfig({ cwd: testDir, userConfigPath, configPath: cliConfigPath });
+      expect(config.library).toBe("/cli/library.json");
+    });
+
+    it("should prioritize configPath over current directory config", () => {
+      const currentConfigPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(currentConfigPath, `library = "/current/library.json"\n`);
+
+      const cliConfigPath = join(testDir, "cli-config.toml");
+      writeFileSync(cliConfigPath, `library = "/cli/library.json"\n`);
+
+      const config = loadConfig({ cwd: testDir, configPath: cliConfigPath });
+      expect(config.library).toBe("/cli/library.json");
+    });
+
+    it("should throw error if configPath file does not exist", () => {
+      expect(() => loadConfig({ cwd: testDir, configPath: "/non/existent/config.toml" })).toThrow(
+        "Config file not found: /non/existent/config.toml"
+      );
+    });
+
+    it("should merge configPath with defaults for unspecified fields", () => {
+      const cliConfigPath = join(testDir, "cli-config.toml");
+      writeFileSync(
+        cliConfigPath,
+        `
+[citation]
+default_style = "vancouver"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir, configPath: cliConfigPath });
+      expect(config.citation.defaultStyle).toBe("vancouver");
+      expect(config.library).toBe(defaultConfig.library); // default
+      expect(config.logLevel).toBe("info"); // default
+    });
+  });
+
   describe("cli.tui configuration", () => {
     it("should use default interactive config when not specified", () => {
       const config = loadConfig({ cwd: testDir });

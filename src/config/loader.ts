@@ -28,6 +28,8 @@ export interface LoadConfigOptions {
   cwd?: string;
   /** User config path (default: ~/.reference-manager/config.toml) */
   userConfigPath?: string;
+  /** CLI --config flag: explicit config file path (highest file priority) */
+  configPath?: string;
   /** CLI argument overrides */
   overrides?: Partial<Config>;
 }
@@ -259,14 +261,20 @@ function fillMcpDefaults(partial: DeepPartialConfig["mcp"]): Config["mcp"] {
  *
  * Priority (highest to lowest):
  * 1. CLI argument overrides
- * 2. Current directory config (.reference-manager.config.toml)
- * 3. Environment variable (REFERENCE_MANAGER_CONFIG)
- * 4. User config (~/.reference-manager/config.toml)
- * 5. Default values
+ * 2. CLI --config file (configPath)
+ * 3. Current directory config (.reference-manager.config.toml)
+ * 4. Environment variable (REFERENCE_MANAGER_CONFIG)
+ * 5. User config (~/.reference-manager/config.toml)
+ * 6. Default values
  */
 export function loadConfig(options: LoadConfigOptions = {}): Config {
   const cwd = options.cwd ?? process.cwd();
   const userConfigPath = options.userConfigPath ?? getDefaultUserConfigPath();
+
+  // If configPath is specified, it must exist (explicit user intent)
+  if (options.configPath && !existsSync(options.configPath)) {
+    throw new Error(`Config file not found: ${options.configPath}`);
+  }
 
   // 1. Load user config (lowest priority)
   const userConfig = loadTOMLFile(userConfigPath);
@@ -275,21 +283,26 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
   const envConfigPath = process.env.REFERENCE_MANAGER_CONFIG;
   const envConfig = envConfigPath ? loadTOMLFile(envConfigPath) : null;
 
-  // 3. Load current directory config (highest priority)
+  // 3. Load current directory config
   const currentConfigPath = join(cwd, getDefaultCurrentDirConfigFilename());
   const currentConfig = loadTOMLFile(currentConfigPath);
+
+  // 4. Load CLI --config file (highest file priority)
+  const cliConfig = options.configPath ? loadTOMLFile(options.configPath) : null;
 
   // Normalize snake_case to camelCase
   const normalizedUser = userConfig ? normalizePartialConfig(userConfig) : null;
   const normalizedEnv = envConfig ? normalizePartialConfig(envConfig) : null;
   const normalizedCurrent = currentConfig ? normalizePartialConfig(currentConfig) : null;
+  const normalizedCli = cliConfig ? normalizePartialConfig(cliConfig) : null;
 
-  // Merge configs (priority: current > env > user > defaults)
+  // Merge configs (priority: cli > current > env > user > defaults)
   const merged = mergeConfigs(
     {},
     normalizedUser,
     normalizedEnv,
     normalizedCurrent,
+    normalizedCli,
     options.overrides
   );
 

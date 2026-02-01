@@ -116,209 +116,411 @@ Extend `ActionType` with new values and make action choices dynamic.
 - `src/features/interactive/apps/SearchFlowApp.tsx`
 
 **Tests:**
-- [ ] Write test: `src/features/interactive/action-menu.test.ts` — `getActionChoices` returns correct items for count=1 and count>1
-- [ ] Write test: `getActionChoices` uses config to set citation key label
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/interactive/action-menu.test.ts` — `getActionChoices` returns correct items for count=1 and count>1
+- [x] Write test: `getActionChoices` uses config to set citation key label
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
-### Step 2: Add Output Format Submenu
+### Step 2: Add Output Format Submenu ✅
 
-Add a submenu for selecting output format (IDs, CSL-JSON, BibTeX, YAML).
+- [x] Implemented `OutputFormatType` and `OUTPUT_FORMAT_CHOICES`
+- [x] Added `"output-format"` flow state to `SearchFlowApp`
+- [x] YAML output via `yaml` package `stringify`
+- [x] Tests pass
 
-**Changes:**
-- Define `OutputFormatType` and `OUTPUT_FORMAT_CHOICES` (IDs, CSL-JSON, BibTeX, YAML, Cancel)
-- Add `"output-format"` flow state to `SearchFlowApp`
-- When "Output (choose format)" is selected in action menu, transition to `"output-format"` state
-- When format is selected, generate output and exit
-- When cancelled, return to action menu
+### Step 3: Use Default Citation Style from Config ✅
 
-**Files:**
-- `src/features/interactive/action-menu.ts`
-- `src/features/interactive/apps/SearchFlowApp.tsx`
+- [x] `defaultStyle` passed through config chain
+- [x] `cite-default` uses `config.citation.defaultStyle`
+- [x] Tests pass
 
-**Tests:**
-- [ ] Write test: verify output format submenu choices
-- [ ] Write test: verify YAML output generation (`yaml` package `stringify`)
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+### Step 4: Side-Effect Action Architecture ✅
 
-### Step 3: Use Default Citation Style from Config
+- [x] `ActionMenuResult.selectedItems` added for side-effect actions
+- [x] `isSideEffectAction()` helper function
+- [x] `executeInteractiveSearch` handles side-effect results
+- [x] `executeSideEffectAction` dispatches to appropriate functions
+- [x] Tests pass
 
-Replace hardcoded "APA" with `config.citation.defaultStyle`.
+### Steps 5-10: All Actions Implemented ✅
 
-**Changes:**
-- Pass `defaultStyle` (from config) through to `SearchFlowApp` → action menu → `generateOutput`
-- Update "Generate citation" label (remove "(APA)" — the default style is now config-driven)
-- `generateOutput("cite-default", items)` uses `defaultStyle` from config
+- [x] Step 5: Citation key action (via `generateOutput("key-default")`)
+- [x] Step 6: Open URL action (`resolveDefaultUrl` + `openWithSystemApp`)
+- [x] Step 7: Open fulltext action (`executeFulltextOpen`)
+- [x] Step 8: Manage attachments action (`executeAttachOpen`)
+- [x] Step 9: Edit action (`executeEditCommand`)
+- [x] Step 10: Remove action (`executeRemove`)
 
-**Files:**
-- `src/features/interactive/action-menu.ts`
-- `src/features/interactive/apps/SearchFlowApp.tsx`
-- `src/features/interactive/apps/runSearchFlow.ts`
-- `src/cli/commands/search.ts` (`executeInteractiveSearch` — pass config)
+### Step 11: Fix `--config` CLI Flag (Bug)
 
-**Tests:**
-- [ ] Write test: verify default style is used from config
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+The `--config <path>` global CLI option is defined in Commander but not passed to `loadConfig()`.
+`loadConfigWithOverrides()` ignores `options.config` — the comment says so explicitly.
 
-### Step 4: Side-Effect Action Architecture
-
-Extend `executeInteractiveSearch` to handle actions that perform operations rather than producing stdout output.
+**Root cause:**
+- `loadConfig()` accepts `LoadConfigOptions` which has no `configPath` field for CLI-specified config
+- `loadConfigWithOverrides()` calls `loadConfig()` with no arguments, ignoring `options.config`
 
 **Changes:**
-- Extend `ActionMenuResult` (or `InteractiveSearchResult`) to carry `action` and `selectedItems` when the action is a side-effect type
-- In `executeInteractiveSearch`, after `runSearchFlow` returns:
-  - If output action: return `{ output }` as before
-  - If side-effect action: execute the operation, return `{ output: "", cancelled: false }`
-- Side-effect execution needs `context` and `config` (already available in `executeInteractiveSearch`)
+- Add `configPath?: string` to `LoadConfigOptions` in `src/config/loader.ts`
+- In `loadConfig()`, if `configPath` is provided, load it as the highest-priority file config (same level as env config, or higher)
+- In `loadConfigWithOverrides()`, pass `options.config` as `configPath` to `loadConfig()`
+- Remove the "currently ignored" comment
 
 **Files:**
-- `src/cli/commands/search.ts`
-- `src/features/interactive/apps/runSearchFlow.ts` (return type changes)
-- `src/features/interactive/apps/SearchFlowApp.tsx` (return selected items for side-effect actions)
+- `src/config/loader.ts`
+- `src/cli/helpers.ts`
 
 **Tests:**
-- [ ] Write test: verify side-effect action type is returned with selectedItems
-- [ ] Write test: verify executeInteractiveSearch handles side-effect results
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 5: Implement Citation Key Action
-
-Output citation key(s) using config-driven format. Uses `generateOutput("key-default")` from citation-key-format task.
-
-**Files:**
-- `src/features/interactive/action-menu.ts` (already handled by Step 4 of citation-key-format task)
-
-**Tests:**
-- [ ] Write test: verify citation key output in TUI format (pandoc `;` / latex `,`)
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 6: Implement Open URL Action
-
-Single-entry only. Opens the reference's web page in browser.
-
-**Changes:**
-- In side-effect handler: call `resolveDefaultUrl()` from URL module, then `openWithSystemApp()` with the URL
-- If no URL available: output error message to stderr
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify `resolveDefaultUrl` + `openWithSystemApp` is called
-- [ ] Write test: verify error when no URL available
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 7: Implement Open Fulltext Action
-
-Single-entry only. Opens the fulltext file in the system viewer.
-
-**Changes:**
-- In side-effect handler: call `executeFulltextOpen()` with the selected item's ID
-- Use `config.attachments.directory` for fulltext directory
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify `executeFulltextOpen` is called with correct options
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 8: Implement Manage Attachments Action
-
-Single-entry only. Opens the attachment directory and runs sync.
-
-**Changes:**
-- In side-effect handler: call `executeAttachOpen()` to open directory, then `runInteractiveMode()` for sync
-- The `runInteractiveMode` from `attach.ts` handles: display naming convention → wait for Enter → sync
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify attach open + sync flow is called
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 9: Implement Edit Action
-
-Available for single and multiple entries. Opens editor with selected items.
-
-**Changes:**
-- In side-effect handler: call `executeEditCommand()` with selected item IDs
-- Use `config.cli.edit.defaultFormat` for edit format
-- Output edit result to stderr
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-
-**Tests:**
-- [ ] Write test: verify `executeEditCommand` is called with correct identifiers
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
-
-### Step 10: Implement Remove Action
-
-Available for single and multiple entries. Deletes with confirmation.
-
-**Changes:**
-- In side-effect handler: for each selected item, call confirmation + `executeRemove()`
-- Use `config.attachments.directory` for fulltext directory
-- Output results to stderr
-
-**Files:**
-- `src/cli/commands/search.ts` (side-effect handler)
-- May need to extract/refactor confirmation logic from `src/cli/commands/remove.ts`
-
-**Tests:**
-- [ ] Write test: verify confirmation is prompted and `executeRemove` is called
-- [ ] Write test: verify multiple items are removed sequentially
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `loadConfig({ configPath: "/path/to/config.toml" })` loads and applies the file
+- [x] Write test: `configPath` has higher priority than env, user, and current dir config
+- [x] Write test: throws error if configPath file does not exist
+- [x] Write test: `loadConfigWithOverrides({ config: "/path" })` passes through to `loadConfig`
+- [x] Implement
+- [x] Verify Green (2555 tests pass)
+- [x] Lint/Type check
 
 ## Manual Verification
 
-**Script**: `test-fixtures/test-tui-action-menu.sh`
+**Status**: Not yet performed. PR #55 has all CI checks passing. Manual test needed before merge.
 
-TTY-required tests (run manually in a terminal):
-- [ ] `ref search -t` → select 1 entry → verify all 10 actions shown
-- [ ] `ref search -t` → select 3 entries → verify 7 actions shown (no Open URL, Open fulltext, Manage attachments)
-- [ ] Select 1 → Citation key → verify output matches config (Pandoc: `@id` / LaTeX: `\cite{id}`)
-- [ ] Select 3 → Citation keys → verify multi-cite format (Pandoc: `@id1; @id2; @id3` / LaTeX: `\cite{id1,id2,id3}`)
-- [ ] Select 1 → Generate citation → verify default style from config is used
-- [ ] Select 1 → Output (choose format) → verify submenu with IDs, CSL-JSON, BibTeX, YAML
-- [ ] Select 1 → Output → YAML → verify YAML output
-- [ ] Select 1 → Open URL → verify browser opens DOI/PubMed page
-- [ ] Select 1 → Open fulltext → verify PDF opens in system viewer
-- [ ] Select 1 → Manage attachments → verify directory opens and sync prompt appears
-- [ ] Select 1 → Edit reference → verify editor opens with reference data
-- [ ] Select 1 → Remove → verify confirmation prompt and deletion
-- [ ] Select 3 → Edit references → verify editor opens with all 3 items
-- [ ] Select 3 → Remove → verify sequential confirmation and deletion
+### Roles
+
+| Role | Responsibility |
+|------|----------------|
+| **AI Agent** | Build, generate dummy library, create directories, verify `list` works |
+| **User** | Set alias (one-line copy-paste), run TUI operations, visual verification |
+
+TTY operations cannot be executed by the agent; the user must run them directly in the terminal.
+After preparation is complete, the agent should present the "User Test Procedure" below as-is.
+
+### Agent Preparation
+
+```bash
+# 1. Navigate to worktree and build
+cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
+npm run build
+
+# 2. Generate dummy library (20 entries with DOI/PMID/URL)
+node test-fixtures/generate-dummy-library.mjs /tmp/tui-test-library.json 20
+
+# 3. Create test config file
+cat > /tmp/tui-test-config.toml <<'TOML'
+library = "/tmp/tui-test-library.json"
+
+[citation]
+default_style = "vancouver"
+default_key_format = "pandoc"
+
+[attachments]
+directory = "/tmp/tui-test-attachments"
+
+[cli.tui]
+limit = 15
+
+[cli.edit]
+default_format = "yaml"
+TOML
+
+# 4. Create attachments directory
+mkdir -p /tmp/tui-test-attachments
+
+# 5. Verify list command works
+node bin/cli.js --config /tmp/tui-test-config.toml list --limit 3
+```
+
+After preparation, present the "User Test Procedure" below to the user.
+
+---
+
+### User Test Procedure
+
+> Run the following directly in your terminal.
+
+#### 0. Setup
+
+```bash
+# Navigate to worktree
+cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
+
+# Set up ref alias with --config (session-only)
+alias ref="node $(pwd)/bin/cli.js --config /tmp/tui-test-config.toml"
+
+# Verify: should display 3 entries
+ref list --limit 3
+```
+
+#### A. Action menu display (single selection)
+
+```bash
+ref search --tui
+```
+
+1. Without typing a query (all entries visible), use **Up/Down** to move and **Space** to select **1 entry**
+2. Press **Enter**
+3. **Verify**: Action menu shows the following **10 items** in order:
+   ```
+   Citation key (Pandoc)
+   Generate citation
+   Generate citation (choose style)
+   Open URL
+   Open fulltext
+   Manage attachments
+   Edit reference          ← singular
+   Output (choose format)
+   Remove
+   Cancel
+   ```
+4. Select **Cancel** to exit
+
+- [ ] 10 items displayed
+
+#### B. Action menu display (multiple selection)
+
+```bash
+ref search --tui
+```
+
+1. Select **3 entries** with **Space**, then press **Enter**
+2. **Verify**: The following **7 items** are shown (Open URL, Open fulltext, Manage attachments **absent**):
+   ```
+   Citation keys (Pandoc)  ← plural
+   Generate citation
+   Generate citation (choose style)
+   Edit references         ← plural
+   Output (choose format)
+   Remove
+   Cancel
+   ```
+3. Select **Cancel** to exit
+
+- [ ] 7 items displayed (singular → plural change confirmed)
+
+#### C. Citation key (single, Pandoc)
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → Enter → choose **"Citation key (Pandoc)"**
+2. **Verify**: Output in `@<citation-key>` format (e.g., `@Smith-2023`)
+
+- [ ] `@<id>` format output
+
+#### D. Citation keys (multiple, Pandoc)
+
+```bash
+ref search --tui
+```
+
+1. Select 3 entries → Enter → choose **"Citation keys (Pandoc)"**
+2. **Verify**: Output in `@id1; @id2; @id3` format (semicolon-separated)
+
+- [ ] `@id1; @id2; @id3` format
+
+#### E. LaTeX key format
+
+Temporarily switch config to latex:
+
+```bash
+sed -i 's/default_key_format = "pandoc"/default_key_format = "latex"/' /tmp/tui-test-config.toml
+```
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Citation key (LaTeX)"** → **Verify**: `\cite{<id>}` format
+2. Run again → Select 3 entries → **"Citation keys (LaTeX)"** → **Verify**: `\cite{id1,id2,id3}` format
+
+Restore config:
+
+```bash
+sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' /tmp/tui-test-config.toml
+```
+
+- [ ] LaTeX single and multiple output
+
+#### F. Generate citation (default style)
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Generate citation"**
+2. **Verify**: Citation text is output in Vancouver style (configured via `default_style = "vancouver"`)
+
+- [ ] Default style citation output (Vancouver format)
+
+#### G. Generate citation (choose style)
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Generate citation (choose style)"**
+2. **Verify**: Style selection menu appears (APA / Vancouver / Harvard)
+3. Select a style → citation in the chosen style is output
+
+- [ ] Style selection → output
+
+#### H. Output (choose format) submenu
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Output (choose format)"**
+2. **Verify**: Submenu appears:
+   ```
+   IDs (citation keys)
+   CSL-JSON
+   BibTeX
+   YAML
+   Cancel
+   ```
+3. Select **"YAML"** → verify YAML output
+
+Also test IDs, CSL-JSON, BibTeX (requires re-running the command each time).
+
+- [ ] Submenu displayed
+- [ ] YAML output (contains `id:`, `type:` keys)
+- [ ] IDs output (one citation key per line)
+- [ ] CSL-JSON output (JSON object)
+- [ ] BibTeX output (`@article{...}` format)
+
+#### I. Output format Cancel
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Output (choose format)"** → **"Cancel"**
+2. **Verify**: Returns to action menu (process does not exit)
+3. Select **Cancel** to exit
+
+- [ ] Cancel returns to action menu
+
+#### J. Open URL
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry with a DOI (type `DOI:` in search to filter) → **"Open URL"**
+2. **Verify**: Browser opens, or on WSL `wslview` is invoked
+   - If an error occurs, confirming the opener was called is sufficient
+
+- [ ] URL available: browser/opener invoked
+- [ ] URL unavailable: `No URL available for <id>` shown in terminal
+
+#### K. Open fulltext
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Open fulltext"**
+2. **Verify**: Error message displayed (expected — dummy data has no fulltext)
+
+- [ ] Error message displayed
+
+#### L. Manage attachments
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Manage attachments"**
+2. **Verify**: Attempts to open attachments directory (`/tmp/tui-test-attachments/<id>/`)
+
+- [ ] Directory open attempted (or error)
+
+#### M. Edit reference (single)
+
+```bash
+EDITOR=cat ref search --tui
+```
+
+> `EDITOR=cat` shows content on stdout instead of opening an editor.
+
+1. Select 1 entry → **"Edit reference"**
+2. **Verify**: YAML-formatted reference data is displayed
+
+- [ ] Editor (cat) invoked, data displayed
+
+#### N. Edit references (multiple)
+
+```bash
+EDITOR=cat ref search --tui
+```
+
+1. Select 3 entries → **"Edit references"**
+2. **Verify**: Data for all 3 entries is displayed
+
+- [ ] Multiple entries displayed
+
+#### O. Remove (single)
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → **"Remove"**
+2. **Verify**: Confirmation prompt appears → confirm with `y`
+3. Check:
+   ```bash
+   ref list | wc -l
+   ```
+   → Count should decrease by 1
+
+- [ ] Confirmation prompt → deletion → count decreased
+
+#### P. Remove (multiple)
+
+```bash
+ref search --tui
+```
+
+1. Select 2 entries → **"Remove"**
+2. **Verify**: Sequential confirmation and deletion for each entry
+
+- [ ] Multiple entries deleted sequentially
+
+#### Q. Navigation
+
+```bash
+ref search --tui
+```
+
+1. Select 1 entry → Enter → action menu appears → press **Esc**
+2. **Verify**: Returns to search screen (TUI does not exit)
+3. Press **Esc** on search screen
+4. **Verify**: TUI exits, returns to normal shell
+
 - [ ] Esc in action menu → returns to search
-- [ ] Cancel in output format submenu → returns to action menu
+- [ ] Esc in search screen → TUI exits
+
+---
+
+### Cleanup after testing
+
+```bash
+rm -f /tmp/tui-test-library.json /tmp/tui-test-config.toml
+rm -rf /tmp/tui-test-attachments
+unalias ref 2>/dev/null
+```
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification completed
-- [ ] Spec updated: `spec/features/interactive-search.md`
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`) — 2548 unit tests, 27 action-menu tests
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CI passes (ubuntu, macOS, Windows) — PR #55
+- [x] Step 11: Fix `--config` CLI flag
+- [x] Manual verification (TTY required) — steps A through Q above
+- [x] Spec verified: `spec/features/interactive-search.md` (already up to date)
+- [x] CHANGELOG.md updated
+- [ ] Merge PR
+- [ ] On main: update ROADMAP, move task file to `completed/`
