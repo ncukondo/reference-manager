@@ -19,7 +19,7 @@ with file-based IPC for status tracking and tmux send-keys for sync when agents 
 - [x] Add `tmux` to apt-get in `.devcontainer/Dockerfile`
 - [x] Add workmux install script after Claude CLI install
 - [x] Add `postStartCommand` to `.devcontainer/devcontainer.json` for tmux session auto-start
-- [ ] Verify: Rebuild container, confirm `which workmux && which tmux` both succeed
+- [x] Verify: `which workmux && which tmux` both succeed
 
 Files:
 - `.devcontainer/Dockerfile`
@@ -35,7 +35,7 @@ Files:
   - `post_create`: `npm install`
   - `status_icons`: working/waiting/done (ASCII for terminal compatibility)
   - `files.symlink`: node_modules (avoid duplicate installs)
-- [ ] Verify: `workmux add test-branch` creates worktree in `--worktrees/` + tmux window
+- [x] Verify: `workmux add test-branch` creates worktree in `--worktrees/` + tmux window
 
 File: `.workmux.yaml` (new)
 
@@ -134,11 +134,11 @@ Files:
 
 ## Manual Verification
 
-- [ ] In tmux: `workmux add test-feature -p "echo hello && exit"` → window created, agent starts
-- [ ] `workmux list` → shows test-feature with status icon
-- [ ] `workmux remove test-feature` → worktree + window + branch cleaned up
-- [ ] `/status` command includes workmux information
-- [ ] `/implement` detects workmux and reports readiness (or prompts install)
+- [x] `workmux add test-feature -b -H -F -C` → worktree + tmux window created
+- [x] `workmux list` → shows test-feature with MUX: ✓
+- [x] `workmux remove -f test-feature` → worktree + window + branch cleaned up
+- [x] `/status` command includes workmux information
+- [x] `/implement` detects workmux and reports readiness (or prompts install)
 
 ## Edge Cases
 
