@@ -33,7 +33,7 @@
     "test:unit": "vitest --project unit",
     "test:e2e": "vitest run --project e2e",
     "test:remote": "vitest --project remote",
-    "test:all": "vitest",
+    "test:all": "vitest --project unit && vitest --project e2e && vitest --project remote",
     "test:watch": "vitest --watch --project unit",
     "test:coverage": "vitest run --coverage --project unit",
     "lint": "biome check .",

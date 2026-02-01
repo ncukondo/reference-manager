@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     ca-certificates \
     tmux \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/bash /bin/sh
 
 # Install Node.js v24.4.1
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
