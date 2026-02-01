@@ -79,6 +79,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 30b**: URL Command (url resolution, ref url command with type filters and browser opening)
 - **Phase 29**: Edit Validation Pipeline (two-stage validation, error annotation, retry loop)
 - **DevOps**: workmux Integration (parallel agent orchestration with tmux)
+- **Phase 30c**: TUI Action Menu Enhancement (dynamic actions, output submenu, side-effect actions, --config fix)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -86,35 +87,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 30c: TUI Action Menu Enhancement
-
-Expand the TUI search action menu with dynamic actions based on selection count,
-citation key (Pandoc/LaTeX), Open URL, Open fulltext, Manage attachments,
-Edit, Remove, output format submenu, and config-driven defaults.
-
-**Task**: `20260129-03-tui-action-menu.md`
-
-**Depends on**: Phase 30a (citation key format) ✅, Phase 30b (URL command) ✅
-
-**Scope**:
-- Dynamic action menu (single vs. multiple entry selection)
-- Citation key action with config-driven format label
-- New actions: Open URL, Open fulltext, Manage attachments, Edit reference(s), Remove
-- Output format submenu (IDs, CSL-JSON, BibTeX, YAML)
-- Default citation style from `config.citation.defaultStyle`
-- Side-effect action execution architecture
-
-**Todos**:
-- [x] Step 1: Refactor ActionType and dynamic action choices
-- [x] Step 2: Add Output format submenu
-- [x] Step 3: Use default citation style from config
-- [x] Step 4: Side-effect action architecture
-- [x] Step 5: Implement Citation key action
-- [x] Step 6: Implement Open URL action
-- [x] Step 7: Implement Open fulltext action
-- [x] Step 8: Implement Manage attachments action
-- [x] Step 9: Implement Edit action
-- [x] Step 10: Implement Remove action
+No active phase. See Next Steps below.
 
 ---
 

@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Default citation style from `config.citation.defaultStyle` (replaces hardcoded APA)
   - Citation key action with config-driven Pandoc/LaTeX format label
   - Side-effect action execution architecture in `executeInteractiveSearch`
+  - Remove action now shows confirmation prompt before deletion
+  - Open fulltext action shows error message when no fulltext is attached
+
+### Fixed
+
+- **`--config` CLI flag**: The global `--config <path>` option was defined in Commander but never passed to `loadConfig()`. Now correctly loads the specified config file with highest priority.
 
 - **Citation Key Output Formats**: Pandoc and LaTeX citation key output for `list`/`search` commands
   - New output formats: `--output pandoc-key` (`@smith2023`), `--output latex-key` (`\cite{smith2023}`)
