@@ -171,14 +171,14 @@ Integrate workmux for tmux-based parallel agent orchestration and monitoring.
 - Permissions and documentation
 
 **Todos**:
-- [ ] Step 1: DevContainer setup
-- [ ] Step 2: workmux configuration
-- [ ] Step 3: IPC status convention
-- [ ] Step 4: implement.md orchestration
-- [ ] Step 5: code-with-task updates
-- [ ] Step 6: merge-pr updates
-- [ ] Step 7: status updates
-- [ ] Step 8: Permissions and documentation
+- [x] Step 1: DevContainer setup
+- [x] Step 2: workmux configuration
+- [x] Step 3: IPC status convention
+- [x] Step 4: implement.md orchestration
+- [x] Step 5: code-with-task updates
+- [x] Step 6: merge-pr updates
+- [x] Step 7: status updates
+- [x] Step 8: Permissions and documentation
 
 ### MCPB Registry Submission
 
