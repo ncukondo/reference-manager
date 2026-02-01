@@ -76,6 +76,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 27**: Update Change Detection (change details, accurate update/edit reporting)
 - **Phase 28**: Edit/Update ID Collision Auto-Resolution
 - **Phase 30a**: Citation Key Output Format (Pandoc/LaTeX key flags, config, TUI action)
+- **Phase 30b**: URL Command (url resolution, ref url command with type filters and browser opening)
 - **Phase 29**: Edit Validation Pipeline (two-stage validation, error annotation, retry loop)
 - **DevOps**: workmux Integration (parallel agent orchestration with tmux)
 
@@ -85,25 +86,6 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-### Phase 30b: URL Command
-
-Add `ref url` command for resolving and displaying reference URLs,
-with type filters and browser opening support.
-
-**Task**: `20260130-02-url-command.md`
-
-**Scope**:
-- URL resolution module (DOI > URL > PMID > PMCID > additional_urls)
-- `ref url` command with `--default`, `--doi`, `--pubmed`, `--pmcid`, `--open`
-- Single ID: URLs only; Multiple IDs: TSV (id\turl); With filter: plain URL
-- Interactive ID selection fallback
-
-**Todos**:
-- [ ] Step 1: URL resolution module
-- [ ] Step 2: URL command execution
-- [ ] Step 3: Register CLI command
-- [ ] Step 4: Interactive ID selection fallback
-
 ### Phase 30c: TUI Action Menu Enhancement
 
 Expand the TUI search action menu with dynamic actions based on selection count,
@@ -112,7 +94,7 @@ Edit, Remove, output format submenu, and config-driven defaults.
 
 **Task**: `20260129-03-tui-action-menu.md`
 
-**Depends on**: Phase 30a (citation key format), Phase 30b (URL command)
+**Depends on**: Phase 30a (citation key format) ✅, Phase 30b (URL command) ✅
 
 **Scope**:
 - Dynamic action menu (single vs. multiple entry selection)

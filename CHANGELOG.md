@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Citation Key Output Formats**: Pandoc and LaTeX citation key output for `list`/`search` commands
+  - New output formats: `--output pandoc-key` (`@smith2023`), `--output latex-key` (`\cite{smith2023}`)
+  - `--key` convenience flag: uses `citation.default_key_format` config setting
+  - Config: `[citation] default_key_format = "pandoc"` (or `"latex"`)
+  - TUI action: "Citation key" action in search action menu with config-driven format label
+
+- **`ref url` Command**: Resolve and display reference URLs with type filters and browser opening
+  - URL resolution priority: DOI > URL > PMID > PMCID > `custom.additional_urls`
+  - Type filters: `--default`, `--doi`, `--pubmed`, `--pmcid`
+  - `--open` flag: open URL in system browser
+  - Output: single ID → URLs only; multiple IDs → TSV (`id\turl`); with filter → plain URL
+  - Interactive ID selection fallback for TTY environments
+
 - **workmux integration**: Parallel agent orchestration with tmux-based visual monitoring
   - DevContainer: tmux and workmux pre-installed
   - `.workmux.yaml`: Project-specific configuration for worktree management
