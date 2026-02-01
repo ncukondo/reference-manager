@@ -519,7 +519,7 @@ unalias ref 2>/dev/null
 - [x] Build succeeds (`npm run build`)
 - [x] CI passes (ubuntu, macOS, Windows) — PR #55
 - [x] Step 11: Fix `--config` CLI flag
-- [ ] Manual verification (TTY required) — steps A through Q above
+- [x] Manual verification (TTY required) — steps A through Q above
 - [x] Spec verified: `spec/features/interactive-search.md` (already up to date)
 - [x] CHANGELOG.md updated
 - [ ] Merge PR
