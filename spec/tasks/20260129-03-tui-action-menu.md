@@ -172,12 +172,13 @@ The `--config <path>` global CLI option is defined in Commander but not passed t
 - `src/cli/helpers.ts`
 
 **Tests:**
-- [ ] Write test: `loadConfig({ configPath: "/path/to/config.toml" })` loads and applies the file
-- [ ] Write test: `configPath` has higher priority than env and user config
-- [ ] Write test: `loadConfigWithOverrides({ config: "/path" })` passes through to `loadConfig`
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `loadConfig({ configPath: "/path/to/config.toml" })` loads and applies the file
+- [x] Write test: `configPath` has higher priority than env, user, and current dir config
+- [x] Write test: throws error if configPath file does not exist
+- [x] Write test: `loadConfigWithOverrides({ config: "/path" })` passes through to `loadConfig`
+- [x] Implement
+- [x] Verify Green (2555 tests pass)
+- [x] Lint/Type check
 
 ## Manual Verification
 
@@ -203,21 +204,32 @@ npm run build
 # 2. Generate dummy library (20 entries with DOI/PMID/URL)
 node test-fixtures/generate-dummy-library.mjs /tmp/tui-test-library.json 20
 
-# 3. Create attachments directory
+# 3. Create test config file
+cat > /tmp/tui-test-config.toml <<'TOML'
+library = "/tmp/tui-test-library.json"
+
+[citation]
+default_style = "vancouver"
+default_key_format = "pandoc"
+
+[attachments]
+directory = "/tmp/tui-test-attachments"
+
+[cli.tui]
+limit = 15
+
+[cli.edit]
+default_format = "yaml"
+TOML
+
+# 4. Create attachments directory
 mkdir -p /tmp/tui-test-attachments
 
-# 4. Verify list command works
-node bin/cli.js --library /tmp/tui-test-library.json list --limit 3
+# 5. Verify list command works
+node bin/cli.js --config /tmp/tui-test-config.toml list --limit 3
 ```
 
 After preparation, present the "User Test Procedure" below to the user.
-
-> **Note on `--config` flag**: The `--config` CLI flag is currently non-functional
-> (`loadConfigWithOverrides` ignores it). See Step 11 for the fix.
-> Manual tests use `--library` and default config values.
-> LaTeX key format test (E) and custom default style test require Step 11 to be
-> completed first, or the user config file at `~/.config/reference-manager/config.toml`
-> to be edited manually.
 
 ---
 
@@ -231,8 +243,8 @@ After preparation, present the "User Test Procedure" below to the user.
 # Navigate to worktree
 cd /workspaces/reference-manager--worktrees/feature/tui-action-menu
 
-# Set up ref alias with --library (session-only)
-alias ref="node $(pwd)/bin/cli.js --library /tmp/tui-test-library.json --attachments-dir /tmp/tui-test-attachments"
+# Set up ref alias with --config (session-only)
+alias ref="node $(pwd)/bin/cli.js --config /tmp/tui-test-config.toml"
 
 # Verify: should display 3 entries
 ref list --limit 3
@@ -308,12 +320,11 @@ ref search --tui
 
 #### E. LaTeX key format
 
-> **Prerequisite**: Requires `--config` fix (Step 11) or manual user config edit.
-> To test without Step 11, edit `~/.config/reference-manager/config.toml`:
-> ```toml
-> [citation]
-> default_key_format = "latex"
-> ```
+Temporarily switch config to latex:
+
+```bash
+sed -i 's/default_key_format = "pandoc"/default_key_format = "latex"/' /tmp/tui-test-config.toml
+```
 
 ```bash
 ref search --tui
@@ -322,7 +333,11 @@ ref search --tui
 1. Select 1 entry → **"Citation key (LaTeX)"** → **Verify**: `\cite{<id>}` format
 2. Run again → Select 3 entries → **"Citation keys (LaTeX)"** → **Verify**: `\cite{id1,id2,id3}` format
 
-Restore config after testing (remove the `[citation]` section or revert the change).
+Restore config:
+
+```bash
+sed -i 's/default_key_format = "latex"/default_key_format = "pandoc"/' /tmp/tui-test-config.toml
+```
 
 - [ ] LaTeX single and multiple output
 
@@ -333,9 +348,9 @@ ref search --tui
 ```
 
 1. Select 1 entry → **"Generate citation"**
-2. **Verify**: Citation text is output (default style is APA unless config is overridden)
+2. **Verify**: Citation text is output in Vancouver style (configured via `default_style = "vancouver"`)
 
-- [ ] Default style citation output
+- [ ] Default style citation output (Vancouver format)
 
 #### G. Generate citation (choose style)
 
@@ -491,7 +506,7 @@ ref search --tui
 ### Cleanup after testing
 
 ```bash
-rm -f /tmp/tui-test-library.json
+rm -f /tmp/tui-test-library.json /tmp/tui-test-config.toml
 rm -rf /tmp/tui-test-attachments
 unalias ref 2>/dev/null
 ```
