@@ -201,6 +201,7 @@ export function SearchFlowApp({
     const count = selectedItems.length;
     const refWord = count === 1 ? "reference" : "references";
     return createElement(Select<ActionType>, {
+      key: "action",
       options: getActionChoices(count, { defaultKeyFormat }),
       message: `Action for ${count} selected ${refWord}:`,
       onSelect: handleActionSelect,
@@ -210,6 +211,7 @@ export function SearchFlowApp({
 
   if (state === "output-format") {
     return createElement(Select<OutputFormatType>, {
+      key: "output-format",
       options: OUTPUT_FORMAT_CHOICES,
       message: "Select output format:",
       onSelect: handleOutputFormatSelect,
@@ -219,6 +221,7 @@ export function SearchFlowApp({
 
   // state === "style"
   return createElement(Select<string>, {
+    key: "style",
     options: STYLE_CHOICES,
     message: "Select citation style:",
     onSelect: handleStyleSelect,

@@ -326,13 +326,16 @@ async function executeSideEffectAction(
       const { executeFulltextOpen } = await import("./fulltext.js");
       const item = items[0];
       if (!item) return;
-      await executeFulltextOpen(
+      const result = await executeFulltextOpen(
         {
           identifier: item.id,
           fulltextDirectory: config.attachments.directory,
         },
         context
       );
+      if (!result.success) {
+        process.stderr.write(`${result.error}\n`);
+      }
       break;
     }
     case "manage-attachments": {
@@ -360,16 +363,28 @@ async function executeSideEffectAction(
       break;
     }
     case "remove": {
-      const { executeRemove } = await import("./remove.js");
+      const {
+        executeRemove,
+        confirmRemoveIfNeeded,
+        getFulltextAttachmentTypes,
+        formatRemoveOutput,
+      } = await import("./remove.js");
       for (const item of items) {
-        await executeRemove(
+        const hasFulltext = getFulltextAttachmentTypes(item).length > 0;
+        const confirmed = await confirmRemoveIfNeeded(item, hasFulltext, false);
+        if (!confirmed) {
+          process.stderr.write("Cancelled.\n");
+          continue;
+        }
+        const result = await executeRemove(
           {
             identifier: item.id,
             fulltextDirectory: config.attachments.directory,
-            deleteFulltext: true,
+            deleteFulltext: hasFulltext,
           },
           context
         );
+        process.stderr.write(`${formatRemoveOutput(result, item.id)}\n`);
       }
       break;
     }
