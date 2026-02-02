@@ -10,6 +10,7 @@ export const ENV_OVERRIDE_MAP: Record<string, string> = {
   REFERENCE_MANAGER_ATTACHMENTS_DIR: "attachments.directory",
   REFERENCE_MANAGER_CLI_DEFAULT_LIMIT: "cli.default_limit",
   REFERENCE_MANAGER_MCP_DEFAULT_LIMIT: "mcp.default_limit",
+  REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "cli.tui.clipboard_auto_copy",
   PUBMED_EMAIL: "pubmed.email",
   PUBMED_API_KEY: "pubmed.api_key",
 };

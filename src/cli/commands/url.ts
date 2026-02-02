@@ -21,7 +21,9 @@ import {
   isTTY,
   loadConfigWithOverrides,
   readIdentifierFromStdin,
+  resolveClipboardEnabled,
   setExitCode,
+  writeOutputWithClipboard,
 } from "../helpers.js";
 
 /**
@@ -260,11 +262,13 @@ export async function handleUrlAction(
     const context = await createExecutionContext(config, Library.load);
 
     let resolvedIdentifiers: string[];
+    let isTuiMode = false;
 
     if (identifiers && identifiers.length > 0) {
       resolvedIdentifiers = identifiers;
     } else if (isTTY()) {
       // TTY mode: interactive selection
+      isTuiMode = true;
       const selected = await executeInteractiveSelect(context, config);
       resolvedIdentifiers = [selected];
     } else {
@@ -282,7 +286,8 @@ export async function handleUrlAction(
     // Output URLs to stdout
     const output = formatUrlOutput(result, options);
     if (output) {
-      process.stdout.write(`${output}\n`);
+      const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, isTuiMode);
+      await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
     }
 
     // Output errors to stderr

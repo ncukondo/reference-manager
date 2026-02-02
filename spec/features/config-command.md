@@ -249,6 +249,7 @@ cli.default_sort             enum      Default sort field
 cli.default_order            enum      Default sort order (asc, desc)
 cli.tui.limit                integer   Result limit in TUI mode
 cli.tui.debounce_ms          integer   Search debounce delay (ms)
+cli.tui.clipboard_auto_copy  boolean   Auto-copy TUI output to clipboard
 cli.edit.default_format      enum      Default edit format (yaml, json)
 
 mcp.default_limit            integer   Default result limit for MCP
@@ -361,6 +362,7 @@ All configuration keys can be read and written via `config get/set`:
 | `cli.default_order` | enum | `desc` | Order: `asc`, `desc` |
 | `cli.tui.limit` | integer | `20` | TUI mode limit |
 | `cli.tui.debounce_ms` | integer | `200` | Search debounce |
+| `cli.tui.clipboard_auto_copy` | boolean | `false` | Auto-copy TUI output to clipboard |
 | `cli.edit.default_format` | enum | `yaml` | Edit format: `yaml`, `json` |
 | `mcp.default_limit` | integer | `20` | MCP result limit |
 

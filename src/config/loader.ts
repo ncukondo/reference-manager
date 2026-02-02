@@ -223,6 +223,11 @@ function fillCliDefaults(partial: DeepPartialConfig["cli"]): Config["cli"] {
     envLimit !== undefined
       ? Number(envLimit)
       : (partial?.defaultLimit ?? defaultConfig.cli.defaultLimit);
+  const envClipboard = process.env.REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY;
+  const clipboardAutoCopy =
+    envClipboard !== undefined
+      ? envClipboard === "1" || envClipboard === "true"
+      : (partial?.tui?.clipboardAutoCopy ?? defaultConfig.cli.tui.clipboardAutoCopy);
   return {
     defaultLimit,
     defaultSort: partial?.defaultSort ?? defaultConfig.cli.defaultSort,
@@ -230,6 +235,7 @@ function fillCliDefaults(partial: DeepPartialConfig["cli"]): Config["cli"] {
     tui: {
       limit: partial?.tui?.limit ?? defaultConfig.cli.tui.limit,
       debounceMs: partial?.tui?.debounceMs ?? defaultConfig.cli.tui.debounceMs,
+      clipboardAutoCopy,
     },
     edit: {
       defaultFormat: partial?.edit?.defaultFormat ?? defaultConfig.cli.edit.defaultFormat,

@@ -70,13 +70,13 @@ Create a utility module for detecting and invoking system clipboard commands.
 - `src/utils/clipboard.test.ts`
 
 **Tests:**
-- [ ] Write test: `detectClipboardCommand` returns correct command per platform mock
-- [ ] Write test: `copyToClipboard` returns `{ success: true }` on success
-- [ ] Write test: `copyToClipboard` returns `{ success: false, error }` when command fails
-- [ ] Write test: `copyToClipboard` returns `{ success: false }` when no clipboard command available
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `detectClipboardCommand` returns correct command per platform mock
+- [x] Write test: `copyToClipboard` returns `{ success: true }` on success
+- [x] Write test: `copyToClipboard` returns `{ success: false, error }` when command fails
+- [x] Write test: `copyToClipboard` returns `{ success: false }` when no clipboard command available
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Config Schema and Defaults
 
@@ -93,12 +93,12 @@ Add `clipboard_auto_copy` to TUI config schema and defaults.
 - `src/config/env-override.ts`
 
 **Tests:**
-- [ ] Write test: config schema accepts `clipboardAutoCopy` boolean
-- [ ] Write test: default value is `false`
-- [ ] Write test: env override resolves `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` to `cli.tui.clipboard_auto_copy`
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: config schema accepts `clipboardAutoCopy` boolean
+- [x] Write test: default value is `false`
+- [x] Write test: env override resolves `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` to `cli.tui.clipboard_auto_copy`
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: CLI Global Option `--clipboard` / `--no-clipboard`
 
@@ -115,13 +115,13 @@ Add clipboard flags as global CLI options.
 - `src/cli/helpers.ts`
 
 **Tests:**
-- [ ] Write test: `--clipboard` flag overrides config and env
-- [ ] Write test: `--no-clipboard` flag disables clipboard
-- [ ] Write test: env var applies when no CLI flag given
-- [ ] Write test: config `cli.tui.clipboard_auto_copy` applies only in TUI mode when no CLI flag/env
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `--clipboard` flag overrides config and env
+- [x] Write test: `--no-clipboard` flag disables clipboard
+- [x] Write test: env var applies when no CLI flag given
+- [x] Write test: config `cli.tui.clipboard_auto_copy` applies only in TUI mode when no CLI flag/env
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Integrate Clipboard into Output Path
 
@@ -141,23 +141,23 @@ Wire clipboard copy into the CLI output flow.
 - `src/cli/index.ts` (command handlers)
 
 **Tests:**
-- [ ] Write test: output goes to both stdout and clipboard when enabled
-- [ ] Write test: stderr shows "Copied to clipboard" on success
-- [ ] Write test: stderr warning on clipboard failure, stdout still works
-- [ ] Write test: `--quiet` suppresses clipboard notification
-- [ ] Write test: clipboard not invoked when disabled
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: output goes to both stdout and clipboard when enabled
+- [x] Write test: stderr shows "Copied to clipboard" on success
+- [x] Write test: stderr warning on clipboard failure, stdout still works
+- [x] Write test: `--quiet` suppresses clipboard notification
+- [x] Write test: clipboard not invoked when disabled
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Update Specs
 
 Update specification documents to reflect the new clipboard feature.
 
-- [ ] Update `spec/architecture/cli.md`: add `--clipboard` / `--no-clipboard` to Global Options, add `clipboard_auto_copy` to config settings
-- [ ] Update `spec/features/interactive-search.md`: move clipboard from Future Extensions to Configuration section
-- [ ] Update `spec/features/config-command.md`: add new config key if needed
-- [ ] Verify consistency across specs
+- [x] Update `spec/architecture/cli.md`: add `--clipboard` / `--no-clipboard` to Global Options, add `clipboard_auto_copy` to config settings
+- [x] Update `spec/features/interactive-search.md`: move clipboard from Future Extensions to Configuration section
+- [x] Update `spec/features/config-command.md`: add new config key if needed
+- [x] Verify consistency across specs
 
 ## Manual Verification
 
@@ -223,10 +223,10 @@ sudo apt-get install -y -qq xclip              # restore for further tests
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification completed
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

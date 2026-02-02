@@ -113,6 +113,11 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     type: "integer",
     description: "Search debounce delay (ms)",
   },
+  {
+    key: "cli.tui.clipboard_auto_copy",
+    type: "boolean",
+    description: "Auto-copy TUI output to clipboard",
+  },
 
   // cli.edit section
   {

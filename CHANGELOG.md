@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Clipboard Support**: Auto-copy CLI output to system clipboard
+  - New global options: `--clipboard` / `--no-clipboard`
+  - Config setting: `cli.tui.clipboard_auto_copy` (TUI output only)
+  - Environment variable: `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` (all commands)
+  - Priority: CLI flag → env var → config → default (false)
+  - Platform-aware detection: pbcopy (macOS) → clip.exe (WSL) → wl-copy (Wayland) → xclip (X11)
+  - Graceful degradation when clipboard is unavailable
+  - Applied to: search, list, export, cite, url commands
+
 - **TUI Action Menu Enhancement**: Expanded interactive search (`ref search -t`) action menu
   - Dynamic action menu: different actions for single vs. multiple entry selection
   - New side-effect actions: Open URL, Open fulltext, Manage attachments, Edit reference(s), Remove

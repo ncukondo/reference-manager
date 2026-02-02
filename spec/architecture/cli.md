@@ -442,6 +442,7 @@ default_order = "desc"
 [cli.tui]
 limit = 20                 # Max results in TUI mode
 debounce_ms = 200          # Search debounce delay
+clipboard_auto_copy = false # Auto-copy TUI output to clipboard
 ```
 
 ### Managing Configuration
@@ -481,6 +482,8 @@ See: `spec/decisions/ADR-009-ilibrary-operations-pattern.md`
 --no-backup           Disable backup for this operation
 --backup-dir <path>   Override backup directory
 --attachments-dir <path>  Override attachments directory
+--clipboard           Copy output to system clipboard
+--no-clipboard        Disable clipboard copy
 --help / -h           Display help
 --version / -V        Display version
 ```

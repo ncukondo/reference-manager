@@ -96,6 +96,7 @@ export const defaultConfig: Config = {
     tui: {
       limit: 20,
       debounceMs: 200,
+      clipboardAutoCopy: false,
     },
     edit: {
       defaultFormat: "yaml",

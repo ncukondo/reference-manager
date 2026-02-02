@@ -7,7 +7,9 @@ import {
   isTTY,
   loadConfigWithOverrides,
   readIdentifiersFromStdin,
+  resolveClipboardEnabled,
   setExitCode,
+  writeOutputWithClipboard,
 } from "../helpers.js";
 
 /**
@@ -202,10 +204,12 @@ export async function handleCiteAction(
     const context = await createExecutionContext(config, Library.load);
 
     let result: CiteCommandResult;
+    let isTuiMode = false;
 
     if (identifiers.length === 0) {
       if (isTTY()) {
         // TTY mode: interactive selection
+        isTuiMode = true;
         result = await executeInteractiveCite(options, context, config);
       } else {
         // Non-TTY mode: read from stdin (pipeline support)
@@ -225,7 +229,8 @@ export async function handleCiteAction(
 
     const output = formatCiteOutput(result);
     if (output) {
-      process.stdout.write(`${output}\n`);
+      const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, isTuiMode);
+      await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
     }
 
     const errors = formatCiteErrors(result);
