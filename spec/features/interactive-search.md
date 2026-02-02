@@ -227,6 +227,7 @@ ref search -t > output.txt
 [cli.tui]
 limit = 20              # Maximum displayed results
 debounce_ms = 200       # Debounce delay in milliseconds
+clipboard_auto_copy = false  # Auto-copy TUI output to clipboard
 ```
 
 ### Defaults
@@ -235,6 +236,18 @@ debounce_ms = 200       # Debounce delay in milliseconds
 |---------|---------|-------------|
 | `limit` | 20 | Maximum results displayed |
 | `debounce_ms` | 200 | Search debounce delay |
+| `clipboard_auto_copy` | `false` | Auto-copy output to system clipboard |
+
+### Clipboard Auto-Copy
+
+When `clipboard_auto_copy = true`, output from TUI actions is automatically copied to the system clipboard in addition to stdout.
+
+**Three-layer control** (highest priority first):
+1. CLI flag: `--clipboard` / `--no-clipboard` (applies to all commands)
+2. Environment variable: `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY=1` (applies to all commands)
+3. Config: `cli.tui.clipboard_auto_copy` (TUI output only)
+
+Clipboard detection order: `pbcopy` (macOS) → `clip.exe` (WSL) → `wl-copy` (Wayland) → `xclip` (X11). If no clipboard command is available, a warning is shown on stderr and the command continues normally.
 
 ## Error Handling
 
@@ -254,7 +267,6 @@ Not in current scope, may be added later:
 - **Configurable default action**: Skip action menu
 - **Custom display format**: Configure which fields to show
 - **Keyboard shortcuts**: Direct actions without menu (e.g., `c` for cite)
-- **Clipboard auto-copy**: Automatically copy output to clipboard (controlled by config setting)
 - **Open specific attachment**: Open a specific attached file (not just directory)
 
 ## Dependencies

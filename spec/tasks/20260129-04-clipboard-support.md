@@ -154,10 +154,10 @@ Wire clipboard copy into the CLI output flow.
 
 Update specification documents to reflect the new clipboard feature.
 
-- [ ] Update `spec/architecture/cli.md`: add `--clipboard` / `--no-clipboard` to Global Options, add `clipboard_auto_copy` to config settings
-- [ ] Update `spec/features/interactive-search.md`: move clipboard from Future Extensions to Configuration section
-- [ ] Update `spec/features/config-command.md`: add new config key if needed
-- [ ] Verify consistency across specs
+- [x] Update `spec/architecture/cli.md`: add `--clipboard` / `--no-clipboard` to Global Options, add `clipboard_auto_copy` to config settings
+- [x] Update `spec/features/interactive-search.md`: move clipboard from Future Extensions to Configuration section
+- [x] Update `spec/features/config-command.md`: add new config key if needed
+- [x] Verify consistency across specs
 
 ## Manual Verification
 
@@ -223,10 +223,10 @@ sudo apt-get install -y -qq xclip              # restore for further tests
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification completed
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
