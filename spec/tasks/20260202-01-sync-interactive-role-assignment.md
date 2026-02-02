@@ -137,8 +137,8 @@ Behavior:
 - Default to `defaultIndex` on empty input (Enter)
 - Non-TTY: return default choice value
 
-- [ ] Implement: `readChoice` in `src/cli/helpers.ts`
-- [ ] Lint/Type check
+- [x] Implement: `readChoice` in `src/cli/helpers.ts`
+- [x] Lint/Type check
 
 ### Step 4: Interactive Role Assignment in `attach sync` (TTY)
 
