@@ -16,6 +16,7 @@ export const logLevelSchema = z.enum(["silent", "info", "debug"]);
 export const tuiConfigSchema = z.object({
   limit: z.number().int().nonnegative(),
   debounceMs: z.number().int().nonnegative(),
+  clipboardAutoCopy: z.boolean(),
 });
 
 /**
@@ -515,6 +516,8 @@ function normalizeTuiSection(
     limit?: number;
     debounceMs?: number;
     debounce_ms?: number;
+    clipboardAutoCopy?: boolean;
+    clipboard_auto_copy?: boolean;
   }>
 ): Partial<TuiConfig> | undefined {
   const normalized: Partial<TuiConfig> = {};
@@ -524,6 +527,10 @@ function normalizeTuiSection(
   const debounceMs = tui.debounceMs ?? tui.debounce_ms;
   if (debounceMs !== undefined) {
     normalized.debounceMs = debounceMs;
+  }
+  const clipboardAutoCopy = tui.clipboardAutoCopy ?? tui.clipboard_auto_copy;
+  if (clipboardAutoCopy !== undefined) {
+    normalized.clipboardAutoCopy = clipboardAutoCopy;
   }
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }

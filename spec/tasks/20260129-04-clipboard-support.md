@@ -93,12 +93,12 @@ Add `clipboard_auto_copy` to TUI config schema and defaults.
 - `src/config/env-override.ts`
 
 **Tests:**
-- [ ] Write test: config schema accepts `clipboardAutoCopy` boolean
-- [ ] Write test: default value is `false`
-- [ ] Write test: env override resolves `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` to `cli.tui.clipboard_auto_copy`
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: config schema accepts `clipboardAutoCopy` boolean
+- [x] Write test: default value is `false`
+- [x] Write test: env override resolves `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` to `cli.tui.clipboard_auto_copy`
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: CLI Global Option `--clipboard` / `--no-clipboard`
 
