@@ -17,6 +17,7 @@ test -n "$TMUX" && echo "in tmux session" || echo "not in tmux — run: tmux new
 - spec/tasks/ROADMAP.md を確認し、未完了のタスクを全て洗い出す
 - 依存関係が満たされているタスクを特定（並列実行候補）
 - 実装するタスクを選択
+  - 並列実装が可能なタスクが複数ある場合、workmux経由でworkerエージェントに分担する
 
 ### 2. ワーカー起動
 
@@ -34,7 +35,14 @@ test -n "$TMUX" && echo "in tmux session" || echo "not in tmux — run: tmux new
 
 起動に失敗した場合はスクリプトが手動コマンドを表示するので、それに従う。
 
-### 3. モニタリングループ
+### 3. レイアウト適用
+
+全ワーカー起動後、ペインレイアウトを整える:
+```bash
+./scripts/apply-layout.sh
+```
+
+### 4. モニタリングループ
 
 ~30秒間隔でポーリング:
 ```bash
@@ -45,36 +53,64 @@ tmux list-panes -F '#{pane_index} #{pane_current_command} #{pane_current_path}'
 cat /workspaces/reference-manager--worktrees/*/.worker-status.json 2>/dev/null | jq -r '[.branch, .status, .current_step] | @tsv'
 
 # 特定ペインの出力確認（停滞時）
-tmux capture-pane -t <pane-index> -p | tail -20
+tmux capture-pane -t <pane-id> -p | tail -20
 ```
 
-### 4. 完了処理
+### 5. ワーカー完了検知 & レビューサイクル
 
-各ワーカーのPRが作成されたら:
-1. PR レビュー + CI 待ち
-2. `gh pr merge <number> --merge`
-3. main で ROADMAP.md 更新 + タスクファイルを `completed/` に移動
-4. クリーンアップ（CLAUDE.md復元 → worktree削除）:
+#### ワーカー完了の検知
+全ワーカーがPR作成まで完了したかを、`tmux capture-pane` でポーリングして確認する:
+```bash
+# 各ワーカーペインの最新出力を確認
+tmux capture-pane -t <pane-id> -p | tail -20
+```
+ワーカーがアイドル状態（プロンプト待ち or `?` 表示）になっていればPR作成済みと判断する。
+
+#### レビュー → 修正 → 再レビュー
+1. mainエージェントが各PRをレビュー (`/review-pr <PR番号>`)
+2. 修正が必要な場合、該当ワーカーに修正指示を送信:
+   ```bash
+   tmux send-keys -t <pane-id> '修正指示テキスト'
+   sleep 1
+   tmux send-keys -t <pane-id> Enter
+   ```
+3. ワーカーが修正してpush → 再レビュー
+4. 全PR承認まで繰り返す
+
+### 6. 完了処理
+
+各ワーカーのPRが承認されたら:
+1. `gh pr merge <number> --merge`
+2. main で ROADMAP.md 更新 + タスクファイルを `completed/` に移動
+3. クリーンアップ（CLAUDE.md復元 → worktree削除）:
    ```bash
    cd /workspaces/reference-manager--worktrees/<branch-name> && git checkout -- CLAUDE.md
    workmux remove <handle>
    # workmux 未使用時: git worktree remove ... && git branch -d ...
    ```
 
-### 5. 障害対応
+### 7. 障害対応
 
-- **エラー検出**: IPC status が `failed` → `tmux capture-pane -t <pane-index>` でエラー確認
-- **リトライ**: メッセージと Enter を分けて送信:
-  ```bash
-  tmux send-keys -t <pane-index> '続きをお願いします'
-  tmux send-keys -t <pane-index> Enter
-  ```
+- **エラー検出**: IPC status が `failed` → `tmux capture-pane -t <pane-id>` でエラー確認
+- **リトライ**: メッセージと Enter を分けて送信（後述の注意事項参照）
 - **回復不能**: ペインを閉じて worktree を削除
 
-### 6. アイドル検出
+### 8. アイドル検出
 
-- `updated_at` が5分以上古い場合 → `tmux capture-pane -t <pane-index>` でプロンプト状態を確認
-- エージェントがアイドルなら `send-keys`（メッセージと Enter を分ける）で継続指示
+- `updated_at` が5分以上古い場合 → `tmux capture-pane -t <pane-id>` でプロンプト状態を確認
+- エージェントがアイドルなら `send-keys` で継続指示
+
+## tmux send-keys の注意
+
+- テキストと Enter は**必ず別々の `send-keys` 呼び出し**で送信する
+- 間に `sleep 1` を挟む（入力レースを防ぐため）
+- 悪い例: `tmux send-keys -t $PANE 'command' Enter`
+- 良い例:
+  ```bash
+  tmux send-keys -t $PANE 'command'
+  sleep 1
+  tmux send-keys -t $PANE Enter
+  ```
 
 ## tmux 未使用時のフォールバック
 

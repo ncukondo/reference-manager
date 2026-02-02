@@ -4,15 +4,12 @@ spec/_index.mdを起点として必要事項を確認後、spec/tasks/内のタ�
 
 ## IPC ステータス報告
 
-`/workspaces/reference-manager--worktrees/.ipc/` ディレクトリが存在する場合、各フェーズでステータスを書き込む:
+worktreeルートの `.worker-status.json` にステータスを書き込む:
 
 ```bash
-IPC_DIR="/workspaces/reference-manager--worktrees/.ipc"
-HANDLE=$(basename "$(git rev-parse --show-toplevel)")
-if [ -d "$IPC_DIR" ]; then
-  cat > "$IPC_DIR/$HANDLE.status.json" <<IPCEOF
+WORKTREE_ROOT="$(git rev-parse --show-toplevel)"
+cat > "$WORKTREE_ROOT/.worker-status.json" <<IPCEOF
 {
-  "handle": "$HANDLE",
   "branch": "$(git branch --show-current)",
   "task_file": "<task file path>",
   "status": "<status>",
@@ -22,10 +19,17 @@ if [ -d "$IPC_DIR" ]; then
   "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 IPCEOF
-fi
 ```
 
 ステータス値: `starting` → `in_progress` → `testing` → `creating_pr` → `completed` / `failed`
+
+書き込みタイミング:
+- 作業開始時: `starting`
+- 各ステップ着手時: `in_progress` + `current_step` 更新
+- テスト実行時: `testing`
+- PR作成時: `creating_pr`
+- 完了時: `completed` + `pr_number` 設定
+- エラー時: `failed` + `error` 設定
 
 ## 作業手順
 

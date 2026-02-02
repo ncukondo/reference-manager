@@ -27,6 +27,7 @@ else
     workmux add "$BRANCH" -b
   else
     echo "[spawn-worker] Creating worktree manually..."
+    mkdir -p "$WORKTREE_BASE"
     git worktree add "$WORKTREE_DIR" -b "$BRANCH"
     (cd "$WORKTREE_DIR" && npm install)
   fi
