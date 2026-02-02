@@ -79,7 +79,9 @@ export function createProgram(): Command {
     .option("--verbose", "Enable verbose output")
     .option("--no-backup", "Disable backup creation")
     .option("--backup-dir <path>", "Override backup directory")
-    .option("--attachments-dir <path>", "Override attachments directory");
+    .option("--attachments-dir <path>", "Override attachments directory")
+    .option("--clipboard", "Copy output to system clipboard")
+    .option("--no-clipboard", "Disable clipboard copy");
 
   // Register commands
   registerListCommand(program);

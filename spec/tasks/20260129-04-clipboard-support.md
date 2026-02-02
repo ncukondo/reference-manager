@@ -115,13 +115,13 @@ Add clipboard flags as global CLI options.
 - `src/cli/helpers.ts`
 
 **Tests:**
-- [ ] Write test: `--clipboard` flag overrides config and env
-- [ ] Write test: `--no-clipboard` flag disables clipboard
-- [ ] Write test: env var applies when no CLI flag given
-- [ ] Write test: config `cli.tui.clipboard_auto_copy` applies only in TUI mode when no CLI flag/env
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `--clipboard` flag overrides config and env
+- [x] Write test: `--no-clipboard` flag disables clipboard
+- [x] Write test: env var applies when no CLI flag given
+- [x] Write test: config `cli.tui.clipboard_auto_copy` applies only in TUI mode when no CLI flag/env
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Integrate Clipboard into Output Path
 

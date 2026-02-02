@@ -5,7 +5,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Config } from "../config/schema.js";
 import {
   getOutputFormat,
   isTTY,
@@ -14,6 +15,7 @@ import {
   readConfirmation,
   readJsonInput,
   readStdinInputs,
+  resolveClipboardEnabled,
 } from "./helpers.js";
 
 describe("readJsonInput", () => {
@@ -199,4 +201,57 @@ describe("readStdinInputs", () => {
   // Note: stdin reading is tested via CLI integration tests
   // The function reads from process.stdin and splits by whitespace
   // See add.e2e.test.ts for actual stdin handling tests
+});
+
+describe("resolveClipboardEnabled", () => {
+  const originalEnv = process.env;
+
+  const makeConfig = (clipboardAutoCopy: boolean): Config =>
+    ({
+      cli: { tui: { clipboardAutoCopy } },
+    }) as unknown as Config;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("--clipboard flag overrides config and env", () => {
+    process.env = { ...originalEnv, REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "0" };
+    const config = makeConfig(false);
+    expect(resolveClipboardEnabled({ clipboard: true }, config, false)).toBe(true);
+  });
+
+  it("--no-clipboard flag disables clipboard", () => {
+    process.env = { ...originalEnv, REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "1" };
+    const config = makeConfig(true);
+    expect(resolveClipboardEnabled({ clipboard: false }, config, true)).toBe(false);
+  });
+
+  it("env var applies when no CLI flag given", () => {
+    process.env = { ...originalEnv, REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "1" };
+    const config = makeConfig(false);
+    expect(resolveClipboardEnabled({}, config, false)).toBe(true);
+  });
+
+  it("env var '0' disables clipboard", () => {
+    process.env = { ...originalEnv, REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "0" };
+    const config = makeConfig(true);
+    expect(resolveClipboardEnabled({}, config, true)).toBe(false);
+  });
+
+  it("config clipboardAutoCopy applies only in TUI mode when no CLI flag/env", () => {
+    process.env = { ...originalEnv };
+    process.env.REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY = undefined;
+    const config = makeConfig(true);
+    expect(resolveClipboardEnabled({}, config, true)).toBe(true);
+    expect(resolveClipboardEnabled({}, config, false)).toBe(false);
+  });
+
+  it("returns false by default when nothing is set", () => {
+    process.env = { ...originalEnv };
+    process.env.REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY = undefined;
+    const config = makeConfig(false);
+    expect(resolveClipboardEnabled({}, config, false)).toBe(false);
+    expect(resolveClipboardEnabled({}, config, true)).toBe(false);
+  });
 });

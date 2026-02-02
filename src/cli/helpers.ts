@@ -29,6 +29,7 @@ export interface CliOptions {
   uuid?: boolean;
   bibtex?: boolean;
   attachmentsDir?: string;
+  clipboard?: boolean;
 }
 
 /**
@@ -321,6 +322,33 @@ export function exitWithError(message: string, code: number = ExitCode.ERROR): v
 export function exitWithMessage(message: string, code: number): void {
   process.stderr.write(`${message}\n`);
   setExitCode(code);
+}
+
+/**
+ * Resolve whether clipboard auto-copy is enabled.
+ *
+ * Priority (highest to lowest):
+ * 1. CLI flag (--clipboard / --no-clipboard)
+ * 2. Environment variable REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY
+ * 3. Config cli.tui.clipboardAutoCopy (only when isTui=true)
+ * 4. Default: false
+ */
+export function resolveClipboardEnabled(
+  options: CliOptions,
+  config: Config,
+  isTui: boolean
+): boolean {
+  if (options.clipboard !== undefined) {
+    return options.clipboard;
+  }
+  const envVal = process.env.REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY;
+  if (envVal !== undefined) {
+    return envVal === "1" || envVal === "true";
+  }
+  if (isTui) {
+    return config.cli.tui.clipboardAutoCopy;
+  }
+  return false;
 }
 
 /**
