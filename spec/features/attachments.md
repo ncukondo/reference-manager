@@ -135,9 +135,10 @@ Examples:
 **Manual file addition workflow (TTY - interactive):**
 
 1. `ref attach open Smith-2024` → Shows naming convention, creates and opens directory
-2. User drags files into directory via file manager
+2. User drags files into directory via file manager (any filename is acceptable)
 3. User presses Enter in terminal
-4. Automatically syncs and updates metadata
+4. Files matching naming convention are auto-registered
+5. Files with non-standard names trigger interactive role assignment and optional rename
 
 ## Commands
 
@@ -270,6 +271,28 @@ Found 2 new files:
 Updated metadata for Smith-2024.
 ```
 
+*If non-standard filenames are detected, interactive role assignment is triggered:*
+
+```
+Scanning directory...
+
+  ✓ supplement-data.csv → role: supplement, label: "data"
+
+  mmc1.pdf → role: unknown (suggested: supplement)
+  Assign role for mmc1.pdf:
+    [1] fulltext
+    [2] supplement (suggested)
+    [3] notes
+    [4] draft
+    [5] other
+  > 2
+  Label (optional, Enter to skip):
+
+  Rename mmc1.pdf → supplement.pdf? (y/N) y
+
+Updated metadata for Smith-2024.
+```
+
 **File mode behavior:**
 - With filename: Opens the specified file
 - With filename or role: Opens the specified file
@@ -347,7 +370,8 @@ ref attach sync --all                        # Sync all references
 
 1. Scan directory for files not in metadata
 2. Infer role/label from filename pattern
-3. Report or apply changes
+3. For ambiguous files (role = "other"), apply context-based suggestion and/or interactive prompt
+4. Report or apply changes
 
 **Filename inference:**
 
@@ -360,20 +384,79 @@ ref attach sync --all                        # Sync all references
 | `{role}-{label}.ext` | {role} | {label} |
 | Other | other | filename |
 
-**Example output:**
+**Context-based role suggestion (for "other" files):**
+
+When filename inference yields `role: "other"`, the system suggests a more likely role based on context:
+
+| Condition | Suggested Role |
+|-----------|---------------|
+| `.pdf`/`.md` file, no fulltext attachment exists | fulltext |
+| `.pdf`/`.md` file, fulltext already exists | supplement |
+| Data file (`.xlsx`, `.csv`, `.tsv`, `.zip`, `.tar.gz`) | supplement |
+| Otherwise | other (no suggestion) |
+
+Suggestions are used as default values in interactive prompts and are informational only — they do not override the user's choice.
+
+**Interactive role assignment (TTY only):**
+
+In TTY mode, when new files have ambiguous roles (inferred as "other"), the user is prompted to assign a role:
+
 ```
 $ ref attach sync Smith-2024
 
 Found 2 new files:
   supplement-data.csv → role: supplement, label: "data"
-  my-notes.md → role: other, label: "my-notes"
+
+  mmc1.pdf → role: unknown (suggested: supplement)
+  Assign role for mmc1.pdf:
+    [1] fulltext
+    [2] supplement (suggested)
+    [3] notes
+    [4] draft
+    [5] other
+  > 2
+  Label (optional, Enter to skip): table-s1
+
+  Rename mmc1.pdf → supplement-table-s1.pdf? (y/N) y
+
+Add new files to metadata? (y/N) y
+Changes applied.
+```
+
+Files matching the naming convention skip the prompt entirely.
+
+**Rename offer (TTY only):**
+
+After role and label assignment, if the file's current name doesn't match the naming convention (`{role}[-{label}].{ext}`), a rename is offered. If accepted:
+- The file is renamed on disk
+- Metadata records the new filename
+
+If declined, the file keeps its original name in both disk and metadata.
+
+**Role overrides (programmatic):**
+
+The sync operation accepts optional `roleOverrides` for programmatic callers (scripts, MCP server, HTTP API):
+- Key: current filename
+- Value: `{ role, label? }`
+- Applied when `--yes` is active
+
+**Non-TTY example output:**
+```
+$ ref attach sync Smith-2024
+
+Found 2 new files:
+  supplement-data.csv → role: supplement, label: "data"
+  mmc1.pdf → role: other, label: "mmc1"
 
 Missing files (in metadata but not on disk):
   supplement-old.xlsx
 
+(dry-run: no changes made)
 Run with --yes to add new files
 Run with --fix to remove missing files
 ```
+
+Non-TTY behavior is unchanged — files are classified by inference only, no interactive prompts.
 
 ## Platform Support
 

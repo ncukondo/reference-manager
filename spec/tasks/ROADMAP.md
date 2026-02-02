@@ -89,7 +89,19 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-No active phase. See Next Steps below.
+### Phase 33: Sync Interactive Role Assignment
+
+Improve `ref attach sync` to handle non-standard filenames (journal-downloaded PDFs, etc.) by adding context-based inference, interactive role assignment, and file rename offers.
+
+- **Task**: `spec/tasks/20260202-01-sync-interactive-role-assignment.md`
+- **Scope**:
+  - [ ] **33.1**: Context-based role suggestion (`suggestRoleFromContext`)
+  - [ ] **33.2**: `roleOverrides` support in sync operation
+  - [ ] **33.3**: `readChoice` CLI helper (numbered list prompt)
+  - [ ] **33.4**: Interactive role assignment in `attach sync` TTY mode
+  - [ ] **33.5**: Interactive role assignment in `attach open` TTY mode
+  - [ ] **33.6**: Rename offer (rename files to match naming convention)
+  - [ ] **33.7**: E2E tests and manual verification
 
 ---
 
