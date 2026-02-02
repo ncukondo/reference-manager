@@ -119,69 +119,24 @@ Use workmux for worktree lifecycle management (create, symlink, install, cleanup
 
 Project config: `.workmux.yaml` (see file for details)
 
-### Worker Setup
+### Spawning Workers
 
-#### 1. Create worktree (workmux)
-
-workmux automates worktree creation, `node_modules` symlink, and `npm install`:
+Use `scripts/spawn-worker.sh` to set up and launch a worker:
 
 ```bash
-workmux add feature/<name> -b
+./scripts/spawn-worker.sh feature/<name> <task-keyword>
 ```
 
-If workmux is not available, create manually:
-```bash
-git worktree add /workspaces/reference-manager--worktrees/<branch-name> -b <branch-name>
-cd /workspaces/reference-manager--worktrees/<branch-name> && npm install
-```
+The script handles:
+1. Worktree creation (via workmux or manual fallback)
+2. `.claude/settings.local.json` for auto-permission
+3. `CLAUDE.md` append with worker instructions and compact recovery
+4. Tmux pane split (`-d` to keep focus on orchestrator)
+5. Claude interactive launch, startup wait, prompt send
 
-#### 2. Auto-permission for worker agents
+If auto-launch fails, the script prints manual commands to run.
 
-Place `.claude/settings.local.json` in the worktree to suppress permission prompts:
-
-```bash
-WORKTREE=/workspaces/reference-manager--worktrees/<branch-name>
-mkdir -p "$WORKTREE/.claude"
-cat > "$WORKTREE/.claude/settings.local.json" << 'EOF'
-{
-  "permissions": {
-    "allow": [
-      "Bash(*)", "Read(*)", "Write(*)", "Edit(*)",
-      "Grep(*)", "Glob(*)", "mcp__serena__*"
-    ]
-  }
-}
-EOF
-```
-
-If this is insufficient, use `claude --dangerously-skip-permissions` as a fallback.
-
-#### 3. Split pane (not separate window)
-
-Spawn worker as a pane in the **current window**, not a separate window. Use `-d` to keep focus on the orchestrator pane.
-
-```bash
-WORKTREE=/workspaces/reference-manager--worktrees/<branch-name>
-tmux split-window -h -d -c "$WORKTREE"
-```
-
-#### 4. Launch Claude interactively, then send prompt
-
-**Important**: Do NOT use `claude -p`. Launch `claude` in interactive mode, wait for startup, then send the prompt. Always send the message and Enter as **two separate `send-keys` calls**.
-
-```bash
-# Start Claude interactively
-tmux send-keys -t <pane-index> 'claude'
-tmux send-keys -t <pane-index> Enter
-
-# Wait for startup ("? for shortcuts" appears)
-sleep 15
-
-# Send prompt (message and Enter MUST be separate)
-tmux send-keys -t <pane-index> '/code-with-task <keyword>'
-sleep 1
-tmux send-keys -t <pane-index> Enter
-```
+See `scripts/spawn-worker.sh` for implementation details.
 
 ### IPC Status Protocol
 
