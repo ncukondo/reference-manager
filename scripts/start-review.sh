@@ -53,7 +53,11 @@ cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
       "Glob(*)",
       "mcp__serena__*"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "serena"
+  ]
 }
 SETTINGS_EOF
 
