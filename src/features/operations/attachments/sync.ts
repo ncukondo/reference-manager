@@ -29,6 +29,8 @@ export interface SyncAttachmentOptions {
   idType?: IdentifierType;
   /** Base directory for attachments */
   attachmentsDirectory: string;
+  /** Override inferred roles for specific files (key: filename) */
+  roleOverrides?: Record<string, { role: string; label?: string }>;
 }
 
 /**
@@ -174,16 +176,20 @@ function buildUpdatedFiles(
   newFiles: InferredFile[],
   missingFiles: string[],
   shouldApplyNew: boolean,
-  shouldApplyFix: boolean
+  shouldApplyFix: boolean,
+  roleOverrides?: Record<string, { role: string; label?: string }>
 ): AttachmentFile[] {
   let updatedFiles = [...metadataFiles];
 
   if (shouldApplyNew) {
     for (const newFile of newFiles) {
+      const override = roleOverrides?.[newFile.filename];
+      const role = override?.role ?? newFile.role;
+      const label = override ? override.label : newFile.label;
       const attachmentFile: AttachmentFile = {
         filename: newFile.filename,
-        role: newFile.role,
-        ...(newFile.label && { label: newFile.label }),
+        role,
+        ...(label && { label }),
       };
       updatedFiles.push(attachmentFile);
     }
@@ -224,7 +230,14 @@ export async function syncAttachments(
   library: ILibrary,
   options: SyncAttachmentOptions
 ): Promise<SyncAttachmentResult> {
-  const { identifier, yes = false, fix = false, idType = "id", attachmentsDirectory } = options;
+  const {
+    identifier,
+    yes = false,
+    fix = false,
+    idType = "id",
+    attachmentsDirectory,
+    roleOverrides,
+  } = options;
 
   // Find reference
   const item = await library.find(identifier, { idType });
@@ -265,7 +278,8 @@ export async function syncAttachments(
       newFiles,
       missingFiles,
       shouldApplyNew,
-      shouldApplyFix
+      shouldApplyFix,
+      roleOverrides
     );
     await updateAttachmentMetadata(library, item as CslItem, attachments, updatedFiles);
     await library.save();

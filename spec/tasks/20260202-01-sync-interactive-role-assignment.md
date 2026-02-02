@@ -103,16 +103,16 @@ Changes:
 - In `buildUpdatedFiles`, when adding new files, check for overrides and apply them
 - Ensure overrides only apply when `yes: true` (i.e., when actually applying changes)
 
-- [ ] Write test: `src/features/operations/attachments/sync.test.ts`
+- [x] Write test: `src/features/operations/attachments/sync.test.ts`
   - Sync with overrides applied: verify metadata uses overridden role/label
   - Override only specific files (some overridden, others keep inferred role)
   - Overrides ignored in dry-run mode
   - Override with non-existent filename (ignored gracefully)
-- [ ] Create stub: extend `SyncAttachmentOptions` interface, add override logic placeholder
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Create stub: extend `SyncAttachmentOptions` interface, add override logic placeholder
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Add `readChoice` CLI Helper
 
