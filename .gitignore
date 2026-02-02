@@ -30,3 +30,4 @@ tmp/
 temp/
 *.tgz
 .claude/settings.local.json
+.worker-status.json

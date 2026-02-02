@@ -17,15 +17,12 @@ git rev-parse --show-toplevel
 
 ## IPC ステータス報告
 
-`/workspaces/reference-manager--worktrees/.ipc/` ディレクトリが存在する場合、各フェーズでステータスを書き込む:
+worktreeルートの `.worker-status.json` にステータスを書き込む（worktree内なので許可プロンプト不要）:
 
 ```bash
-IPC_DIR="/workspaces/reference-manager--worktrees/.ipc"
-HANDLE=$(basename "$(git rev-parse --show-toplevel)")
-if [ -d "$IPC_DIR" ]; then
-  cat > "$IPC_DIR/$HANDLE.status.json" <<IPCEOF
+WORKTREE_ROOT="$(git rev-parse --show-toplevel)"
+cat > "$WORKTREE_ROOT/.worker-status.json" <<IPCEOF
 {
-  "handle": "$HANDLE",
   "branch": "$(git branch --show-current)",
   "task_file": "<task file path>",
   "status": "<status>",
@@ -35,7 +32,6 @@ if [ -d "$IPC_DIR" ]; then
   "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 IPCEOF
-fi
 ```
 
 ステータス値: `starting` → `in_progress` → `testing` → `creating_pr` → `completed` / `failed`

@@ -18,10 +18,10 @@ test -n "$TMUX" && echo "in tmux session" || echo "not in tmux — run: tmux new
 - 依存関係が満たされているタスクを特定（並列実行候補）
 - 実装するタスクを選択
 
-### 2. IPC ディレクトリ準備
-```bash
-mkdir -p /workspaces/reference-manager--worktrees/.ipc
-```
+### 2. IPC について
+
+各ワーカーは自身のworktreeルートに `.worker-status.json` を書き込む（`.gitignore`済み）。
+共有ディレクトリの事前準備は不要。
 
 ### 3. ワーカー起動
 
@@ -104,8 +104,8 @@ tmux send-keys -t <pane-index> Enter
 # ペイン一覧
 tmux list-panes -F '#{pane_index} #{pane_current_command} #{pane_current_path}'
 
-# IPC ステータス確認
-cat /workspaces/reference-manager--worktrees/.ipc/*.status.json 2>/dev/null | jq -r '[.handle, .status, .current_step] | @tsv'
+# IPC ステータス確認（各worktree内の .worker-status.json）
+cat /workspaces/reference-manager--worktrees/*/.worker-status.json 2>/dev/null | jq -r '[.branch, .status, .current_step] | @tsv'
 
 # 特定ペインの出力確認（停滞時）
 tmux capture-pane -t <pane-index> -p | tail -20
@@ -124,7 +124,7 @@ tmux capture-pane -t <pane-index> -p | tail -20
    # workmux 未使用時:
    # git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
    # git branch -d <branch-name>
-   rm -f /workspaces/reference-manager--worktrees/.ipc/<handle>.status.json
+   # .worker-status.json は worktree 内なので worktree 削除時に自動消去
    ```
 
 ### 6. 障害対応

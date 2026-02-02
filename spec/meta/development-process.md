@@ -185,11 +185,10 @@ tmux send-keys -t <pane-index> Enter
 
 ### IPC Status Protocol
 
-Workers write status to `/workspaces/reference-manager--worktrees/.ipc/<handle>.status.json`:
+Workers write status to `.worker-status.json` in their own worktree root (`.gitignore`d). This avoids permission issues since the file is within the worktree directory.
 
 ```json
 {
-  "handle": "<handle>",
   "branch": "<branch>",
   "task_file": "<path>",
   "status": "starting|in_progress|testing|creating_pr|completed|failed",
@@ -200,16 +199,14 @@ Workers write status to `/workspaces/reference-manager--worktrees/.ipc/<handle>.
 }
 ```
 
-Workers only write status files when the `.ipc/` directory exists (backward compatible).
-
 ### Monitoring
 
 ```bash
 # List all panes
 tmux list-panes -F '#{pane_index} #{pane_current_command} #{pane_current_path}'
 
-# IPC status
-cat /workspaces/reference-manager--worktrees/.ipc/*.status.json 2>/dev/null | jq .
+# IPC status (glob across all worktrees)
+cat /workspaces/reference-manager--worktrees/*/.worker-status.json 2>/dev/null | jq .
 
 # Inspect specific pane
 tmux capture-pane -t <pane-index> -p | tail -20
@@ -223,13 +220,12 @@ tmux send-keys -t <pane-index> Enter
 
 ```bash
 # workmux: removes worktree + tmux window + branch in one command
+# (.worker-status.json is inside worktree, so it's removed automatically)
 workmux remove <handle>
 
 # Manual cleanup (if workmux not used):
 # git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
 # git branch -d <branch-name>
-
-rm -f /workspaces/reference-manager--worktrees/.ipc/<handle>.status.json
 ```
 
 ## 4. TDD Implementation Phase
