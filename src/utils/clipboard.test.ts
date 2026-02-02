@@ -30,6 +30,12 @@ describe("clipboard", () => {
       expect(result).toEqual({ command: "pbcopy", args: [] });
     });
 
+    it("returns clip.exe on Windows", () => {
+      Object.defineProperty(process, "platform", { value: "win32" });
+      const result = detectClipboardCommand();
+      expect(result).toEqual({ command: "clip.exe", args: [] });
+    });
+
     it("returns clip.exe on WSL", () => {
       Object.defineProperty(process, "platform", { value: "linux" });
       process.env = { ...originalEnv, WSL_DISTRO_NAME: "Ubuntu" };

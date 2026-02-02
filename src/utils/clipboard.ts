@@ -34,6 +34,10 @@ export function detectClipboardCommand(): ClipboardCommand | null {
     return { command: "pbcopy", args: [] };
   }
 
+  if (process.platform === "win32") {
+    return { command: "clip.exe", args: [] };
+  }
+
   if (process.platform === "linux") {
     if (isWSL()) {
       return { command: "clip.exe", args: [] };
