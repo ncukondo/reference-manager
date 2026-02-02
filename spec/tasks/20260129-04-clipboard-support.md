@@ -70,13 +70,13 @@ Create a utility module for detecting and invoking system clipboard commands.
 - `src/utils/clipboard.test.ts`
 
 **Tests:**
-- [ ] Write test: `detectClipboardCommand` returns correct command per platform mock
-- [ ] Write test: `copyToClipboard` returns `{ success: true }` on success
-- [ ] Write test: `copyToClipboard` returns `{ success: false, error }` when command fails
-- [ ] Write test: `copyToClipboard` returns `{ success: false }` when no clipboard command available
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `detectClipboardCommand` returns correct command per platform mock
+- [x] Write test: `copyToClipboard` returns `{ success: true }` on success
+- [x] Write test: `copyToClipboard` returns `{ success: false, error }` when command fails
+- [x] Write test: `copyToClipboard` returns `{ success: false }` when no clipboard command available
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Config Schema and Defaults
 
