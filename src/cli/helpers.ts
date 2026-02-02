@@ -352,6 +352,32 @@ export function resolveClipboardEnabled(
 }
 
 /**
+ * Write output to stdout with optional clipboard copy.
+ * @param output - Output text
+ * @param clipboardEnabled - Whether to copy to clipboard
+ * @param quiet - Whether to suppress stderr notifications
+ */
+export async function writeOutputWithClipboard(
+  output: string,
+  clipboardEnabled: boolean,
+  quiet: boolean
+): Promise<void> {
+  process.stdout.write(`${output}\n`);
+
+  if (clipboardEnabled) {
+    const { copyToClipboard } = await import("../utils/clipboard.js");
+    const result = await copyToClipboard(output);
+    if (!quiet) {
+      if (result.success) {
+        process.stderr.write("Copied to clipboard\n");
+      } else {
+        process.stderr.write(`Warning: Failed to copy to clipboard: ${result.error}\n`);
+      }
+    }
+  }
+}
+
+/**
  * Write output to stdout and set success exit code.
  * @param output - Output to display
  */

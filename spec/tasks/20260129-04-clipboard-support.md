@@ -141,14 +141,14 @@ Wire clipboard copy into the CLI output flow.
 - `src/cli/index.ts` (command handlers)
 
 **Tests:**
-- [ ] Write test: output goes to both stdout and clipboard when enabled
-- [ ] Write test: stderr shows "Copied to clipboard" on success
-- [ ] Write test: stderr warning on clipboard failure, stdout still works
-- [ ] Write test: `--quiet` suppresses clipboard notification
-- [ ] Write test: clipboard not invoked when disabled
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: output goes to both stdout and clipboard when enabled
+- [x] Write test: stderr shows "Copied to clipboard" on success
+- [x] Write test: stderr warning on clipboard failure, stdout still works
+- [x] Write test: `--quiet` suppresses clipboard notification
+- [x] Write test: clipboard not invoked when disabled
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Update Specs
 

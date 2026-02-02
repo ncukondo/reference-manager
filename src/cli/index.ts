@@ -56,7 +56,9 @@ import {
   exitWithError,
   loadConfigWithOverrides,
   readStdinContent,
+  resolveClipboardEnabled,
   setExitCode,
+  writeOutputWithClipboard,
 } from "./helpers.js";
 
 /**
@@ -110,13 +112,14 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, false);
 
     const context = await createExecutionContext(config, Library.load);
     const result = await executeList(options, context);
     const output = formatListOutput(result, options, config.citation.defaultKeyFormat);
 
     if (output) {
-      process.stdout.write(`${output}\n`);
+      await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
     }
 
     setExitCode(ExitCode.SUCCESS);
@@ -163,13 +166,14 @@ async function handleExportAction(
   try {
     const globalOpts = program.opts();
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, false);
 
     const context = await createExecutionContext(config, Library.load);
     const result = await executeExport({ ...options, ids }, context);
     const output = formatExportOutput(result, { ...options, ids });
 
     if (output) {
-      process.stdout.write(`${output}\n`);
+      await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
     }
 
     // Print not found errors to stderr
@@ -220,7 +224,12 @@ async function handleSearchAction(
     if (options.tui) {
       const result = await executeInteractiveSearch({ ...options, query }, context, config);
       if (result.output) {
-        process.stdout.write(`${result.output}\n`);
+        const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, true);
+        await writeOutputWithClipboard(
+          result.output,
+          clipboardEnabled,
+          config.logLevel === "silent"
+        );
       }
       setExitCode(ExitCode.SUCCESS);
       return;
@@ -235,7 +244,8 @@ async function handleSearchAction(
     );
 
     if (output) {
-      process.stdout.write(`${output}\n`);
+      const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, false);
+      await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
     }
 
     setExitCode(ExitCode.SUCCESS);

@@ -5,7 +5,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../config/schema.js";
 import {
   getOutputFormat,
@@ -16,6 +16,7 @@ import {
   readJsonInput,
   readStdinInputs,
   resolveClipboardEnabled,
+  writeOutputWithClipboard,
 } from "./helpers.js";
 
 describe("readJsonInput", () => {
@@ -253,5 +254,67 @@ describe("resolveClipboardEnabled", () => {
     const config = makeConfig(false);
     expect(resolveClipboardEnabled({}, config, false)).toBe(false);
     expect(resolveClipboardEnabled({}, config, true)).toBe(false);
+  });
+});
+
+vi.mock("../utils/clipboard.js", () => ({
+  copyToClipboard: vi.fn(),
+}));
+
+describe("writeOutputWithClipboard", () => {
+  let stdoutWrite: ReturnType<typeof vi.spyOn>;
+  let stderrWrite: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    stderrWrite = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    stdoutWrite.mockRestore();
+    stderrWrite.mockRestore();
+    vi.clearAllMocks();
+  });
+
+  it("writes output to stdout and clipboard when enabled", async () => {
+    const { copyToClipboard } = await import("../utils/clipboard.js");
+    vi.mocked(copyToClipboard).mockResolvedValue({ success: true });
+
+    await writeOutputWithClipboard("test output", true, false);
+
+    expect(stdoutWrite).toHaveBeenCalledWith("test output\n");
+    expect(copyToClipboard).toHaveBeenCalledWith("test output");
+    expect(stderrWrite).toHaveBeenCalledWith("Copied to clipboard\n");
+  });
+
+  it("shows warning on clipboard failure, stdout still works", async () => {
+    const { copyToClipboard } = await import("../utils/clipboard.js");
+    vi.mocked(copyToClipboard).mockResolvedValue({ success: false, error: "not found" });
+
+    await writeOutputWithClipboard("test output", true, false);
+
+    expect(stdoutWrite).toHaveBeenCalledWith("test output\n");
+    expect(stderrWrite).toHaveBeenCalledWith("Warning: Failed to copy to clipboard: not found\n");
+  });
+
+  it("suppresses clipboard notification when quiet", async () => {
+    const { copyToClipboard } = await import("../utils/clipboard.js");
+    vi.mocked(copyToClipboard).mockResolvedValue({ success: true });
+
+    await writeOutputWithClipboard("test output", true, true);
+
+    expect(stdoutWrite).toHaveBeenCalledWith("test output\n");
+    expect(copyToClipboard).toHaveBeenCalledWith("test output");
+    expect(stderrWrite).not.toHaveBeenCalled();
+  });
+
+  it("does not invoke clipboard when disabled", async () => {
+    const { copyToClipboard } = await import("../utils/clipboard.js");
+
+    await writeOutputWithClipboard("test output", false, false);
+
+    expect(stdoutWrite).toHaveBeenCalledWith("test output\n");
+    expect(copyToClipboard).not.toHaveBeenCalled();
+    expect(stderrWrite).not.toHaveBeenCalled();
   });
 });
