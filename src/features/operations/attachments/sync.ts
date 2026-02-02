@@ -29,6 +29,8 @@ export interface SyncAttachmentOptions {
   idType?: IdentifierType;
   /** Base directory for attachments */
   attachmentsDirectory: string;
+  /** Override inferred roles for specific files (key: filename) */
+  roleOverrides?: Record<string, { role: string; label?: string }>;
 }
 
 /**
@@ -59,6 +61,34 @@ export interface SyncAttachmentResult {
  */
 function errorResult(error: string): SyncAttachmentResult {
   return { success: false, newFiles: [], missingFiles: [], applied: false, error };
+}
+
+/**
+ * Suggest a role for a file based on context (existing files and file extension).
+ *
+ * This is a pure function with no side effects.
+ * Returns a suggested role string or null if no suggestion.
+ */
+export function suggestRoleFromContext(
+  filename: string,
+  existingFiles: InferredFile[]
+): string | null {
+  const ext = filename.toLowerCase();
+
+  // Data-like extensions always suggest supplement
+  const dataExtensions = [".xlsx", ".csv", ".tsv", ".zip"];
+  if (dataExtensions.some((de) => ext.endsWith(de)) || ext.endsWith(".tar.gz")) {
+    return "supplement";
+  }
+
+  // PDF or Markdown: suggest fulltext if none exists, otherwise supplement
+  const isDocumentLike = ext.endsWith(".pdf") || ext.endsWith(".md");
+  if (isDocumentLike) {
+    const hasFulltext = existingFiles.some((f) => f.role === "fulltext");
+    return hasFulltext ? "supplement" : "fulltext";
+  }
+
+  return null;
 }
 
 /**
@@ -146,16 +176,20 @@ function buildUpdatedFiles(
   newFiles: InferredFile[],
   missingFiles: string[],
   shouldApplyNew: boolean,
-  shouldApplyFix: boolean
+  shouldApplyFix: boolean,
+  roleOverrides?: Record<string, { role: string; label?: string }>
 ): AttachmentFile[] {
   let updatedFiles = [...metadataFiles];
 
   if (shouldApplyNew) {
     for (const newFile of newFiles) {
+      const override = roleOverrides?.[newFile.filename];
+      const role = override?.role ?? newFile.role;
+      const label = override ? override.label : newFile.label;
       const attachmentFile: AttachmentFile = {
         filename: newFile.filename,
-        role: newFile.role,
-        ...(newFile.label && { label: newFile.label }),
+        role,
+        ...(label && { label }),
       };
       updatedFiles.push(attachmentFile);
     }
@@ -196,7 +230,14 @@ export async function syncAttachments(
   library: ILibrary,
   options: SyncAttachmentOptions
 ): Promise<SyncAttachmentResult> {
-  const { identifier, yes = false, fix = false, idType = "id", attachmentsDirectory } = options;
+  const {
+    identifier,
+    yes = false,
+    fix = false,
+    idType = "id",
+    attachmentsDirectory,
+    roleOverrides,
+  } = options;
 
   // Find reference
   const item = await library.find(identifier, { idType });
@@ -237,7 +278,8 @@ export async function syncAttachments(
       newFiles,
       missingFiles,
       shouldApplyNew,
-      shouldApplyFix
+      shouldApplyFix,
+      roleOverrides
     );
     await updateAttachmentMetadata(library, item as CslItem, attachments, updatedFiles);
     await library.save();

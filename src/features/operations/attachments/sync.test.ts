@@ -8,7 +8,12 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary } from "../../../core/library-interface.js";
-import { type SyncAttachmentOptions, syncAttachments } from "./sync.js";
+import {
+  type InferredFile,
+  type SyncAttachmentOptions,
+  suggestRoleFromContext,
+  syncAttachments,
+} from "./sync.js";
 
 describe("syncAttachments", () => {
   let tempDir: string;
@@ -326,6 +331,201 @@ describe("syncAttachments", () => {
       expect(result.newFiles).toHaveLength(0);
       expect(result.missingFiles).toHaveLength(0);
       expect(result.applied).toBe(false);
+    });
+  });
+
+  describe("suggestRoleFromContext", () => {
+    it("should suggest fulltext for .pdf when no fulltext exists", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("paper.pdf", existingFiles)).toBe("fulltext");
+    });
+
+    it("should suggest fulltext for .md when no fulltext exists", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("paper.md", existingFiles)).toBe("fulltext");
+    });
+
+    it("should suggest supplement for .pdf when fulltext already exists", () => {
+      const existingFiles: InferredFile[] = [{ filename: "fulltext.pdf", role: "fulltext" }];
+      expect(suggestRoleFromContext("mmc1.pdf", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for .md when fulltext already exists", () => {
+      const existingFiles: InferredFile[] = [{ filename: "fulltext.md", role: "fulltext" }];
+      expect(suggestRoleFromContext("readme.md", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.xlsx)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("data.xlsx", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.csv)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("data.csv", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.tsv)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("data.tsv", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.zip)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("archive.zip", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.tar.gz)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("archive.tar.gz", existingFiles)).toBe("supplement");
+    });
+
+    it("should return null for unknown extensions", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("readme.txt", existingFiles)).toBeNull();
+    });
+
+    it("should consider fulltext from existing files (not just metadata)", () => {
+      const existingFiles: InferredFile[] = [
+        { filename: "fulltext.pdf", role: "fulltext" },
+        { filename: "notes.md", role: "notes" },
+      ];
+      expect(suggestRoleFromContext("another.pdf", existingFiles)).toBe("supplement");
+    });
+
+    it("should handle multiple existing fulltext files", () => {
+      const existingFiles: InferredFile[] = [
+        { filename: "fulltext.pdf", role: "fulltext" },
+        { filename: "fulltext.md", role: "fulltext" },
+      ];
+      expect(suggestRoleFromContext("extra.pdf", existingFiles)).toBe("supplement");
+    });
+  });
+
+  describe("roleOverrides", () => {
+    it("should apply role overrides when yes=true", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement", label: "table-s1" },
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(true);
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "mmc1.pdf",
+          role: "supplement",
+          label: "table-s1",
+        })
+      );
+    });
+
+    it("should override only specific files, others keep inferred role", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+      await writeFile(join(attachDir, "notes-reading.md"), "Notes content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement" },
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(true);
+      // mmc1.pdf should have overridden role
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "mmc1.pdf",
+          role: "supplement",
+        })
+      );
+      // notes-reading.md should keep inferred role
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "notes-reading.md",
+          role: "notes",
+          label: "reading",
+        })
+      );
+    });
+
+    it("should ignore overrides in dry-run mode", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement" },
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(false);
+      expect(mockLibrary.update).not.toHaveBeenCalled();
+    });
+
+    it("should gracefully ignore overrides for non-existent filenames", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "nonexistent.pdf": { role: "fulltext" },
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(true);
+      // mmc1.pdf should keep its inferred role (other)
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "mmc1.pdf",
+          role: "other",
+        })
+      );
+    });
+
+    it("should apply override with role only (no label)", async () => {
+      await writeFile(join(attachDir, "PIIS0092867424000011.pdf"), "Paper content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "PIIS0092867424000011.pdf": { role: "fulltext" },
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      const file = updatedItem?.custom?.attachments?.files?.find(
+        (f: { filename: string }) => f.filename === "PIIS0092867424000011.pdf"
+      );
+      expect(file).toBeDefined();
+      expect(file?.role).toBe("fulltext");
+      expect(file?.label).toBeUndefined();
     });
   });
 
