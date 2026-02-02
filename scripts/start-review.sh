@@ -61,7 +61,21 @@ cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
 }
 SETTINGS_EOF
 
-# --- 4. Split pane ---
+# --- 4. Append review instructions to CLAUDE.md ---
+echo "[start-review] Appending review instructions to CLAUDE.md..."
+if ! grep -q '## Review Agent Instructions' "$WORKTREE_DIR/CLAUDE.md" 2>/dev/null; then
+  cat >> "$WORKTREE_DIR/CLAUDE.md" << 'CLAUDE_EOF'
+
+## Review Agent Instructions
+
+You are a review agent for a PR in this worktree.
+
+### Responsibilities
+- **All PR comments and review bodies MUST be in English**
+CLAUDE_EOF
+fi
+
+# --- 5. Split pane ---
 if [ -z "${TMUX:-}" ]; then
   echo "[start-review] ERROR: Not in a tmux session. Run: tmux new-session -s main"
   exit 1
@@ -73,7 +87,7 @@ tmux split-window -h -d -c "$WORKTREE_DIR"
 PANE_INDEX=$(tmux list-panes -F '#{pane_index}' | sort -n | tail -1)
 echo "[start-review] Review pane: $PANE_INDEX"
 
-# --- 5. Launch Claude and send review prompt ---
+# --- 6. Launch Claude and send review prompt ---
 echo "[start-review] Launching Claude in pane $PANE_INDEX..."
 tmux send-keys -t "$PANE_INDEX" 'claude'
 sleep 1

@@ -68,6 +68,7 @@ You are a worker agent implementing a task in a worktree.
 - Write .worker-status.json at worktree root with current progress
 - Create PR when all steps complete
 - Work scope: implementation + tests + PR only (ROADMAP changes are done on main after merge)
+- **All commit messages, PR titles/bodies, and PR comments MUST be in English**
 
 ### Compact Recovery
 If context was compacted, re-read these before continuing:
