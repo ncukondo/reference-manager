@@ -119,24 +119,28 @@ Use workmux for worktree lifecycle management (create, symlink, install, cleanup
 
 Project config: `.workmux.yaml` (see file for details)
 
-### Spawning Workers
+### Agent Scripts
 
-Use `scripts/spawn-worker.sh` to set up and launch a worker:
+Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch-agent.sh`).
+
+| Script | Usage | Purpose |
+|--------|-------|---------|
+| `launch-agent.sh` | `<worktree-dir> <prompt>` | Base: permissions, pane split, Claude launch, prompt send |
+| `spawn-worker.sh` | `<branch> <task-keyword>` | Creates worktree + worker CLAUDE.md, then delegates |
+| `start-review.sh` | `<pr-number>` | Resolves PR branch + review CLAUDE.md, then delegates |
 
 ```bash
+# Implementation worker
 ./scripts/spawn-worker.sh feature/<name> <task-keyword>
+
+# PR review
+./scripts/start-review.sh <pr-number>
+
+# Ad-hoc agent (existing worktree, custom prompt)
+./scripts/launch-agent.sh /path/to/worktree "your prompt here"
 ```
 
-The script handles:
-1. Worktree creation (via workmux or manual fallback)
-2. `.claude/settings.local.json` for auto-permission
-3. `CLAUDE.md` append with worker instructions and compact recovery
-4. Tmux pane split (`-d` to keep focus on orchestrator)
-5. Claude interactive launch, startup wait, prompt send
-
-If auto-launch fails, the script prints manual commands to run.
-
-See `scripts/spawn-worker.sh` for implementation details.
+If auto-launch fails, the scripts print manual commands to run.
 
 ### IPC Status Protocol
 

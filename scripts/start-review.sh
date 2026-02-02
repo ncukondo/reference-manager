@@ -9,10 +9,10 @@ set -euo pipefail
 # What it does:
 #   1. Gets branch name from PR
 #   2. Creates worktree if not exists
-#   3. Places .claude/settings.local.json for auto-permission
-#   4. Splits a tmux pane (-d to keep focus)
-#   5. Launches claude interactively, waits, sends review prompt
+#   3. Appends review instructions to CLAUDE.md
+#   4. Delegates to launch-agent.sh for pane + Claude setup
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PR_NUMBER="${1:?Usage: start-review.sh <pr-number>}"
 
 WORKTREE_BASE="/workspaces/reference-manager--worktrees"
@@ -38,30 +38,7 @@ else
   (cd "$WORKTREE_DIR" && npm install)
 fi
 
-# --- 3. Auto-permission settings (always overwrite) ---
-echo "[start-review] Setting up auto-permission..."
-mkdir -p "$WORKTREE_DIR/.claude"
-cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
-{
-  "permissions": {
-    "allow": [
-      "Bash(*)",
-      "Read(*)",
-      "Write(*)",
-      "Edit(*)",
-      "Grep(*)",
-      "Glob(*)",
-      "mcp__serena__*"
-    ]
-  },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "serena"
-  ]
-}
-SETTINGS_EOF
-
-# --- 4. Append review instructions to CLAUDE.md ---
+# --- 3. Append review instructions to CLAUDE.md ---
 echo "[start-review] Appending review instructions to CLAUDE.md..."
 if ! grep -q '## Review Agent Instructions' "$WORKTREE_DIR/CLAUDE.md" 2>/dev/null; then
   cat >> "$WORKTREE_DIR/CLAUDE.md" << 'CLAUDE_EOF'
@@ -75,44 +52,6 @@ You are a review agent for a PR in this worktree.
 CLAUDE_EOF
 fi
 
-# --- 5. Split pane ---
-if [ -z "${TMUX:-}" ]; then
-  echo "[start-review] ERROR: Not in a tmux session. Run: tmux new-session -s main"
-  exit 1
-fi
-
-echo "[start-review] Splitting tmux pane..."
-tmux split-window -h -d -c "$WORKTREE_DIR"
-
-PANE_INDEX=$(tmux list-panes -F '#{pane_index}' | sort -n | tail -1)
-echo "[start-review] Review pane: $PANE_INDEX"
-
-# --- 6. Launch Claude and send review prompt ---
-echo "[start-review] Launching Claude in pane $PANE_INDEX..."
-tmux send-keys -t "$PANE_INDEX" 'claude'
-sleep 1
-tmux send-keys -t "$PANE_INDEX" Enter
-
-echo "[start-review] Waiting for Claude to start..."
-for i in $(seq 1 30); do
-  sleep 2
-  if tmux capture-pane -t "$PANE_INDEX" -p 2>/dev/null | grep -q '? for shortcuts'; then
-    echo "[start-review] Claude is ready (after ~$((i * 2))s)"
-    break
-  fi
-  if [ "$i" -eq 30 ]; then
-    echo "[start-review] WARNING: Claude startup not detected after 60s."
-    echo "[start-review] Send prompt manually:"
-    echo "  tmux send-keys -t $PANE_INDEX '/review-pr-local $PR_NUMBER'"
-    echo "  tmux send-keys -t $PANE_INDEX Enter"
-    exit 0
-  fi
-done
-
-echo "[start-review] Sending review prompt..."
-tmux send-keys -t "$PANE_INDEX" "/review-pr-local $PR_NUMBER"
-sleep 1
-tmux send-keys -t "$PANE_INDEX" Enter
-
-echo "[start-review] Done. Reviewer running in pane $PANE_INDEX."
-echo "[start-review] Monitor: tmux capture-pane -t $PANE_INDEX -p | tail -20"
+# --- 4. Delegate to launch-agent.sh ---
+export LAUNCH_AGENT_LABEL="start-review"
+exec "$SCRIPT_DIR/launch-agent.sh" "$WORKTREE_DIR" "/review-pr-local $PR_NUMBER"
