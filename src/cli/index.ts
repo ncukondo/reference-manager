@@ -85,6 +85,15 @@ export function createProgram(): Command {
     .option("--clipboard", "Copy output to system clipboard")
     .option("--no-clipboard", "Disable clipboard copy");
 
+  // Default action: `ref` (no subcommand) launches TUI search on TTY, shows help otherwise
+  program.action(async () => {
+    if (process.stdin.isTTY && process.stdout.isTTY) {
+      await handleSearchAction("", { tui: true }, program);
+    } else {
+      program.help();
+    }
+  });
+
   // Register commands
   registerListCommand(program);
   registerSearchCommand(program);

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Root Command Default TUI Search**: `ref` (no subcommand) now launches interactive TUI search
+  - TTY: Launches TUI search (same as `ref search -t`)
+  - Non-TTY (pipe, script): Shows help (previous behavior preserved)
+  - All existing subcommands unchanged
+
 - **Clipboard Support**: Auto-copy CLI output to system clipboard
   - New global options: `--clipboard` / `--no-clipboard`
   - Config setting: `cli.tui.clipboard_auto_copy` (TUI output only)

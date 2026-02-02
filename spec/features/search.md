@@ -147,5 +147,6 @@ Output format is specified with `--output` / `-o` option.
 ## TUI Mode
 
 Use `--tui` / `-t` for interactive search with real-time filtering.
+Running `ref` with no subcommand also launches TUI search when in a TTY.
 
 See `spec/features/interactive-search.md` for details.

@@ -64,27 +64,27 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 1: Add Default Action to Root Program (Unit Tests)
 
-- [ ] Write test: `src/cli/index.test.ts` — add "root command default action" describe block
+- [x] Write test: `src/cli/index.test.ts` — add "root command default action" describe block
   - Root program has an action handler when no subcommand is given
   - All existing subcommands remain registered and functional
-- [ ] Implement: Add `.action()` to `program` in `createProgram()` with TTY check
-- [ ] Verify Green: `npm run test:unit -- index.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Add `.action()` to `program` in `createProgram()` with TTY check
+- [x] Verify Green: `npm run test:unit -- index.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: E2E Test
 
-- [ ] Write test: `src/cli/interactive-search.e2e.test.ts` — add test for `ref` with no subcommand
+- [x] Write test: `src/cli/interactive-search.e2e.test.ts` — add test for `ref` with no subcommand
   - Non-TTY: should show help (exit code 0), not "TUI mode requires a TTY" error
-- [ ] Verify Green: `npm run test:e2e -- interactive-search`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify Green: `npm run test:e2e -- interactive-search`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Documentation Updates
 
-- [ ] Update `spec/features/interactive-search.md` — add `ref` (no subcommand) as TUI entry point
-- [ ] Update `spec/features/search.md` — mention fallback in TUI Mode section
-- [ ] Update `spec/architecture/cli.md` — document root command default behavior
-- [ ] Update `README.md` — add `ref` usage example in relevant sections
-- [ ] Update `CHANGELOG.md`
+- [x] Update `spec/features/interactive-search.md` — add `ref` (no subcommand) as TUI entry point
+- [x] Update `spec/features/search.md` — mention fallback in TUI Mode section
+- [x] Update `spec/architecture/cli.md` — document root command default behavior
+- [x] Update `README.md` — add `ref` usage example in relevant sections
+- [x] Update `CHANGELOG.md`
 
 ## Manual Verification
 
@@ -92,18 +92,18 @@ TTY-required tests (run manually in a terminal):
 - [ ] `ref` (TTY, no args) → TUI search launches
 - [ ] `ref` (TTY) then `Esc` → exits cleanly
 - [ ] `ref search -t` → still works as before
-- [ ] `ref search "query"` → still works as before
-- [ ] `ref list` → still works as before
-- [ ] `ref --help` → shows help with all subcommands
-- [ ] `ref -V` → shows version
-- [ ] `echo "" | ref` (non-TTY) → shows help, not TUI error
+- [x] `ref search "query"` → still works as before
+- [x] `ref list` → still works as before
+- [x] `ref --help` → shows help with all subcommands
+- [x] `ref -V` → shows version
+- [x] `echo "" | ref` (non-TTY) → shows help, not TUI error
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Manual verification completed
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`) — 2849 passed, 151 files
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [ ] Manual verification completed (TTY tests require interactive terminal)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

@@ -70,10 +70,19 @@ When specified, interprets identifier arguments as UUIDs instead of citation key
 
 **Note:** For `list`/`search`, use `--output uuid` or `--uuid-only` to output UUIDs.
 
+## Root Command Default Behavior
+
+Running `ref` with no subcommand:
+- **TTY**: Launches TUI search (same as `ref search -t`)
+- **Non-TTY** (pipe, script): Shows help
+
+This follows the same pattern as `ref attach` → `ref attach open`.
+
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
+| `ref` (no subcommand) | TUI search (TTY) / help (non-TTY) |
 | `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI, ISBN) |
 | `list` | List all references |
 | `search [query]` | Search references |

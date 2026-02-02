@@ -120,6 +120,31 @@ describe("CLI Entry", () => {
       expect(identifiersArg?.variadic).toBe(true);
     });
 
+    describe("root command default action", () => {
+      it("should have a default action handler on the root program", () => {
+        const program = createProgram();
+        // Commander internally stores action listeners; check via _actionHandler
+        // biome-ignore lint/suspicious/noExplicitAny: testing Commander internals
+        expect((program as any)._actionHandler).not.toBeNull();
+      });
+
+      it("all existing subcommands should still be registered", () => {
+        const program = createProgram();
+        const subcommands = program.commands.map((cmd) => cmd.name());
+        expect(subcommands).toContain("list");
+        expect(subcommands).toContain("search");
+        expect(subcommands).toContain("add");
+        expect(subcommands).toContain("remove");
+        expect(subcommands).toContain("update");
+        expect(subcommands).toContain("edit");
+        expect(subcommands).toContain("cite");
+        expect(subcommands).toContain("server");
+        expect(subcommands).toContain("attach");
+        expect(subcommands).toContain("url");
+        expect(subcommands).toContain("config");
+      });
+    });
+
     describe("attach command default action", () => {
       it("should have a default action on the attach parent command", () => {
         const program = createProgram();

@@ -101,6 +101,9 @@ npm link
 # Initialize (creates default config and empty library)
 ref list
 
+# Browse your library interactively (launches TUI search)
+ref
+
 # Add a reference by DOI
 ref add "10.1038/nature12373"
 
@@ -506,6 +509,7 @@ Supported field prefixes: `id:`, `author:`, `title:`, `year:`, `doi:`, `pmid:`, 
 Start an interactive search session with real-time filtering:
 
 ```bash
+ref                              # Shortcut: launches TUI search directly
 ref search -t                    # Start with empty query
 ref search -t "machine learning" # Pre-fill the search query
 ```

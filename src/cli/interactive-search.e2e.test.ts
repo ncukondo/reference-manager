@@ -177,6 +177,28 @@ describe("Interactive Search E2E", () => {
     });
   });
 
+  describe("root command default action", () => {
+    it("should show help when running without subcommand in non-TTY", async () => {
+      const { code, stdout } = await runCli(["--library", libraryPath], {
+        cwd: testDir,
+      });
+
+      expect(code).toBe(0);
+      // Help output contains usage info and subcommand names
+      expect(stdout).toContain("Usage:");
+      expect(stdout).toContain("search");
+      expect(stdout).toContain("list");
+    });
+
+    it("should not show TUI error when running without subcommand in non-TTY", async () => {
+      const { stderr } = await runCli(["--library", libraryPath], {
+        cwd: testDir,
+      });
+
+      expect(stderr).not.toContain("TUI mode requires a TTY");
+    });
+  });
+
   describe("normal search mode", () => {
     it("should work without interactive flag", async () => {
       const { code, stdout } = await runCli(["search", "test", "--library", libraryPath], {

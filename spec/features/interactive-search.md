@@ -13,9 +13,13 @@ Enable users to search references interactively with:
 ## Command Interface
 
 ```bash
+ref                             # Launches TUI search (TTY only)
 ref search --tui [initial-query]
 ref search -t [initial-query]
 ```
+
+Running `ref` with no subcommand in a TTY launches TUI search (same as `ref search -t`).
+In non-TTY contexts (pipes, scripts), `ref` shows the help message instead.
 
 ### Options
 
