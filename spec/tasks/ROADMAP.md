@@ -88,7 +88,16 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Current Phase
 
-No active phase. See Next Steps below.
+### Phase 32a: Root Command Default TUI Search
+
+Make `ref` (without subcommand) fall back to `ref search -t` (interactive TUI search).
+Same pattern as `ref attach` → `ref attach open`.
+
+- **Task**: `spec/tasks/20260202-01-root-default-tui-search.md`
+- **Scope**:
+  - `ref` (TTY) → launch TUI search
+  - `ref` (non-TTY) → show help (current behavior)
+  - All existing subcommands unchanged
 
 ---
 
