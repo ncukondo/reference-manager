@@ -340,14 +340,25 @@ export async function executeSideEffectAction(
       break;
     }
     case "manage-attachments": {
-      const { executeAttachOpen } = await import("./attach.js");
+      const { executeAttachOpen, runInteractiveMode } = await import("./attach.js");
       const item = items[0];
       if (!item) return;
-      await executeAttachOpen(
+      const result = await executeAttachOpen(
         {
           identifier: item.id,
           attachmentsDirectory: config.attachments.directory,
         },
+        context
+      );
+      if (!result.success) {
+        process.stderr.write(`Error: ${result.error}\n`);
+        return;
+      }
+      await runInteractiveMode(
+        item.id,
+        result.path ?? "",
+        config.attachments.directory,
+        undefined,
         context
       );
       break;

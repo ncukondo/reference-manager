@@ -62,7 +62,7 @@ describe("Config Loader", () => {
 
   describe("Default configuration", () => {
     it("should return default config when no config files exist", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadConfig({ cwd: testDir, userConfigPath: join(testDir, "no-user.toml") });
       expect(config).toEqual(defaultConfig);
     });
 
@@ -100,7 +100,7 @@ log_level = "silent"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadConfig({ cwd: testDir, userConfigPath: join(testDir, "no-user.toml") });
       expect(config.logLevel).toBe("silent");
       expect(config.library).toBe(defaultConfig.library); // Default value
     });
@@ -370,7 +370,7 @@ max_generations = -1
     it("should ignore non-existent environment config file", () => {
       process.env.REFERENCE_MANAGER_CONFIG = "/non/existent/config.toml";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadConfig({ cwd: testDir, userConfigPath: join(testDir, "no-user.toml") });
       expect(config).toEqual(defaultConfig);
     });
   });
@@ -750,7 +750,11 @@ default_style = "vancouver"
 `
       );
 
-      const config = loadConfig({ cwd: testDir, configPath: cliConfigPath });
+      const config = loadConfig({
+        cwd: testDir,
+        configPath: cliConfigPath,
+        userConfigPath: join(testDir, "no-user.toml"),
+      });
       expect(config.citation.defaultStyle).toBe("vancouver");
       expect(config.library).toBe(defaultConfig.library); // default
       expect(config.logLevel).toBe("info"); // default

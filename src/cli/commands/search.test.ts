@@ -458,11 +458,15 @@ describe("search command", () => {
       vi.doUnmock("./fulltext.js");
     });
 
-    it("should call executeAttachOpen for manage-attachments action", async () => {
-      const mockExecuteAttachOpen = vi.fn().mockResolvedValue(undefined);
+    it("should call executeAttachOpen and runInteractiveMode for manage-attachments action", async () => {
+      const mockExecuteAttachOpen = vi
+        .fn()
+        .mockResolvedValue({ success: true, path: "/tmp/test-attachments/ref1" });
+      const mockRunInteractiveMode = vi.fn().mockResolvedValue(undefined);
 
       vi.doMock("./attach.js", () => ({
         executeAttachOpen: mockExecuteAttachOpen,
+        runInteractiveMode: mockRunInteractiveMode,
       }));
 
       const { executeSideEffectAction: fn } = await import("./search.js");
@@ -476,6 +480,37 @@ describe("search command", () => {
         { identifier: "ref1", attachmentsDirectory: "/tmp/test-attachments" },
         context
       );
+      expect(mockRunInteractiveMode).toHaveBeenCalledWith(
+        "ref1",
+        "/tmp/test-attachments/ref1",
+        "/tmp/test-attachments",
+        undefined,
+        context
+      );
+
+      vi.doUnmock("./attach.js");
+    });
+
+    it("should show error when manage-attachments open fails", async () => {
+      const mockExecuteAttachOpen = vi
+        .fn()
+        .mockResolvedValue({ success: false, error: "Open failed" });
+      const mockRunInteractiveMode = vi.fn();
+
+      vi.doMock("./attach.js", () => ({
+        executeAttachOpen: mockExecuteAttachOpen,
+        runInteractiveMode: mockRunInteractiveMode,
+      }));
+
+      const { executeSideEffectAction: fn } = await import("./search.js");
+
+      const item = createItem("ref1");
+      const context = createContext();
+      const config = createConfig();
+      await fn("manage-attachments", [item], context, config);
+
+      expect(stderrSpy).toHaveBeenCalledWith("Error: Open failed\n");
+      expect(mockRunInteractiveMode).not.toHaveBeenCalled();
 
       vi.doUnmock("./attach.js");
     });

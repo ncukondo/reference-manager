@@ -51,8 +51,8 @@ describe("opener", () => {
       expect(getOpenerCommand("darwin")).toEqual(["open"]);
     });
 
-    it("returns 'xdg-open' for linux", () => {
-      expect(getOpenerCommand("linux")).toEqual(["xdg-open"]);
+    it("returns 'xdg-open' for linux when not WSL", () => {
+      expect(getOpenerCommand("linux", false)).toEqual(["xdg-open"]);
     });
 
     it("returns 'cmd /c start \"\"' for win32", () => {
@@ -94,7 +94,11 @@ describe("opener", () => {
       expect(mockProcess.unref).toHaveBeenCalled();
     });
 
-    it("spawns opener with file path on Linux", async () => {
+    it("spawns opener with file path on Linux (non-WSL)", async () => {
+      const originalEnv = process.env;
+      process.env = { ...originalEnv };
+      process.env.WSL_DISTRO_NAME = undefined;
+
       const mockProcess = {
         on: vi.fn((event, callback) => {
           if (event === "close") {
@@ -112,6 +116,8 @@ describe("opener", () => {
         detached: true,
         stdio: "ignore",
       });
+
+      process.env = originalEnv;
     });
 
     it("spawns opener with file path on Windows", async () => {

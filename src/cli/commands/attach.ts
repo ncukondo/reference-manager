@@ -598,7 +598,7 @@ function displayInteractiveSyncResult(result: SyncAttachmentResult, identifier: 
 /**
  * Run interactive mode: show convention, wait for Enter, auto-sync
  */
-async function runInteractiveMode(
+export async function runInteractiveMode(
   identifier: string,
   dirPath: string,
   attachmentsDirectory: string,
