@@ -16,6 +16,9 @@ test -n "$TMUX" && echo "in tmux session" || echo "not in tmux — run: tmux new
 ### 1. タスク分析
 - spec/tasks/ROADMAP.md を確認し、未完了のタスクを全て洗い出す
 - 依存関係が満たされているタスクを特定（並列実行候補）
+- **ファイル衝突チェック**: 並列候補のタスクが同じファイルを変更する場合、1つのワーカーにまとめる
+  - タスクファイルの "Affected Files" / "File" セクションを確認
+  - 同じ `.ts` や `.test.ts` を変更するステップは同一ワーカーに割り当てる
 - 実装するタスクを選択
   - 並列実装が可能なタスクが複数ある場合、workmux経由でworkerエージェントに分担する
 
@@ -23,7 +26,11 @@ test -n "$TMUX" && echo "in tmux session" || echo "not in tmux — run: tmux new
 
 `scripts/spawn-worker.sh` がセットアップからエージェント起動まで一括で行う:
 ```bash
+# 基本
 ./scripts/spawn-worker.sh feature/<name> <task-keyword>
+
+# ステップ指定あり（ワーカーの作業範囲を明示）
+./scripts/spawn-worker.sh feature/<name> <task-keyword> "Steps 1 and 2 only"
 ```
 
 スクリプトの内容:
@@ -67,15 +74,37 @@ tmux capture-pane -t <pane-id> -p | tail -20
 ワーカーがアイドル状態（プロンプト待ち or `?` 表示）になっていればPR作成済みと判断する。
 
 #### レビュー → 修正 → 再レビュー
-1. mainエージェントが各PRをレビュー (`/review-pr <PR番号>`)
-2. 修正が必要な場合、該当ワーカーに修正指示を送信:
+
+**方法A: レビューエージェントに委任（推奨）**
+ワーカーペインを片付けた後、`start-review.sh` でレビューエージェントを起動:
+```bash
+# ワーカーペインを閉じる
+tmux send-keys -t <pane-id> '/exit'
+sleep 1
+tmux send-keys -t <pane-id> Enter
+sleep 3
+tmux kill-pane -t <pane-id>
+
+# レビューエージェント起動（並列可）
+./scripts/start-review.sh <PR番号>
+```
+- レビューエージェントはCI完了を待ってからレビューを実施する
+- 起動検知がタイムアウトした場合、手動でプロンプトを送信する
+
+**方法B: mainエージェントが直接レビュー**
+```
+/review-pr <PR番号>
+```
+
+**修正が必要な場合**:
+1. 該当ワーカーに修正指示を送信:
    ```bash
    tmux send-keys -t <pane-id> '修正指示テキスト'
    sleep 1
    tmux send-keys -t <pane-id> Enter
    ```
-3. ワーカーが修正してpush → 再レビュー
-4. 全PR承認まで繰り返す
+2. ワーカーが修正してpush → 再レビュー
+3. 全PR承認まで繰り返す
 
 ### 6. 完了処理
 

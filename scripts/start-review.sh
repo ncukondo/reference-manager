@@ -38,10 +38,13 @@ else
   (cd "$WORKTREE_DIR" && npm install)
 fi
 
-# --- 3. Append review instructions to CLAUDE.md ---
+# --- 3. Prepare CLAUDE.md for review ---
+# Restore CLAUDE.md to git state first (removes any worker instructions from spawn-worker.sh)
+echo "[start-review] Restoring CLAUDE.md to git state..."
+(cd "$WORKTREE_DIR" && git checkout -- CLAUDE.md 2>/dev/null || true)
+
 echo "[start-review] Appending review instructions to CLAUDE.md..."
-if ! grep -q '## Review Agent Instructions' "$WORKTREE_DIR/CLAUDE.md" 2>/dev/null; then
-  cat >> "$WORKTREE_DIR/CLAUDE.md" << 'CLAUDE_EOF'
+cat >> "$WORKTREE_DIR/CLAUDE.md" << 'CLAUDE_EOF'
 
 ## Review Agent Instructions
 
@@ -50,7 +53,6 @@ You are a review agent for a PR in this worktree.
 ### Responsibilities
 - **All PR comments and review bodies MUST be in English**
 CLAUDE_EOF
-fi
 
 # --- 4. Delegate to launch-agent.sh ---
 export LAUNCH_AGENT_LABEL="start-review"

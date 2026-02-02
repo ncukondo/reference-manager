@@ -3,17 +3,25 @@ set -euo pipefail
 
 # Spawn a worker agent for a task in a new worktree.
 #
-# Usage: spawn-worker.sh <branch-name> <task-keyword>
+# Usage: spawn-worker.sh <branch-name> <task-keyword> [step-scope]
 # Example: spawn-worker.sh feature/clipboard-support clipboard
+# Example: spawn-worker.sh feature/sync-role sync-interactive "Steps 1 and 2 only"
+#
+# Arguments:
+#   branch-name:  Git branch to create/use
+#   task-keyword: Keyword to match task file in spec/tasks/
+#   step-scope:   (Optional) Specific steps this worker should handle.
+#                 Appended to CLAUDE.md so the worker knows its scope.
 #
 # What it does:
 #   1. Creates worktree (via workmux or manually)
-#   2. Appends worker instructions to CLAUDE.md
+#   2. Appends worker instructions to CLAUDE.md (with optional step scope)
 #   3. Delegates to launch-agent.sh for pane + Claude setup
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BRANCH="${1:?Usage: spawn-worker.sh <branch-name> <task-keyword>}"
-TASK_KEYWORD="${2:?Usage: spawn-worker.sh <branch-name> <task-keyword>}"
+BRANCH="${1:?Usage: spawn-worker.sh <branch-name> <task-keyword> [step-scope]}"
+TASK_KEYWORD="${2:?Usage: spawn-worker.sh <branch-name> <task-keyword> [step-scope]}"
+STEP_SCOPE="${3:-}"
 
 WORKTREE_BASE="/workspaces/reference-manager--worktrees"
 WORKTREE_DIR="$WORKTREE_BASE/$(echo "$BRANCH" | tr '/' '-')"
@@ -56,6 +64,15 @@ If context was compacted, re-read these before continuing:
 2. git log --oneline -10 (recent commits)
 3. git status and git diff (uncommitted work)
 CLAUDE_EOF
+fi
+
+# Append step scope if provided
+if [ -n "$STEP_SCOPE" ]; then
+  echo "" >> "$WORKTREE_DIR/CLAUDE.md"
+  echo "### Worker Scope" >> "$WORKTREE_DIR/CLAUDE.md"
+  echo "" >> "$WORKTREE_DIR/CLAUDE.md"
+  echo "**This worker is responsible for: $STEP_SCOPE**" >> "$WORKTREE_DIR/CLAUDE.md"
+  echo "Do NOT implement steps outside this scope. Other workers handle the rest." >> "$WORKTREE_DIR/CLAUDE.md"
 fi
 
 # --- 3. Delegate to launch-agent.sh ---

@@ -126,12 +126,15 @@ Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch
 | Script | Usage | Purpose |
 |--------|-------|---------|
 | `launch-agent.sh` | `<worktree-dir> <prompt>` | Base: permissions, pane split, Claude launch, prompt send |
-| `spawn-worker.sh` | `<branch> <task-keyword>` | Creates worktree + worker CLAUDE.md, then delegates |
+| `spawn-worker.sh` | `<branch> <task-keyword> [step-scope]` | Creates worktree + worker CLAUDE.md, then delegates |
 | `start-review.sh` | `<pr-number>` | Resolves PR branch + review CLAUDE.md, then delegates |
 
 ```bash
 # Implementation worker
 ./scripts/spawn-worker.sh feature/<name> <task-keyword>
+
+# Implementation worker with step scope (restricts which steps the worker handles)
+./scripts/spawn-worker.sh feature/<name> <task-keyword> "Steps 1 and 2 only"
 
 # PR review
 ./scripts/start-review.sh <pr-number>
@@ -141,6 +144,14 @@ Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch
 ```
 
 If auto-launch fails, the scripts print manual commands to run.
+
+### Parallel Task Analysis
+
+When splitting a task into parallel workers:
+
+1. **Check file conflicts**: If two steps modify the same source/test files, assign them to the same worker
+2. **Use step scope**: Pass the third argument to `spawn-worker.sh` to restrict each worker's scope
+3. **Review after implementation**: Use `start-review.sh` to spawn review agents (restores CLAUDE.md before appending review instructions)
 
 ### IPC Status Protocol
 

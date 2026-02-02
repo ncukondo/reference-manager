@@ -80,7 +80,11 @@ for i in $(seq 1 45); do
     continue
   fi
 
-  if echo "$PANE_CONTENT" | grep -q '? for shortcuts'; then
+  # Detect Claude ready state via multiple patterns (robust against format changes)
+  # - "❯" or ">" prompt character: always shown when Claude is waiting for input
+  # - "? for shortcuts": shown in some Claude Code versions
+  # - 'Try "': hint text shown on idle prompt
+  if echo "$PANE_CONTENT" | grep -qE '(❯|^> |[?] for shortcuts|Try ")'; then
     echo "[$SCRIPT_NAME] Claude is ready (after ~$((i * 2))s)"
     break
   fi
