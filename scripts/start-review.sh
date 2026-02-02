@@ -38,11 +38,10 @@ else
   (cd "$WORKTREE_DIR" && npm install)
 fi
 
-# --- 3. Auto-permission settings ---
-if [ ! -f "$WORKTREE_DIR/.claude/settings.local.json" ]; then
-  echo "[start-review] Setting up auto-permission..."
-  mkdir -p "$WORKTREE_DIR/.claude"
-  cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
+# --- 3. Auto-permission settings (always overwrite) ---
+echo "[start-review] Setting up auto-permission..."
+mkdir -p "$WORKTREE_DIR/.claude"
+cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
 {
   "permissions": {
     "allow": [
@@ -57,7 +56,6 @@ if [ ! -f "$WORKTREE_DIR/.claude/settings.local.json" ]; then
   }
 }
 SETTINGS_EOF
-fi
 
 # --- 4. Split pane ---
 if [ -z "${TMUX:-}" ]; then
