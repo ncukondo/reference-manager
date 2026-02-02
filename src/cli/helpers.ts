@@ -233,6 +233,102 @@ export async function readConfirmation(prompt: string): Promise<boolean> {
 }
 
 /**
+ * Choice option for readChoice prompt
+ */
+export interface Choice {
+  label: string;
+  value: string;
+}
+
+/**
+ * Display a numbered choice prompt and return the selected value.
+ * Output is written to stderr (keeping stdout clean for piping).
+ * In non-TTY mode, returns the default choice value immediately.
+ *
+ * @param prompt - Question text displayed before the choices
+ * @param choices - Available options to choose from
+ * @param defaultIndex - Index of the default choice (used on empty input or non-TTY)
+ * @returns The selected choice's value
+ */
+export async function readChoice(
+  prompt: string,
+  choices: Choice[],
+  defaultIndex?: number
+): Promise<string> {
+  if (choices.length === 0) {
+    throw new Error("readChoice requires at least one choice");
+  }
+
+  const effectiveDefault =
+    defaultIndex !== undefined && defaultIndex >= 0 && defaultIndex < choices.length
+      ? defaultIndex
+      : 0;
+
+  const getDefault = (): string => {
+    const choice = choices[effectiveDefault];
+    if (!choice) throw new Error("Invalid default index");
+    return choice.value;
+  };
+
+  const parseAnswer = (answer: string): string => {
+    const trimmed = answer.trim();
+    if (trimmed === "") return getDefault();
+    const num = Number.parseInt(trimmed, 10);
+    if (Number.isNaN(num) || num < 1 || num > choices.length) return getDefault();
+    const selected = choices[num - 1];
+    return selected ? selected.value : getDefault();
+  };
+
+  // If not TTY, return default choice
+  if (!isTTY()) {
+    return getDefault();
+  }
+
+  // Ensure stdin is in normal mode (Ink may leave it in raw mode)
+  if (process.stdin.isTTY && process.stdin.isRaw) {
+    process.stdin.setRawMode(false);
+  }
+
+  // Resume stdin and ref it to keep the event loop alive
+  process.stdin.resume();
+  process.stdin.ref();
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
+  });
+
+  // Display prompt and choices on stderr
+  process.stderr.write(`${prompt}\n`);
+  for (let i = 0; i < choices.length; i++) {
+    const choice = choices[i];
+    if (!choice) continue;
+    const marker = i === effectiveDefault ? " (default)" : "";
+    process.stderr.write(`  ${i + 1}) ${choice.label}${marker}\n`);
+  }
+
+  return new Promise<string>((resolve) => {
+    let resolved = false;
+
+    rl.question("Enter number: ", (answer) => {
+      if (!resolved) {
+        resolved = true;
+        rl.close();
+        resolve(parseAnswer(answer));
+      }
+    });
+
+    // Handle Ctrl+C or unexpected close
+    rl.on("close", () => {
+      if (!resolved) {
+        resolved = true;
+        resolve(getDefault());
+      }
+    });
+  });
+}
+
+/**
  * Read stdin content and split into inputs.
  * Used for reading identifiers from stdin.
  * @returns Array of input strings (split by whitespace)
