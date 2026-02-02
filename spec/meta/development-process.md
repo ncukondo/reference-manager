@@ -106,9 +106,9 @@ git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
 git branch -d <branch-name>
 ```
 
-## workmux: Parallel Agent Orchestration (Recommended)
+## Parallel Agent Orchestration
 
-[workmux](https://github.com/raine/workmux) automates worktree + tmux window management for parallel agent work.
+Use workmux for worktree lifecycle management (create, symlink, install, cleanup) and tmux pane splitting for agent launch. This combines workmux's automation with reliable agent startup.
 
 ### Prerequisites
 
@@ -119,12 +119,68 @@ git branch -d <branch-name>
 
 Project config: `.workmux.yaml` (see file for details)
 
-### Spawning Workers
+### Worker Setup
+
+#### 1. Create worktree (workmux)
+
+workmux automates worktree creation, `node_modules` symlink, and `npm install`:
 
 ```bash
-# From orchestrator on main branch
-mkdir -p /workspaces/reference-manager--worktrees/.ipc
-workmux add feature/<name> -b -p "/code-with-task <keyword>"
+workmux add feature/<name> -b
+```
+
+If workmux is not available, create manually:
+```bash
+git worktree add /workspaces/reference-manager--worktrees/<branch-name> -b <branch-name>
+cd /workspaces/reference-manager--worktrees/<branch-name> && npm install
+```
+
+#### 2. Auto-permission for worker agents
+
+Place `.claude/settings.local.json` in the worktree to suppress permission prompts:
+
+```bash
+WORKTREE=/workspaces/reference-manager--worktrees/<branch-name>
+mkdir -p "$WORKTREE/.claude"
+cat > "$WORKTREE/.claude/settings.local.json" << 'EOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)", "Read(*)", "Write(*)", "Edit(*)",
+      "Grep(*)", "Glob(*)", "mcp__serena__*"
+    ]
+  }
+}
+EOF
+```
+
+If this is insufficient, use `claude --dangerously-skip-permissions` as a fallback.
+
+#### 3. Split pane (not separate window)
+
+Spawn worker as a pane in the **current window**, not a separate window. Use `-d` to keep focus on the orchestrator pane.
+
+```bash
+WORKTREE=/workspaces/reference-manager--worktrees/<branch-name>
+tmux split-window -h -d -c "$WORKTREE"
+```
+
+#### 4. Launch Claude interactively, then send prompt
+
+**Important**: Do NOT use `claude -p`. Launch `claude` in interactive mode, wait for startup, then send the prompt. Always send the message and Enter as **two separate `send-keys` calls**.
+
+```bash
+# Start Claude interactively
+tmux send-keys -t <pane-index> 'claude'
+tmux send-keys -t <pane-index> Enter
+
+# Wait for startup ("? for shortcuts" appears)
+sleep 15
+
+# Send prompt (message and Enter MUST be separate)
+tmux send-keys -t <pane-index> '/code-with-task <keyword>'
+sleep 1
+tmux send-keys -t <pane-index> Enter
 ```
 
 ### IPC Status Protocol
@@ -149,22 +205,32 @@ Workers only write status files when the `.ipc/` directory exists (backward comp
 ### Monitoring
 
 ```bash
-workmux list                    # Overview of all workers
-cat .ipc/*.status.json | jq .   # Detailed status
-tmux capture-pane -t <window>   # Inspect stalled worker
-tmux send-keys -t <window> "..." Enter  # Resume idle worker
+# List all panes
+tmux list-panes -F '#{pane_index} #{pane_current_command} #{pane_current_path}'
+
+# IPC status
+cat /workspaces/reference-manager--worktrees/.ipc/*.status.json 2>/dev/null | jq .
+
+# Inspect specific pane
+tmux capture-pane -t <pane-index> -p | tail -20
+
+# Resume idle worker (message and Enter MUST be separate)
+tmux send-keys -t <pane-index> '続きをお願いします'
+tmux send-keys -t <pane-index> Enter
 ```
 
 ### Cleanup
 
 ```bash
-workmux remove <handle>         # Removes worktree + tmux window + branch
-rm -f .ipc/<handle>.status.json # Clean IPC file
+# workmux: removes worktree + tmux window + branch in one command
+workmux remove <handle>
+
+# Manual cleanup (if workmux not used):
+# git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
+# git branch -d <branch-name>
+
+rm -f /workspaces/reference-manager--worktrees/.ipc/<handle>.status.json
 ```
-
-### Manual Worktree Fallback
-
-If workmux is not available, use the manual worktree workflow described above. All commands (`/implement`, `/code-with-task`, etc.) detect workmux availability and fall back automatically.
 
 ## 4. TDD Implementation Phase
 
