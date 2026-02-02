@@ -81,14 +81,14 @@ Logic for `suggestRoleFromContext(filename, existingFiles)`:
 
 The function returns a suggested role string or `null` if no suggestion. This is a pure function with no side effects.
 
-- [ ] Write test: `src/features/operations/attachments/sync.test.ts`
+- [x] Write test: `src/features/operations/attachments/sync.test.ts`
   - Test each condition row in the table above
   - Test edge cases: multiple existing fulltext files, unknown extensions
-- [ ] Create stub: `suggestRoleFromContext` with `throw new Error("Not implemented")`
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Create stub: `suggestRoleFromContext` with `throw new Error("Not implemented")`
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Add `roleOverrides` to Sync Operation
 

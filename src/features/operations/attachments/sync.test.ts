@@ -8,7 +8,12 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary } from "../../../core/library-interface.js";
-import { type SyncAttachmentOptions, syncAttachments } from "./sync.js";
+import {
+  type InferredFile,
+  type SyncAttachmentOptions,
+  suggestRoleFromContext,
+  syncAttachments,
+} from "./sync.js";
 
 describe("syncAttachments", () => {
   let tempDir: string;
@@ -326,6 +331,74 @@ describe("syncAttachments", () => {
       expect(result.newFiles).toHaveLength(0);
       expect(result.missingFiles).toHaveLength(0);
       expect(result.applied).toBe(false);
+    });
+  });
+
+  describe("suggestRoleFromContext", () => {
+    it("should suggest fulltext for .pdf when no fulltext exists", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("paper.pdf", existingFiles)).toBe("fulltext");
+    });
+
+    it("should suggest fulltext for .md when no fulltext exists", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("paper.md", existingFiles)).toBe("fulltext");
+    });
+
+    it("should suggest supplement for .pdf when fulltext already exists", () => {
+      const existingFiles: InferredFile[] = [{ filename: "fulltext.pdf", role: "fulltext" }];
+      expect(suggestRoleFromContext("mmc1.pdf", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for .md when fulltext already exists", () => {
+      const existingFiles: InferredFile[] = [{ filename: "fulltext.md", role: "fulltext" }];
+      expect(suggestRoleFromContext("readme.md", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.xlsx)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("data.xlsx", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.csv)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("data.csv", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.tsv)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("data.tsv", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.zip)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("archive.zip", existingFiles)).toBe("supplement");
+    });
+
+    it("should suggest supplement for data-like extensions (.tar.gz)", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("archive.tar.gz", existingFiles)).toBe("supplement");
+    });
+
+    it("should return null for unknown extensions", () => {
+      const existingFiles: InferredFile[] = [];
+      expect(suggestRoleFromContext("readme.txt", existingFiles)).toBeNull();
+    });
+
+    it("should consider fulltext from existing files (not just metadata)", () => {
+      const existingFiles: InferredFile[] = [
+        { filename: "fulltext.pdf", role: "fulltext" },
+        { filename: "notes.md", role: "notes" },
+      ];
+      expect(suggestRoleFromContext("another.pdf", existingFiles)).toBe("supplement");
+    });
+
+    it("should handle multiple existing fulltext files", () => {
+      const existingFiles: InferredFile[] = [
+        { filename: "fulltext.pdf", role: "fulltext" },
+        { filename: "fulltext.md", role: "fulltext" },
+      ];
+      expect(suggestRoleFromContext("extra.pdf", existingFiles)).toBe("supplement");
     });
   });
 

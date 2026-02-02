@@ -62,6 +62,34 @@ function errorResult(error: string): SyncAttachmentResult {
 }
 
 /**
+ * Suggest a role for a file based on context (existing files and file extension).
+ *
+ * This is a pure function with no side effects.
+ * Returns a suggested role string or null if no suggestion.
+ */
+export function suggestRoleFromContext(
+  filename: string,
+  existingFiles: InferredFile[]
+): string | null {
+  const ext = filename.toLowerCase();
+
+  // Data-like extensions always suggest supplement
+  const dataExtensions = [".xlsx", ".csv", ".tsv", ".zip"];
+  if (dataExtensions.some((de) => ext.endsWith(de)) || ext.endsWith(".tar.gz")) {
+    return "supplement";
+  }
+
+  // PDF or Markdown: suggest fulltext if none exists, otherwise supplement
+  const isDocumentLike = ext.endsWith(".pdf") || ext.endsWith(".md");
+  if (isDocumentLike) {
+    const hasFulltext = existingFiles.some((f) => f.role === "fulltext");
+    return hasFulltext ? "supplement" : "fulltext";
+  }
+
+  return null;
+}
+
+/**
  * Infer role and label from filename
  *
  * Pattern matching:
