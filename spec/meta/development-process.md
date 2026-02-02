@@ -177,9 +177,13 @@ tmux send-keys -t <pane-index> Enter
 
 ### Cleanup
 
+Agent scripts modify `CLAUDE.md` in the worktree (not committed). Restore it before removing the worktree to avoid `--force`:
+
 ```bash
+# Restore CLAUDE.md modified by agent scripts
+cd /workspaces/reference-manager--worktrees/<branch-name> && git checkout -- CLAUDE.md
+
 # workmux: removes worktree + tmux window + branch in one command
-# (.worker-status.json is inside worktree, so it's removed automatically)
 workmux remove <handle>
 
 # Manual cleanup (if workmux not used):

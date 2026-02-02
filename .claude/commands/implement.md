@@ -54,8 +54,9 @@ tmux capture-pane -t <pane-index> -p | tail -20
 1. PR レビュー + CI 待ち
 2. `gh pr merge <number> --merge`
 3. main で ROADMAP.md 更新 + タスクファイルを `completed/` に移動
-4. クリーンアップ:
+4. クリーンアップ（CLAUDE.md復元 → worktree削除）:
    ```bash
+   cd /workspaces/reference-manager--worktrees/<branch-name> && git checkout -- CLAUDE.md
    workmux remove <handle>
    # workmux 未使用時: git worktree remove ... && git branch -d ...
    ```

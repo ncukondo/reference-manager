@@ -80,6 +80,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 29**: Edit Validation Pipeline (two-stage validation, error annotation, retry loop)
 - **DevOps**: workmux Integration (parallel agent orchestration with tmux)
 - **Phase 30c**: TUI Action Menu Enhancement (dynamic actions, output submenu, side-effect actions, --config fix)
+- **Phase 31**: Clipboard Support (clipboard auto-copy, --clipboard/--no-clipboard, env var, config, win32 support)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -101,27 +102,6 @@ Submit to Anthropic's official extension registry when ready.
   - Prepare icon.png (256x256)
   - Submit via Anthropic extension form
   - Address review feedback if any
-
-### Phase 31: Clipboard Support
-
-Add clipboard auto-copy for CLI output, controlled via config, environment variable, and CLI flag.
-
-**Task**: `20260129-04-clipboard-support.md`
-
-**Scope**:
-- Clipboard utility module (OS command detection: `pbcopy`, `clip.exe`, `wl-copy`, `xclip`)
-- Config setting: `cli.tui.clipboard_auto_copy` (TUI output only)
-- Environment variable: `REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY` (all output commands)
-- Global CLI option: `--clipboard` / `--no-clipboard` (all output commands)
-- Centralized output helper (stdout + clipboard, graceful degradation)
-- Spec updates
-
-**Todos**:
-- [ ] Step 1: Clipboard utility module
-- [ ] Step 2: Config schema and defaults
-- [ ] Step 3: CLI global option `--clipboard` / `--no-clipboard`
-- [ ] Step 4: Integrate clipboard into output path
-- [ ] Step 5: Update specs
 
 ---
 
