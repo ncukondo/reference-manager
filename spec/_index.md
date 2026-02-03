@@ -66,6 +66,9 @@ spec/
 ├── decisions/                   # Architecture Decision Records
 │   ├── README.md                # ADR template and guidelines
 │   └── ADR-*.md                 # Individual decisions
+├── roles/                       # Agent role definitions
+│   ├── implement.md             # Worker agent for TDD implementation
+│   └── review.md                # Reviewer agent for PR reviews
 └── tasks/                       # Task management
     ├── ROADMAP.md               # Progress tracking
     ├── _template.md             # Task template
@@ -83,6 +86,7 @@ spec/
 | `guidelines/` | When writing code, tests, or checking compatibility |
 | `patterns/` | When implementing error handling or common patterns |
 | `decisions/` | When understanding technical choices (ADRs) |
+| `roles/` | When working as a specialized agent (worker, reviewer) |
 | `tasks/` | When tracking progress or creating new tasks |
 
 ## Quick Reference

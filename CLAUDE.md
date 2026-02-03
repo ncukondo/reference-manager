@@ -1,19 +1,43 @@
-# Working Guidelines
+# Claude Code Context
 
-## Required First Step
+## Project Overview
 
-**Before starting any work, read `spec/_index.md` first.**
+reference-manager: CLI tool for managing academic references in CSL-JSON format.
 
-## Workflow
+## Work Guidelines
 
-Follow `spec/meta/development-process.md` for complete workflow:
+1. **Starting Point**: Always begin work from `spec/_index.md` to understand current tasks and priorities.
 
-1. Read `spec/_index.md` → identify relevant specs
-2. Read `spec/meta/development-process.md` → understand workflow
-3. Read necessary specs (always check `spec/core/`)
-4. Check `spec/tasks/ROADMAP.md` → verify current phase and next steps
-5. Follow TDD process (see `spec/guidelines/testing.md`)
-6. Quality checks → ROADMAP update → commit → push
+2. **Commit Frequently**: Make commits at small, logical units of work. Do not accumulate large changes.
+
+3. **Context Management**: If compact (context summarization) appears likely before completing the current task, report this to the user and pause work to avoid losing important context.
+
+## Agent Role
+
+When working in a worktree, a role file is specified at the bottom of this file (e.g. `<!-- role: implement -->`).
+Read the corresponding role file from `spec/roles/{role}.md` and follow its instructions.
+
+Available roles:
+- `implement` — TDD implementation worker (`spec/roles/implement.md`)
+- `review` — PR reviewer (`spec/roles/review.md`)
+
+## tmux send-keys Guidelines
+
+When sending input to tmux panes (e.g., to other Claude agents), **always send text and Enter separately with sleep 1 in between**:
+
+```bash
+# Correct: separate commands with sleep
+tmux send-keys -t %42 "/code-with-task example"
+sleep 1
+tmux send-keys -t %42 Enter
+
+# WRONG: combining text and Enter causes input races
+tmux send-keys -t %42 "/code-with-task example" Enter
+```
+
+This prevents input race conditions where tmux processes the Enter before the text is fully buffered.
+
+Use `scripts/send-to-agent.sh` when possible, as it handles this correctly.
 
 ## Quick Reference
 

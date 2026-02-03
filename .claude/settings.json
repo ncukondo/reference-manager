@@ -4,12 +4,15 @@
       "Bash(workmux:*)",
       "Bash(tmux capture-pane:*)",
       "Bash(tmux send-keys:*)",
+      "Bash(tmux list-panes:*)",
       "Bash(tmux list-windows:*)",
+      "Bash(tmux kill-pane:*)",
       "Bash(tmux new-session:*)",
       "Bash(tmux has-session:*)",
       "Bash(which workmux)",
       "Bash(which tmux)",
-      "Bash(sleep:*)"
+      "Bash(sleep:*)",
+      "Read(/workspaces/reference-manager--worktrees/**)"
     ]
   },
   "hooks": {

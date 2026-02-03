@@ -11,11 +11,12 @@ set -euo pipefail
 #   - Must be inside a tmux session
 #
 # What it does:
-#   1. Writes .claude/settings.local.json for auto-permission
+#   1. Writes .claude/settings.local.json for auto-permission + state hooks
 #   2. Splits a tmux pane (-d to keep focus on current pane)
 #   3. Launches claude interactively, waits for startup
 #   4. Sends the prompt
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WORKTREE_DIR="${1:?Usage: launch-agent.sh <worktree-dir> <prompt>}"
 PROMPT="${2:?Usage: launch-agent.sh <worktree-dir> <prompt>}"
 SCRIPT_NAME="${LAUNCH_AGENT_LABEL:-launch-agent}"
@@ -33,7 +34,22 @@ fi
 # --- 1. Auto-permission settings (always overwrite) ---
 echo "[$SCRIPT_NAME] Setting up auto-permission..."
 mkdir -p "$WORKTREE_DIR/.claude"
-cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
+
+# State file directory for hook-based state tracking
+WORKER_STATE_DIR="/tmp/claude-agent-states"
+mkdir -p "$WORKER_STATE_DIR"
+
+# --- 2. Split pane ---
+echo "[$SCRIPT_NAME] Splitting tmux pane..."
+PANE_ID=$(tmux split-window -h -d -c "$WORKTREE_DIR" -P -F '#{pane_id}')
+echo "[$SCRIPT_NAME] Agent pane: $PANE_ID"
+
+# --- 2b. Write settings with hooks (now that we have PANE_ID) ---
+# State file path uses PANE_ID (e.g., %5 -> /tmp/claude-agent-states/%5)
+STATE_FILE="$WORKER_STATE_DIR/$PANE_ID"
+echo "[$SCRIPT_NAME] State file: $STATE_FILE"
+
+cat > "$WORKTREE_DIR/.claude/settings.local.json" << SETTINGS_EOF
 {
   "permissions": {
     "allow": [
@@ -49,58 +65,123 @@ cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "serena"
-  ]
+  ],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo idle > '$STATE_FILE'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo working > '$STATE_FILE'",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo permission > '$STATE_FILE'"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo idle > '$STATE_FILE'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p '$WORKER_STATE_DIR' && echo starting > '$STATE_FILE'"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rm -f '$STATE_FILE'"
+          }
+        ]
+      }
+    ]
+  }
 }
 SETTINGS_EOF
 
-# --- 2. Split pane ---
-echo "[$SCRIPT_NAME] Splitting tmux pane..."
-PANE_ID=$(tmux split-window -h -d -c "$WORKTREE_DIR" -P -F '#{pane_id}')
-echo "[$SCRIPT_NAME] Agent pane: $PANE_ID"
+# Initialize state file
+echo "starting" > "$STATE_FILE"
 
 # --- 3. Launch Claude interactively ---
 # NOTE: text and Enter must be separate send-keys calls (sleep 1 between).
+# Set CLAUDE_WORKER_ID to identify this agent
 echo "[$SCRIPT_NAME] Launching Claude in pane $PANE_ID..."
-tmux send-keys -t "$PANE_ID" 'claude'
+tmux send-keys -t "$PANE_ID" "CLAUDE_WORKER_ID='$PANE_ID' claude"
 sleep 1
 tmux send-keys -t "$PANE_ID" Enter
 
 echo "[$SCRIPT_NAME] Waiting for Claude to start..."
-TRUST_HANDLED=false
+DETECTED=false
 # Timeout: 45 iterations × 2s = 90s (extra headroom for parallel launches)
 for i in $(seq 1 45); do
   sleep 2
-  PANE_CONTENT=$(tmux capture-pane -t "$PANE_ID" -p 2>/dev/null || true)
 
-  # Handle "Trust this folder?" prompt (appears on first launch in new directories)
-  if [ "$TRUST_HANDLED" = false ] && echo "$PANE_CONTENT" | grep -q 'Yes, I trust this folder'; then
-    echo "[$SCRIPT_NAME] Trust prompt detected, auto-accepting..."
-    tmux send-keys -t "$PANE_ID" Enter
-    TRUST_HANDLED=true
-    continue
-  fi
+  # Use check-agent-state.sh for robust state detection
+  # This handles narrow panes (via -J) and distinguishes Trust prompt from input prompt
+  STATE=$("$SCRIPT_DIR/check-agent-state.sh" "$PANE_ID" 2>/dev/null || echo "error")
 
-  # Detect Claude ready state via multiple patterns (robust against format changes)
-  # - "❯" or ">" prompt character: always shown when Claude is waiting for input
-  # - "? for shortcuts": shown in some Claude Code versions
-  # - 'Try "': hint text shown on idle prompt
-  if echo "$PANE_CONTENT" | grep -qE '(❯|^> |[?] for shortcuts|Try ")'; then
-    echo "[$SCRIPT_NAME] Claude is ready (after ~$((i * 2))s)"
-    break
-  fi
-  if [ "$i" -eq 45 ]; then
-    echo "[$SCRIPT_NAME] WARNING: Claude startup not detected after 90s."
-    echo "[$SCRIPT_NAME] Send prompt manually:"
-    echo "  tmux send-keys -t $PANE_ID '$PROMPT'"
-    echo "  sleep 1"
-    echo "  tmux send-keys -t $PANE_ID Enter"
-    exit 0
-  fi
+  case "$STATE" in
+    trust)
+      echo "[$SCRIPT_NAME] Trust prompt detected, auto-accepting..."
+      tmux send-keys -t "$PANE_ID" Enter
+      # Continue waiting for idle state after accepting trust
+      ;;
+    idle)
+      echo "[$SCRIPT_NAME] Claude is ready (after ~$((i * 2))s)"
+      DETECTED=true
+      break
+      ;;
+    working)
+      # Agent is initializing, keep waiting
+      ;;
+    *)
+      # Error or unexpected state, keep waiting
+      ;;
+  esac
 done
+
+if [ "$DETECTED" = false ]; then
+  echo "[$SCRIPT_NAME] WARNING: Claude startup not detected after 90s. Sending prompt anyway as fallback."
+fi
 
 # --- 4. Send prompt ---
 # NOTE: Always send text and Enter as separate send-keys calls with sleep 1
 # in between. Combining them (e.g. 'text' Enter) can cause input races.
+# This runs on both success and timeout — if Claude isn't ready yet,
+# the keys will wait in the input buffer and be processed once it starts.
 echo "[$SCRIPT_NAME] Sending prompt..."
 tmux send-keys -t "$PANE_ID" "$PROMPT"
 sleep 1
