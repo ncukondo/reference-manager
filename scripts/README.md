@@ -1,6 +1,6 @@
 # Scripts
 
-Scripts for parallel agent orchestration and automation.
+Scripts for parallel agent orchestration and automation. All agents run in tmux panes within the same window for easy monitoring.
 
 ## Agent Lifecycle Scripts
 
@@ -8,7 +8,7 @@ Scripts for parallel agent orchestration and automation.
 |--------|-------|---------|
 | `launch-agent.sh` | `<worktree-dir> <prompt>` | Base: permissions + hooks, pane split, Claude launch, prompt send |
 | `spawn-worker.sh` | `<branch> <task-keyword> [step-scope]` | Creates worktree + sets implement role, then delegates |
-| `spawn-reviewer.sh` | `<pr-number>` | Resolves PR branch + sets review role, then delegates |
+| `start-review.sh` | `<pr-number>` | Resolves PR branch + sets review role, then delegates |
 
 ## Monitoring & Control Scripts
 
@@ -25,7 +25,6 @@ Scripts for parallel agent orchestration and automation.
 |--------|-------|---------|
 | `set-role.sh` | `<worktree-dir> <role>` | Set role marker in CLAUDE.md |
 | `apply-layout.sh` | (no args) | Apply tiled layout to tmux panes |
-| `start-review.sh` | `<pr-number>` | Start review (alias for spawn-reviewer.sh) |
 
 ## State Tracking
 
@@ -52,7 +51,7 @@ Use `monitor-agents.sh --watch` to continuously monitor all agents.
 
 ### Start a reviewer for a PR
 ```bash
-./scripts/spawn-reviewer.sh 123
+./scripts/start-review.sh 123
 ```
 
 ### Monitor all agents
@@ -68,4 +67,11 @@ Use `monitor-agents.sh --watch` to continuously monitor all agents.
 ### Check PR completion status
 ```bash
 ./scripts/check-task-completion.sh feature/branch pr-creation
+```
+
+### Cleanup after merge
+```bash
+cd /workspaces/reference-manager--worktrees/<branch> && git checkout -- CLAUDE.md
+git worktree remove /workspaces/reference-manager--worktrees/<branch>
+git branch -d <branch>
 ```

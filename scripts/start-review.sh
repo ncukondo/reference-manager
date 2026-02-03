@@ -8,8 +8,8 @@ set -euo pipefail
 #
 # What it does:
 #   1. Gets branch name from PR
-#   2. Creates worktree if not exists
-#   3. Appends review instructions to CLAUDE.md
+#   2. Creates worktree if not exists (fetches branch from origin)
+#   3. Sets role to 'review' in CLAUDE.md
 #   4. Delegates to launch-agent.sh for pane + Claude setup
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -21,7 +21,7 @@ WORKTREE_BASE="/workspaces/reference-manager--worktrees"
 echo "[start-review] Fetching PR #$PR_NUMBER info..."
 BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')
 if [ -z "$BRANCH" ]; then
-  echo "[start-review] ERROR: Could not get branch name for PR #$PR_NUMBER"
+  echo "[start-review] ERROR: Could not get branch name for PR #$PR_NUMBER" >&2
   exit 1
 fi
 echo "[start-review] Branch: $BRANCH"
@@ -33,27 +33,16 @@ if [ -d "$WORKTREE_DIR" ]; then
   echo "[start-review] Worktree already exists: $WORKTREE_DIR"
 else
   echo "[start-review] Creating worktree..."
+  mkdir -p "$WORKTREE_BASE"
   git fetch origin "$BRANCH"
   git worktree add "$WORKTREE_DIR" "$BRANCH"
   (cd "$WORKTREE_DIR" && npm install)
 fi
 
-# --- 3. Prepare CLAUDE.md for review ---
-# Restore CLAUDE.md to git state first (removes any worker instructions from spawn-worker.sh)
-echo "[start-review] Restoring CLAUDE.md to git state..."
-(cd "$WORKTREE_DIR" && git checkout -- CLAUDE.md 2>/dev/null || true)
-
-echo "[start-review] Appending review instructions to CLAUDE.md..."
-cat >> "$WORKTREE_DIR/CLAUDE.md" << 'CLAUDE_EOF'
-
-## Review Agent Instructions
-
-You are a review agent for a PR in this worktree.
-
-### Responsibilities
-- **All PR comments and review bodies MUST be in English**
-CLAUDE_EOF
+# --- 3. Set role to 'review' ---
+echo "[start-review] Setting role to 'review' in CLAUDE.md..."
+"$SCRIPT_DIR/set-role.sh" "$WORKTREE_DIR" review
 
 # --- 4. Delegate to launch-agent.sh ---
 export LAUNCH_AGENT_LABEL="start-review"
-exec "$SCRIPT_DIR/launch-agent.sh" "$WORKTREE_DIR" "/review-pr-local $PR_NUMBER"
+exec "$SCRIPT_DIR/launch-agent.sh" "$WORKTREE_DIR" "/review-pr $PR_NUMBER"

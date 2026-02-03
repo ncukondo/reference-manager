@@ -108,16 +108,12 @@ git branch -d <branch-name>
 
 ## Parallel Agent Orchestration
 
-Use workmux for worktree lifecycle management (create, symlink, install, cleanup) and tmux pane splitting for agent launch. This combines workmux's automation with reliable agent startup.
+Use tmux pane splitting for parallel agent work. All agents run in panes within the same tmux window for easy monitoring.
 
 ### Prerequisites
 
-- `tmux` and `workmux` (both installed via DevContainer)
+- `tmux` (installed via DevContainer)
 - Running inside a tmux session (`$TMUX` must be set)
-
-### Configuration
-
-Project config: `.workmux.yaml` (see file for details)
 
 ### Agent Scripts
 
@@ -125,9 +121,9 @@ Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch
 
 | Script | Usage | Purpose |
 |--------|-------|---------|
-| `launch-agent.sh` | `<worktree-dir> <prompt>` | Base: permissions, pane split, Claude launch, prompt send |
-| `spawn-worker.sh` | `<branch> <task-keyword> [step-scope]` | Creates worktree + worker CLAUDE.md, then delegates |
-| `start-review.sh` | `<pr-number>` | Resolves PR branch + review CLAUDE.md, then delegates |
+| `launch-agent.sh` | `<worktree-dir> <prompt>` | Base: permissions + hooks, pane split, Claude launch, prompt send |
+| `spawn-worker.sh` | `<branch> <task-keyword> [step-scope]` | Creates worktree + sets implement role, then delegates |
+| `start-review.sh` | `<pr-number>` | Resolves PR branch + sets review role, then delegates |
 
 ```bash
 # Implementation worker
@@ -145,45 +141,46 @@ Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch
 
 If auto-launch fails, the scripts print manual commands to run.
 
+### Monitoring Scripts
+
+| Script | Usage | Purpose |
+|--------|-------|---------|
+| `monitor-agents.sh` | `[--watch] [--json]` | List all agent states (idle/working/trust) |
+| `check-agent-state.sh` | `<pane-id>` | Check single agent's state |
+| `check-task-completion.sh` | `<branch> <task-type> [pr]` | Check PR/CI/review status via GitHub API |
+| `send-to-agent.sh` | `<pane-id> <prompt>` | Send prompt to idle agent |
+
 ### Parallel Task Analysis
 
 When splitting a task into parallel workers:
 
 1. **Check file conflicts**: If two steps modify the same source/test files, assign them to the same worker
 2. **Use step scope**: Pass the third argument to `spawn-worker.sh` to restrict each worker's scope
-3. **Review after implementation**: Use `start-review.sh` to spawn review agents (restores CLAUDE.md before appending review instructions)
+3. **Review after implementation**: Use `start-review.sh` to spawn review agents
 
-### IPC Status Protocol
+### State Tracking
 
-Workers write status to `.worker-status.json` in their own worktree root (`.gitignore`d). This avoids permission issues since the file is within the worktree directory.
-
-```json
-{
-  "branch": "<branch>",
-  "task_file": "<path>",
-  "status": "starting|in_progress|testing|creating_pr|completed|failed",
-  "current_step": "<description>",
-  "pr_number": null,
-  "error": null,
-  "updated_at": "<ISO8601>"
-}
-```
+Agent states are tracked via hooks in `/tmp/claude-agent-states/<pane-id>`:
+- `starting` - Agent is starting up
+- `working` - Agent is executing a task
+- `idle` - Agent is waiting for input
+- `permission` - Permission prompt displayed
+- `trust` - Trust folder prompt displayed
 
 ### Monitoring
 
 ```bash
-# List all panes
-tmux list-panes -F '#{pane_index} #{pane_current_command} #{pane_current_path}'
+# Monitor all agents continuously
+./scripts/monitor-agents.sh --watch
 
-# IPC status (glob across all worktrees)
-cat /workspaces/reference-manager--worktrees/*/.worker-status.json 2>/dev/null | jq .
+# List all panes
+tmux list-panes -F '#{pane_id} #{pane_current_command} #{pane_current_path}'
 
 # Inspect specific pane
-tmux capture-pane -t <pane-index> -p | tail -20
+tmux capture-pane -t <pane-id> -p | tail -20
 
-# Resume idle worker (message and Enter MUST be separate)
-tmux send-keys -t <pane-index> '続きをお願いします'
-tmux send-keys -t <pane-index> Enter
+# Send prompt to idle agent
+./scripts/send-to-agent.sh <pane-id> "your instruction"
 ```
 
 ### Cleanup
@@ -194,12 +191,9 @@ Agent scripts modify `CLAUDE.md` in the worktree (not committed). Restore it bef
 # Restore CLAUDE.md modified by agent scripts
 cd /workspaces/reference-manager--worktrees/<branch-name> && git checkout -- CLAUDE.md
 
-# workmux: removes worktree + tmux window + branch in one command
-workmux remove <handle>
-
-# Manual cleanup (if workmux not used):
-# git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
-# git branch -d <branch-name>
+# Remove worktree and branch
+git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
+git branch -d <branch-name>
 ```
 
 ## 4. TDD Implementation Phase

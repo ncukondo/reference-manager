@@ -1,176 +1,117 @@
-spec/_index.mdを起点として必要事項を確認後、spec/tasks/ROADMAP.md を確認し、並列実装可能なタスクを分析して実装を進めて下さい。
-
-## 前提チェック
-
-以下をまず確認:
-```bash
-which workmux && which tmux && echo "workmux ready" || echo "workmux not available"
-test -n "$TMUX" && echo "in tmux session" || echo "not in tmux — run: tmux new-session -s main"
-```
-
-- workmux が無い場合: 手動 worktree フォールバック（従来手順）で続行
-- tmux 外の場合: `tmux new-session -s main` を案内
+spec/tasks/ROADMAP.md を確認し、並列実装可能なタスクを分析して実装を進めて下さい。
 
 ## 手順
 
 ### 1. タスク分析
-- spec/tasks/ROADMAP.md を確認し、未完了のタスクを全て洗い出す
+- spec/tasks/ROADMAP.md を確認し、"Pending" のタスクを全て洗い出す
 - 依存関係が満たされているタスクを特定（並列実行候補）
-- **ファイル衝突チェック**: 並列候補のタスクが同じファイルを変更する場合、1つのワーカーにまとめる
-  - タスクファイルの "Affected Files" / "File" セクションを確認
-  - 同じ `.ts` や `.test.ts` を変更するステップは同一ワーカーに割り当てる
 - 実装するタスクを選択
-  - 並列実装が可能なタスクが複数ある場合、workmux経由でworkerエージェントに分担する
+  - 並列実装が可能なタスクが複数ある場合、spawn-worker.sh でworkerエージェントに分担する
 
-### 2. ワーカー起動
+### 2. ブランチ & worktree セットアップ
 
-`scripts/spawn-worker.sh` がセットアップからエージェント起動まで一括で行う:
 ```bash
-# 基本
-./scripts/spawn-worker.sh feature/<name> <task-keyword>
-
-# ステップ指定あり（ワーカーの作業範囲を明示）
-./scripts/spawn-worker.sh feature/<name> <task-keyword> "Steps 1 and 2 only"
+# ワーカーエージェントを起動（worktree作成 + pane分割 + Claude起動）
+./scripts/spawn-worker.sh <branch-name> <task-keyword>
 ```
 
-スクリプトの内容:
-1. worktree 作成（workmux or 手動）
-2. `.claude/settings.local.json` 配置（自動許可）
-3. `CLAUDE.md` にワーカー用指示を append（compact復帰手順含む）
-4. tmux ペイン分割（`-d` でフォーカス維持）
-5. Claude 対話起動 → 待機 → プロンプト送信
+spawn-worker.sh は以下を自動実行:
+1. worktree を `reference-manager--worktrees/<branch-name>` に作成
+2. npm install を実行
+3. 現在のウィンドウ内で新しいペインを作成
+4. Claude を起動してタスクを開始
 
-起動に失敗した場合はスクリプトが手動コマンドを表示するので、それに従う。
+**注意**: 新しいtmuxウィンドウは作成しません。全エージェントは同一ウィンドウ内のペインで動作します。
 
-### 3. レイアウト適用
-
-全ワーカー起動後、ペインレイアウトを整える:
-```bash
-./scripts/apply-layout.sh
-```
-
-### 4. モニタリングループ
-
-~30秒間隔でポーリング:
-```bash
-# ペイン一覧
-tmux list-panes -F '#{pane_index} #{pane_current_command} #{pane_current_path}'
-
-# IPC ステータス確認（各worktree内の .worker-status.json）
-cat /workspaces/reference-manager--worktrees/*/.worker-status.json 2>/dev/null | jq -r '[.branch, .status, .current_step] | @tsv'
-
-# 特定ペインの出力確認（停滞時）
-tmux capture-pane -t <pane-id> -p | tail -20
-```
-
-### 5. ワーカー完了検知 & レビューサイクル
-
-#### ワーカー完了の検知
-全ワーカーがPR作成まで完了したかを、`tmux capture-pane` でポーリングして確認する:
-```bash
-# 各ワーカーペインの最新出力を確認
-tmux capture-pane -t <pane-id> -p | tail -20
-```
-ワーカーがアイドル状態（プロンプト待ち or `?` 表示）になっていればPR作成済みと判断する。
-
-#### レビュー → 修正 → 再レビュー
-
-**方法A: レビューエージェントに委任（推奨）**
-ワーカーペインを片付けた後、`start-review.sh` でレビューエージェントを起動:
-```bash
-# ワーカーペインを閉じる
-tmux send-keys -t <pane-id> '/exit'
-sleep 1
-tmux send-keys -t <pane-id> Enter
-sleep 3
-tmux kill-pane -t <pane-id>
-
-# レビューエージェント起動（並列可）
-./scripts/start-review.sh <PR番号>
-```
-- レビューエージェントはCI完了を待ってからレビューを実施する
-- 起動検知がタイムアウトした場合、手動でプロンプトを送信する
-
-**方法B: mainエージェントが直接レビュー**
-```
-/review-pr <PR番号>
-```
-
-**修正が必要な場合**:
-1. 該当ワーカーに修正指示を送信:
-   ```bash
-   tmux send-keys -t <pane-id> '修正指示テキスト'
-   sleep 1
-   tmux send-keys -t <pane-id> Enter
-   ```
-2. ワーカーが修正してpush → 再レビュー
-3. 全PR承認まで繰り返す
-
-### 6. 完了処理
-
-各ワーカーのPRが承認されたら:
-1. `gh pr merge <number> --merge`
-2. main で ROADMAP.md 更新 + タスクファイルを `completed/` に移動
-3. クリーンアップ（CLAUDE.md復元 → worktree削除）:
-   ```bash
-   cd /workspaces/reference-manager--worktrees/<branch-name> && git checkout -- CLAUDE.md
-   workmux remove <handle>
-   # workmux 未使用時: git worktree remove ... && git branch -d ...
-   ```
-
-### 7. 障害対応
-
-- **エラー検出**: IPC status が `failed` → `tmux capture-pane -t <pane-id>` でエラー確認
-- **リトライ**: メッセージと Enter を分けて送信（後述の注意事項参照）
-- **回復不能**: ペインを閉じて worktree を削除
-
-### 8. アイドル検出
-
-- `updated_at` が5分以上古い場合 → `tmux capture-pane -t <pane-id>` でプロンプト状態を確認
-- エージェントがアイドルなら `send-keys` で継続指示
-
-## tmux send-keys の注意
-
-- テキストと Enter は**必ず別々の `send-keys` 呼び出し**で送信する
-- 間に `sleep 1` を挟む（入力レースを防ぐため）
-- 悪い例: `tmux send-keys -t $PANE 'command' Enter`
-- 良い例:
-  ```bash
-  tmux send-keys -t $PANE 'command'
-  sleep 1
-  tmux send-keys -t $PANE Enter
-  ```
-
-## tmux 未使用時のフォールバック
-
-worktreeは必ず `/workspaces/reference-manager--worktrees/` 内に作成:
-```bash
-git worktree add /workspaces/reference-manager--worktrees/<branch-name> -b <branch-name>
-cd /workspaces/reference-manager--worktrees/<branch-name>
-npm install
-```
-
-TDD実装サイクル:
+### 3. TDD実装サイクル
+各ステップについて:
 1. **Red**: 失敗するテストを書く
 2. **Green**: テストを通す最小限の実装
 3. **Refactor**: リファクタリング
 4. 各ステップ完了後にcommit
 
-完了前チェック:
+### 4. 完了前チェック
 ```bash
 npm run test:all
 npm run lint
 npm run typecheck
 ```
 
-PR作成 → マージ → ROADMAP更新 → worktree cleanup
+### 5. PR作成
+- 全テスト通過を確認
+- gh pr create でPR作成
 
-## 作業範囲について
+### 5a. ワーカー完了検知 & レビューサイクル
 
-並列作業時のconflictを避けるため:
+#### エージェント状態の監視
+```bash
+# 全エージェントの状態を一覧表示
+./scripts/monitor-agents.sh
 
-- **worktree内での作業**: 実装 → テスト → PR作成まで
-- **マージ後にmainブランチで**: ROADMAP.md更新とタスクファイルのcompleted/への移動
+# 継続監視モード（5秒ごとに更新）
+./scripts/monitor-agents.sh --watch
+
+# 特定ペインの状態を確認
+./scripts/check-agent-state.sh <pane_id>
+# 出力: "idle" / "working" / "trust"
+```
+
+#### タスク完了の確認（GitHub API）
+```bash
+# PR作成とCI完了を確認
+./scripts/check-task-completion.sh <branch> pr-creation
+# 出力: "pending" / "ci-pending" / "ci-failed" / "completed"
+
+# レビュー状態を確認
+./scripts/check-task-completion.sh <branch> review <pr-number>
+# 出力: "pending" / "approved" / "changes_requested" / "commented"
+```
+
+#### 手動でのレビュー起動
+```bash
+# レビューエージェントを起動
+./scripts/start-review.sh <pr-number>
+```
+
+#### 修正指示の送信
+```bash
+# アイドル状態のエージェントに指示を送信
+./scripts/send-to-agent.sh <pane_id> "修正指示テキスト"
+```
+
+### 5b. レイアウト適用
+全ワーカー起動後、ペインレイアウトを整える:
+```bash
+./scripts/apply-layout.sh
+```
+
+### 6. マージ（mainエージェントで）
+ワーカー/レビュアーはマージを行わない。mainエージェントが以下を実行:
+```bash
+# PRをマージ
+gh pr merge <pr-number> --squash --delete-branch
+
+# worktreeをクリーンアップ
+git worktree remove <path> --force
+git branch -D <branch>
+```
+
+### 7. マージ後（mainブランチで）
+- ROADMAP.md のステータスを "Done" に更新
+- タスクファイルを `spec/tasks/completed/` に移動
+
+## 並列実行について
+- `git worktree list` で全worktreeのステータスを確認可能
+- `./scripts/monitor-agents.sh` で全エージェントの状態を一覧表示
+- 依存関係のconflictに注意
+- マージ時の調整を意識する
+
+## エージェント状態の判定
+- **idle**: エージェントが入力待ち（プロンプト `❯` が表示）
+- **working**: エージェントがタスク実行中
+- **trust**: Trust prompt表示中（自動でEnter送信される）
+
+**注意**: tmux出力にサジェスション（グレー表示のコマンド候補）が表示されることがあるが、これはアイドル状態であり、実行中ではない。完了判定には `check-task-completion.sh` を使うこと。
 
 ## context管理
-ステップ一つが完了する毎にタスクファイルを更新し、commit。次の作業の完了までにcompactが必要になりそうなら、その時点で作業を中断し、進捗を報告して下さい。
+次の作業の完了までにcompactが必要になりそうなら、その時点で作業を中断し、進捗を報告して下さい。
