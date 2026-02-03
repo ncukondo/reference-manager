@@ -13,18 +13,21 @@ gh pr merge $ARGUMENTS --merge
 
 ### 3. cleanup
 - mainを最新にする (`git checkout main && git pull`)
-- workmux が使える場合:
+- PRのブランチ名を取得:
   ```bash
-  # PRのブランチ名からハンドルを特定
-  HANDLE=$(gh pr view $ARGUMENTS --json headRefLabel -q .headRefLabel)
-  workmux remove "$HANDLE" 2>/dev/null || true
+  BRANCH=$(gh pr view $ARGUMENTS --json headRefName -q .headRefName)
   ```
-- workmux が無い場合のフォールバック:
-  - `git worktree list` で該当のworktree（`/workspaces/reference-manager--worktrees/` 内）を確認し削除
-  - 不要になったブランチを削除
-- IPC ステータスファイルのクリーンアップ:
+- worktreeを削除:
   ```bash
-  rm -f /workspaces/reference-manager--worktrees/.ipc/"$HANDLE".status.json 2>/dev/null
+  WORKTREE_DIR="/workspaces/reference-manager--worktrees/$(echo "$BRANCH" | tr '/' '-')"
+  if [ -d "$WORKTREE_DIR" ]; then
+    cd "$WORKTREE_DIR" && git checkout -- CLAUDE.md 2>/dev/null || true
+    git worktree remove "$WORKTREE_DIR" --force
+  fi
+  ```
+- ブランチを削除（リモートは --delete-branch で削除済みの場合あり）:
+  ```bash
+  git branch -D "$BRANCH" 2>/dev/null || true
   ```
 
 ### 4. タスク完了処理（mainブランチで）
