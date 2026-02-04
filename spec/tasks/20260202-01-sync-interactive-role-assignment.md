@@ -33,7 +33,7 @@ Current behavior:
 |------|---------|
 | `src/features/operations/attachments/sync.ts` | Add `roleOverrides` to options; export `InferredFile`; add `suggestRoleFromContext` |
 | `src/features/attachments/filename.ts` | (No change needed — `generateFilename` already exists for rename) |
-| `src/cli/commands/attach.ts` | Add role selection prompt in `runInteractiveSyncMode` and `runInteractiveMode`; add rename offer after role assignment |
+| `src/cli/commands/attach.ts` | Add `--no-rename` option; add role selection prompt in `runInteractiveSyncMode` and `runInteractiveMode`; show suggestion previews in dry-run; add rename after role assignment |
 | `src/cli/helpers.ts` | Add `readChoice` helper (numbered list selection via readline) |
 
 ### Test Files
@@ -74,15 +74,16 @@ Logic for `suggestRoleFromContext(filename, existingFiles)`:
 
 | Condition | Suggested Role |
 |-----------|---------------|
-| File is `.pdf`/`.md` and no `fulltext` exists | `fulltext` |
-| File is `.pdf`/`.md` and `fulltext` already exists | `supplement` |
+| File is `.pdf` and no `fulltext` exists | `fulltext` |
+| File is `.pdf` and `fulltext` already exists | `supplement` |
+| File is `.md`/`.txt` | `notes` |
 | File is data-like (`.xlsx`, `.csv`, `.tsv`, `.zip`, `.tar.gz`) | `supplement` |
 | Otherwise | `other` (no suggestion) |
 
 The function returns a suggested role string or `null` if no suggestion. This is a pure function with no side effects.
 
 - [x] Write test: `src/features/operations/attachments/sync.test.ts`
-  - Test each condition row in the table above
+  - Test each condition row in the table above (`.pdf` → fulltext/supplement, `.md`/`.txt` → notes)
   - Test edge cases: multiple existing fulltext files, unknown extensions
 - [x] Create stub: `suggestRoleFromContext` with `throw new Error("Not implemented")`
 - [x] Verify Red
@@ -140,14 +141,26 @@ Behavior:
 - [x] Implement: `readChoice` in `src/cli/helpers.ts`
 - [x] Lint/Type check
 
-### Step 4: Interactive Role Assignment in `attach sync` (TTY)
+### Step 4: Interactive Role Assignment in `attach sync` (TTY) and Non-TTY Suggestion
 
-Modify `runInteractiveSyncMode` to prompt users for role assignment when files are classified as `other`.
+Modify `runInteractiveSyncMode` to:
+- Apply `suggestRoleFromContext` to all "other" files in both TTY and non-TTY modes
+- In TTY mode, prompt users for role confirmation/override
+- In non-TTY dry-run, show suggestions and rename previews
+- With `--yes`, apply suggestions and renames automatically
+- Add `--no-rename` option to opt out of renaming
 
 **File**: `src/cli/commands/attach.ts`
 **Test**: `src/cli/commands/attach.test.ts`
 
-Flow:
+**Non-TTY flow:**
+1. Dry-run sync → get `newFiles`
+2. Apply `suggestRoleFromContext` to all "other" files
+3. Generate rename previews (current name vs convention name)
+4. Display preview showing suggested roles and renames
+5. With `--yes`: apply suggestions + renames (use `--no-rename` to skip renames)
+
+**TTY flow:**
 1. Dry-run sync → get `newFiles`
 2. Separate files into: `knownRoleFiles` (inferred correctly) and `unknownRoleFiles` (role = "other")
 3. For each unknown file:
@@ -158,10 +171,27 @@ Flow:
 5. Show combined preview (known + overridden files)
 6. Confirm and apply sync with `roleOverrides`
 
+**Dry-run output format (non-TTY):**
+```
+Sync preview for Smith-2024:
+  New files:
+    supplement-data.csv
+      role: supplement, label: "data"
+    mmc1.pdf
+      role: supplement (suggested, inferred: other)
+      rename: supplement-mmc1.pdf
+
+To apply: ref attach sync Smith-2024 --yes
+To apply without renaming: ref attach sync Smith-2024 --yes --no-rename
+```
+
 - [ ] Write test: `src/cli/commands/attach.test.ts`
-  - Test that unknown files trigger role prompt
+  - Test that unknown files trigger role prompt (TTY)
   - Test that known files skip prompt
   - Test that overrides are passed to sync
+  - Test dry-run output includes suggestions and rename previews
+  - Test `--yes` applies suggestions and renames
+  - Test `--yes --no-rename` applies suggestions without renaming
 - [ ] Implement
 - [ ] Verify Green
 - [ ] Lint/Type check
@@ -185,9 +215,9 @@ Changes:
 - [ ] Verify Green
 - [ ] Lint/Type check
 
-### Step 6: Rename Offer
+### Step 6: Rename Support
 
-After role/label assignment, offer to rename files on disk to match the naming convention.
+After role/label assignment, rename files on disk to match the naming convention. Rename is applied automatically with `--yes` and can be opted out with `--no-rename`.
 
 **File**: `src/features/operations/attachments/sync.ts`, `src/cli/commands/attach.ts`
 **Test**: `src/features/operations/attachments/sync.test.ts`
@@ -200,16 +230,24 @@ Operation layer changes:
 
 CLI layer changes:
 - After role/label assignment, compare current filename with generated convention filename
-- If different, ask: `Rename mmc1.pdf → supplement-mmc1.pdf? (y/N)`
-- Collect renames and pass to sync
+- Rename behavior by mode:
+
+| Mode | Behavior |
+|------|----------|
+| TTY (interactive) | Prompt: `Rename mmc1.pdf → supplement-mmc1.pdf? (y/N)` |
+| `--yes` | Rename automatically |
+| `--yes --no-rename` | Keep original filename |
+| dry-run (non-TTY) | Show rename preview in output |
 
 - [ ] Write test: `src/features/operations/attachments/sync.test.ts`
   - File renamed on disk and metadata updated
   - Rename conflict (target already exists) → skip with warning
-  - Rename declined → keep original filename in metadata
+  - Rename skipped when `--no-rename` is set → keep original filename in metadata
 - [ ] Write test: `src/cli/commands/attach.test.ts`
-  - Rename prompt shown when filename doesn't match convention
+  - Rename prompt shown when filename doesn't match convention (TTY)
   - Rename prompt NOT shown when filename already matches
+  - `--yes` applies rename without prompt
+  - `--yes --no-rename` skips rename
 - [ ] Implement operation layer
 - [ ] Implement CLI layer
 - [ ] Verify Green
@@ -253,7 +291,12 @@ The sync interactive flow already uses simple readline prompts (`readConfirmatio
 
 ### Non-TTY behavior
 
-In non-TTY mode, all interactive prompting is skipped. `--yes` applies with inferred roles as before (no regression). `roleOverrides` can be used programmatically by callers (e.g., MCP server, HTTP API) if needed in the future.
+In non-TTY mode, all interactive prompting is skipped.
+
+- **Dry-run** (no `--yes`): Shows preview with suggested roles and rename previews, so users can see what `--yes` would do.
+- **`--yes`**: Applies context-based role suggestions and renames files to match the naming convention automatically.
+- **`--yes --no-rename`**: Applies role suggestions but keeps original filenames on disk.
+- **`roleOverrides`** can be used programmatically by callers (e.g., MCP server, HTTP API) to override suggestions.
 
 ## Completion Checklist
 

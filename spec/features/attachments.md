@@ -360,8 +360,9 @@ ref attach detach <ref-id> --role draft --all --delete  # Also delete
 Synchronize metadata with files on disk.
 
 ```bash
-ref attach sync <ref-id>                     # Show diff (dry-run)
-ref attach sync <ref-id> --yes               # Apply changes
+ref attach sync <ref-id>                     # Show diff (dry-run) with suggestions
+ref attach sync <ref-id> --yes               # Apply changes with suggestions and rename
+ref attach sync <ref-id> --yes --no-rename   # Apply without renaming files on disk
 ref attach sync <ref-id> --fix               # Remove missing files from metadata
 ref attach sync --all                        # Sync all references
 ```
@@ -370,8 +371,17 @@ ref attach sync --all                        # Sync all references
 
 1. Scan directory for files not in metadata
 2. Infer role/label from filename pattern
-3. For ambiguous files (role = "other"), apply context-based suggestion and/or interactive prompt
-4. Report or apply changes
+3. For ambiguous files (role = "other"), apply context-based role suggestion
+4. In TTY mode, prompt for confirmation/override of suggested roles
+5. Report (dry-run) or apply changes
+
+**`--yes` behavior:**
+
+When `--yes` is specified, all changes are applied without confirmation, including:
+- Context-based role suggestions (e.g., `.pdf` → `fulltext`, `.md` → `notes`)
+- File renames to match the naming convention
+
+Use `--no-rename` to opt out of file renames while still applying role suggestions.
 
 **Filename inference:**
 
@@ -390,12 +400,13 @@ When filename inference yields `role: "other"`, the system suggests a more likel
 
 | Condition | Suggested Role |
 |-----------|---------------|
-| `.pdf`/`.md` file, no fulltext attachment exists | fulltext |
-| `.pdf`/`.md` file, fulltext already exists | supplement |
+| `.pdf` file, no fulltext attachment exists | fulltext |
+| `.pdf` file, fulltext already exists | supplement |
+| `.md`/`.txt` file | notes |
 | Data file (`.xlsx`, `.csv`, `.tsv`, `.zip`, `.tar.gz`) | supplement |
 | Otherwise | other (no suggestion) |
 
-Suggestions are used as default values in interactive prompts and are informational only — they do not override the user's choice.
+In TTY mode, suggestions are used as default values in interactive prompts. In non-TTY mode, `--yes` applies suggestions automatically (see below).
 
 **Interactive role assignment (TTY only):**
 
@@ -425,13 +436,21 @@ Changes applied.
 
 Files matching the naming convention skip the prompt entirely.
 
-**Rename offer (TTY only):**
+**Rename behavior:**
 
-After role and label assignment, if the file's current name doesn't match the naming convention (`{role}[-{label}].{ext}`), a rename is offered. If accepted:
+After role and label assignment, if the file's current name doesn't match the naming convention (`{role}[-{label}].{ext}`):
+
+| Mode | Behavior |
+|------|----------|
+| TTY (interactive) | Prompt: `Rename mmc1.pdf → supplement-mmc1.pdf? (y/N)` |
+| `--yes` | Rename automatically |
+| `--yes --no-rename` | Keep original filename |
+
+When rename is applied:
 - The file is renamed on disk
 - Metadata records the new filename
 
-If declined, the file keeps its original name in both disk and metadata.
+When rename is declined or skipped, the file keeps its original name in both disk and metadata.
 
 **Role overrides (programmatic):**
 
@@ -440,23 +459,33 @@ The sync operation accepts optional `roleOverrides` for programmatic callers (sc
 - Value: `{ role, label? }`
 - Applied when `--yes` is active
 
-**Non-TTY example output:**
+**Non-TTY dry-run output:**
+
+Dry-run shows the final result that `--yes` would produce, including suggested roles and renames:
+
 ```
 $ ref attach sync Smith-2024
 
-Found 2 new files:
-  supplement-data.csv → role: supplement, label: "data"
-  mmc1.pdf → role: other, label: "mmc1"
+Sync preview for Smith-2024:
+  New files:
+    supplement-data.csv
+      role: supplement, label: "data"
+    mmc1.pdf
+      role: supplement (suggested, inferred: other)
+      rename: supplement-mmc1.pdf
+    readme.md
+      role: notes (suggested, inferred: other)
+      rename: notes-readme.md
 
-Missing files (in metadata but not on disk):
-  supplement-old.xlsx
+  Missing files (in metadata but not on disk):
+    supplement-old.xlsx
 
-(dry-run: no changes made)
-Run with --yes to add new files
-Run with --fix to remove missing files
+To apply: ref attach sync Smith-2024 --yes
+To apply without renaming: ref attach sync Smith-2024 --yes --no-rename
+To remove missing files: ref attach sync Smith-2024 --fix
 ```
 
-Non-TTY behavior is unchanged — files are classified by inference only, no interactive prompts.
+Non-TTY mode does not prompt interactively — suggestions are shown in dry-run and applied automatically with `--yes`.
 
 ## Platform Support
 
