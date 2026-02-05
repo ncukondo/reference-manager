@@ -121,6 +121,8 @@ export interface AttachSyncOptions {
   idType?: IdentifierType;
   attachmentsDirectory: string;
   roleOverrides?: Record<string, { role: string; label?: string }>;
+  /** Skip file renaming (used in Step 6) */
+  noRename?: boolean;
 }
 
 // Re-export result types
@@ -1012,6 +1014,8 @@ export interface AttachSyncActionOptions {
   yes?: boolean;
   fix?: boolean;
   uuid?: boolean;
+  /** Skip file renaming (used in Step 6) */
+  noRename?: boolean;
 }
 
 /**
