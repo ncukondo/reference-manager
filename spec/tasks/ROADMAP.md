@@ -98,7 +98,7 @@ Improve `ref attach sync` to handle non-standard filenames (journal-downloaded P
   - [x] **33.1**: Context-based role suggestion (`suggestRoleFromContext`: `.pdf`→fulltext/supplement, `.md`/`.txt`→notes)
   - [x] **33.2**: `roleOverrides` support in sync operation
   - [x] **33.3**: `readChoice` CLI helper (numbered list prompt)
-  - [ ] **33.4**: Interactive role assignment in `attach sync` (TTY prompt + non-TTY suggestion preview)
+  - [x] **33.4**: Interactive role assignment in `attach sync` (TTY prompt + non-TTY suggestion preview)
   - [ ] **33.5**: Interactive role assignment in `attach open` TTY mode
   - [ ] **33.6**: Rename support (`--yes` applies rename, `--no-rename` opts out)
   - [ ] **33.7**: E2E tests and manual verification
