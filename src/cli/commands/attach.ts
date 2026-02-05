@@ -1109,8 +1109,10 @@ export interface AttachSyncActionOptions {
   yes?: boolean;
   fix?: boolean;
   uuid?: boolean;
-  /** Skip file renaming (used in Step 6) */
+  /** Skip file renaming (used in Step 6) — set by Commander.js --no-rename as rename: false */
   noRename?: boolean;
+  /** Commander.js sets this to false when --no-rename is passed */
+  rename?: boolean;
 }
 
 /**
@@ -1313,6 +1315,8 @@ export async function handleAttachSyncAction(
     }
 
     // --yes (with or without --fix): apply with suggestions
+    // Commander.js --no-rename sets rename: false; direct API uses noRename: true
+    const noRename = options.noRename || options.rename === false;
     if (options.yes) {
       await handleSyncApplyWithSuggestions(
         identifier,
@@ -1320,7 +1324,7 @@ export async function handleAttachSyncAction(
         idType,
         context,
         options.fix,
-        options.noRename
+        noRename
       );
       return;
     }
