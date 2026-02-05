@@ -812,7 +812,7 @@ describe("Attach Command E2E", () => {
       expect(dryRunResult.stderr).toContain("supplement-table-s1.xlsx");
       expect(dryRunResult.stderr).toContain("notes.md");
       // Should not apply changes (dry run)
-      expect(dryRunResult.stderr).toContain("2 new file");
+      expect(dryRunResult.stderr).toContain("New files:");
 
       // Verify metadata NOT updated yet (dry run)
       const listBeforeSync = await runWithAttachments([
@@ -948,7 +948,7 @@ describe("Attach Command E2E", () => {
 
       expect(syncResult.exitCode).toBe(0);
       // 4. Verify missing file reported
-      expect(syncResult.stderr).toContain("missing");
+      expect(syncResult.stderr).toContain("Missing");
       expect(syncResult.stderr).toContain("supplement.csv");
     });
 

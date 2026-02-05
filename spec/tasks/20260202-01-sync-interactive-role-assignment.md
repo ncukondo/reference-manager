@@ -185,16 +185,16 @@ To apply: ref attach sync Smith-2024 --yes
 To apply without renaming: ref attach sync Smith-2024 --yes --no-rename
 ```
 
-- [ ] Write test: `src/cli/commands/attach.test.ts`
+- [x] Write test: `src/cli/commands/attach.test.ts`
   - Test that unknown files trigger role prompt (TTY)
   - Test that known files skip prompt
   - Test that overrides are passed to sync
   - Test dry-run output includes suggestions and rename previews
   - Test `--yes` applies suggestions and renames
   - Test `--yes --no-rename` applies suggestions without renaming
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Interactive Role Assignment in `attach open` Flow
 

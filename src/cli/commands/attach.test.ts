@@ -8,6 +8,7 @@ import type {
   OpenAttachmentResult,
   SyncAttachmentResult,
 } from "../../features/operations/attachments/index.js";
+import type { InferredFile } from "../../features/operations/attachments/sync.js";
 import type { ExecutionContext } from "../execution-context.js";
 import {
   type AttachAddOptions,
@@ -16,6 +17,7 @@ import {
   type AttachListOptions,
   type AttachOpenOptions,
   type AttachSyncOptions,
+  buildRoleOverridesFromSuggestions,
   executeAttachAdd,
   executeAttachDetach,
   executeAttachGet,
@@ -28,7 +30,10 @@ import {
   formatAttachListOutput,
   formatAttachOpenOutput,
   formatAttachSyncOutput,
+  formatSyncPreviewWithSuggestions,
+  generateRenameMap,
   getAttachExitCode,
+  handleAttachSyncAction,
 } from "./attach.js";
 
 // Mock attachment operations
@@ -39,6 +44,8 @@ const mockDetachAttachment = vi.fn();
 const mockSyncAttachments = vi.fn();
 const mockOpenAttachment = vi.fn();
 
+const mockSuggestRoleFromContext = vi.fn();
+
 vi.mock("../../features/operations/attachments/index.js", () => ({
   addAttachment: (...args: unknown[]) => mockAddAttachment(...args),
   listAttachments: (...args: unknown[]) => mockListAttachments(...args),
@@ -46,6 +53,34 @@ vi.mock("../../features/operations/attachments/index.js", () => ({
   detachAttachment: (...args: unknown[]) => mockDetachAttachment(...args),
   syncAttachments: (...args: unknown[]) => mockSyncAttachments(...args),
   openAttachment: (...args: unknown[]) => mockOpenAttachment(...args),
+}));
+
+vi.mock("../../features/operations/attachments/sync.js", () => ({
+  suggestRoleFromContext: (...args: unknown[]) => mockSuggestRoleFromContext(...args),
+}));
+
+// Mocks for action handler tests
+const mockLoadConfigWithOverrides = vi.fn();
+const mockIsTTY = vi.fn();
+const mockSetExitCode = vi.fn();
+const mockCreateExecutionContext = vi.fn();
+
+vi.mock("../helpers.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../helpers.js")>();
+  return {
+    ...actual,
+    loadConfigWithOverrides: (...args: unknown[]) => mockLoadConfigWithOverrides(...args),
+    isTTY: () => mockIsTTY(),
+    setExitCode: (...args: unknown[]) => mockSetExitCode(...args),
+  };
+});
+
+vi.mock("../execution-context.js", () => ({
+  createExecutionContext: (...args: unknown[]) => mockCreateExecutionContext(...args),
+}));
+
+vi.mock("../../core/library.js", () => ({
+  Library: { load: vi.fn() },
 }));
 
 describe("attach command", () => {
@@ -778,6 +813,329 @@ describe("attach command", () => {
       };
       const output = formatAttachOpenOutput(result);
       expect(output).toBe("Created and opened: /path/to/dir");
+    });
+  });
+
+  describe("buildRoleOverridesFromSuggestions", () => {
+    beforeEach(() => {
+      mockSuggestRoleFromContext.mockReset();
+    });
+
+    it("should build overrides for 'other' role files with suggestions", () => {
+      const newFiles: InferredFile[] = [
+        { filename: "mmc1.pdf", role: "other" },
+        { filename: "supplement-data.csv", role: "supplement", label: "data" },
+      ];
+      mockSuggestRoleFromContext.mockReturnValueOnce("fulltext");
+
+      const overrides = buildRoleOverridesFromSuggestions(newFiles);
+
+      expect(overrides).toEqual({
+        "mmc1.pdf": { role: "fulltext" },
+      });
+      expect(mockSuggestRoleFromContext).toHaveBeenCalledOnce();
+    });
+
+    it("should skip files that already have a known role", () => {
+      const newFiles: InferredFile[] = [
+        { filename: "fulltext.pdf", role: "fulltext" },
+        { filename: "notes.md", role: "notes" },
+      ];
+
+      const overrides = buildRoleOverridesFromSuggestions(newFiles);
+
+      expect(overrides).toEqual({});
+      expect(mockSuggestRoleFromContext).not.toHaveBeenCalled();
+    });
+
+    it("should skip 'other' files when suggestion returns null", () => {
+      const newFiles: InferredFile[] = [{ filename: "readme.xyz", role: "other" }];
+      mockSuggestRoleFromContext.mockReturnValueOnce(null);
+
+      const overrides = buildRoleOverridesFromSuggestions(newFiles);
+
+      expect(overrides).toEqual({});
+    });
+
+    it("should use all newFiles as context for suggestions", () => {
+      const newFiles: InferredFile[] = [
+        { filename: "mmc1.pdf", role: "other" },
+        { filename: "fulltext.pdf", role: "fulltext" },
+      ];
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+
+      const overrides = buildRoleOverridesFromSuggestions(newFiles);
+
+      expect(overrides).toEqual({
+        "mmc1.pdf": { role: "supplement" },
+      });
+      // suggestRoleFromContext should receive all files as context
+      expect(mockSuggestRoleFromContext).toHaveBeenCalledWith("mmc1.pdf", newFiles);
+    });
+  });
+
+  describe("generateRenameMap", () => {
+    it("should generate renames for files with overridden roles", () => {
+      const newFiles: InferredFile[] = [{ filename: "mmc1.pdf", role: "other" }];
+      const overrides: Record<string, { role: string; label?: string }> = {
+        "mmc1.pdf": { role: "supplement" },
+      };
+
+      const renames = generateRenameMap(newFiles, overrides);
+
+      expect(renames).toEqual({ "mmc1.pdf": "supplement-mmc1.pdf" });
+    });
+
+    it("should generate renames with label", () => {
+      const newFiles: InferredFile[] = [{ filename: "data.csv", role: "other" }];
+      const overrides: Record<string, { role: string; label?: string }> = {
+        "data.csv": { role: "supplement", label: "raw-data" },
+      };
+
+      const renames = generateRenameMap(newFiles, overrides);
+
+      expect(renames).toEqual({ "data.csv": "supplement-raw-data.csv" });
+    });
+
+    it("should not rename files that already match convention", () => {
+      const newFiles: InferredFile[] = [{ filename: "fulltext.pdf", role: "fulltext" }];
+      const overrides: Record<string, { role: string }> = {};
+
+      const renames = generateRenameMap(newFiles, overrides);
+
+      expect(renames).toEqual({});
+    });
+
+    it("should not rename files without overrides", () => {
+      const newFiles: InferredFile[] = [{ filename: "notes.md", role: "notes" }];
+      const overrides: Record<string, { role: string }> = {};
+
+      const renames = generateRenameMap(newFiles, overrides);
+
+      expect(renames).toEqual({});
+    });
+
+    it("should handle files without extension (no trailing dot)", () => {
+      const newFiles: InferredFile[] = [{ filename: "Makefile", role: "other" }];
+      const overrides: Record<string, { role: string; label?: string }> = {
+        Makefile: { role: "supplement" },
+      };
+
+      const renames = generateRenameMap(newFiles, overrides);
+
+      expect(renames).toEqual({ Makefile: "supplement-Makefile" });
+    });
+
+    it("should handle multiple files with some overridden", () => {
+      const newFiles: InferredFile[] = [
+        { filename: "mmc1.pdf", role: "other" },
+        { filename: "supplement-data.csv", role: "supplement", label: "data" },
+        { filename: "PIIS123.pdf", role: "other" },
+      ];
+      const overrides: Record<string, { role: string; label?: string }> = {
+        "mmc1.pdf": { role: "supplement" },
+        "PIIS123.pdf": { role: "fulltext" },
+      };
+
+      const renames = generateRenameMap(newFiles, overrides);
+
+      expect(renames).toEqual({
+        "mmc1.pdf": "supplement-mmc1.pdf",
+        "PIIS123.pdf": "fulltext-PIIS123.pdf",
+      });
+    });
+  });
+
+  describe("formatSyncPreviewWithSuggestions", () => {
+    it("should show suggestions for 'other' files in preview", () => {
+      const result: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "supplement-data.csv", role: "supplement", label: "data" },
+          { filename: "mmc1.pdf", role: "other" },
+        ],
+        missingFiles: [],
+        applied: false,
+      };
+      const suggestions: Record<string, { role: string }> = {
+        "mmc1.pdf": { role: "supplement" },
+      };
+      const renames: Record<string, string> = {
+        "mmc1.pdf": "supplement-mmc1.pdf",
+      };
+
+      const output = formatSyncPreviewWithSuggestions(result, suggestions, renames, "Smith-2024");
+
+      expect(output).toContain("Sync preview for Smith-2024");
+      expect(output).toContain("supplement-data.csv");
+      expect(output).toContain('role: supplement, label: "data"');
+      expect(output).toContain("mmc1.pdf");
+      expect(output).toContain("role: supplement (suggested, inferred: other)");
+      expect(output).toContain("rename: supplement-mmc1.pdf");
+    });
+
+    it("should show apply commands in preview", () => {
+      const result: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const suggestions: Record<string, { role: string }> = {
+        "mmc1.pdf": { role: "fulltext" },
+      };
+      const renames: Record<string, string> = {
+        "mmc1.pdf": "fulltext-mmc1.pdf",
+      };
+
+      const output = formatSyncPreviewWithSuggestions(result, suggestions, renames, "Smith-2024");
+
+      expect(output).toContain("ref attach sync Smith-2024 --yes");
+      expect(output).toContain("ref attach sync Smith-2024 --yes --no-rename");
+    });
+
+    it("should not show rename line when no renames", () => {
+      const result: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "fulltext.pdf", role: "fulltext" }],
+        missingFiles: [],
+        applied: false,
+      };
+
+      const output = formatSyncPreviewWithSuggestions(result, {}, {}, "Smith-2024");
+
+      expect(output).not.toContain("rename:");
+      expect(output).not.toContain("--no-rename");
+    });
+
+    it("should handle missing files section", () => {
+      const result: SyncAttachmentResult = {
+        success: true,
+        newFiles: [],
+        missingFiles: ["old-file.pdf"],
+        applied: false,
+      };
+
+      const output = formatSyncPreviewWithSuggestions(result, {}, {}, "Smith-2024");
+
+      expect(output).toContain("Missing 1 file");
+      expect(output).toContain("old-file.pdf");
+    });
+  });
+
+  describe("executeAttachSync with roleOverrides", () => {
+    it("should pass roleOverrides to sync operation", async () => {
+      const result: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "supplement" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValue(result);
+
+      const overrides = { "mmc1.pdf": { role: "supplement" } };
+      const options: AttachSyncOptions = {
+        identifier: "Smith-2024",
+        attachmentsDirectory,
+        yes: true,
+        roleOverrides: overrides,
+      };
+
+      await executeAttachSync(options, localContext);
+
+      expect(mockSyncAttachments).toHaveBeenCalledWith(
+        localContext.library,
+        expect.objectContaining({ roleOverrides: overrides })
+      );
+    });
+  });
+
+  describe("handleAttachSyncAction", () => {
+    const mockConfig = {
+      attachments: { directory: attachmentsDirectory },
+    };
+
+    beforeEach(() => {
+      mockLoadConfigWithOverrides.mockResolvedValue(mockConfig);
+      mockCreateExecutionContext.mockResolvedValue(localContext);
+      mockIsTTY.mockReturnValue(false);
+      vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    });
+
+    it("should apply suggestions when --yes --fix is used", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "mmc1.pdf", role: "other" },
+          { filename: "fulltext.pdf", role: "fulltext" },
+        ],
+        missingFiles: ["old-file.pdf"],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "mmc1.pdf", role: "supplement" },
+          { filename: "fulltext.pdf", role: "fulltext" },
+        ],
+        missingFiles: ["old-file.pdf"],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+
+      await handleAttachSyncAction("Smith-2024", { yes: true, fix: true }, {});
+
+      // First call: dry-run (no yes/fix)
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      expect(mockSyncAttachments.mock.calls[0][1]).toEqual(
+        expect.objectContaining({
+          identifier: "Smith-2024",
+          attachmentsDirectory,
+        })
+      );
+      expect(mockSyncAttachments.mock.calls[0][1]).not.toHaveProperty("yes");
+      expect(mockSyncAttachments.mock.calls[0][1]).not.toHaveProperty("fix");
+
+      // Second call: apply with yes, fix, and roleOverrides
+      expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
+        expect.objectContaining({
+          identifier: "Smith-2024",
+          attachmentsDirectory,
+          yes: true,
+          fix: true,
+          roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+        })
+      );
+    });
+
+    it("should apply suggestions when --yes without --fix is used", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "supplement" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+
+      await handleAttachSyncAction("Smith-2024", { yes: true }, {});
+
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      // Second call: apply with yes but NOT fix
+      expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
+        expect.objectContaining({
+          yes: true,
+          roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+        })
+      );
+      expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("fix");
     });
   });
 });
