@@ -261,16 +261,16 @@ Add non-TTY scenarios (E2E tests run in non-TTY):
 - Sync with `roleOverrides` via the operation layer (test directly, not through CLI)
 - Verify rename is applied correctly in a full workflow
 
-- [ ] Write E2E tests
-- [ ] Verify Green
+- [x] Write E2E tests
+- [x] Verify Green
 
 ## Manual Verification
 
 **Script**: `test-fixtures/test-sync-role-assignment.sh`
 
 Non-TTY tests (automated):
-- [ ] `ref attach sync <id> --yes` with non-standard files → files registered as `other` (unchanged behavior)
-- [ ] Verify renamed files are accessible via `ref attach get`
+- [x] `ref attach sync <id> --yes` with non-standard files → files registered with suggested roles and renamed
+- [x] Verify renamed files are accessible via `ref attach get`
 
 TTY-required tests (run manually in a terminal):
 - [ ] `ref attach sync <id>` with `mmc1.pdf` in directory → prompts for role selection

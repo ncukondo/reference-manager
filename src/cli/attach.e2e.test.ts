@@ -913,6 +913,340 @@ describe("Attach Command E2E", () => {
     });
   });
 
+  describe("Scenario: Sync with roleOverrides and rename", () => {
+    it("should apply roleOverrides via --yes and rename non-standard files", async () => {
+      // 1. Create attachment directory via open --no-sync
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+      expect(openResult.exitCode).toBe(0);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      expect(refDirs.length).toBe(1);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Add non-standard filenames (simulating journal-downloaded PDFs)
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "supplement pdf", "utf-8");
+      await fs.writeFile(path.join(refDir, "PIIS0092867424000011.pdf"), "main pdf", "utf-8");
+      await fs.writeFile(path.join(refDir, "data-analysis.xlsx"), "excel data", "utf-8");
+
+      // 3. Sync with --yes (non-TTY: applies context-based suggestions + renames)
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+      expect(syncResult.stderr).toContain("Added");
+
+      // 4. Verify metadata: list shows the synced files with suggested roles
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      // data-analysis.xlsx should be inferred as supplement (data-like extension)
+      expect(listResult.stdout).toContain("supplement");
+      // At least one PDF should be fulltext (context-based suggestion)
+      expect(listResult.stdout).toContain("fulltext");
+    });
+
+    it("should apply --yes --no-rename to keep original filenames", async () => {
+      // 1. Create directory
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+      expect(openResult.exitCode).toBe(0);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Add non-standard file
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "supplement pdf", "utf-8");
+
+      // 3. Sync with --yes --no-rename
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--no-rename",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+
+      // 4. Verify the original filename is preserved on disk
+      const files = await fs.readdir(refDir);
+      expect(files).toContain("mmc1.pdf");
+
+      // 5. Verify metadata has the file listed
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      expect(listResult.stdout).toContain("mmc1.pdf");
+    });
+
+    it("should show suggestion preview in dry-run mode", async () => {
+      // 1. Create directory
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+      expect(openResult.exitCode).toBe(0);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Add non-standard file
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "supplement pdf", "utf-8");
+
+      // 3. Dry-run (no --yes): should show preview with suggestions
+      const dryRunResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(dryRunResult.exitCode).toBe(0);
+      // Should show suggestion info for the non-standard file
+      expect(dryRunResult.stderr).toContain("mmc1.pdf");
+      expect(dryRunResult.stderr).toContain("suggested");
+      // Should show rename preview
+      expect(dryRunResult.stderr).toContain("rename");
+      // Should show apply instructions
+      expect(dryRunResult.stderr).toContain("--yes");
+    });
+
+    it("should rename files on disk when --yes is used (without --no-rename)", async () => {
+      // 1. Create directory
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+      expect(openResult.exitCode).toBe(0);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Add non-standard file that will get a role suggestion
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "supplement pdf", "utf-8");
+
+      // 3. Sync with --yes (applies suggestions + renames)
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+
+      // 4. Verify the file was renamed on disk
+      const files = await fs.readdir(refDir);
+      // Original file should be gone (renamed)
+      expect(files).not.toContain("mmc1.pdf");
+      // Renamed file should exist (fulltext-mmc1.pdf since it's the first PDF)
+      expect(files.some((f) => f.startsWith("fulltext-"))).toBe(true);
+
+      // 5. Verify the renamed file is accessible via attach get
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      expect(listResult.stdout).toContain("fulltext");
+    });
+
+    it("should handle mixed standard and non-standard filenames", async () => {
+      // 1. Create directory
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+      expect(openResult.exitCode).toBe(0);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Add files: one standard, one non-standard
+      await fs.writeFile(path.join(refDir, "supplement-data.csv"), "csv data", "utf-8");
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "pdf data", "utf-8");
+
+      // 3. Sync with --yes
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+
+      // 4. Verify standard file keeps its role
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      // supplement-data.csv should keep its standard role
+      expect(listResult.stdout).toContain("supplement");
+      // mmc1.pdf should get a suggested role (fulltext since it's the first PDF)
+      expect(listResult.stdout).toContain("fulltext");
+    });
+
+    it("should suggest supplement for second PDF when fulltext already exists", async () => {
+      // 1. Create directory and add a fulltext first
+      const testFile = path.join(testDir, "paper.pdf");
+      await fs.writeFile(testFile, "fulltext content", "utf-8");
+
+      await runWithAttachments([
+        "attach",
+        "add",
+        "Smith-2024",
+        testFile,
+        "--role",
+        "fulltext",
+        "--library",
+        libraryPath,
+      ]);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // 2. Add a non-standard PDF (should be supplement since fulltext exists)
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "supplement pdf", "utf-8");
+
+      // 3. Sync with --yes --no-rename
+      const syncResult = await runWithAttachments([
+        "attach",
+        "sync",
+        "Smith-2024",
+        "--yes",
+        "--no-rename",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(syncResult.exitCode).toBe(0);
+
+      // 4. Verify the new file gets supplement role (not fulltext)
+      const listResult = await runWithAttachments([
+        "attach",
+        "list",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(listResult.exitCode).toBe(0);
+      // Should have fulltext (existing) and supplement (new mmc1.pdf)
+      const output = listResult.stdout;
+      // Count supplement mentions — should include mmc1.pdf under supplement
+      expect(output).toContain("mmc1.pdf");
+      // The existing fulltext.pdf should remain
+      expect(output).toContain("fulltext.pdf");
+    });
+
+    it("should rename and then get the renamed file successfully", async () => {
+      // Full workflow: open → add non-standard file → sync with rename → get renamed file
+      const openResult = await runWithAttachments([
+        "attach",
+        "open",
+        "Smith-2024",
+        "--print",
+        "--no-sync",
+        "--library",
+        libraryPath,
+      ]);
+      expect(openResult.exitCode).toBe(0);
+
+      const refDirs = await fs.readdir(attachmentsDir);
+      const refDir = path.join(attachmentsDir, refDirs[0]);
+
+      // Add non-standard file
+      await fs.writeFile(path.join(refDir, "mmc1.pdf"), "fulltext content", "utf-8");
+
+      // Sync with --yes (rename applied)
+      await runWithAttachments(["attach", "sync", "Smith-2024", "--yes", "--library", libraryPath]);
+
+      // Find the renamed file
+      const files = await fs.readdir(refDir);
+      const renamedFile = files.find((f) => f.startsWith("fulltext-"));
+      expect(renamedFile).toBeDefined();
+
+      // Get the renamed file by role
+      const getResult = await runWithAttachments([
+        "attach",
+        "get",
+        "Smith-2024",
+        "--role",
+        "fulltext",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(getResult.exitCode).toBe(0);
+      expect(getResult.stdout).toContain(renamedFile);
+    });
+  });
+
   describe("Scenario: Missing file detection", () => {
     it("should detect and report missing files", async () => {
       // 1. Add attachment via CLI
