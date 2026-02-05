@@ -100,7 +100,7 @@ Improve `ref attach sync` to handle non-standard filenames (journal-downloaded P
   - [x] **33.3**: `readChoice` CLI helper (numbered list prompt)
   - [x] **33.4**: Interactive role assignment in `attach sync` (TTY prompt + non-TTY suggestion preview)
   - [x] **33.5**: Interactive role assignment in `attach open` TTY mode
-  - [ ] **33.6**: Rename support (`--yes` applies rename, `--no-rename` opts out)
+  - [x] **33.6**: Rename support (`--yes` applies rename, `--no-rename` opts out)
   - [ ] **33.7**: E2E tests and manual verification
 
 ---
