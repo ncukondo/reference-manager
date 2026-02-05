@@ -34,6 +34,7 @@ import {
   generateRenameMap,
   getAttachExitCode,
   handleAttachSyncAction,
+  syncNewFilesWithRolePrompt,
 } from "./attach.js";
 
 // Mock attachment operations
@@ -64,6 +65,8 @@ const mockLoadConfigWithOverrides = vi.fn();
 const mockIsTTY = vi.fn();
 const mockSetExitCode = vi.fn();
 const mockCreateExecutionContext = vi.fn();
+const mockReadChoice = vi.fn();
+const mockReadConfirmation = vi.fn();
 
 vi.mock("../helpers.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../helpers.js")>();
@@ -72,6 +75,8 @@ vi.mock("../helpers.js", async (importOriginal) => {
     loadConfigWithOverrides: (...args: unknown[]) => mockLoadConfigWithOverrides(...args),
     isTTY: () => mockIsTTY(),
     setExitCode: (...args: unknown[]) => mockSetExitCode(...args),
+    readChoice: (...args: unknown[]) => mockReadChoice(...args),
+    readConfirmation: (...args: unknown[]) => mockReadConfirmation(...args),
   };
 });
 
@@ -1136,6 +1141,143 @@ describe("attach command", () => {
         })
       );
       expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("fix");
+    });
+  });
+
+  describe("syncNewFilesWithRolePrompt", () => {
+    beforeEach(() => {
+      vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    });
+
+    it("should prompt for unknown roles when files have role 'other'", async () => {
+      // Dry-run returns files with "other" role
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "mmc1.pdf", role: "other" },
+          { filename: "fulltext.pdf", role: "fulltext" },
+        ],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "mmc1.pdf", role: "supplement" },
+          { filename: "fulltext.pdf", role: "fulltext" },
+        ],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+      mockReadChoice.mockResolvedValueOnce("supplement");
+      mockReadConfirmation.mockResolvedValueOnce(true);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // Should call readChoice for the "other" file
+      expect(mockReadChoice).toHaveBeenCalledOnce();
+      expect(mockReadChoice.mock.calls[0][0]).toContain("mmc1.pdf");
+
+      // Second sync call should include roleOverrides
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
+        expect.objectContaining({
+          yes: true,
+          roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+        })
+      );
+    });
+
+    it("should skip prompts when all files have known roles", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "supplement-data.csv", role: "supplement", label: "data" },
+        ],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "supplement-data.csv", role: "supplement", label: "data" },
+        ],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockReadConfirmation.mockResolvedValueOnce(true);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // No role prompt needed
+      expect(mockReadChoice).not.toHaveBeenCalled();
+
+      // Apply should happen without roleOverrides
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("roleOverrides");
+    });
+
+    it("should not apply changes when user declines confirmation", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "fulltext.pdf", role: "fulltext" }],
+        missingFiles: [],
+        applied: false,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult);
+      mockReadConfirmation.mockResolvedValueOnce(false);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // Only dry-run call, no apply call
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle no new files detected", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [],
+        missingFiles: [],
+        applied: false,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      expect(mockReadChoice).not.toHaveBeenCalled();
+      expect(mockReadConfirmation).not.toHaveBeenCalled();
+      // Only dry-run call
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(1);
+    });
+
+    it("should not include 'other' selections in overrides", async () => {
+      // User keeps file as "other"
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "unknown.xyz", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "unknown.xyz", role: "other" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce(null);
+      mockReadChoice.mockResolvedValueOnce("other");
+      mockReadConfirmation.mockResolvedValueOnce(true);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // Apply should happen without roleOverrides since user kept "other"
+      expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("roleOverrides");
     });
   });
 });

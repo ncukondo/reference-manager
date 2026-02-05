@@ -702,27 +702,88 @@ async function waitForEnter(): Promise<void> {
 }
 
 /**
- * Format and display sync result in interactive mode
+ * Sync new files with interactive role assignment prompt.
+ * Shared logic for both `attach open` and `attach sync` interactive flows.
+ *
+ * Flow: dry-run → prompt for unknown roles → show preview → confirm → apply
  */
-function displayInteractiveSyncResult(result: SyncAttachmentResult, identifier: string): void {
-  if (result.newFiles.length === 0) {
+export async function syncNewFilesWithRolePrompt(
+  identifier: string,
+  attachmentsDirectory: string,
+  idType: "uuid" | undefined,
+  context: ExecutionContext
+): Promise<void> {
+  // Dry-run to discover new files
+  const dryRunResult = await executeAttachSync(
+    {
+      identifier,
+      attachmentsDirectory,
+      ...(idType && { idType }),
+    },
+    context
+  );
+
+  if (!dryRunResult.success) {
+    process.stderr.write(`Sync error: ${dryRunResult.error}\n`);
+    return;
+  }
+
+  if (dryRunResult.newFiles.length === 0) {
     process.stderr.write("No new files detected.\n");
     return;
   }
 
-  process.stderr.write("Scanning directory...\n\n");
+  // Prompt for role assignment on unknown files
+  const roleOverrides = await promptForUnknownRoles(dryRunResult.newFiles);
+
+  // Build preview with overrides applied
+  const previewFiles = dryRunResult.newFiles.map((file) => {
+    const override = roleOverrides[file.filename];
+    if (override) {
+      return { ...file, role: override.role, ...(override.label && { label: override.label }) };
+    }
+    return file;
+  });
+
+  // Show preview
+  process.stderr.write("\nScanning directory...\n\n");
   process.stderr.write(
-    `Found ${result.newFiles.length} new file${result.newFiles.length > 1 ? "s" : ""}:\n`
+    `Found ${previewFiles.length} new file${previewFiles.length > 1 ? "s" : ""}:\n`
   );
-  for (const file of result.newFiles) {
+  for (const file of previewFiles) {
     const labelPart = file.label ? `, label: "${file.label}"` : "";
     process.stderr.write(`  \u2713 ${file.filename} \u2192 role: ${file.role}${labelPart}\n`);
   }
-  process.stderr.write(`\nUpdated metadata for ${identifier}.\n`);
+
+  // Confirm
+  const shouldApply = await readConfirmation("\nAdd new files to metadata?");
+  if (!shouldApply) {
+    process.stderr.write("No changes applied.\n");
+    return;
+  }
+
+  // Apply with overrides
+  const hasOverrides = Object.keys(roleOverrides).length > 0;
+  const applyResult = await executeAttachSync(
+    {
+      identifier,
+      attachmentsDirectory,
+      yes: true,
+      ...(idType && { idType }),
+      ...(hasOverrides && { roleOverrides }),
+    },
+    context
+  );
+
+  if (applyResult.success) {
+    process.stderr.write(`\nUpdated metadata for ${identifier}.\n`);
+  } else {
+    process.stderr.write(`Sync error: ${applyResult.error}\n`);
+  }
 }
 
 /**
- * Run interactive mode: show convention, wait for Enter, auto-sync
+ * Run interactive mode: show convention, wait for Enter, sync with role prompt
  */
 export async function runInteractiveMode(
   identifier: string,
@@ -733,22 +794,7 @@ export async function runInteractiveMode(
 ): Promise<void> {
   displayNamingConvention(identifier, dirPath);
   await waitForEnter();
-
-  const syncResult = await executeAttachSync(
-    {
-      identifier,
-      attachmentsDirectory,
-      yes: true,
-      ...(idType && { idType }),
-    },
-    context
-  );
-
-  if (syncResult.success) {
-    displayInteractiveSyncResult(syncResult, identifier);
-  } else {
-    process.stderr.write(`Sync error: ${syncResult.error}\n`);
-  }
+  await syncNewFilesWithRolePrompt(identifier, attachmentsDirectory, idType, context);
 }
 
 /**

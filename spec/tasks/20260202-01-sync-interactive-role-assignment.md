@@ -208,12 +208,12 @@ Changes:
 - Change to: dry-run first → check for `other` roles → prompt if needed → apply with overrides
 - Extract shared logic with `runInteractiveSyncMode` into a helper (e.g., `promptForUnknownRoles`)
 
-- [ ] Write test: `src/cli/commands/attach.test.ts`
+- [x] Write test: `src/cli/commands/attach.test.ts`
   - Test that `attach open` interactive mode prompts for unknown roles
   - Test that files matching convention are auto-accepted
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 6: Rename Support
 
