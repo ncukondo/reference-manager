@@ -123,6 +123,8 @@ export interface AttachSyncOptions {
   roleOverrides?: Record<string, { role: string; label?: string }>;
   /** Skip file renaming (used in Step 6) */
   noRename?: boolean;
+  /** Rename files on disk (key: current filename, value: new filename) */
+  renames?: Record<string, string>;
 }
 
 // Re-export result types
@@ -249,6 +251,7 @@ export async function executeAttachSync(
     ...(options.fix !== undefined && { fix: options.fix }),
     ...(options.idType !== undefined && { idType: options.idType }),
     ...(options.roleOverrides !== undefined && { roleOverrides: options.roleOverrides }),
+    ...(options.renames !== undefined && { renames: options.renames }),
   };
 
   return syncAttachments(context.library, operationOptions);
@@ -702,6 +705,61 @@ async function waitForEnter(): Promise<void> {
 }
 
 /**
+ * Prompt user to confirm renames for each file in the rename map.
+ * Returns accepted renames (subset of renameMap).
+ */
+async function promptForRenames(
+  renameMap: Record<string, string>
+): Promise<Record<string, string>> {
+  const accepted: Record<string, string> = {};
+  for (const [oldName, newName] of Object.entries(renameMap)) {
+    const shouldRename = await readConfirmation(`Rename ${oldName} \u2192 ${newName}?`);
+    if (shouldRename) {
+      accepted[oldName] = newName;
+    }
+  }
+  return accepted;
+}
+
+/**
+ * Display file preview with optional rename info.
+ */
+function showFilePreview(
+  previewFiles: InferredFile[],
+  acceptedRenames: Record<string, string>
+): void {
+  process.stderr.write("\nScanning directory...\n\n");
+  process.stderr.write(
+    `Found ${previewFiles.length} new file${previewFiles.length > 1 ? "s" : ""}:\n`
+  );
+  for (const file of previewFiles) {
+    const labelPart = file.label ? `, label: "${file.label}"` : "";
+    const renamePart = acceptedRenames[file.filename]
+      ? ` (rename \u2192 ${acceptedRenames[file.filename]})`
+      : "";
+    process.stderr.write(
+      `  \u2713 ${file.filename} \u2192 role: ${file.role}${labelPart}${renamePart}\n`
+    );
+  }
+}
+
+/**
+ * Build preview files with overrides applied.
+ */
+function buildPreviewFiles(
+  newFiles: InferredFile[],
+  roleOverrides: Record<string, { role: string; label?: string }>
+): InferredFile[] {
+  return newFiles.map((file) => {
+    const override = roleOverrides[file.filename];
+    if (override) {
+      return { ...file, role: override.role, ...(override.label && { label: override.label }) };
+    }
+    return file;
+  });
+}
+
+/**
  * Sync new files with interactive role assignment prompt.
  * Shared logic for both `attach open` and `attach sync` interactive flows.
  *
@@ -736,24 +794,13 @@ export async function syncNewFilesWithRolePrompt(
   // Prompt for role assignment on unknown files
   const roleOverrides = await promptForUnknownRoles(dryRunResult.newFiles);
 
-  // Build preview with overrides applied
-  const previewFiles = dryRunResult.newFiles.map((file) => {
-    const override = roleOverrides[file.filename];
-    if (override) {
-      return { ...file, role: override.role, ...(override.label && { label: override.label }) };
-    }
-    return file;
-  });
+  // Compute potential renames and prompt for each
+  const renameMap = generateRenameMap(dryRunResult.newFiles, roleOverrides);
+  const acceptedRenames = await promptForRenames(renameMap);
 
-  // Show preview
-  process.stderr.write("\nScanning directory...\n\n");
-  process.stderr.write(
-    `Found ${previewFiles.length} new file${previewFiles.length > 1 ? "s" : ""}:\n`
-  );
-  for (const file of previewFiles) {
-    const labelPart = file.label ? `, label: "${file.label}"` : "";
-    process.stderr.write(`  \u2713 ${file.filename} \u2192 role: ${file.role}${labelPart}\n`);
-  }
+  // Build and show preview
+  const previewFiles = buildPreviewFiles(dryRunResult.newFiles, roleOverrides);
+  showFilePreview(previewFiles, acceptedRenames);
 
   // Confirm
   const shouldApply = await readConfirmation("\nAdd new files to metadata?");
@@ -762,8 +809,9 @@ export async function syncNewFilesWithRolePrompt(
     return;
   }
 
-  // Apply with overrides
+  // Apply with overrides and renames
   const hasOverrides = Object.keys(roleOverrides).length > 0;
+  const hasRenames = Object.keys(acceptedRenames).length > 0;
   const applyResult = await executeAttachSync(
     {
       identifier,
@@ -771,6 +819,7 @@ export async function syncNewFilesWithRolePrompt(
       yes: true,
       ...(idType && { idType }),
       ...(hasOverrides && { roleOverrides }),
+      ...(hasRenames && { renames: acceptedRenames }),
     },
     context
   );
@@ -1133,14 +1182,12 @@ async function runInteractiveSyncMode(
   // Prompt for role assignment on unknown files (TTY)
   const roleOverrides = await promptForUnknownRoles(dryRunResult.newFiles);
 
+  // Compute potential renames and prompt for each
+  const renameMap = generateRenameMap(dryRunResult.newFiles, roleOverrides);
+  const acceptedRenames = await promptForRenames(renameMap);
+
   // Build preview with overrides applied
-  const previewFiles = dryRunResult.newFiles.map((file) => {
-    const override = roleOverrides[file.filename];
-    if (override) {
-      return { ...file, role: override.role, ...(override.label && { label: override.label }) };
-    }
-    return file;
-  });
+  const previewFiles = buildPreviewFiles(dryRunResult.newFiles, roleOverrides);
   const previewResult = { ...dryRunResult, newFiles: previewFiles };
 
   // Show preview
@@ -1156,6 +1203,7 @@ async function runInteractiveSyncMode(
   }
 
   // Apply changes
+  const hasRenames = Object.keys(acceptedRenames).length > 0;
   const applyOptions: AttachSyncOptions = {
     identifier,
     attachmentsDirectory,
@@ -1163,6 +1211,7 @@ async function runInteractiveSyncMode(
     ...(shouldApplyFix && { fix: true }),
     ...(idType && { idType }),
     ...(shouldApplyNew && Object.keys(roleOverrides).length > 0 && { roleOverrides }),
+    ...(shouldApplyNew && hasRenames && { renames: acceptedRenames }),
   };
   const result = await executeAttachSync(applyOptions, context);
   process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
@@ -1176,7 +1225,8 @@ async function handleSyncApplyWithSuggestions(
   attachmentsDirectory: string,
   idType: "uuid" | undefined,
   context: ExecutionContext,
-  fix?: boolean
+  fix?: boolean,
+  noRename?: boolean
 ): Promise<void> {
   const dryRunOptions: AttachSyncOptions = {
     identifier,
@@ -1192,6 +1242,8 @@ async function handleSyncApplyWithSuggestions(
   }
 
   const suggestions = buildRoleOverridesFromSuggestions(dryRunResult.newFiles);
+  const renames = noRename ? {} : generateRenameMap(dryRunResult.newFiles, suggestions);
+  const hasRenames = Object.keys(renames).length > 0;
 
   const applyOptions: AttachSyncOptions = {
     identifier,
@@ -1200,6 +1252,7 @@ async function handleSyncApplyWithSuggestions(
     ...(fix && { fix: true }),
     ...(idType && { idType }),
     ...(Object.keys(suggestions).length > 0 && { roleOverrides: suggestions }),
+    ...(hasRenames && { renames }),
   };
   const result = await executeAttachSync(applyOptions, context);
   process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
@@ -1266,7 +1319,8 @@ export async function handleAttachSyncAction(
         attachmentsDirectory,
         idType,
         context,
-        options.fix
+        options.fix,
+        options.noRename
       );
       return;
     }

@@ -1114,6 +1114,65 @@ describe("attach command", () => {
       );
     });
 
+    it("should pass renames when --yes is used (auto rename)", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "supplement-mmc1.pdf", role: "supplement" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+
+      await handleAttachSyncAction("Smith-2024", { yes: true }, {});
+
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      // Second call should include renames
+      expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
+        expect.objectContaining({
+          yes: true,
+          roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+          renames: { "mmc1.pdf": "supplement-mmc1.pdf" },
+        })
+      );
+    });
+
+    it("should NOT pass renames when --yes --no-rename is used", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "supplement" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+
+      await handleAttachSyncAction("Smith-2024", { yes: true, noRename: true }, {});
+
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      // Second call should NOT include renames
+      expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("renames");
+      // But should still include roleOverrides
+      expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
+        expect.objectContaining({
+          yes: true,
+          roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+        })
+      );
+    });
+
     it("should apply suggestions when --yes without --fix is used", async () => {
       const dryRunResult: SyncAttachmentResult = {
         success: true,
@@ -1172,7 +1231,8 @@ describe("attach command", () => {
       mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
       mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
       mockReadChoice.mockResolvedValueOnce("supplement");
-      mockReadConfirmation.mockResolvedValueOnce(true);
+      // readConfirmation calls: 1) rename prompt, 2) apply confirmation
+      mockReadConfirmation.mockResolvedValueOnce(true).mockResolvedValueOnce(true);
 
       await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
 
@@ -1180,12 +1240,13 @@ describe("attach command", () => {
       expect(mockReadChoice).toHaveBeenCalledOnce();
       expect(mockReadChoice.mock.calls[0][0]).toContain("mmc1.pdf");
 
-      // Second sync call should include roleOverrides
+      // Second sync call should include roleOverrides and renames
       expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
       expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
         expect.objectContaining({
           yes: true,
           roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+          renames: { "mmc1.pdf": "supplement-mmc1.pdf" },
         })
       );
     });
@@ -1253,6 +1314,95 @@ describe("attach command", () => {
       expect(mockReadConfirmation).not.toHaveBeenCalled();
       // Only dry-run call
       expect(mockSyncAttachments).toHaveBeenCalledTimes(1);
+    });
+
+    it("should prompt for rename and pass renames when accepted (TTY)", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "supplement-mmc1.pdf", role: "supplement" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+      mockReadChoice.mockResolvedValueOnce("supplement");
+      // First readConfirmation: rename prompt (accept rename)
+      // Second readConfirmation: apply confirmation
+      mockReadConfirmation.mockResolvedValueOnce(true).mockResolvedValueOnce(true);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // Should have prompted for rename
+      expect(mockReadConfirmation).toHaveBeenCalledTimes(2);
+
+      // Second sync call should include renames
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      expect(mockSyncAttachments.mock.calls[1][1]).toEqual(
+        expect.objectContaining({
+          yes: true,
+          roleOverrides: { "mmc1.pdf": { role: "supplement" } },
+          renames: { "mmc1.pdf": "supplement-mmc1.pdf" },
+        })
+      );
+    });
+
+    it("should not pass renames when rename is declined (TTY)", async () => {
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "other" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "mmc1.pdf", role: "supplement" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      mockSuggestRoleFromContext.mockReturnValueOnce("supplement");
+      mockReadChoice.mockResolvedValueOnce("supplement");
+      // First readConfirmation: rename prompt (decline rename)
+      // Second readConfirmation: apply confirmation
+      mockReadConfirmation.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // Second sync call should NOT include renames
+      expect(mockSyncAttachments).toHaveBeenCalledTimes(2);
+      expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("renames");
+    });
+
+    it("should not prompt for rename when filename already matches convention", async () => {
+      // fulltext.pdf already matches the convention for role=fulltext
+      const dryRunResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "fulltext.pdf", role: "fulltext" }],
+        missingFiles: [],
+        applied: false,
+      };
+      const applyResult: SyncAttachmentResult = {
+        success: true,
+        newFiles: [{ filename: "fulltext.pdf", role: "fulltext" }],
+        missingFiles: [],
+        applied: true,
+      };
+      mockSyncAttachments.mockResolvedValueOnce(dryRunResult).mockResolvedValueOnce(applyResult);
+      // Only one readConfirmation for the apply confirmation (no rename prompt)
+      mockReadConfirmation.mockResolvedValueOnce(true);
+
+      await syncNewFilesWithRolePrompt("Smith-2024", attachmentsDirectory, undefined, localContext);
+
+      // Only 1 confirmation (for apply), no rename prompt
+      expect(mockReadConfirmation).toHaveBeenCalledTimes(1);
+      // No renames in sync call
+      expect(mockSyncAttachments.mock.calls[1][1]).not.toHaveProperty("renames");
     });
 
     it("should not include 'other' selections in overrides", async () => {

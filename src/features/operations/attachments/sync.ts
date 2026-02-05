@@ -7,7 +7,7 @@
  * - Infers role/label from filename pattern
  */
 
-import { readdir, stat } from "node:fs/promises";
+import { readdir, rename, stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
@@ -31,6 +31,8 @@ export interface SyncAttachmentOptions {
   attachmentsDirectory: string;
   /** Override inferred roles for specific files (key: filename) */
   roleOverrides?: Record<string, { role: string; label?: string }>;
+  /** Rename files on disk (key: current filename, value: new filename) */
+  renames?: Record<string, string>;
 }
 
 /**
@@ -204,6 +206,55 @@ function buildUpdatedFiles(
 }
 
 /**
+ * Apply file renames on disk and return updated filenames.
+ * Skips renames when target already exists (conflict).
+ * Returns a map of old filename → new filename for successfully renamed files.
+ */
+async function applyRenames(
+  dirPath: string,
+  renames: Record<string, string>
+): Promise<Record<string, string>> {
+  const applied: Record<string, string> = {};
+  for (const [oldName, newName] of Object.entries(renames)) {
+    const oldPath = join(dirPath, oldName);
+    const newPath = join(dirPath, newName);
+    try {
+      // Check if target already exists
+      await stat(newPath);
+      // Target exists — skip rename (conflict)
+      process.stderr.write(
+        `Warning: Cannot rename ${oldName} → ${newName}: target already exists\n`
+      );
+    } catch {
+      // Target doesn't exist — proceed with rename
+      try {
+        await rename(oldPath, newPath);
+        applied[oldName] = newName;
+      } catch {
+        // Source file doesn't exist or rename failed — skip
+      }
+    }
+  }
+  return applied;
+}
+
+/**
+ * Update filenames in files list based on applied renames
+ */
+function applyRenamesInMetadata(
+  files: AttachmentFile[],
+  appliedRenames: Record<string, string>
+): AttachmentFile[] {
+  return files.map((f) => {
+    const newName = appliedRenames[f.filename];
+    if (newName) {
+      return { ...f, filename: newName };
+    }
+    return f;
+  });
+}
+
+/**
  * Update library with new attachment metadata
  */
 async function updateAttachmentMetadata(
@@ -237,6 +288,7 @@ export async function syncAttachments(
     idType = "id",
     attachmentsDirectory,
     roleOverrides,
+    renames,
   } = options;
 
   // Find reference
@@ -273,7 +325,7 @@ export async function syncAttachments(
   const shouldApply = shouldApplyNew || shouldApplyFix;
 
   if (shouldApply) {
-    const updatedFiles = buildUpdatedFiles(
+    let updatedFiles = buildUpdatedFiles(
       metadataFiles,
       newFiles,
       missingFiles,
@@ -281,6 +333,15 @@ export async function syncAttachments(
       shouldApplyFix,
       roleOverrides
     );
+
+    // Apply file renames on disk if requested
+    if (shouldApplyNew && renames && Object.keys(renames).length > 0) {
+      const appliedRenames = await applyRenames(dirPath, renames);
+      if (Object.keys(appliedRenames).length > 0) {
+        updatedFiles = applyRenamesInMetadata(updatedFiles, appliedRenames);
+      }
+    }
+
     await updateAttachmentMetadata(library, item as CslItem, attachments, updatedFiles);
     await library.save();
   }
