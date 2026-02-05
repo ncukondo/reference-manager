@@ -4,10 +4,12 @@
  * Uses ILibrary interface for unified operations across local and server modes.
  */
 
+import path from "node:path";
 import type { Config } from "../../config/schema.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
-import type { AttachmentFile } from "../../features/attachments/types.js";
+import { generateFilename } from "../../features/attachments/filename.js";
+import { type AttachmentFile, RESERVED_ROLES } from "../../features/attachments/types.js";
 import {
   type AddAttachmentResult,
   type DetachAttachmentResult,
@@ -28,11 +30,16 @@ import {
   openAttachment,
   syncAttachments,
 } from "../../features/operations/attachments/index.js";
+import {
+  type InferredFile,
+  suggestRoleFromContext,
+} from "../../features/operations/attachments/sync.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
   ExitCode,
   isTTY,
   loadConfigWithOverrides,
+  readChoice,
   readConfirmation,
   readIdentifierFromStdin,
   setExitCode,
@@ -113,6 +120,8 @@ export interface AttachSyncOptions {
   fix?: boolean;
   idType?: IdentifierType;
   attachmentsDirectory: string;
+  roleOverrides?: Record<string, { role: string; label?: string }>;
+  noRename?: boolean;
 }
 
 // Re-export result types
@@ -238,6 +247,7 @@ export async function executeAttachSync(
     ...(options.yes !== undefined && { yes: options.yes }),
     ...(options.fix !== undefined && { fix: options.fix }),
     ...(options.idType !== undefined && { idType: options.idType }),
+    ...(options.roleOverrides !== undefined && { roleOverrides: options.roleOverrides }),
   };
 
   return syncAttachments(context.library, operationOptions);
@@ -400,6 +410,120 @@ function formatMissingFilesSection(result: SyncAttachmentResult, lines: string[]
     lines.push(`  ${filename}`);
   }
   lines.push("");
+}
+
+// ============================================================================
+// Role suggestion and rename helpers
+// ============================================================================
+
+/**
+ * Build role overrides from context-based suggestions for files inferred as "other".
+ * Pure function: uses suggestRoleFromContext to suggest roles.
+ */
+export function buildRoleOverridesFromSuggestions(
+  newFiles: InferredFile[]
+): Record<string, { role: string; label?: string }> {
+  const overrides: Record<string, { role: string; label?: string }> = {};
+  for (const file of newFiles) {
+    if (file.role !== "other") continue;
+    const suggested = suggestRoleFromContext(file.filename, newFiles);
+    if (suggested) {
+      overrides[file.filename] = { role: suggested };
+    }
+  }
+  return overrides;
+}
+
+/**
+ * Generate a rename map for files whose names don't match the naming convention
+ * after role override. Key: current filename, Value: new filename.
+ */
+export function generateRenameMap(
+  newFiles: InferredFile[],
+  overrides: Record<string, { role: string; label?: string }>
+): Record<string, string> {
+  const renames: Record<string, string> = {};
+  for (const file of newFiles) {
+    const override = overrides[file.filename];
+    if (!override) continue;
+    const ext = path.extname(file.filename);
+    const extWithoutDot = ext.startsWith(".") ? ext.slice(1) : ext;
+    const baseName = ext ? file.filename.slice(0, -ext.length) : file.filename;
+    const expected = generateFilename(override.role, extWithoutDot, override.label);
+    if (expected !== file.filename) {
+      // Use role-baseName.ext format for renamed files
+      const newName = override.label
+        ? generateFilename(override.role, extWithoutDot, override.label)
+        : `${override.role}-${baseName}.${extWithoutDot}`;
+      renames[file.filename] = newName;
+    }
+  }
+  return renames;
+}
+
+/**
+ * Format sync preview with role suggestions and rename previews for non-TTY output.
+ */
+/**
+ * Format a single file entry in the suggestion preview.
+ */
+function formatSuggestedFileEntry(
+  file: InferredFile,
+  suggestions: Record<string, { role: string; label?: string }>,
+  renames: Record<string, string>,
+  lines: string[]
+): void {
+  lines.push(`    ${file.filename}`);
+  const suggestion = suggestions[file.filename];
+  if (suggestion) {
+    lines.push(`      role: ${suggestion.role} (suggested, inferred: ${file.role})`);
+  } else {
+    const labelPart = file.label ? `, label: "${file.label}"` : "";
+    lines.push(`      role: ${file.role}${labelPart}`);
+  }
+  const rename = renames[file.filename];
+  if (rename) {
+    lines.push(`      rename: ${rename}`);
+  }
+}
+
+export function formatSyncPreviewWithSuggestions(
+  result: SyncAttachmentResult,
+  suggestions: Record<string, { role: string; label?: string }>,
+  renames: Record<string, string>,
+  identifier: string
+): string {
+  if (!result.success) {
+    return `Error: ${result.error}`;
+  }
+
+  const hasNewFiles = result.newFiles.length > 0;
+  const hasMissingFiles = result.missingFiles.length > 0;
+  const hasRenames = Object.keys(renames).length > 0;
+
+  if (!hasNewFiles && !hasMissingFiles) {
+    return "Already in sync.";
+  }
+
+  const lines: string[] = [];
+  lines.push(`Sync preview for ${identifier}:`);
+
+  if (hasNewFiles) {
+    lines.push("  New files:");
+    for (const file of result.newFiles) {
+      formatSuggestedFileEntry(file, suggestions, renames, lines);
+    }
+    lines.push("");
+  }
+
+  formatMissingFilesSection(result, lines);
+
+  lines.push(`To apply: ref attach sync ${identifier} --yes`);
+  if (hasRenames) {
+    lines.push(`To apply without renaming: ref attach sync ${identifier} --yes --no-rename`);
+  }
+
+  return lines.join("\n").trimEnd();
 }
 
 /**
@@ -888,12 +1012,52 @@ export interface AttachSyncActionOptions {
   yes?: boolean;
   fix?: boolean;
   uuid?: boolean;
+  noRename?: boolean;
 }
 
 /**
  * Run interactive sync mode: dry-run, confirm, then apply.
  * Similar pattern to runInteractiveMode for attach open.
  */
+/**
+ * Prompt for role assignment on files with role "other" (TTY only).
+ * Returns a roleOverrides record for files the user chose to reclassify.
+ */
+async function promptForUnknownRoles(
+  newFiles: InferredFile[]
+): Promise<Record<string, { role: string; label?: string }>> {
+  const overrides: Record<string, { role: string; label?: string }> = {};
+  const unknownFiles = newFiles.filter((f) => f.role === "other");
+
+  if (unknownFiles.length === 0) return overrides;
+
+  process.stderr.write("\nSome files could not be classified by filename:\n");
+
+  const roleChoices = [
+    ...RESERVED_ROLES.map((r) => ({ label: r, value: r })),
+    { label: "other (keep as-is)", value: "other" },
+  ];
+
+  for (const file of unknownFiles) {
+    const suggested = suggestRoleFromContext(file.filename, newFiles);
+    const defaultIndex = suggested
+      ? roleChoices.findIndex((c) => c.value === suggested)
+      : undefined;
+
+    const selectedRole = await readChoice(
+      `\nRole for "${file.filename}"?`,
+      roleChoices,
+      defaultIndex !== undefined && defaultIndex >= 0 ? defaultIndex : undefined
+    );
+
+    if (selectedRole !== "other") {
+      overrides[file.filename] = { role: selectedRole };
+    }
+  }
+
+  return overrides;
+}
+
 async function runInteractiveSyncMode(
   identifier: string,
   attachmentsDirectory: string,
@@ -917,8 +1081,21 @@ async function runInteractiveSyncMode(
     return;
   }
 
-  // Show preview and ask for confirmation (without dry-run hints for TTY)
-  process.stderr.write(`${formatSyncPreview(dryRunResult)}\n`);
+  // Prompt for role assignment on unknown files (TTY)
+  const roleOverrides = await promptForUnknownRoles(dryRunResult.newFiles);
+
+  // Build preview with overrides applied
+  const previewFiles = dryRunResult.newFiles.map((file) => {
+    const override = roleOverrides[file.filename];
+    if (override) {
+      return { ...file, role: override.role, ...(override.label && { label: override.label }) };
+    }
+    return file;
+  });
+  const previewResult = { ...dryRunResult, newFiles: previewFiles };
+
+  // Show preview
+  process.stderr.write(`${formatSyncPreview(previewResult)}\n`);
 
   const shouldApplyNew = hasNewFiles && (await readConfirmation("Add new files to metadata?"));
   const shouldApplyFix =
@@ -936,6 +1113,7 @@ async function runInteractiveSyncMode(
     ...(shouldApplyNew && { yes: true }),
     ...(shouldApplyFix && { fix: true }),
     ...(idType && { idType }),
+    ...(shouldApplyNew && Object.keys(roleOverrides).length > 0 && { roleOverrides }),
   };
   const result = await executeAttachSync(applyOptions, context);
   process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
@@ -944,6 +1122,73 @@ async function runInteractiveSyncMode(
 /**
  * Handle 'attach sync' command action.
  */
+/**
+ * Handle non-TTY sync with --yes: compute suggestions and apply.
+ */
+async function handleSyncApplyWithSuggestions(
+  identifier: string,
+  attachmentsDirectory: string,
+  idType: "uuid" | undefined,
+  context: ExecutionContext
+): Promise<void> {
+  const dryRunOptions: AttachSyncOptions = {
+    identifier,
+    attachmentsDirectory,
+    ...(idType && { idType }),
+  };
+  const dryRunResult = await executeAttachSync(dryRunOptions, context);
+
+  if (!dryRunResult.success) {
+    process.stderr.write(`${formatAttachSyncOutput(dryRunResult)}\n`);
+    setExitCode(getAttachExitCode(dryRunResult));
+    return;
+  }
+
+  const suggestions = buildRoleOverridesFromSuggestions(dryRunResult.newFiles);
+
+  const applyOptions: AttachSyncOptions = {
+    identifier,
+    attachmentsDirectory,
+    yes: true,
+    ...(idType && { idType }),
+    ...(Object.keys(suggestions).length > 0 && { roleOverrides: suggestions }),
+  };
+  const result = await executeAttachSync(applyOptions, context);
+  process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
+  setExitCode(getAttachExitCode(result));
+}
+
+/**
+ * Handle non-TTY dry-run: show preview with suggestions and rename previews.
+ */
+async function handleSyncDryRunPreview(
+  identifier: string,
+  attachmentsDirectory: string,
+  idType: "uuid" | undefined,
+  context: ExecutionContext
+): Promise<void> {
+  const dryRunOptions: AttachSyncOptions = {
+    identifier,
+    attachmentsDirectory,
+    ...(idType && { idType }),
+  };
+  const dryRunResult = await executeAttachSync(dryRunOptions, context);
+
+  if (!dryRunResult.success) {
+    process.stderr.write(`${formatAttachSyncOutput(dryRunResult)}\n`);
+    setExitCode(getAttachExitCode(dryRunResult));
+    return;
+  }
+
+  const suggestions = buildRoleOverridesFromSuggestions(dryRunResult.newFiles);
+  const renames = generateRenameMap(dryRunResult.newFiles, suggestions);
+
+  process.stderr.write(
+    `${formatSyncPreviewWithSuggestions(dryRunResult, suggestions, renames, identifier)}\n`
+  );
+  setExitCode(getAttachExitCode(dryRunResult));
+}
+
 export async function handleAttachSyncAction(
   identifierArg: string | undefined,
   options: AttachSyncActionOptions,
@@ -956,16 +1201,26 @@ export async function handleAttachSyncAction(
     const attachmentsDirectory = config.attachments.directory;
     const idType = options.uuid ? ("uuid" as const) : undefined;
 
-    // Determine mode: interactive (TTY without flags) or direct
-    const shouldUseInteractive = isTTY() && !options.yes && !options.fix;
-
-    if (shouldUseInteractive) {
+    // TTY interactive mode (no flags)
+    if (isTTY() && !options.yes && !options.fix) {
       await runInteractiveSyncMode(identifier, attachmentsDirectory, idType, context);
       setExitCode(ExitCode.SUCCESS);
       return;
     }
 
-    // Direct mode: execute sync with provided flags
+    // --yes without --fix: apply with suggestions
+    if (options.yes && !options.fix) {
+      await handleSyncApplyWithSuggestions(identifier, attachmentsDirectory, idType, context);
+      return;
+    }
+
+    // Non-TTY dry-run (no flags): show preview with suggestions
+    if (!options.yes && !options.fix) {
+      await handleSyncDryRunPreview(identifier, attachmentsDirectory, idType, context);
+      return;
+    }
+
+    // Direct mode (--fix or --yes --fix): execute sync with provided flags
     const syncOptions: AttachSyncOptions = {
       identifier,
       attachmentsDirectory,
