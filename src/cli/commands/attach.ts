@@ -121,7 +121,6 @@ export interface AttachSyncOptions {
   idType?: IdentifierType;
   attachmentsDirectory: string;
   roleOverrides?: Record<string, { role: string; label?: string }>;
-  noRename?: boolean;
 }
 
 // Re-export result types
@@ -449,21 +448,19 @@ export function generateRenameMap(
     const ext = path.extname(file.filename);
     const extWithoutDot = ext.startsWith(".") ? ext.slice(1) : ext;
     const baseName = ext ? file.filename.slice(0, -ext.length) : file.filename;
-    const expected = generateFilename(override.role, extWithoutDot, override.label);
-    if (expected !== file.filename) {
-      // Use role-baseName.ext format for renamed files
-      const newName = override.label
-        ? generateFilename(override.role, extWithoutDot, override.label)
-        : `${override.role}-${baseName}.${extWithoutDot}`;
+    // Check if filename already matches the canonical form (role.ext or role-label.ext).
+    // If it does, no rename is needed.
+    const canonical = generateFilename(override.role, extWithoutDot, override.label);
+    if (canonical !== file.filename) {
+      // For files with a label, the canonical name is the target.
+      // For files without a label, preserve the original basename with a role prefix.
+      const newName = override.label ? canonical : `${override.role}-${baseName}.${extWithoutDot}`;
       renames[file.filename] = newName;
     }
   }
   return renames;
 }
 
-/**
- * Format sync preview with role suggestions and rename previews for non-TTY output.
- */
 /**
  * Format a single file entry in the suggestion preview.
  */
@@ -487,6 +484,9 @@ function formatSuggestedFileEntry(
   }
 }
 
+/**
+ * Format sync preview with role suggestions and rename previews for non-TTY output.
+ */
 export function formatSyncPreviewWithSuggestions(
   result: SyncAttachmentResult,
   suggestions: Record<string, { role: string; label?: string }>,
@@ -1012,13 +1012,8 @@ export interface AttachSyncActionOptions {
   yes?: boolean;
   fix?: boolean;
   uuid?: boolean;
-  noRename?: boolean;
 }
 
-/**
- * Run interactive sync mode: dry-run, confirm, then apply.
- * Similar pattern to runInteractiveMode for attach open.
- */
 /**
  * Prompt for role assignment on files with role "other" (TTY only).
  * Returns a roleOverrides record for files the user chose to reclassify.
@@ -1058,6 +1053,10 @@ async function promptForUnknownRoles(
   return overrides;
 }
 
+/**
+ * Run interactive sync mode: dry-run, confirm, then apply.
+ * Similar pattern to runInteractiveMode for attach open.
+ */
 async function runInteractiveSyncMode(
   identifier: string,
   attachmentsDirectory: string,
@@ -1119,9 +1118,6 @@ async function runInteractiveSyncMode(
   process.stderr.write(`${formatAttachSyncOutput(result)}\n`);
 }
 
-/**
- * Handle 'attach sync' command action.
- */
 /**
  * Handle non-TTY sync with --yes: compute suggestions and apply.
  */
@@ -1189,6 +1185,9 @@ async function handleSyncDryRunPreview(
   setExitCode(getAttachExitCode(dryRunResult));
 }
 
+/**
+ * Handle 'attach sync' command action.
+ */
 export async function handleAttachSyncAction(
   identifierArg: string | undefined,
   options: AttachSyncActionOptions,
