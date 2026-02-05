@@ -711,6 +711,7 @@ function registerAttachCommand(program: Command): void {
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--yes", "Apply changes (add new files)")
     .option("--fix", "Remove missing files from metadata")
+    .option("--no-rename", "Skip file renaming (keep original filenames)")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
       await handleAttachSyncAction(identifier, options, program.opts());

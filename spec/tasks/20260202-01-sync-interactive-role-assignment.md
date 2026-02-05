@@ -239,19 +239,19 @@ CLI layer changes:
 | `--yes --no-rename` | Keep original filename |
 | dry-run (non-TTY) | Show rename preview in output |
 
-- [ ] Write test: `src/features/operations/attachments/sync.test.ts`
+- [x] Write test: `src/features/operations/attachments/sync.test.ts`
   - File renamed on disk and metadata updated
   - Rename conflict (target already exists) → skip with warning
   - Rename skipped when `--no-rename` is set → keep original filename in metadata
-- [ ] Write test: `src/cli/commands/attach.test.ts`
+- [x] Write test: `src/cli/commands/attach.test.ts`
   - Rename prompt shown when filename doesn't match convention (TTY)
   - Rename prompt NOT shown when filename already matches
   - `--yes` applies rename without prompt
   - `--yes --no-rename` skips rename
-- [ ] Implement operation layer
-- [ ] Implement CLI layer
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Implement operation layer
+- [x] Implement CLI layer
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 7: E2E Tests
 
