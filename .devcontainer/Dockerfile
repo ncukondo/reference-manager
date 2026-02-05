@@ -38,6 +38,10 @@ COPY --from=ghcr.io/astral-sh/uv:0.8.3 /uv /uvx /bin/
 # Switch to non-root user and set up uv for them
 USER $USERNAME
 
+# Configure tmux
+COPY --chown=$USERNAME:$USERNAME .tmux.conf /home/$USERNAME/.tmux.conf
+
+
 # Install Claude CLI (native binary) as non-root user
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
