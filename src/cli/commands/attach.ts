@@ -456,7 +456,7 @@ export function generateRenameMap(
     if (canonical !== file.filename) {
       // For files with a label, the canonical name is the target.
       // For files without a label, preserve the original basename with a role prefix.
-      const newName = override.label ? canonical : `${override.role}-${baseName}.${extWithoutDot}`;
+      const newName = override.label ? canonical : `${override.role}-${baseName}${ext}`;
       renames[file.filename] = newName;
     }
   }
@@ -1129,7 +1129,8 @@ async function handleSyncApplyWithSuggestions(
   identifier: string,
   attachmentsDirectory: string,
   idType: "uuid" | undefined,
-  context: ExecutionContext
+  context: ExecutionContext,
+  fix?: boolean
 ): Promise<void> {
   const dryRunOptions: AttachSyncOptions = {
     identifier,
@@ -1150,6 +1151,7 @@ async function handleSyncApplyWithSuggestions(
     identifier,
     attachmentsDirectory,
     yes: true,
+    ...(fix && { fix: true }),
     ...(idType && { idType }),
     ...(Object.keys(suggestions).length > 0 && { roleOverrides: suggestions }),
   };
@@ -1211,24 +1213,29 @@ export async function handleAttachSyncAction(
       return;
     }
 
-    // --yes without --fix: apply with suggestions
-    if (options.yes && !options.fix) {
-      await handleSyncApplyWithSuggestions(identifier, attachmentsDirectory, idType, context);
+    // --yes (with or without --fix): apply with suggestions
+    if (options.yes) {
+      await handleSyncApplyWithSuggestions(
+        identifier,
+        attachmentsDirectory,
+        idType,
+        context,
+        options.fix
+      );
       return;
     }
 
     // Non-TTY dry-run (no flags): show preview with suggestions
-    if (!options.yes && !options.fix) {
+    if (!options.fix) {
       await handleSyncDryRunPreview(identifier, attachmentsDirectory, idType, context);
       return;
     }
 
-    // Direct mode (--fix or --yes --fix): execute sync with provided flags
+    // Direct mode (--fix only): execute sync with provided flags
     const syncOptions: AttachSyncOptions = {
       identifier,
       attachmentsDirectory,
-      ...(options.yes && { yes: true }),
-      ...(options.fix && { fix: true }),
+      fix: true,
       ...(idType && { idType }),
     };
     const result = await executeAttachSync(syncOptions, context);
