@@ -2,7 +2,7 @@
  * Tests for attachment sync operation
  */
 
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -526,6 +526,161 @@ describe("syncAttachments", () => {
       expect(file).toBeDefined();
       expect(file?.role).toBe("fulltext");
       expect(file?.label).toBeUndefined();
+    });
+  });
+
+  describe("renames", () => {
+    it("should rename file on disk and update metadata when renames provided", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement" },
+        },
+        renames: {
+          "mmc1.pdf": "supplement-mmc1.pdf",
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(true);
+
+      // Verify file was renamed on disk
+      await expect(access(join(attachDir, "supplement-mmc1.pdf"))).resolves.toBeUndefined();
+      await expect(access(join(attachDir, "mmc1.pdf"))).rejects.toThrow();
+
+      // Verify metadata uses the new filename
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "supplement-mmc1.pdf",
+          role: "supplement",
+        })
+      );
+    });
+
+    it("should skip rename when target file already exists (conflict)", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+      await writeFile(join(attachDir, "supplement-mmc1.pdf"), "Existing file");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement" },
+        },
+        renames: {
+          "mmc1.pdf": "supplement-mmc1.pdf",
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(true);
+
+      // Both files still exist on disk (rename was skipped)
+      await expect(access(join(attachDir, "mmc1.pdf"))).resolves.toBeUndefined();
+      await expect(access(join(attachDir, "supplement-mmc1.pdf"))).resolves.toBeUndefined();
+
+      // Metadata should use the original filename (rename was skipped)
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "mmc1.pdf",
+          role: "supplement",
+        })
+      );
+    });
+
+    it("should keep original filename in metadata when no renames provided", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement" },
+        },
+        // No renames — equivalent to --no-rename
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(true);
+
+      // File should not be renamed
+      await expect(access(join(attachDir, "mmc1.pdf"))).resolves.toBeUndefined();
+
+      // Metadata should use the original filename
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({
+          filename: "mmc1.pdf",
+          role: "supplement",
+        })
+      );
+    });
+
+    it("should rename multiple files in a single sync", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Content 1");
+      await writeFile(join(attachDir, "PIIS123.pdf"), "Content 2");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        yes: true,
+        attachmentsDirectory: attachmentsBaseDir,
+        roleOverrides: {
+          "mmc1.pdf": { role: "supplement" },
+          "PIIS123.pdf": { role: "fulltext" },
+        },
+        renames: {
+          "mmc1.pdf": "supplement-mmc1.pdf",
+          "PIIS123.pdf": "fulltext-PIIS123.pdf",
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+
+      // Verify both files renamed on disk
+      await expect(access(join(attachDir, "supplement-mmc1.pdf"))).resolves.toBeUndefined();
+      await expect(access(join(attachDir, "fulltext-PIIS123.pdf"))).resolves.toBeUndefined();
+
+      // Verify metadata
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({ filename: "supplement-mmc1.pdf", role: "supplement" })
+      );
+      expect(updatedItem?.custom?.attachments?.files).toContainEqual(
+        expect.objectContaining({ filename: "fulltext-PIIS123.pdf", role: "fulltext" })
+      );
+    });
+
+    it("should not rename files in dry-run mode", async () => {
+      await writeFile(join(attachDir, "mmc1.pdf"), "Supplement content");
+
+      const options: SyncAttachmentOptions = {
+        identifier: "Smith-2024",
+        // no yes: true — dry-run
+        attachmentsDirectory: attachmentsBaseDir,
+        renames: {
+          "mmc1.pdf": "supplement-mmc1.pdf",
+        },
+      };
+
+      const result = await syncAttachments(mockLibrary, options);
+
+      expect(result.success).toBe(true);
+      expect(result.applied).toBe(false);
+
+      // File should not be renamed
+      await expect(access(join(attachDir, "mmc1.pdf"))).resolves.toBeUndefined();
     });
   });
 
