@@ -36,7 +36,7 @@ export function createServer(library: Library, config: Config) {
   app.route("/health", healthRoute);
 
   // References API routes
-  const referencesRoute = createReferencesRoute(library);
+  const referencesRoute = createReferencesRoute(library, config);
   app.route("/api/references", referencesRoute);
 
   // Add references route

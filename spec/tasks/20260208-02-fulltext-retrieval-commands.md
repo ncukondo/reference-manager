@@ -19,89 +19,89 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 1: Add `@ncukondo/academic-fulltext` dependency
 
-- [ ] Install: `npm install @ncukondo/academic-fulltext`
-- [ ] Verify: import works in a simple test
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Install: `npm install @ncukondo/academic-fulltext`
+- [x] Verify: import works in a simple test
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Fulltext Discover Operation
 
 Create operation layer function that takes a reference item, extracts DOI/PMID, and calls `discoverOA()`.
 
-- [ ] Write test: `src/features/operations/fulltext/discover.test.ts`
-- [ ] Create stub: `src/features/operations/fulltext/discover.ts`
-- [ ] Verify Red
-- [ ] Implement: Extract DOI/PMID from CSL-JSON item, call `discoverOA()`, return structured result
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/operations/fulltext/discover.test.ts`
+- [x] Create stub: `src/features/operations/fulltext/discover.ts`
+- [x] Verify Red
+- [x] Implement: Extract DOI/PMID from CSL-JSON item, call `discoverOA()`, return structured result
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Fulltext Fetch Operation
 
 Create operation layer function that discovers OA sources, downloads the best available, and auto-attaches via existing `fulltextAttach`.
 
-- [ ] Write test: `src/features/operations/fulltext/fetch.test.ts`
-- [ ] Create stub: `src/features/operations/fulltext/fetch.ts`
-- [ ] Verify Red
-- [ ] Implement:
+- [x] Write test: `src/features/operations/fulltext/fetch.test.ts`
+- [x] Create stub: `src/features/operations/fulltext/fetch.ts`
+- [x] Verify Red
+- [x] Implement:
   - Call discover operation
   - Download PDF (and PMC XML if available) to temp directory
   - Convert PMC XML to Markdown if downloaded
   - Call `fulltextAttach` to attach files
   - Clean up temp files
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Fulltext Convert Operation
 
 Create operation layer function that finds attached PMC XML and converts to Markdown.
 
-- [ ] Write test: `src/features/operations/fulltext/convert.test.ts`
-- [ ] Create stub: `src/features/operations/fulltext/convert.ts`
-- [ ] Verify Red
-- [ ] Implement: Locate XML in attachment dir, call `convertPmcXmlToMarkdown()`, attach result
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/operations/fulltext/convert.test.ts`
+- [x] Create stub: `src/features/operations/fulltext/convert.ts`
+- [x] Verify Red
+- [x] Implement: Locate XML in attachment dir, call `convertPmcXmlToMarkdown()`, attach result
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: CLI Command - `fulltext discover`
 
 Register `fulltext discover <id>` subcommand.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` (add discover test cases)
-- [ ] Implement: Add to `src/cli/commands/fulltext.ts` and register in `src/cli/index.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/fulltext.test.ts` (add discover test cases)
+- [x] Implement: Add to `src/cli/commands/fulltext.ts` and register in `src/cli/index.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 6: CLI Command - `fulltext fetch`
 
 Register `fulltext fetch <id>` subcommand with `--source`, `--force` options.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` (add fetch test cases)
-- [ ] Implement: Add to `src/cli/commands/fulltext.ts` and register in `src/cli/index.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/fulltext.test.ts` (add fetch test cases)
+- [x] Implement: Add to `src/cli/commands/fulltext.ts` and register in `src/cli/index.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 7: CLI Command - `fulltext convert`
 
 Register `fulltext convert <id>` subcommand.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` (add convert test cases)
-- [ ] Implement: Add to `src/cli/commands/fulltext.ts` and register in `src/cli/index.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/fulltext.test.ts` (add convert test cases)
+- [x] Implement: Add to `src/cli/commands/fulltext.ts` and register in `src/cli/index.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 8: MCP/HTTP Server Endpoints
 
 Add `fulltext_discover`, `fulltext_fetch`, `fulltext_convert` MCP tools and HTTP endpoints.
 
-- [ ] Write test: MCP tool tests
-- [ ] Implement: Add MCP tools and HTTP routes
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: MCP tool tests
+- [x] Implement: Add MCP tools and HTTP routes
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 9: E2E Tests
 
-- [ ] Write E2E test: `src/cli/fulltext.e2e.test.ts` (add discover/fetch/convert test cases)
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write E2E test: `src/cli/fulltext.e2e.test.ts` (add discover/fetch/convert test cases)
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Manual Verification
 
@@ -114,9 +114,9 @@ Non-TTY tests:
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

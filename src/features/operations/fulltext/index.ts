@@ -8,3 +8,14 @@ export { fulltextAttach, type FulltextAttachOptions, type FulltextAttachResult }
 export { fulltextGet, type FulltextGetOptions, type FulltextGetResult } from "./get.js";
 export { fulltextDetach, type FulltextDetachOptions, type FulltextDetachResult } from "./detach.js";
 export { fulltextOpen, type FulltextOpenOptions, type FulltextOpenResult } from "./open.js";
+export {
+  fulltextDiscover,
+  type FulltextDiscoverOptions,
+  type FulltextDiscoverResult,
+} from "./discover.js";
+export { fulltextFetch, type FulltextFetchOptions, type FulltextFetchResult } from "./fetch.js";
+export {
+  fulltextConvert,
+  type FulltextConvertOptions,
+  type FulltextConvertResult,
+} from "./convert.js";

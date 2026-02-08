@@ -32,7 +32,10 @@ import {
 } from "./commands/export.js";
 import {
   handleFulltextAttachAction,
+  handleFulltextConvertAction,
   handleFulltextDetachAction,
+  handleFulltextDiscoverAction,
+  handleFulltextFetchAction,
   handleFulltextGetAction,
   handleFulltextOpenAction,
 } from "./commands/fulltext.js";
@@ -774,6 +777,35 @@ function registerFulltextCommand(program: Command): void {
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextOpenAction(identifier, options, program.opts());
+    });
+
+  fulltextCmd
+    .command("discover")
+    .description("Check OA (Open Access) availability for a reference")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleFulltextDiscoverAction(identifier, options, program.opts());
+    });
+
+  fulltextCmd
+    .command("fetch")
+    .description("Download OA full text and auto-attach to a reference")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .option("--source <source>", "Preferred source: pmc, arxiv, unpaywall, core")
+    .option("-f, --force", "Overwrite existing fulltext attachment")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleFulltextFetchAction(identifier, options, program.opts());
+    });
+
+  fulltextCmd
+    .command("convert")
+    .description("Convert attached PMC XML to Markdown")
+    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .option("--uuid", "Interpret identifier as UUID")
+    .action(async (identifier: string | undefined, options) => {
+      await handleFulltextConvertAction(identifier, options, program.opts());
     });
 }
 

@@ -941,6 +941,89 @@ describe("Fulltext Command E2E", () => {
       expect(files.length).toBe(0);
     });
   });
+  describe("fulltext discover", () => {
+    it("should show error when reference not found", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "discover",
+        "nonexistent",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Reference 'nonexistent' not found");
+    });
+
+    it("should show error when reference has no DOI or PMID", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "discover",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("No DOI or PMID found");
+    });
+  });
+
+  describe("fulltext fetch", () => {
+    it("should show error when reference not found", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "fetch",
+        "nonexistent",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Reference 'nonexistent' not found");
+    });
+
+    it("should show error when reference has no DOI or PMID", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "fetch",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("No DOI or PMID found");
+    });
+  });
+
+  describe("fulltext convert", () => {
+    it("should show error when reference not found", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "convert",
+        "nonexistent",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Reference 'nonexistent' not found");
+    });
+
+    it("should show error when no XML file attached", async () => {
+      const result = await runWithFulltext([
+        "fulltext",
+        "convert",
+        "Smith-2024",
+        "--library",
+        libraryPath,
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("No PMC XML file");
+    });
+  });
 });
 
 const CLI_PATH = path.resolve("bin/cli.js");

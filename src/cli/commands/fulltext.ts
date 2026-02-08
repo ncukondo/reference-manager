@@ -5,20 +5,30 @@
  */
 
 import type { Config } from "../../config/schema.js";
+import type { FulltextSource } from "../../config/schema.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
 import type { FulltextType } from "../../features/fulltext/index.js";
 import {
   type FulltextAttachResult,
+  type FulltextConvertResult,
   type FulltextDetachResult,
+  type FulltextDiscoverResult,
+  type FulltextFetchResult,
   type FulltextGetResult,
   type FulltextOpenResult,
   type FulltextAttachOptions as OperationAttachOptions,
+  type FulltextConvertOptions as OperationConvertOptions,
   type FulltextDetachOptions as OperationDetachOptions,
+  type FulltextDiscoverOptions as OperationDiscoverOptions,
+  type FulltextFetchOptions as OperationFetchOptions,
   type FulltextGetOptions as OperationGetOptions,
   type FulltextOpenOptions as OperationOpenOptions,
   fulltextAttach,
+  fulltextConvert,
   fulltextDetach,
+  fulltextDiscover,
+  fulltextFetch,
   fulltextGet,
   fulltextOpen,
 } from "../../features/operations/fulltext/index.js";
@@ -79,8 +89,44 @@ export interface FulltextOpenOptions {
   fulltextDirectory: string;
 }
 
+/**
+ * Options for fulltext discover command
+ */
+export interface FulltextDiscoverOptions {
+  identifier: string;
+  idType?: IdentifierType;
+}
+
+/**
+ * Options for fulltext fetch command
+ */
+export interface FulltextFetchOptions {
+  identifier: string;
+  idType?: IdentifierType;
+  source?: FulltextSource;
+  force?: boolean;
+  fulltextDirectory: string;
+}
+
+/**
+ * Options for fulltext convert command
+ */
+export interface FulltextConvertOptions {
+  identifier: string;
+  idType?: IdentifierType;
+  fulltextDirectory: string;
+}
+
 // Re-export result types
-export type { FulltextAttachResult, FulltextGetResult, FulltextDetachResult, FulltextOpenResult };
+export type {
+  FulltextAttachResult,
+  FulltextConvertResult,
+  FulltextDetachResult,
+  FulltextDiscoverResult,
+  FulltextFetchResult,
+  FulltextGetResult,
+  FulltextOpenResult,
+};
 
 /**
  * Execute fulltext attach command
@@ -154,6 +200,59 @@ export async function executeFulltextOpen(
   };
 
   return fulltextOpen(context.library, operationOptions);
+}
+
+/**
+ * Execute fulltext discover command
+ */
+export async function executeFulltextDiscover(
+  options: FulltextDiscoverOptions,
+  context: ExecutionContext,
+  config: Config
+): Promise<FulltextDiscoverResult> {
+  const operationOptions: OperationDiscoverOptions = {
+    identifier: options.identifier,
+    idType: options.idType,
+    fulltextConfig: config.fulltext,
+  };
+
+  return fulltextDiscover(context.library, operationOptions);
+}
+
+/**
+ * Execute fulltext fetch command
+ */
+export async function executeFulltextFetch(
+  options: FulltextFetchOptions,
+  context: ExecutionContext,
+  config: Config
+): Promise<FulltextFetchResult> {
+  const operationOptions: OperationFetchOptions = {
+    identifier: options.identifier,
+    idType: options.idType,
+    fulltextConfig: config.fulltext,
+    fulltextDirectory: options.fulltextDirectory,
+    source: options.source,
+    force: options.force,
+  };
+
+  return fulltextFetch(context.library, operationOptions);
+}
+
+/**
+ * Execute fulltext convert command
+ */
+export async function executeFulltextConvert(
+  options: FulltextConvertOptions,
+  context: ExecutionContext
+): Promise<FulltextConvertResult> {
+  const operationOptions: OperationConvertOptions = {
+    identifier: options.identifier,
+    idType: options.idType,
+    fulltextDirectory: options.fulltextDirectory,
+  };
+
+  return fulltextConvert(context.library, operationOptions);
 }
 
 // ============================================================================
@@ -237,10 +336,77 @@ export function formatFulltextOpenOutput(result: FulltextOpenResult): string {
 }
 
 /**
+ * Format fulltext discover output
+ */
+export function formatFulltextDiscoverOutput(
+  result: FulltextDiscoverResult,
+  identifier: string
+): string {
+  if (!result.success) {
+    return `Error: ${result.error}`;
+  }
+
+  if (!result.locations || result.locations.length === 0) {
+    return `No OA sources found for ${identifier}`;
+  }
+
+  const lines: string[] = [`OA sources for ${identifier}:`];
+  for (const loc of result.locations) {
+    const license = loc.license ? ` (${loc.license})` : "";
+    lines.push(`  ${loc.source}: ${loc.url}${license}`);
+  }
+
+  if (result.errors && result.errors.length > 0) {
+    for (const err of result.errors) {
+      lines.push(`  Warning: ${err.source}: ${err.error}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Format fulltext fetch output
+ */
+export function formatFulltextFetchOutput(result: FulltextFetchResult): string {
+  if (!result.success) {
+    return `Error: ${result.error}`;
+  }
+
+  const lines: string[] = [];
+  if (result.source) {
+    lines.push(`Source: ${result.source}`);
+  }
+  for (const file of result.attachedFiles ?? []) {
+    lines.push(`Attached ${file}: fulltext.${file === "markdown" ? "md" : file}`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Format fulltext convert output
+ */
+export function formatFulltextConvertOutput(result: FulltextConvertResult): string {
+  if (!result.success) {
+    return `Error: ${result.error}`;
+  }
+
+  return `Converted PMC XML to Markdown: ${result.filename}`;
+}
+
+/**
  * Get exit code for fulltext command result
  */
 export function getFulltextExitCode(
-  result: FulltextAttachResult | FulltextGetResult | FulltextDetachResult | FulltextOpenResult
+  result:
+    | FulltextAttachResult
+    | FulltextGetResult
+    | FulltextDetachResult
+    | FulltextOpenResult
+    | FulltextDiscoverResult
+    | FulltextFetchResult
+    | FulltextConvertResult
 ): number {
   return result.success ? 0 : 1;
 }
@@ -549,6 +715,171 @@ export async function handleFulltextOpenAction(
 
     const result = await executeFulltextOpen(openOptions, context);
     const output = formatFulltextOpenOutput(result);
+    process.stderr.write(`${output}\n`);
+    setExitCode(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    setExitCode(ExitCode.INTERNAL_ERROR);
+  }
+}
+
+/**
+ * Options for fulltext discover action
+ */
+export interface FulltextDiscoverActionOptions {
+  uuid?: boolean;
+}
+
+/**
+ * Handle 'fulltext discover' command action.
+ */
+export async function handleFulltextDiscoverAction(
+  identifierArg: string | undefined,
+  options: FulltextDiscoverActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    let identifier: string;
+    if (identifierArg) {
+      identifier = identifierArg;
+    } else if (isTTY()) {
+      identifier = await executeInteractiveSelect(context, config);
+    } else {
+      const stdinId = await readIdentifierFromStdin();
+      if (!stdinId) {
+        process.stderr.write(
+          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
+        );
+        setExitCode(ExitCode.ERROR);
+        return;
+      }
+      identifier = stdinId;
+    }
+
+    const discoverOptions: FulltextDiscoverOptions = {
+      identifier,
+      ...(options.uuid && { idType: "uuid" as const }),
+    };
+
+    const result = await executeFulltextDiscover(discoverOptions, context, config);
+    const output = formatFulltextDiscoverOutput(result, identifier);
+    if (result.success) {
+      process.stdout.write(`${output}\n`);
+    } else {
+      process.stderr.write(`${output}\n`);
+    }
+    setExitCode(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    setExitCode(ExitCode.INTERNAL_ERROR);
+  }
+}
+
+/**
+ * Options for fulltext fetch action
+ */
+export interface FulltextFetchActionOptions {
+  source?: string;
+  force?: boolean;
+  uuid?: boolean;
+}
+
+/**
+ * Handle 'fulltext fetch' command action.
+ */
+export async function handleFulltextFetchAction(
+  identifierArg: string | undefined,
+  options: FulltextFetchActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    let identifier: string;
+    if (identifierArg) {
+      identifier = identifierArg;
+    } else if (isTTY()) {
+      identifier = await executeInteractiveSelect(context, config);
+    } else {
+      const stdinId = await readIdentifierFromStdin();
+      if (!stdinId) {
+        process.stderr.write(
+          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
+        );
+        setExitCode(ExitCode.ERROR);
+        return;
+      }
+      identifier = stdinId;
+    }
+
+    process.stderr.write(`Fetching fulltext for ${identifier}...\n`);
+
+    const fetchOptions: FulltextFetchOptions = {
+      identifier,
+      fulltextDirectory: config.attachments.directory,
+      ...(options.source && { source: options.source as FulltextSource }),
+      ...(options.force && { force: options.force }),
+      ...(options.uuid && { idType: "uuid" as const }),
+    };
+
+    const result = await executeFulltextFetch(fetchOptions, context, config);
+    const output = formatFulltextFetchOutput(result);
+    process.stderr.write(`${output}\n`);
+    setExitCode(getFulltextExitCode(result));
+  } catch (error) {
+    process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+    setExitCode(ExitCode.INTERNAL_ERROR);
+  }
+}
+
+/**
+ * Options for fulltext convert action
+ */
+export interface FulltextConvertActionOptions {
+  uuid?: boolean;
+}
+
+/**
+ * Handle 'fulltext convert' command action.
+ */
+export async function handleFulltextConvertAction(
+  identifierArg: string | undefined,
+  options: FulltextConvertActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    let identifier: string;
+    if (identifierArg) {
+      identifier = identifierArg;
+    } else if (isTTY()) {
+      identifier = await executeInteractiveSelect(context, config);
+    } else {
+      const stdinId = await readIdentifierFromStdin();
+      if (!stdinId) {
+        process.stderr.write(
+          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
+        );
+        setExitCode(ExitCode.ERROR);
+        return;
+      }
+      identifier = stdinId;
+    }
+
+    const convertOptions: FulltextConvertOptions = {
+      identifier,
+      fulltextDirectory: config.attachments.directory,
+      ...(options.uuid && { idType: "uuid" as const }),
+    };
+
+    const result = await executeFulltextConvert(convertOptions, context);
+    const output = formatFulltextConvertOutput(result);
     process.stderr.write(`${output}\n`);
     setExitCode(getFulltextExitCode(result));
   } catch (error) {
