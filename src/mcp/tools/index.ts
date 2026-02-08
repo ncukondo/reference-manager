@@ -5,7 +5,10 @@ import { registerAddTool } from "./add.js";
 import { registerCiteTool } from "./cite.js";
 import {
   registerFulltextAttachTool,
+  registerFulltextConvertTool,
   registerFulltextDetachTool,
+  registerFulltextDiscoverTool,
+  registerFulltextFetchTool,
   registerFulltextGetTool,
 } from "./fulltext.js";
 import { registerListTool } from "./list.js";
@@ -32,4 +35,7 @@ export function registerAllTools(
   registerFulltextAttachTool(server, getLibraryOperations, getConfig);
   registerFulltextGetTool(server, getLibraryOperations, getConfig);
   registerFulltextDetachTool(server, getLibraryOperations, getConfig);
+  registerFulltextDiscoverTool(server, getLibraryOperations, getConfig);
+  registerFulltextFetchTool(server, getLibraryOperations, getConfig);
+  registerFulltextConvertTool(server, getLibraryOperations, getConfig);
 }

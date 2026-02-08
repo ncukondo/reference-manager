@@ -1,14 +1,21 @@
 import { Hono } from "hono";
+import type { Config, FulltextSource } from "../../config/schema.js";
 import type { Library } from "../../core/library.js";
+import {
+  fulltextConvert,
+  fulltextDiscover,
+  fulltextFetch,
+} from "../../features/operations/fulltext/index.js";
 import { removeReference } from "../../features/operations/remove.js";
 import { updateReference } from "../../features/operations/update.js";
 
 /**
  * Create references CRUD route with the given library.
  * @param library - Library instance to use for operations
+ * @param config - Configuration for fulltext operations
  * @returns Hono app with references routes
  */
-export function createReferencesRoute(library: Library) {
+export function createReferencesRoute(library: Library, config?: Config) {
   const route = new Hono();
 
   // GET / - Get all references (getAll now returns Promise<CslItem[]>)
@@ -178,6 +185,67 @@ export function createReferencesRoute(library: Library) {
 
     return c.json(result);
   });
+
+  // Fulltext retrieval routes (require config)
+  if (config) {
+    // GET /uuid/:uuid/fulltext/discover
+    route.get("/uuid/:uuid/fulltext/discover", async (c) => {
+      const uuid = c.req.param("uuid");
+      const result = await fulltextDiscover(library, {
+        identifier: uuid,
+        idType: "uuid",
+        fulltextConfig: config.fulltext,
+      });
+
+      if (!result.success) {
+        return c.json({ error: result.error }, 400);
+      }
+
+      return c.json(result);
+    });
+
+    // POST /uuid/:uuid/fulltext/fetch
+    route.post("/uuid/:uuid/fulltext/fetch", async (c) => {
+      const uuid = c.req.param("uuid");
+      let body: { source?: string; force?: boolean } = {};
+      try {
+        body = await c.req.json();
+      } catch {
+        // No body is OK - use defaults
+      }
+
+      const result = await fulltextFetch(library, {
+        identifier: uuid,
+        idType: "uuid",
+        fulltextConfig: config.fulltext,
+        fulltextDirectory: config.attachments.directory,
+        source: body.source as FulltextSource | undefined,
+        force: body.force,
+      });
+
+      if (!result.success) {
+        return c.json({ error: result.error }, 400);
+      }
+
+      return c.json(result);
+    });
+
+    // POST /uuid/:uuid/fulltext/convert
+    route.post("/uuid/:uuid/fulltext/convert", async (c) => {
+      const uuid = c.req.param("uuid");
+      const result = await fulltextConvert(library, {
+        identifier: uuid,
+        idType: "uuid",
+        fulltextDirectory: config.attachments.directory,
+      });
+
+      if (!result.success) {
+        return c.json({ error: result.error }, 400);
+      }
+
+      return c.json(result);
+    });
+  }
 
   return route;
 }

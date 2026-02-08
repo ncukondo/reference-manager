@@ -1,9 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Config } from "../../config/schema.js";
+import type { FulltextSource } from "../../config/schema.js";
 import {
   fulltextAttach,
+  fulltextConvert,
   fulltextDetach,
+  fulltextDiscover,
+  fulltextFetch,
   fulltextGet,
 } from "../../features/operations/fulltext/index.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
@@ -206,6 +210,183 @@ export function registerFulltextDetachTool(
           {
             type: "text" as const,
             text: `Detached from '${args.id}': ${detachedTypes}`,
+          },
+        ],
+      };
+    }
+  );
+}
+
+/**
+ * Parameters for the fulltext_discover tool
+ */
+export interface FulltextDiscoverToolParams {
+  /** Reference ID */
+  id: string;
+}
+
+/**
+ * Register the fulltext_discover tool with the MCP server.
+ */
+export function registerFulltextDiscoverTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations,
+  getConfig: () => Config
+): void {
+  server.registerTool(
+    "fulltext_discover",
+    {
+      description:
+        "Check Open Access (OA) availability for a reference. Returns available sources and URLs.",
+      inputSchema: {
+        id: z.string().describe("Reference ID"),
+      },
+    },
+    async (args: FulltextDiscoverToolParams) => {
+      const libraryOps = getLibraryOperations();
+      const config = getConfig();
+
+      const result = await fulltextDiscover(libraryOps, {
+        identifier: args.id,
+        fulltextConfig: config.fulltext,
+      });
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
+          isError: true,
+        };
+      }
+
+      if (!result.locations || result.locations.length === 0) {
+        return {
+          content: [{ type: "text" as const, text: `No OA sources found for '${args.id}'` }],
+        };
+      }
+
+      const lines: string[] = [`OA sources for '${args.id}' (status: ${result.oaStatus}):`];
+      for (const loc of result.locations) {
+        lines.push(`  ${loc.source}: ${loc.url} (${loc.urlType})`);
+      }
+
+      return {
+        content: [{ type: "text" as const, text: lines.join("\n") }],
+      };
+    }
+  );
+}
+
+/**
+ * Parameters for the fulltext_fetch tool
+ */
+export interface FulltextFetchToolParams {
+  /** Reference ID */
+  id: string;
+  /** Preferred source (optional) */
+  source?: string | undefined;
+  /** Force overwrite existing (optional) */
+  force?: boolean | undefined;
+}
+
+/**
+ * Register the fulltext_fetch tool with the MCP server.
+ */
+export function registerFulltextFetchTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations,
+  getConfig: () => Config
+): void {
+  server.registerTool(
+    "fulltext_fetch",
+    {
+      description:
+        "Download and attach Open Access full-text for a reference. Automatically discovers OA sources, downloads PDF/XML, converts PMC XML to Markdown, and attaches files.",
+      inputSchema: {
+        id: z.string().describe("Reference ID"),
+        source: z
+          .enum(["pmc", "arxiv", "unpaywall", "core"])
+          .optional()
+          .describe("Preferred source (optional)"),
+        force: z.boolean().optional().describe("Force overwrite existing attachment"),
+      },
+    },
+    async (args: FulltextFetchToolParams) => {
+      const libraryOps = getLibraryOperations();
+      const config = getConfig();
+
+      const result = await fulltextFetch(libraryOps, {
+        identifier: args.id,
+        fulltextConfig: config.fulltext,
+        fulltextDirectory: config.attachments.directory,
+        source: args.source as FulltextSource | undefined,
+        force: args.force,
+      });
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
+          isError: true,
+        };
+      }
+
+      const files = result.attachedFiles?.join(", ") ?? "none";
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Fetched fulltext for '${args.id}' from ${result.source}: ${files}`,
+          },
+        ],
+      };
+    }
+  );
+}
+
+/**
+ * Parameters for the fulltext_convert tool
+ */
+export interface FulltextConvertToolParams {
+  /** Reference ID */
+  id: string;
+}
+
+/**
+ * Register the fulltext_convert tool with the MCP server.
+ */
+export function registerFulltextConvertTool(
+  server: McpServer,
+  getLibraryOperations: () => ILibraryOperations,
+  getConfig: () => Config
+): void {
+  server.registerTool(
+    "fulltext_convert",
+    {
+      description: "Convert an attached PMC JATS XML file to Markdown for a reference.",
+      inputSchema: {
+        id: z.string().describe("Reference ID"),
+      },
+    },
+    async (args: FulltextConvertToolParams) => {
+      const libraryOps = getLibraryOperations();
+      const config = getConfig();
+
+      const result = await fulltextConvert(libraryOps, {
+        identifier: args.id,
+        fulltextDirectory: config.attachments.directory,
+      });
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Converted PMC XML to Markdown for '${args.id}': ${result.filename}`,
           },
         ],
       };
