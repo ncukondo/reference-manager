@@ -44,11 +44,11 @@ Add flag to the `add` command. When enabled, after each successful add, attempt 
 
 Auto-fetch failures should NOT cause the add command to fail. The reference is already added; fulltext is best-effort.
 
-- [ ] Write test: Network failure during auto-fetch does not affect add exit code
-- [ ] Write test: No OA source found shows info message, exit code 0
-- [ ] Implement: Wrap fetch in try/catch, report on stderr
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: Network failure during auto-fetch does not affect add exit code
+- [x] Write test: No OA source found shows info message, exit code 0
+- [x] Implement: Wrap fetch in try/catch, report on stderr
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: E2E Tests
 

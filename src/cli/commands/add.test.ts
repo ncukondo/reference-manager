@@ -447,6 +447,51 @@ describe("add command", () => {
       expect(results[0]?.error).toContain("Network error");
     });
 
+    it("should return results that do not affect add exit code even when all fetch fail", async () => {
+      mockFulltextFetch.mockRejectedValue(new Error("Network timeout"));
+
+      const addedItems = [
+        { id: "Smith-2024", title: "Test Paper 1" },
+        { id: "Jones-2023", title: "Test Paper 2" },
+      ];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      // autoFetchFulltext should complete without throwing
+      const results = await autoFetchFulltext(addedItems, createContext(), options);
+
+      // All results are failures, but function completed normally
+      expect(results).toHaveLength(2);
+      for (const result of results) {
+        expect(result.success).toBe(false);
+      }
+    });
+
+    it("should return error message when no OA source found", async () => {
+      mockFulltextFetch.mockResolvedValue({
+        success: false,
+        error: "No OA sources found for Smith-2024",
+      });
+
+      const addedItems = [{ id: "Smith-2024", title: "Test Paper" }];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      const results = await autoFetchFulltext(addedItems, createContext(), options);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toContain("No OA sources found");
+    });
+
     it("should continue fetching remaining items when one fails", async () => {
       mockFulltextFetch.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce({
         success: true,
