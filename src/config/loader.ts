@@ -74,6 +74,65 @@ function mergeCliConfig(
 }
 
 /**
+ * Merge fulltext config with nested sources section
+ */
+function mergeFulltextConfig(
+  base: DeepPartialConfig["fulltext"],
+  override: NonNullable<DeepPartialConfig["fulltext"]>
+): NonNullable<DeepPartialConfig["fulltext"]> {
+  const { sources: overrideSources, ...overrideRest } = override;
+  const { sources: baseSources, ...baseRest } = base ?? {};
+  const mergedSources =
+    overrideSources !== undefined ? { ...baseSources, ...overrideSources } : baseSources;
+  return {
+    ...baseRest,
+    ...overrideRest,
+    ...(mergedSources !== undefined ? { sources: mergedSources } : {}),
+  };
+}
+
+const flatSectionKeys = [
+  "backup",
+  "watch",
+  "server",
+  "citation",
+  "pubmed",
+  "attachments",
+  "mcp",
+] as const;
+
+/**
+ * Apply a single override to the result config
+ */
+function applyOverride(result: DeepPartialConfig, override: DeepPartialConfig): void {
+  // Merge top-level primitive fields
+  if (override.library !== undefined) {
+    result.library = override.library;
+  }
+  if (override.logLevel !== undefined) {
+    result.logLevel = override.logLevel;
+  }
+
+  // Merge flat section configs
+  for (const key of flatSectionKeys) {
+    if (override[key] !== undefined) {
+      result[key] = {
+        ...result[key],
+        ...override[key],
+      };
+    }
+  }
+
+  // Merge nested section configs
+  if (override.fulltext !== undefined) {
+    result.fulltext = mergeFulltextConfig(result.fulltext, override.fulltext);
+  }
+  if (override.cli !== undefined) {
+    result.cli = mergeCliConfig(result.cli, override.cli);
+  }
+}
+
+/**
  * Merge partial configurations
  * Later configs override earlier ones
  */
@@ -83,41 +142,9 @@ function mergeConfigs(
 ): DeepPartialConfig {
   const result: DeepPartialConfig = { ...base };
 
-  const sectionKeys = [
-    "backup",
-    "watch",
-    "server",
-    "citation",
-    "pubmed",
-    "attachments",
-    "mcp",
-  ] as const;
-
   for (const override of overrides) {
     if (!override) continue;
-
-    // Merge top-level primitive fields
-    if (override.library !== undefined) {
-      result.library = override.library;
-    }
-    if (override.logLevel !== undefined) {
-      result.logLevel = override.logLevel;
-    }
-
-    // Merge section configs
-    for (const key of sectionKeys) {
-      if (override[key] !== undefined) {
-        result[key] = {
-          ...result[key],
-          ...override[key],
-        };
-      }
-    }
-
-    // Merge cli config with nested interactive
-    if (override.cli !== undefined) {
-      result.cli = mergeCliConfig(result.cli, override.cli);
-    }
+    applyOverride(result, override);
   }
 
   return result;
@@ -149,6 +176,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     },
     citation: fillCitationDefaults(partial.citation),
     pubmed: fillPubmedDefaults(partial.pubmed),
+    fulltext: fillFulltextDefaults(partial.fulltext),
     attachments: fillAttachmentsDefaults(partial.attachments),
     cli: fillCliDefaults(partial.cli),
     mcp: fillMcpDefaults(partial.mcp),
@@ -180,6 +208,30 @@ function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubme
   return {
     email,
     apiKey,
+  };
+}
+
+/**
+ * Fill fulltext config with defaults
+ * Environment variables take priority over config file values
+ */
+function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
+  // Environment variables take priority
+  const unpaywallEmail =
+    process.env.UNPAYWALL_EMAIL ??
+    partial?.sources?.unpaywallEmail ??
+    defaultConfig.fulltext.sources.unpaywallEmail;
+  const coreApiKey =
+    process.env.CORE_API_KEY ??
+    partial?.sources?.coreApiKey ??
+    defaultConfig.fulltext.sources.coreApiKey;
+
+  return {
+    preferSources: partial?.preferSources ?? defaultConfig.fulltext.preferSources,
+    sources: {
+      unpaywallEmail,
+      coreApiKey,
+    },
   };
 }
 
