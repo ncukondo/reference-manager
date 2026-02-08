@@ -16,6 +16,8 @@ describe("Config Loader", () => {
   let originalLibrary: string | undefined;
   let originalPubmedEmail: string | undefined;
   let originalPubmedApiKey: string | undefined;
+  let originalUnpaywallEmail: string | undefined;
+  let originalCoreApiKey: string | undefined;
 
   beforeEach(() => {
     // Create a temporary test directory
@@ -27,6 +29,8 @@ describe("Config Loader", () => {
     originalLibrary = process.env.REFERENCE_MANAGER_LIBRARY;
     originalPubmedEmail = process.env.PUBMED_EMAIL;
     originalPubmedApiKey = process.env.PUBMED_API_KEY;
+    originalUnpaywallEmail = process.env.UNPAYWALL_EMAIL;
+    originalCoreApiKey = process.env.CORE_API_KEY;
   });
 
   afterEach(() => {
@@ -57,6 +61,18 @@ describe("Config Loader", () => {
       delete process.env.PUBMED_API_KEY;
     } else {
       process.env.PUBMED_API_KEY = originalPubmedApiKey;
+    }
+    if (originalUnpaywallEmail === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.UNPAYWALL_EMAIL;
+    } else {
+      process.env.UNPAYWALL_EMAIL = originalUnpaywallEmail;
+    }
+    if (originalCoreApiKey === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.CORE_API_KEY;
+    } else {
+      process.env.CORE_API_KEY = originalCoreApiKey;
     }
   });
 
@@ -867,6 +883,175 @@ debounce_ms = 0
 
       const config = loadConfig({ cwd: testDir });
       expect(config.cli.tui.debounceMs).toBe(0);
+    });
+  });
+
+  describe("Fulltext configuration", () => {
+    it("should use default fulltext settings when not specified", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferSources).toEqual(["pmc", "arxiv", "unpaywall", "core"]);
+      expect(config.fulltext.sources.unpaywallEmail).toBeUndefined();
+      expect(config.fulltext.sources.coreApiKey).toBeUndefined();
+    });
+
+    it("should load fulltext.prefer_sources from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+prefer_sources = ["unpaywall", "pmc"]
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
+    });
+
+    it("should load fulltext.sources.unpaywall_email from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+unpaywall_email = "user@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
+    });
+
+    it("should load fulltext.sources.core_api_key from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+core_api_key = "my-core-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.coreApiKey).toBe("my-core-key");
+    });
+
+    it("should load both fulltext sources from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+prefer_sources = ["pmc", "core"]
+
+[fulltext.sources]
+unpaywall_email = "user@example.com"
+core_api_key = "my-core-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferSources).toEqual(["pmc", "core"]);
+      expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
+      expect(config.fulltext.sources.coreApiKey).toBe("my-core-key");
+    });
+
+    it("should load fulltext.sources.unpaywallEmail from UNPAYWALL_EMAIL environment variable", () => {
+      process.env.UNPAYWALL_EMAIL = "env@example.com";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.unpaywallEmail).toBe("env@example.com");
+    });
+
+    it("should load fulltext.sources.coreApiKey from CORE_API_KEY environment variable", () => {
+      process.env.CORE_API_KEY = "env-core-key";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.coreApiKey).toBe("env-core-key");
+    });
+
+    it("should prioritize environment variables over config file for fulltext", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+unpaywall_email = "config@example.com"
+core_api_key = "config-core-key"
+`
+      );
+
+      process.env.UNPAYWALL_EMAIL = "env@example.com";
+      process.env.CORE_API_KEY = "env-core-key";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.unpaywallEmail).toBe("env@example.com");
+      expect(config.fulltext.sources.coreApiKey).toBe("env-core-key");
+    });
+
+    it("should use config file value when environment variable is not set", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+unpaywall_email = "config@example.com"
+core_api_key = "config-core-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.unpaywallEmail).toBe("config@example.com");
+      expect(config.fulltext.sources.coreApiKey).toBe("config-core-key");
+    });
+
+    it("should support camelCase field names for fulltext config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+preferSources = ["arxiv", "pmc"]
+
+[fulltext.sources]
+unpaywallEmail = "user@example.com"
+coreApiKey = "my-core-key"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferSources).toEqual(["arxiv", "pmc"]);
+      expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
+      expect(config.fulltext.sources.coreApiKey).toBe("my-core-key");
+    });
+
+    it("should merge partial fulltext config with defaults", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+unpaywall_email = "user@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
+      expect(config.fulltext.sources.coreApiKey).toBeUndefined();
+      expect(config.fulltext.preferSources).toEqual(["pmc", "arxiv", "unpaywall", "core"]);
+    });
+
+    it("should reject invalid prefer_sources values", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+prefer_sources = ["invalid_source"]
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
     });
   });
 });

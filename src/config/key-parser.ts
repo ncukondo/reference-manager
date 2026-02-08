@@ -80,6 +80,25 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
   { key: "pubmed.email", type: "string", description: "Email for PubMed API", optional: true },
   { key: "pubmed.api_key", type: "string", description: "API key for PubMed", optional: true },
 
+  // fulltext section
+  {
+    key: "fulltext.prefer_sources",
+    type: "string[]",
+    description: "Fulltext source priority order",
+  },
+  {
+    key: "fulltext.sources.unpaywall_email",
+    type: "string",
+    description: "Email for Unpaywall API",
+    optional: true,
+  },
+  {
+    key: "fulltext.sources.core_api_key",
+    type: "string",
+    description: "API key for CORE",
+    optional: true,
+  },
+
   // attachments section
   { key: "attachments.directory", type: "string", description: "Attachments storage directory" },
 

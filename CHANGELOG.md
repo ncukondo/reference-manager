@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Fulltext Retrieval Configuration**: Config and environment variable support for OA fulltext retrieval sources
+  - New config section: `[fulltext]` with `prefer_sources` and `[fulltext.sources]` for `unpaywall_email` / `core_api_key`
+  - Default source priority: `["pmc", "arxiv", "unpaywall", "core"]`
+  - Environment variable overrides: `UNPAYWALL_EMAIL`, `CORE_API_KEY`
+  - Config command integration: `ref config list-keys/get/set` works with fulltext keys
+
 - **Root Command Default TUI Search**: `ref` (no subcommand) now launches interactive TUI search
   - TTY: Launches TUI search (same as `ref search -t`)
   - Non-TTY (pipe, script): Shows help (previous behavior preserved)
