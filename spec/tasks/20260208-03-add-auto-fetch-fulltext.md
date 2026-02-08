@@ -30,15 +30,15 @@ Add `fulltext.autoFetchOnAdd` config option (default: `false`) so users can enab
 
 Add flag to the `add` command. When enabled, after each successful add, attempt fulltext fetch.
 
-- [ ] Write test: `src/cli/commands/add.test.ts` (add fetch-fulltext option tests)
-- [ ] Implement:
+- [x] Write test: `src/cli/commands/add.test.ts` (add fetch-fulltext option tests)
+- [x] Implement:
   - Add `--fetch-fulltext` option to `add` command in `src/cli/index.ts`
   - After successful `executeAdd`, for each added item:
     - Call fulltext fetch operation (non-blocking, best-effort)
     - Report success/failure per item on stderr
   - `--no-fetch-fulltext` explicitly disables (overrides config)
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Error Handling for Auto-Fetch
 

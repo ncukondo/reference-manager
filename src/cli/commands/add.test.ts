@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { FulltextConfig } from "../../config/schema.js";
 import type { AddReferencesResult } from "../../features/operations/add.js";
+import type { FulltextFetchResult } from "../../features/operations/fulltext/fetch.js";
 import type { ExecutionContext } from "../execution-context.js";
 import {
   type AddCommandOptions,
   type AddCommandResult,
+  type AutoFetchOptions,
+  autoFetchFulltext,
   executeAdd,
   formatAddOutput,
   getExitCode,
@@ -311,6 +315,162 @@ describe("add command", () => {
       };
 
       expect(getExitCode(result)).toBe(0);
+    });
+  });
+
+  describe("autoFetchFulltext", () => {
+    const mockFulltextFetch = vi.fn();
+
+    const createContext = (): ExecutionContext =>
+      ({
+        mode: "local",
+        type: "local",
+        library: {
+          import: vi.fn(),
+        },
+      }) as unknown as ExecutionContext;
+
+    const defaultFulltextConfig: FulltextConfig = {
+      preferSources: ["pmc", "arxiv", "unpaywall", "core"],
+      autoFetchOnAdd: false,
+      sources: {
+        unpaywallEmail: undefined,
+        coreApiKey: undefined,
+      },
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should call fulltextFetch for each added item", async () => {
+      const successResult: FulltextFetchResult = {
+        success: true,
+        referenceId: "Smith-2024",
+        source: "pmc",
+        attachedFiles: ["pdf"],
+      };
+      mockFulltextFetch.mockResolvedValue(successResult);
+
+      const addedItems = [
+        { id: "Smith-2024", title: "Test Paper 1" },
+        { id: "Jones-2023", title: "Test Paper 2" },
+      ];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      const results = await autoFetchFulltext(addedItems, createContext(), options);
+
+      expect(mockFulltextFetch).toHaveBeenCalledTimes(2);
+      expect(results).toHaveLength(2);
+    });
+
+    it("should pass correct options to fulltextFetch", async () => {
+      const successResult: FulltextFetchResult = {
+        success: true,
+        referenceId: "Smith-2024",
+        source: "pmc",
+        attachedFiles: ["pdf"],
+      };
+      mockFulltextFetch.mockResolvedValue(successResult);
+
+      const addedItems = [{ id: "Smith-2024", title: "Test Paper" }];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      await autoFetchFulltext(addedItems, createContext(), options);
+
+      expect(mockFulltextFetch).toHaveBeenCalledWith(expect.anything(), {
+        identifier: "Smith-2024",
+        idType: "id",
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+      });
+    });
+
+    it("should return empty array when no items added", async () => {
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      const results = await autoFetchFulltext([], createContext(), options);
+
+      expect(results).toEqual([]);
+      expect(mockFulltextFetch).not.toHaveBeenCalled();
+    });
+
+    it("should not throw when fulltextFetch fails", async () => {
+      mockFulltextFetch.mockResolvedValue({
+        success: false,
+        error: "No OA sources found for Smith-2024",
+      });
+
+      const addedItems = [{ id: "Smith-2024", title: "Test Paper" }];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      const results = await autoFetchFulltext(addedItems, createContext(), options);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]?.success).toBe(false);
+    });
+
+    it("should not throw when fulltextFetch throws an exception", async () => {
+      mockFulltextFetch.mockRejectedValue(new Error("Network error"));
+
+      const addedItems = [{ id: "Smith-2024", title: "Test Paper" }];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      const results = await autoFetchFulltext(addedItems, createContext(), options);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toContain("Network error");
+    });
+
+    it("should continue fetching remaining items when one fails", async () => {
+      mockFulltextFetch.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce({
+        success: true,
+        referenceId: "Jones-2023",
+        source: "arxiv",
+        attachedFiles: ["pdf"],
+      });
+
+      const addedItems = [
+        { id: "Smith-2024", title: "Test Paper 1" },
+        { id: "Jones-2023", title: "Test Paper 2" },
+      ];
+
+      const options: AutoFetchOptions = {
+        fulltextConfig: defaultFulltextConfig,
+        fulltextDirectory: "/tmp/attachments",
+        fulltextFetchFn: mockFulltextFetch,
+      };
+
+      const results = await autoFetchFulltext(addedItems, createContext(), options);
+
+      expect(results).toHaveLength(2);
+      expect(results[0]?.success).toBe(false);
+      expect(results[1]?.success).toBe(true);
     });
   });
 });

@@ -1,3 +1,5 @@
+import type { FulltextConfig } from "../../config/schema.js";
+import type { ILibrary } from "../../core/library-interface.js";
 import type { InputFormat } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
 import type {
@@ -6,6 +8,10 @@ import type {
   FailedItem,
   SkippedItem,
 } from "../../features/operations/add.js";
+import type {
+  FulltextFetchOptions,
+  FulltextFetchResult,
+} from "../../features/operations/fulltext/fetch.js";
 import type { ImportOptions } from "../../features/operations/library-operations.js";
 import type { ExecutionContext } from "../execution-context.js";
 
@@ -162,4 +168,56 @@ export function getExitCode(result: AddCommandResult): number {
 
   // All skipped or empty input is considered success
   return 0;
+}
+
+/**
+ * Type for the fulltext fetch function (for dependency injection in tests).
+ */
+type FulltextFetchFn = (
+  library: ILibrary,
+  options: FulltextFetchOptions
+) => Promise<FulltextFetchResult>;
+
+/**
+ * Options for auto-fetching fulltext after add.
+ */
+export interface AutoFetchOptions {
+  fulltextConfig: FulltextConfig;
+  fulltextDirectory: string;
+  fulltextFetchFn: FulltextFetchFn;
+}
+
+/**
+ * Auto-fetch fulltext for added items (best-effort).
+ * Failures are caught and returned as failed results, never thrown.
+ */
+export async function autoFetchFulltext(
+  addedItems: AddedItem[],
+  context: ExecutionContext,
+  options: AutoFetchOptions
+): Promise<FulltextFetchResult[]> {
+  if (addedItems.length === 0) {
+    return [];
+  }
+
+  const results: FulltextFetchResult[] = [];
+
+  for (const item of addedItems) {
+    try {
+      const result = await options.fulltextFetchFn(context.library, {
+        identifier: item.id,
+        idType: "id",
+        fulltextConfig: options.fulltextConfig,
+        fulltextDirectory: options.fulltextDirectory,
+      });
+      results.push(result);
+    } catch (error) {
+      results.push({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return results;
 }
