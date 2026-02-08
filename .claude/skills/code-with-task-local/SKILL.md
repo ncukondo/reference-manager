@@ -1,8 +1,15 @@
-spec/_index.mdを起点として必要事項を確認後、spec/tasks/内のタスク[prefix]-*$ARGUMENTS*.mdに取り組んで下さい。
+---
+name: code-with-task-local
+description: Implements a task locally (without worktree) following TDD with IPC status reporting. Use when working on a task in an existing branch.
+---
+
+# Task Implementation (Local): $ARGUMENTS
+
+spec/_index.mdを起点として必要事項を確認後、spec/tasks/内のタスク `[prefix]-*$ARGUMENTS*.md` に取り組みます。
 
 作業は $ARGUMENTS に結びつけられたブランチ(無ければ妥当な名前を考えて作成)で行います。
 
-## IPC ステータス報告
+## IPC Status Reporting
 
 worktreeルートの `.worker-status.json` にステータスを書き込む:
 
@@ -31,11 +38,11 @@ IPCEOF
 - 完了時: `completed` + `pr_number` 設定
 - エラー時: `failed` + `error` 設定
 
-## 作業手順
+## Workflow
 
 ステップ一つが完了する毎にタスクファイルを更新し、commit。次の作業に移る前に残りのcontextを確認し、次の作業の完了までにcompactが必要になってしまいそうならその時点で作業を中断して下さい。
 
-## 作業範囲について
+## Work Boundaries
 
 並列作業時のconflictを避けるため:
 

@@ -1,4 +1,17 @@
-PR #$ARGUMENTS をレビューして下さい。現在mainリポジトリにいます（worktree外）。
+---
+name: review-pr-local
+description: Reviews a PR from the main repository (without worktree). Use when reviewing PRs from the main branch.
+---
+
+# PR Review (Local): #$ARGUMENTS
+
+PR #$ARGUMENTS をレビューします。現在mainリポジトリにいます（worktree外）。
+
+## PR Context
+!`gh pr view $ARGUMENTS --json title,author,body,additions,deletions,changedFiles --jq '"Title: \(.title)\nAuthor: \(.author.login)\nChanges: +\(.additions)/-\(.deletions) in \(.changedFiles) files"' 2>/dev/null`
+
+## CI Status
+!`gh pr checks $ARGUMENTS 2>/dev/null`
 
 ## 手順
 

@@ -1,0 +1,8 @@
+---
+name: readme-update
+description: Reviews and updates README for researchers. Use when documentation needs revision.
+---
+
+# README Update
+
+このプロジェクトのreadmeの主なターゲットは、スクリプトや生成AIを駆使して研究効率を高めたいと考えている研究者です。spec/_index.mdを起点として必要事項を確認し、実装と記載の解離がないか、ドキュメントとして十分な情報を提供できているかについてreadmeを吟味します。吟味の結果に基づいて必要な更新を行います。readmeの更新が完了したら、README_ja.mdもreadme.mdに合わせて更新します。
