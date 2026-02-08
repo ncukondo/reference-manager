@@ -462,6 +462,97 @@ ER  - `;
       expect(result.stderr).toContain("Skipped 1 duplicate");
     });
   });
+
+  describe("--fetch-fulltext option", () => {
+    it("should add reference and attempt fulltext fetch with --fetch-fulltext", async () => {
+      const jsonData = JSON.stringify([
+        {
+          id: "NoDoi-2024",
+          type: "article-journal",
+          title: "Article Without DOI",
+        },
+      ]);
+
+      const result = await runCli(["add", "--library", libraryPath, "--fetch-fulltext"], jsonData);
+
+      // Add should succeed
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Added 1 reference");
+      // Fulltext fetch attempted but fails (no DOI/PMID on reference)
+      expect(result.stderr).toContain("Fulltext for");
+    });
+
+    it("should skip fulltext fetch with --no-fetch-fulltext", async () => {
+      const jsonData = JSON.stringify([
+        {
+          id: "NoDoi-2024b",
+          type: "article-journal",
+          title: "Another Article Without DOI",
+        },
+      ]);
+
+      const result = await runCli(
+        ["add", "--library", libraryPath, "--no-fetch-fulltext"],
+        jsonData
+      );
+
+      // Add should succeed
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Added 1 reference");
+      // No fulltext fetch attempted
+      expect(result.stderr).not.toContain("Fulltext for");
+    });
+
+    it("should skip fulltext fetch with --no-fetch-fulltext even when config enables it", async () => {
+      // Create config file that enables auto-fetch
+      const configPath = path.join(testDir, "config.toml");
+      await fs.writeFile(configPath, "[fulltext]\nauto_fetch_on_add = true\n", "utf-8");
+
+      const jsonData = JSON.stringify([
+        {
+          id: "NoDoi-2024c",
+          type: "article-journal",
+          title: "Yet Another Article",
+        },
+      ]);
+
+      const result = await runCli(
+        ["add", "--library", libraryPath, "--config", configPath, "--no-fetch-fulltext"],
+        jsonData
+      );
+
+      // Add should succeed
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Added 1 reference");
+      // No fulltext fetch attempted (CLI flag overrides config)
+      expect(result.stderr).not.toContain("Fulltext for");
+    });
+
+    it("should auto-fetch fulltext when config enables it", async () => {
+      // Create config file that enables auto-fetch
+      const configPath = path.join(testDir, "config.toml");
+      await fs.writeFile(configPath, "[fulltext]\nauto_fetch_on_add = true\n", "utf-8");
+
+      const jsonData = JSON.stringify([
+        {
+          id: "NoDoi-2024d",
+          type: "article-journal",
+          title: "Config Auto Fetch Article",
+        },
+      ]);
+
+      const result = await runCli(
+        ["add", "--library", libraryPath, "--config", configPath],
+        jsonData
+      );
+
+      // Add should succeed
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain("Added 1 reference");
+      // Fulltext fetch attempted via config
+      expect(result.stderr).toContain("Fulltext for");
+    });
+  });
 });
 
 const CLI_PATH = path.resolve("bin/cli.js");

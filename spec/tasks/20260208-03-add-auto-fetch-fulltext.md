@@ -20,42 +20,42 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Add `fulltext.autoFetchOnAdd` config option (default: `false`) so users can enable auto-fetch globally.
 
-- [ ] Write test: `src/config/schema.test.ts` (add autoFetchOnAdd validation)
-- [ ] Implement: Add to `fulltextConfigSchema` in `src/config/schema.ts`
-- [ ] Update loader: `src/config/loader.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/config/loader.test.ts` (add autoFetchOnAdd validation)
+- [x] Implement: Add to `fulltextConfigSchema` in `src/config/schema.ts`
+- [x] Update loader: `src/config/loader.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Add `--fetch-fulltext` / `--no-fetch-fulltext` CLI Option
 
 Add flag to the `add` command. When enabled, after each successful add, attempt fulltext fetch.
 
-- [ ] Write test: `src/cli/commands/add.test.ts` (add fetch-fulltext option tests)
-- [ ] Implement:
+- [x] Write test: `src/cli/commands/add.test.ts` (add fetch-fulltext option tests)
+- [x] Implement:
   - Add `--fetch-fulltext` option to `add` command in `src/cli/index.ts`
   - After successful `executeAdd`, for each added item:
     - Call fulltext fetch operation (non-blocking, best-effort)
     - Report success/failure per item on stderr
   - `--no-fetch-fulltext` explicitly disables (overrides config)
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Error Handling for Auto-Fetch
 
 Auto-fetch failures should NOT cause the add command to fail. The reference is already added; fulltext is best-effort.
 
-- [ ] Write test: Network failure during auto-fetch does not affect add exit code
-- [ ] Write test: No OA source found shows info message, exit code 0
-- [ ] Implement: Wrap fetch in try/catch, report on stderr
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: Network failure during auto-fetch does not affect add exit code
+- [x] Write test: No OA source found shows info message, exit code 0
+- [x] Implement: Wrap fetch in try/catch, report on stderr
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: E2E Tests
 
-- [ ] Write E2E test: `ref add <doi> --fetch-fulltext` adds reference and attempts fulltext
-- [ ] Write E2E test: `ref add <doi> --no-fetch-fulltext` skips fulltext even if config enabled
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write E2E test: `ref add <doi> --fetch-fulltext` adds reference and attempts fulltext
+- [x] Write E2E test: `ref add <doi> --no-fetch-fulltext` skips fulltext even if config enabled
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Manual Verification
 
@@ -67,9 +67,9 @@ Non-TTY tests:
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

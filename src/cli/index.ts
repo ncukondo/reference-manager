@@ -12,7 +12,7 @@ import {
   formatAddJsonOutput,
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
-import { executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
+import { autoFetchFulltext, executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
 import {
   handleAttachAddAction,
   handleAttachDetachAction,
@@ -31,6 +31,7 @@ import {
   getExportExitCode,
 } from "./commands/export.js";
 import {
+  formatFulltextFetchOutput,
   handleFulltextAttachAction,
   handleFulltextConvertAction,
   handleFulltextDetachAction,
@@ -311,6 +312,7 @@ interface AddCommandOptions extends CliOptions {
   verbose?: boolean;
   output?: "json" | "text";
   full?: boolean;
+  fetchFulltext?: boolean;
 }
 
 function buildAddOptions(
@@ -367,6 +369,47 @@ async function outputAddResultJson(
   process.stdout.write(`${JSON.stringify(jsonOutput)}\n`);
 }
 
+/**
+ * Determine whether auto-fetch fulltext should be performed.
+ * CLI flag takes precedence, then config setting.
+ */
+function shouldAutoFetch(cliFlag: boolean | undefined, configEnabled: boolean): boolean {
+  if (cliFlag !== undefined) {
+    return cliFlag;
+  }
+  return configEnabled;
+}
+
+/**
+ * Perform auto-fetch fulltext for added items and report results on stderr.
+ */
+async function performAutoFetch(
+  addedItems: Awaited<ReturnType<typeof executeAdd>>["added"],
+  context: ExecutionContext,
+  config: Awaited<ReturnType<typeof loadConfigWithOverrides>>
+): Promise<void> {
+  const { fulltextFetch } = await import("../features/operations/fulltext/fetch.js");
+  const fetchResults = await autoFetchFulltext(addedItems, context, {
+    fulltextConfig: config.fulltext,
+    fulltextDirectory: config.attachments.directory,
+    fulltextFetchFn: fulltextFetch,
+  });
+
+  for (const [i, fetchResult] of fetchResults.entries()) {
+    const addedItem = addedItems[i];
+    if (!addedItem) continue;
+    if (fetchResult.success) {
+      process.stderr.write(
+        `Fulltext for ${addedItem.id}: ${formatFulltextFetchOutput(fetchResult)}\n`
+      );
+    } else {
+      process.stderr.write(
+        `Fulltext for ${addedItem.id}: ${fetchResult.error ?? "unknown error"}\n`
+      );
+    }
+  }
+}
+
 async function handleAddAction(
   inputs: string[],
   options: AddCommandOptions,
@@ -399,6 +442,14 @@ async function handleAddAction(
       process.stderr.write(`${output}\n`);
     }
 
+    // Auto-fetch fulltext for added items (best-effort, does not affect exit code)
+    if (
+      result.added.length > 0 &&
+      shouldAutoFetch(options.fetchFulltext, config.fulltext.autoFetchOnAdd)
+    ) {
+      await performAutoFetch(result.added, context, config);
+    }
+
     setExitCode(getExitCode(result));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -422,6 +473,8 @@ function registerAddCommand(program: Command): void {
     .option("--verbose", "Show detailed error information")
     .option("-o, --output <format>", "Output format: json|text", "text")
     .option("--full", "Include full CSL-JSON data in JSON output")
+    .option("--fetch-fulltext", "Auto-fetch OA fulltext after adding")
+    .option("--no-fetch-fulltext", "Disable auto-fetch fulltext (overrides config)")
     .action(async (inputs: string[], options: AddCommandOptions) => {
       await handleAddAction(inputs, options, program);
     });

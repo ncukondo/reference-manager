@@ -1053,5 +1053,58 @@ prefer_sources = ["invalid_source"]
 
       expect(() => loadConfig({ cwd: testDir })).toThrow();
     });
+
+    it("should default autoFetchOnAdd to false", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.autoFetchOnAdd).toBe(false);
+    });
+
+    it("should load fulltext.auto_fetch_on_add from config (snake_case)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+auto_fetch_on_add = true
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.autoFetchOnAdd).toBe(true);
+    });
+
+    it("should load fulltext.autoFetchOnAdd from config (camelCase)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+autoFetchOnAdd = true
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.autoFetchOnAdd).toBe(true);
+    });
+
+    it("should merge autoFetchOnAdd with other fulltext settings", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+auto_fetch_on_add = true
+prefer_sources = ["unpaywall", "pmc"]
+
+[fulltext.sources]
+unpaywall_email = "user@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.autoFetchOnAdd).toBe(true);
+      expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
+      expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
+    });
   });
 });

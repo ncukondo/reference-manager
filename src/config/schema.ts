@@ -117,6 +117,7 @@ export const fulltextSourceSchema = z.enum(["pmc", "arxiv", "unpaywall", "core"]
  */
 export const fulltextConfigSchema = z.object({
   preferSources: z.array(fulltextSourceSchema),
+  autoFetchOnAdd: z.boolean(),
   sources: z.object({
     unpaywallEmail: z.string().optional(),
     coreApiKey: z.string().optional(),
@@ -210,6 +211,8 @@ export const partialConfigSchema = z
       .object({
         preferSources: z.array(fulltextSourceSchema).optional(),
         prefer_sources: z.array(fulltextSourceSchema).optional(),
+        autoFetchOnAdd: z.boolean().optional(),
+        auto_fetch_on_add: z.boolean().optional(),
         sources: z
           .object({
             unpaywallEmail: z.string().optional(),
@@ -479,6 +482,8 @@ function normalizeFulltextConfig(
   fulltext: Partial<{
     preferSources?: FulltextSource[];
     prefer_sources?: FulltextSource[];
+    autoFetchOnAdd?: boolean;
+    auto_fetch_on_add?: boolean;
     sources?: Partial<{
       unpaywallEmail?: string;
       unpaywall_email?: string;
@@ -492,6 +497,11 @@ function normalizeFulltextConfig(
   const preferSources = fulltext.preferSources ?? fulltext.prefer_sources;
   if (preferSources !== undefined) {
     normalized.preferSources = preferSources;
+  }
+
+  const autoFetchOnAdd = fulltext.autoFetchOnAdd ?? fulltext.auto_fetch_on_add;
+  if (autoFetchOnAdd !== undefined) {
+    normalized.autoFetchOnAdd = autoFetchOnAdd;
   }
 
   if (fulltext.sources !== undefined) {

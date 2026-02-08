@@ -228,6 +228,7 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
 
   return {
     preferSources: partial?.preferSources ?? defaultConfig.fulltext.preferSources,
+    autoFetchOnAdd: partial?.autoFetchOnAdd ?? defaultConfig.fulltext.autoFetchOnAdd,
     sources: {
       unpaywallEmail,
       coreApiKey,

@@ -87,6 +87,11 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "Fulltext source priority order",
   },
   {
+    key: "fulltext.auto_fetch_on_add",
+    type: "boolean",
+    description: "Auto-fetch fulltext when adding references",
+  },
+  {
     key: "fulltext.sources.unpaywall_email",
     type: "string",
     description: "Email for Unpaywall API",
