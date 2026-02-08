@@ -113,7 +113,7 @@ Integrate `@ncukondo/academic-fulltext` to enable automated OA fulltext discover
 
 - **Spec**: `spec/features/fulltext-retrieval.md`
 - **Scope**:
-  - [ ] **34.1**: Fulltext retrieval config (`fulltext.sources`, env vars) — `20260208-01-fulltext-retrieval-config.md`
+  - [x] **34.1**: Fulltext retrieval config (`fulltext.sources`, env vars) — `20260208-01-fulltext-retrieval-config.md`
   - [ ] **34.2**: `fulltext discover/fetch/convert` commands — `20260208-02-fulltext-retrieval-commands.md`
   - [ ] **34.3**: `add --fetch-fulltext` auto-fetch option — `20260208-03-add-auto-fetch-fulltext.md`
 
