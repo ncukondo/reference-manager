@@ -82,40 +82,14 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 30c**: TUI Action Menu Enhancement (dynamic actions, output submenu, side-effect actions, --config fix)
 - **Phase 31**: Clipboard Support (clipboard auto-copy, --clipboard/--no-clipboard, env var, config, win32 support)
 - **Phase 32a**: Root Command Default TUI Search (`ref` → TUI search on TTY, help on non-TTY)
+- **Phase 33**: Sync Interactive Role Assignment (context-based role suggestion, interactive prompt, rename support)
+- **Phase 34**: Fulltext Retrieval (OA Discovery & Download, `fulltext discover/fetch/convert`, `add --fetch-fulltext`)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
-## Current Phase
-
-### Phase 33: Sync Interactive Role Assignment
-
-Improve `ref attach sync` to handle non-standard filenames (journal-downloaded PDFs, etc.) by adding context-based inference, interactive role assignment, and file rename. `--yes` applies suggestions and renames automatically; `--no-rename` opts out of renaming.
-
-- **Task**: `spec/tasks/20260202-01-sync-interactive-role-assignment.md`
-- **Scope**:
-  - [x] **33.1**: Context-based role suggestion (`suggestRoleFromContext`: `.pdf`→fulltext/supplement, `.md`/`.txt`→notes)
-  - [x] **33.2**: `roleOverrides` support in sync operation
-  - [x] **33.3**: `readChoice` CLI helper (numbered list prompt)
-  - [x] **33.4**: Interactive role assignment in `attach sync` (TTY prompt + non-TTY suggestion preview)
-  - [x] **33.5**: Interactive role assignment in `attach open` TTY mode
-  - [x] **33.6**: Rename support (`--yes` applies rename, `--no-rename` opts out)
-  - [x] **33.7**: E2E tests and manual verification
-
----
-
 ## Next Steps
-
-### Phase 34: Fulltext Retrieval (OA Discovery & Download)
-
-Integrate `@ncukondo/academic-fulltext` to enable automated OA fulltext discovery, download, and conversion. Add auto-fetch option to `ref add`.
-
-- **Spec**: `spec/features/fulltext-retrieval.md`
-- **Scope**:
-  - [x] **34.1**: Fulltext retrieval config (`fulltext.sources`, env vars) — `20260208-01-fulltext-retrieval-config.md`
-  - [x] **34.2**: `fulltext discover/fetch/convert` commands — `20260208-02-fulltext-retrieval-commands.md`
-  - [ ] **34.3**: `add --fetch-fulltext` auto-fetch option — `20260208-03-add-auto-fetch-fulltext.md`
 
 ### MCPB Registry Submission
 
