@@ -30,19 +30,19 @@ Add `fulltextConfigSchema` to `configSchema` with:
 - `sources.unpaywallEmail`: `z.string().optional()`
 - `sources.coreApiKey`: `z.string().optional()`
 
-- [ ] Write test: `src/config/schema.test.ts` (add cases for fulltext config validation)
-- [ ] Implement: Add schema to `src/config/schema.ts`
-- [ ] Verify Green: `npm run test:unit -- schema.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/config/schema.test.ts` (add cases for fulltext config validation)
+- [x] Implement: Add schema to `src/config/schema.ts`
+- [x] Verify Green: `npm run test:unit -- schema.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Config Loader - Add `fillFulltextDefaults()`
 
 Add loader logic following `fillPubmedDefaults()` pattern. Environment variables take priority over config file values.
 
-- [ ] Write test: `src/config/loader.test.ts` (add cases for fulltext config loading, env var priority)
-- [ ] Implement: Add `fillFulltextDefaults()` to `src/config/loader.ts`
-- [ ] Verify Green: `npm run test:unit -- loader.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/config/loader.test.ts` (add cases for fulltext config loading, env var priority)
+- [x] Implement: Add `fillFulltextDefaults()` to `src/config/loader.ts`
+- [x] Verify Green: `npm run test:unit -- loader.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Environment Variable Overrides
 
@@ -50,25 +50,25 @@ Add to `ENV_OVERRIDE_MAP`:
 - `UNPAYWALL_EMAIL` -> `fulltext.sources.unpaywall_email`
 - `CORE_API_KEY` -> `fulltext.sources.core_api_key`
 
-- [ ] Write test: `src/config/env-override.test.ts` (add cases for new env vars)
-- [ ] Implement: Update `src/config/env-override.ts`
-- [ ] Verify Green: `npm run test:unit -- env-override.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/config/env-override.test.ts` (add cases for new env vars)
+- [x] Implement: Update `src/config/env-override.ts`
+- [x] Verify Green: `npm run test:unit -- env-override.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Config Command Integration
 
 Ensure `ref config show/get/set` works with the new fulltext keys. Add to config-command's key list if needed.
 
-- [ ] Verify: `ref config list-keys` includes fulltext keys
-- [ ] Verify: `ref config get fulltext.sources.unpaywall_email` works
-- [ ] Verify: `ref config set fulltext.sources.unpaywall_email "user@example.com"` works
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify: `ref config list-keys` includes fulltext keys
+- [x] Verify: `ref config get fulltext.sources.unpaywall_email` works
+- [x] Verify: `ref config set fulltext.sources.unpaywall_email "user@example.com"` works
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

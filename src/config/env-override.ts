@@ -13,6 +13,8 @@ export const ENV_OVERRIDE_MAP: Record<string, string> = {
   REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "cli.tui.clipboard_auto_copy",
   PUBMED_EMAIL: "pubmed.email",
   PUBMED_API_KEY: "pubmed.api_key",
+  UNPAYWALL_EMAIL: "fulltext.sources.unpaywall_email",
+  CORE_API_KEY: "fulltext.sources.core_api_key",
 };
 
 /**

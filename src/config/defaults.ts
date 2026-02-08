@@ -86,6 +86,13 @@ export const defaultConfig: Config = {
     email: undefined,
     apiKey: undefined,
   },
+  fulltext: {
+    preferSources: ["pmc", "arxiv", "unpaywall", "core"],
+    sources: {
+      unpaywallEmail: undefined,
+      coreApiKey: undefined,
+    },
+  },
   attachments: {
     directory: getDefaultAttachmentsDirectory(),
   },

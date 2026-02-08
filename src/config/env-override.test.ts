@@ -55,6 +55,16 @@ describe("env-override", () => {
       expect(getEnvOverride("mcp.default_limit")).toBe("50");
     });
 
+    it("returns value when UNPAYWALL_EMAIL is set", () => {
+      process.env.UNPAYWALL_EMAIL = "test@example.com";
+      expect(getEnvOverride("fulltext.sources.unpaywall_email")).toBe("test@example.com");
+    });
+
+    it("returns value when CORE_API_KEY is set", () => {
+      process.env.CORE_API_KEY = "my-core-key";
+      expect(getEnvOverride("fulltext.sources.core_api_key")).toBe("my-core-key");
+    });
+
     it("returns null when no override is set", () => {
       expect(getEnvOverride("library")).toBeNull();
       expect(getEnvOverride("pubmed.email")).toBeNull();

@@ -108,6 +108,22 @@ export const pubmedConfigSchema = z.object({
 });
 
 /**
+ * Fulltext source enum schema
+ */
+export const fulltextSourceSchema = z.enum(["pmc", "arxiv", "unpaywall", "core"]);
+
+/**
+ * Fulltext retrieval configuration schema
+ */
+export const fulltextConfigSchema = z.object({
+  preferSources: z.array(fulltextSourceSchema),
+  sources: z.object({
+    unpaywallEmail: z.string().optional(),
+    coreApiKey: z.string().optional(),
+  }),
+});
+
+/**
  * Attachments storage configuration schema
  */
 export const attachmentsConfigSchema = z.object({
@@ -125,6 +141,7 @@ export const configSchema = z.object({
   server: serverConfigSchema,
   citation: citationConfigSchema,
   pubmed: pubmedConfigSchema,
+  fulltext: fulltextConfigSchema,
   attachments: attachmentsConfigSchema,
   cli: cliConfigSchema,
   mcp: mcpConfigSchema,
@@ -189,6 +206,20 @@ export const partialConfigSchema = z
         api_key: z.string().optional(),
       })
       .optional(),
+    fulltext: z
+      .object({
+        preferSources: z.array(fulltextSourceSchema).optional(),
+        prefer_sources: z.array(fulltextSourceSchema).optional(),
+        sources: z
+          .object({
+            unpaywallEmail: z.string().optional(),
+            unpaywall_email: z.string().optional(),
+            coreApiKey: z.string().optional(),
+            core_api_key: z.string().optional(),
+          })
+          .optional(),
+      })
+      .optional(),
     attachments: z
       .object({
         directory: z.string().min(1).optional(),
@@ -237,6 +268,8 @@ export type CitationFormat = z.infer<typeof citationFormatSchema>;
 export type CitationKeyFormat = z.infer<typeof citationKeyFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
+export type FulltextSource = z.infer<typeof fulltextSourceSchema>;
+export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type TuiConfig = z.infer<typeof tuiConfigSchema>;
 export type EditConfigFormat = z.infer<typeof editFormatSchema>;
@@ -257,6 +290,9 @@ export type DeepPartialConfig = {
   server?: Partial<ServerConfig>;
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
+  fulltext?: Partial<Omit<FulltextConfig, "sources">> & {
+    sources?: Partial<FulltextConfig["sources"]>;
+  };
   attachments?: Partial<AttachmentsConfig>;
   cli?: Partial<Omit<CliConfig, "tui" | "edit">> & {
     tui?: Partial<TuiConfig>;
@@ -437,6 +473,49 @@ function normalizePubmedConfig(
 }
 
 /**
+ * Normalize fulltext configuration from snake_case to camelCase
+ */
+function normalizeFulltextConfig(
+  fulltext: Partial<{
+    preferSources?: FulltextSource[];
+    prefer_sources?: FulltextSource[];
+    sources?: Partial<{
+      unpaywallEmail?: string;
+      unpaywall_email?: string;
+      coreApiKey?: string;
+      core_api_key?: string;
+    }>;
+  }>
+): DeepPartialConfig["fulltext"] | undefined {
+  const normalized: NonNullable<DeepPartialConfig["fulltext"]> = {};
+
+  const preferSources = fulltext.preferSources ?? fulltext.prefer_sources;
+  if (preferSources !== undefined) {
+    normalized.preferSources = preferSources;
+  }
+
+  if (fulltext.sources !== undefined) {
+    const sources: Partial<FulltextConfig["sources"]> = {};
+
+    const unpaywallEmail = fulltext.sources.unpaywallEmail ?? fulltext.sources.unpaywall_email;
+    if (unpaywallEmail !== undefined) {
+      sources.unpaywallEmail = unpaywallEmail;
+    }
+
+    const coreApiKey = fulltext.sources.coreApiKey ?? fulltext.sources.core_api_key;
+    if (coreApiKey !== undefined) {
+      sources.coreApiKey = coreApiKey;
+    }
+
+    if (Object.keys(sources).length > 0) {
+      normalized.sources = sources;
+    }
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Section normalizers mapping
  */
 const sectionNormalizers = {
@@ -445,6 +524,7 @@ const sectionNormalizers = {
   server: normalizeServerConfig,
   citation: normalizeCitationConfig,
   pubmed: normalizePubmedConfig,
+  fulltext: normalizeFulltextConfig,
   attachments: normalizeAttachmentsConfig,
   cli: normalizeCliConfig,
   mcp: normalizeMcpConfig,
