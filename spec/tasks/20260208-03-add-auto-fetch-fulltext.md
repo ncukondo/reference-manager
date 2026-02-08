@@ -52,10 +52,10 @@ Auto-fetch failures should NOT cause the add command to fail. The reference is a
 
 ### Step 4: E2E Tests
 
-- [ ] Write E2E test: `ref add <doi> --fetch-fulltext` adds reference and attempts fulltext
-- [ ] Write E2E test: `ref add <doi> --no-fetch-fulltext` skips fulltext even if config enabled
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write E2E test: `ref add <doi> --fetch-fulltext` adds reference and attempts fulltext
+- [x] Write E2E test: `ref add <doi> --no-fetch-fulltext` skips fulltext even if config enabled
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Manual Verification
 
@@ -67,9 +67,9 @@ Non-TTY tests:
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

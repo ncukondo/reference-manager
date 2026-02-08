@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Auto-Fetch Fulltext on Add**: Automatically discover and download OA fulltext when adding references
+  - New CLI option: `--fetch-fulltext` / `--no-fetch-fulltext` on `ref add`
+  - New config option: `fulltext.auto_fetch_on_add` (default: `false`) to enable auto-fetch globally
+  - CLI flag takes precedence over config setting
+  - Best-effort: fetch failures do not affect the add command's exit code
+  - Reports per-item fetch results on stderr
+
 - **Fulltext Retrieval Configuration**: Config and environment variable support for OA fulltext retrieval sources
   - New config section: `[fulltext]` with `prefer_sources` and `[fulltext.sources]` for `unpaywall_email` / `core_api_key`
   - Default source priority: `["pmc", "arxiv", "unpaywall", "core"]`
