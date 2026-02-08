@@ -88,6 +88,7 @@ export const defaultConfig: Config = {
   },
   fulltext: {
     preferSources: ["pmc", "arxiv", "unpaywall", "core"],
+    autoFetchOnAdd: false,
     sources: {
       unpaywallEmail: undefined,
       coreApiKey: undefined,

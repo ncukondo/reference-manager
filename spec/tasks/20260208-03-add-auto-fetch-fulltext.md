@@ -20,11 +20,11 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Add `fulltext.autoFetchOnAdd` config option (default: `false`) so users can enable auto-fetch globally.
 
-- [ ] Write test: `src/config/schema.test.ts` (add autoFetchOnAdd validation)
-- [ ] Implement: Add to `fulltextConfigSchema` in `src/config/schema.ts`
-- [ ] Update loader: `src/config/loader.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/config/loader.test.ts` (add autoFetchOnAdd validation)
+- [x] Implement: Add to `fulltextConfigSchema` in `src/config/schema.ts`
+- [x] Update loader: `src/config/loader.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Add `--fetch-fulltext` / `--no-fetch-fulltext` CLI Option
 
