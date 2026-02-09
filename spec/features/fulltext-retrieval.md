@@ -127,6 +127,9 @@ New section in config file:
 # Source priority order (first available wins)
 prefer_sources = ["pmc", "arxiv", "unpaywall", "core"]
 
+# Preferred fulltext type for open/get (pdf or markdown)
+preferred_type = "markdown"
+
 [fulltext.sources]
 # Required for Unpaywall API (polite pool)
 unpaywall_email = "user@example.com"
@@ -138,6 +141,7 @@ core_api_key = ""
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `fulltext.prefer_sources` | `["pmc", "arxiv", "unpaywall", "core"]` | Source priority order |
+| `fulltext.preferred_type` | (none = pdf priority) | Preferred fulltext type for open/get (`pdf` or `markdown`) |
 | `fulltext.sources.unpaywall_email` | (none) | Email for Unpaywall API |
 | `fulltext.sources.core_api_key` | (none) | API key for CORE |
 
@@ -149,6 +153,7 @@ Following the same pattern as `PUBMED_EMAIL` / `PUBMED_API_KEY`:
 |---------------------|------------|-------------|
 | `UNPAYWALL_EMAIL` | `fulltext.sources.unpaywall_email` | Email for Unpaywall API (polite pool) |
 | `CORE_API_KEY` | `fulltext.sources.core_api_key` | API key for CORE repository |
+| `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` | `fulltext.preferred_type` | Preferred fulltext type (`pdf` or `markdown`) |
 
 Environment variables take priority over config file values. These must be added to `ENV_OVERRIDE_MAP` in `src/config/env-override.ts`.
 

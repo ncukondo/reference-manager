@@ -92,6 +92,13 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Next Steps
 
+### Phase 36: Fulltext Preferred Type
+
+Configurable preferred fulltext type (pdf/markdown) with 3-layer priority:
+config file < environment variable < CLI option.
+
+- Task: `spec/tasks/20260209-02-fulltext-preferred-type.md`
+
 ### MCPB Registry Submission
 
 Submit to Anthropic's official extension registry when ready.

@@ -175,23 +175,44 @@ ref fulltext get <ref-id>                    # Both paths
 ref fulltext get <ref-id> --pdf              # PDF path only
 ref fulltext get <ref-id> --markdown         # Markdown path only
 ref fulltext get <ref-id> --pdf --stdout     # Output content
+ref fulltext get <ref-id> --prefer markdown  # Preferred type path first
 ```
+
+**Options:**
+```
+--pdf              PDF path only
+--markdown         Markdown path only
+--stdout           Output content to stdout
+--prefer <type>    Preferred fulltext type (pdf or markdown); overrides config
+```
+
+When `--prefer` is specified and type is not explicitly selected (`--pdf`/`--markdown`), the preferred type path is listed first. Both paths are still returned.
 
 #### `fulltext open`
 
 ```bash
-ref fulltext open <ref-id>                   # Open PDF (or Markdown if no PDF)
+ref fulltext open <ref-id>                   # Open preferred type (default: PDF)
 ref fulltext open <ref-id> --pdf             # Open PDF
 ref fulltext open <ref-id> --markdown        # Open Markdown
+ref fulltext open <ref-id> --prefer markdown # Open Markdown if available
+```
+
+**Options:**
+```
+--pdf              Open PDF explicitly
+--markdown         Open Markdown explicitly
+--prefer <type>    Preferred fulltext type (pdf or markdown); overrides config
 ```
 
 **File Priority (when format not specified):**
+
+The priority is determined by the `--prefer` CLI option > `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` env var > `fulltext.preferred_type` config > default (pdf).
 
 | State | Behavior |
 |-------|----------|
 | PDF only | Open PDF |
 | Markdown only | Open Markdown |
-| Both exist | Open PDF |
+| Both exist | Open preferred type (default: PDF) |
 | Neither exists | Error |
 
 #### `fulltext detach`
