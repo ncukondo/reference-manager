@@ -1,7 +1,10 @@
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { Attachments } from "../attachments/types.js";
 import { getExtension } from "../attachments/types.js";
-import { FULLTEXT_ROLE } from "../operations/fulltext-adapter/fulltext-adapter.js";
+import {
+  extensionToFormat,
+  findFulltextFiles,
+} from "../operations/fulltext-adapter/fulltext-adapter.js";
 
 /**
  * Build a resource indicator string showing available resources for a reference.
@@ -12,24 +15,23 @@ export function buildResourceIndicators(item: CslItem): string {
   const icons: string[] = [];
 
   const attachments = item.custom?.attachments as Attachments | undefined;
-  const files = attachments?.files ?? [];
+  const fulltextFiles = findFulltextFiles(attachments);
 
   // 📄 Fulltext PDF
-  const hasFulltextPdf = files.some(
-    (f) => f.role === FULLTEXT_ROLE && getExtension(f.filename) === "pdf"
+  const hasFulltextPdf = fulltextFiles.some(
+    (f) => extensionToFormat(getExtension(f.filename)) === "pdf"
   );
   if (hasFulltextPdf) icons.push("📄");
 
   // 📝 Fulltext Markdown
-  const hasFulltextMd = files.some(
-    (f) =>
-      f.role === FULLTEXT_ROLE &&
-      (getExtension(f.filename) === "md" || getExtension(f.filename) === "markdown")
+  const hasFulltextMd = fulltextFiles.some(
+    (f) => extensionToFormat(getExtension(f.filename)) === "markdown"
   );
   if (hasFulltextMd) icons.push("📝");
 
   // 📎 Other (non-fulltext) attachments
-  const hasOtherAttachments = files.some((f) => f.role !== FULLTEXT_ROLE);
+  const allFiles = attachments?.files ?? [];
+  const hasOtherAttachments = allFiles.length > fulltextFiles.length;
   if (hasOtherAttachments) icons.push("📎");
 
   // 🔗 URL
