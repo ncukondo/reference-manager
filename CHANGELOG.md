@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Fulltext Preferred Type**: Configurable preferred fulltext type (pdf/markdown) for `fulltext open` and `fulltext get`
+  - New config option: `fulltext.preferred_type` (`"pdf"` or `"markdown"`, default: none → PDF)
+  - Environment variable: `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE`
+  - CLI option: `--prefer <type>` on `fulltext open` and `fulltext get` commands
+  - 3-layer priority: config file < environment variable < CLI option
+  - MCP tools pass config-level preferred type through to operations
+
 - **Resource Indicators**: Emoji icons in reference displays showing available resources at a glance
   - Pretty format: indicator line (📄📝📎🔗🏷) at end of each reference entry
   - TUI interactive: indicator prefix on meta line in search results
