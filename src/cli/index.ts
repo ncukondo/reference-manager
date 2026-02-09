@@ -802,6 +802,7 @@ function registerFulltextCommand(program: Command): void {
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--pdf", "Get PDF file only")
     .option("--markdown", "Get Markdown file only")
+    .option("--prefer <type>", "Preferred fulltext type (pdf or markdown)")
     .option("--stdout", "Output file content to stdout")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
@@ -827,6 +828,7 @@ function registerFulltextCommand(program: Command): void {
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--pdf", "Open PDF file")
     .option("--markdown", "Open Markdown file")
+    .option("--prefer <type>", "Preferred fulltext type (pdf or markdown)")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextOpenAction(identifier, options, program.opts());

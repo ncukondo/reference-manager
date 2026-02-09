@@ -61,14 +61,14 @@ Update `fulltextOpen` to use `preferred_type` from config when type is not speci
 
 Add `--prefer <type>` option to `fulltext open` and `fulltext get` CLI commands, passing it through to operations.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` — add tests for `--prefer` option:
+- [x] Write test: `src/cli/commands/fulltext.test.ts` — add tests for `--prefer` option:
   - `fulltext open <id> --prefer markdown` passes `preferredType: "markdown"` to operation
   - `fulltext get <id> --prefer pdf` passes `preferredType: "pdf"` to operation
   - Invalid `--prefer` value shows error
   - When `--prefer` not specified, uses config value
-- [ ] Implement: Update `src/cli/commands/fulltext.ts` — add `--prefer` option to open and get subcommands
-- [ ] Verify Green: `npm run test:unit -- fulltext.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Update `src/cli/commands/fulltext.ts` — add `--prefer` option to open and get subcommands
+- [x] Verify Green: `npm run test:unit -- fulltext.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: MCP Layer (fulltext.ts)
 
