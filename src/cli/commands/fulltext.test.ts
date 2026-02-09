@@ -887,6 +887,40 @@ describe("fulltext command", () => {
     });
   });
 
+  describe("--prefer option validation", () => {
+    it("should reject invalid --prefer values for get command", { timeout: 15000 }, async () => {
+      const { createProgram } = await import("../index.js");
+      const program = createProgram();
+      program.exitOverride();
+      const errors: string[] = [];
+      program.configureOutput({
+        writeOut: () => {},
+        writeErr: (str: string) => errors.push(str),
+      });
+
+      await expect(
+        program.parseAsync(["node", "test", "fulltext", "get", "Smith-2024", "--prefer", "html"])
+      ).rejects.toThrow();
+      expect(errors.some((e) => e.includes("html"))).toBe(true);
+    });
+
+    it("should reject invalid --prefer values for open command", { timeout: 15000 }, async () => {
+      const { createProgram } = await import("../index.js");
+      const program = createProgram();
+      program.exitOverride();
+      const errors: string[] = [];
+      program.configureOutput({
+        writeOut: () => {},
+        writeErr: (str: string) => errors.push(str),
+      });
+
+      await expect(
+        program.parseAsync(["node", "test", "fulltext", "open", "Smith-2024", "--prefer", "html"])
+      ).rejects.toThrow();
+      expect(errors.some((e) => e.includes("html"))).toBe(true);
+    });
+  });
+
   describe("interactive fulltext commands", () => {
     // Note: Interactive fulltext functionality is tested via E2E tests
     // because it requires mocking multiple interactive modules

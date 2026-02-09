@@ -2,7 +2,7 @@
  * CLI Entry Point
  */
 
-import { Command } from "commander";
+import { Command, Option } from "commander";
 // Import package.json for version and description
 import packageJson from "../../package.json" with { type: "json" };
 import type { CslItem } from "../core/csl-json/types.js";
@@ -802,7 +802,9 @@ function registerFulltextCommand(program: Command): void {
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--pdf", "Get PDF file only")
     .option("--markdown", "Get Markdown file only")
-    .option("--prefer <type>", "Preferred fulltext type (pdf or markdown)")
+    .addOption(
+      new Option("--prefer <type>", "Preferred fulltext type").choices(["pdf", "markdown"])
+    )
     .option("--stdout", "Output file content to stdout")
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
@@ -828,7 +830,9 @@ function registerFulltextCommand(program: Command): void {
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--pdf", "Open PDF file")
     .option("--markdown", "Open Markdown file")
-    .option("--prefer <type>", "Preferred fulltext type (pdf or markdown)")
+    .addOption(
+      new Option("--prefer <type>", "Preferred fulltext type").choices(["pdf", "markdown"])
+    )
     .option("--uuid", "Interpret identifier as UUID")
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextOpenAction(identifier, options, program.opts());

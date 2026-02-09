@@ -536,7 +536,7 @@ export async function handleFulltextAttachAction(
 export interface FulltextGetActionOptions {
   pdf?: boolean;
   markdown?: boolean;
-  prefer?: string;
+  prefer?: "pdf" | "markdown";
   stdout?: boolean;
   uuid?: boolean;
 }
@@ -599,9 +599,7 @@ export async function handleFulltextGetAction(
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.stdout && { stdout: options.stdout }),
       ...(options.uuid && { idType: "uuid" as const }),
-      ...((preferValue === "pdf" || preferValue === "markdown") && {
-        preferredType: preferValue,
-      }),
+      ...(preferValue && { preferredType: preferValue }),
     };
 
     const result = await executeFulltextGet(getOptions, context);
@@ -682,7 +680,7 @@ export async function handleFulltextDetachAction(
 export interface FulltextOpenActionOptions {
   pdf?: boolean;
   markdown?: boolean;
-  prefer?: string;
+  prefer?: "pdf" | "markdown";
   uuid?: boolean;
 }
 
@@ -726,9 +724,7 @@ export async function handleFulltextOpenAction(
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.uuid && { idType: "uuid" as const }),
-      ...((preferValue === "pdf" || preferValue === "markdown") && {
-        preferredType: preferValue,
-      }),
+      ...(preferValue && { preferredType: preferValue }),
     };
 
     const result = await executeFulltextOpen(openOptions, context);
