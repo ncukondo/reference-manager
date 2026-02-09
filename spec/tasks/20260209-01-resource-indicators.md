@@ -60,12 +60,12 @@ Add indicator line as the last line of `formatSingleReference()` in `pretty.ts`.
 
 Prepend indicator string to the meta line in `toChoice()` in `runSearchFlow.ts`.
 
-- [ ] Write test: `src/features/interactive/apps/runSearchFlow.test.ts` (add cases for indicator prefix)
+- [x] Write test: `src/features/interactive/apps/runSearchFlow.test.ts` (add cases for indicator prefix)
   - Choice with indicators → meta starts with emoji string followed by space
   - Choice without indicators → meta unchanged
-- [ ] Implement: Call `buildResourceIndicators()` in `toChoice()`, prepend to `meta` if non-empty
-- [ ] Verify Green: `npm run test:unit -- runSearchFlow.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Call `buildResourceIndicators()` in `toChoice()`, prepend to `meta` if non-empty
+- [x] Verify Green: `npm run test:unit -- runSearchFlow.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 
