@@ -22,7 +22,7 @@ import { SearchFlowApp } from "./SearchFlowApp.js";
 export interface SearchFlowConfig {
   /** Maximum number of results to display */
   limit: number;
-  /** Debounce delay in milliseconds (not used, kept for API compatibility) */
+  /** Debounce delay in milliseconds for search filtering */
   debounceMs: number;
   /** Default citation key format */
   defaultKeyFormat?: CitationKeyFormat;
@@ -155,8 +155,9 @@ export async function runSearchFlow(
   searchFn: SearchFunction,
   config: SearchFlowConfig
 ): Promise<ActionMenuResult> {
-  // Convert references to choices
+  // Convert references to choices and build lookup map
   const choices = allReferences.map(toChoice);
+  const choiceMap = new Map(choices.map((c) => [c.id, c]));
 
   // Calculate effective visible count
   const effectiveLimit = calculateEffectiveLimit(config.limit);
@@ -166,7 +167,10 @@ export async function runSearchFlow(
     if (!query.trim()) return choices;
 
     const results = searchFn(query);
-    return results.map((r) => toChoice(r.reference));
+    return results.flatMap((r) => {
+      const choice = choiceMap.get(r.reference.id);
+      return choice ? [choice] : [];
+    });
   };
 
   // Default sort option
@@ -201,6 +205,7 @@ export async function runSearchFlow(
         defaultSort,
         defaultKeyFormat: config.defaultKeyFormat ?? "pandoc",
         defaultStyle: config.defaultStyle ?? "apa",
+        debounceMs: config.debounceMs,
         onComplete: handleComplete,
         onCancel: handleCancel,
       })

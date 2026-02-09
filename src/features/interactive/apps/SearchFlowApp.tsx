@@ -48,6 +48,8 @@ export interface SearchFlowAppProps {
   defaultKeyFormat: CitationKeyFormat;
   /** Default citation style */
   defaultStyle: string;
+  /** Debounce delay in milliseconds for search filtering */
+  debounceMs?: number;
   /** Callback when flow completes */
   onComplete: (result: ActionMenuResult) => void;
   /** Callback when flow is cancelled */
@@ -66,6 +68,7 @@ export function SearchFlowApp({
   defaultSort,
   defaultKeyFormat,
   defaultStyle,
+  debounceMs,
   onComplete,
   onCancel,
 }: SearchFlowAppProps): React.ReactElement {
@@ -194,6 +197,7 @@ export function SearchFlowApp({
       header: "Search references",
       placeholder: "Type to search...",
       defaultSort,
+      ...(debounceMs !== undefined && { debounceMs }),
     });
   }
 

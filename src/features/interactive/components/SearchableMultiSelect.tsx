@@ -7,7 +7,7 @@
 
 import { Box, Text, useFocus, useInput, useStdout } from "ink";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import cliTruncate from "cli-truncate";
 import { ITEM_HEIGHT, RESERVED_LINES } from "./layout.js";
@@ -67,6 +67,8 @@ export interface SearchableMultiSelectProps<T> {
   footer?: string;
   /** Default sort option */
   defaultSort?: SortOption;
+  /** Debounce delay in milliseconds for search filtering */
+  debounceMs?: number;
 }
 
 /** All available sort options */
@@ -421,8 +423,11 @@ export function SearchableMultiSelect<T>({
   header,
   footer,
   defaultSort = "updated-desc",
+  debounceMs = 0,
 }: SearchableMultiSelectProps<T>): React.ReactElement {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusIndex, setFocusIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
@@ -444,13 +449,27 @@ export function SearchableMultiSelect<T>({
   );
   const visibleCount = visibleCountProp ?? calculatedVisibleCount;
 
-  // Filter choices based on query
-  const filteredChoices = useMemo(() => filterFn(query, choices), [query, choices, filterFn]);
+  // Debounce query updates for expensive filtering
+  useEffect(() => {
+    if (debounceMs <= 0) {
+      setDebouncedQuery(query);
+      return;
+    }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedQuery(query), debounceMs);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, debounceMs]);
+
+  // Filter choices based on debounced query
+  const filteredChoices = useMemo(
+    () => filterFn(debouncedQuery, choices),
+    [debouncedQuery, choices, filterFn]
+  );
 
   // Get available sort options (relevance only when query exists)
   const availableSortOptions = useMemo(
-    () => SORT_OPTIONS.filter((opt) => !opt.requiresQuery || query.trim().length > 0),
-    [query]
+    () => SORT_OPTIONS.filter((opt) => !opt.requiresQuery || debouncedQuery.trim().length > 0),
+    [debouncedQuery]
   );
 
   // Apply sorting (skip for relevance as filter function handles it)
@@ -461,12 +480,12 @@ export function SearchableMultiSelect<T>({
 
   const maxIndex = sortedChoices.length - 1;
 
-  // Reset focus and scroll when query changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on query change
+  // Reset focus and scroll when filtered results change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on debounced query change
   useEffect(() => {
     setFocusIndex(0);
     setScrollOffset(0);
-  }, [query]);
+  }, [debouncedQuery]);
 
   // Adjust scroll offset when focus changes
   useEffect(() => {
