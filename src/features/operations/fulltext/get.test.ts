@@ -192,6 +192,74 @@ describe("fulltextGet", () => {
     });
   });
 
+  describe("preferredType option", () => {
+    it("should list markdown path first when preferredType is markdown", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "fulltext.md", role: "fulltext" },
+        ],
+      });
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        preferredType: "markdown",
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.paths).toBeDefined();
+      const pathKeys = Object.keys(result.paths ?? {});
+      expect(pathKeys[0]).toBe("markdown");
+      expect(pathKeys[1]).toBe("pdf");
+    });
+
+    it("should list PDF path first when preferredType is undefined (backward compatible)", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "fulltext.md", role: "fulltext" },
+        ],
+      });
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.paths).toBeDefined();
+      const pathKeys = Object.keys(result.paths ?? {});
+      expect(pathKeys[0]).toBe("pdf");
+    });
+
+    it("should list PDF path first when preferredType is pdf", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [
+          { filename: "fulltext.md", role: "fulltext" },
+          { filename: "fulltext.pdf", role: "fulltext" },
+        ],
+      });
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        preferredType: "pdf",
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.paths).toBeDefined();
+      const pathKeys = Object.keys(result.paths ?? {});
+      expect(pathKeys[0]).toBe("pdf");
+    });
+  });
+
   describe("stdout mode", () => {
     it("should return content when stdout and type are specified", async () => {
       const item = createItem("test-id", {

@@ -256,6 +256,76 @@ describe("fulltextOpen", () => {
     });
   });
 
+  describe("preferredType option", () => {
+    it("should open markdown when both exist and preferredType is markdown", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithBoth);
+
+      const result = await fulltextOpen(mockLibrary, {
+        identifier: "Smith-2024",
+        preferredType: "markdown",
+        fulltextDirectory,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.openedType).toBe("markdown");
+      expect(openWithSystemApp).toHaveBeenCalledWith(
+        join(fulltextDirectory, "Smith-2024-12345678", "fulltext.md")
+      );
+    });
+
+    it("should open PDF when both exist and preferredType is pdf", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithBoth);
+
+      const result = await fulltextOpen(mockLibrary, {
+        identifier: "Smith-2024",
+        preferredType: "pdf",
+        fulltextDirectory,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.openedType).toBe("pdf");
+    });
+
+    it("should open PDF when both exist and preferredType is undefined (backward compatible)", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithBoth);
+
+      const result = await fulltextOpen(mockLibrary, {
+        identifier: "Smith-2024",
+        fulltextDirectory,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.openedType).toBe("pdf");
+    });
+
+    it("should open available type regardless of preference when only one type exists", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithPdfOnly);
+
+      const result = await fulltextOpen(mockLibrary, {
+        identifier: "Jones-2024",
+        preferredType: "markdown",
+        fulltextDirectory,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.openedType).toBe("pdf");
+    });
+
+    it("should ignore preferredType when explicit type is specified", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithBoth);
+
+      const result = await fulltextOpen(mockLibrary, {
+        identifier: "Smith-2024",
+        type: "pdf",
+        preferredType: "markdown",
+        fulltextDirectory,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.openedType).toBe("pdf");
+    });
+  });
+
   describe("identifier types", () => {
     it("should support uuid identifier type", async () => {
       vi.mocked(mockLibrary.find).mockResolvedValue(itemWithPdfOnly);

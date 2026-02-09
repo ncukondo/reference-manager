@@ -29,6 +29,8 @@ export interface FulltextOpenOptions {
   identifier: string;
   /** Specific type to open (pdf or markdown) */
   type?: FulltextType | undefined;
+  /** Preferred type when type is not specified (pdf or markdown) */
+  preferredType?: FulltextType | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
   idType?: IdentifierType | undefined;
   /** Directory for attachments (replaces fulltextDirectory) */
@@ -56,17 +58,23 @@ function buildFilePath(attachmentsDirectory: string, directory: string, filename
  * Determine which type to open based on priority
  * Priority: PDF > Markdown when both exist
  */
-function determineTypeToOpen(attachments: Attachments | undefined): FulltextType | undefined {
+function determineTypeToOpen(
+  attachments: Attachments | undefined,
+  preferredType?: FulltextType
+): FulltextType | undefined {
   const files = findFulltextFiles(attachments);
   if (files.length === 0) return undefined;
 
-  // Check for PDF first (priority)
-  const pdfFile = files.find((f) => f.filename.endsWith(".pdf"));
-  if (pdfFile) return "pdf";
+  const hasPdf = files.some((f) => f.filename.endsWith(".pdf"));
+  const hasMd = files.some((f) => f.filename.endsWith(".md"));
 
-  // Then markdown
-  const mdFile = files.find((f) => f.filename.endsWith(".md"));
-  if (mdFile) return "markdown";
+  // Use preferred type if available
+  if (preferredType === "markdown" && hasMd) return "markdown";
+  if (preferredType === "pdf" && hasPdf) return "pdf";
+
+  // Fallback: PDF first (default), then markdown
+  if (hasPdf) return "pdf";
+  if (hasMd) return "markdown";
 
   return undefined;
 }
@@ -82,7 +90,7 @@ export async function fulltextOpen(
   library: ILibrary,
   options: FulltextOpenOptions
 ): Promise<FulltextOpenResult> {
-  const { identifier, type, idType = "id", fulltextDirectory } = options;
+  const { identifier, type, preferredType, idType = "id", fulltextDirectory } = options;
 
   // Find reference
   const item = await library.find(identifier, { idType });
@@ -95,7 +103,7 @@ export async function fulltextOpen(
   const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
 
   // Determine which type to open
-  const typeToOpen = type ?? determineTypeToOpen(attachments);
+  const typeToOpen = type ?? determineTypeToOpen(attachments, preferredType);
 
   if (!typeToOpen) {
     return { success: false, error: `No fulltext attached to reference: ${identifier}` };

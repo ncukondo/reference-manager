@@ -43,19 +43,19 @@ Add `fulltext.preferred_type` to the config schema and wire up environment varia
 
 Update `fulltextOpen` to use `preferred_type` from config when type is not specified. Update `fulltextGet` to order results by preferred type.
 
-- [ ] Write test: `src/features/operations/fulltext/open.test.ts` — add tests for `preferred_type` behavior:
+- [x] Write test: `src/features/operations/fulltext/open.test.ts` — add tests for `preferred_type` behavior:
   - When both PDF and markdown exist and `preferred_type` is `"markdown"`, opens markdown
   - When both exist and `preferred_type` is `"pdf"`, opens PDF
   - When both exist and `preferred_type` is undefined, opens PDF (backward compatible)
   - When only one type exists, opens that type regardless of preference
   - When explicit type is specified (`--pdf`/`--markdown`), preference is ignored
-- [ ] Write test: `src/features/operations/fulltext/get.test.ts` — add tests for `preferred_type` behavior:
+- [x] Write test: `src/features/operations/fulltext/get.test.ts` — add tests for `preferred_type` behavior:
   - When both types exist and `preferred_type` is `"markdown"`, markdown path is listed first
   - When both types exist and `preferred_type` is undefined, PDF path is listed first (backward compatible)
-- [ ] Implement: Update `src/features/operations/fulltext/open.ts` — accept `preferredType` option, use it in type resolution
-- [ ] Implement: Update `src/features/operations/fulltext/get.ts` — accept `preferredType` option, use it for ordering
-- [ ] Verify Green: `npm run test:unit -- fulltext/open.test.ts fulltext/get.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Update `src/features/operations/fulltext/open.ts` — accept `preferredType` option, use it in type resolution
+- [x] Implement: Update `src/features/operations/fulltext/get.ts` — accept `preferredType` option, use it for ordering
+- [x] Verify Green: `npm run test:unit -- fulltext/open.test.ts fulltext/get.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: CLI Layer (fulltext.ts, index.ts)
 
