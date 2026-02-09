@@ -74,12 +74,12 @@ Add `--prefer <type>` option to `fulltext open` and `fulltext get` CLI commands,
 
 Pass config-level `preferred_type` through MCP tool handlers for `fulltext_open` and `fulltext_get`.
 
-- [ ] Write test: `src/mcp/tools/fulltext.test.ts` — add tests for config passthrough:
+- [x] Write test: `src/mcp/tools/fulltext.test.ts` — add tests for config passthrough:
   - `fulltext_open` uses `preferred_type` from config
   - `fulltext_get` uses `preferred_type` from config
-- [ ] Implement: Update `src/mcp/tools/fulltext.ts` — read `preferred_type` from config and pass to operations
-- [ ] Verify Green: `npm run test:unit -- mcp/tools/fulltext.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Update `src/mcp/tools/fulltext.ts` — read `preferred_type` from config and pass to operations
+- [x] Verify Green: `npm run test:unit -- mcp/tools/fulltext.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 
