@@ -239,6 +239,71 @@ describe("MCP fulltext tools", () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("No fulltext");
     });
+
+    it("should use preferred_type from config", async () => {
+      // Create a reference with both PDF and markdown
+      const bothUuid = "test-uuid-both-0000-000000000000";
+      const bothDirectory = "both2024-test-uuid";
+      const refs = [
+        {
+          id: "both2024",
+          type: "article-journal",
+          title: "Both Types Article",
+          custom: {
+            uuid: bothUuid,
+            created_at: "2024-01-01T00:00:00.000Z",
+            timestamp: "2024-01-01T00:00:00.000Z",
+            attachments: {
+              directory: bothDirectory,
+              files: [
+                { filename: "fulltext.pdf", role: "fulltext" },
+                { filename: "fulltext.md", role: "fulltext" },
+              ],
+            },
+          },
+        },
+      ];
+      await fs.writeFile(libraryPath, JSON.stringify(refs), "utf-8");
+      const library = await Library.load(libraryPath);
+      const ops = new OperationsLibrary(library);
+
+      // Create both files
+      const bothDir = path.join(attachmentsDir, bothDirectory);
+      await fs.mkdir(bothDir, { recursive: true });
+      await fs.writeFile(path.join(bothDir, "fulltext.pdf"), "%PDF-1.4 test");
+      await fs.writeFile(path.join(bothDir, "fulltext.md"), "# Markdown Content");
+
+      // Config with preferredType = "markdown"
+      const configWithPref = {
+        ...config,
+        fulltext: {
+          ...config.fulltext,
+          preferredType: "markdown" as const,
+        },
+      };
+
+      let capturedCallback: (
+        args: FulltextGetToolParams
+      ) => Promise<{ content: Array<{ type: string; text: string }> }>;
+
+      const mockServer = {
+        registerTool: (_name: string, _config: unknown, cb: typeof capturedCallback) => {
+          capturedCallback = cb;
+        },
+      };
+
+      registerFulltextGetTool(
+        mockServer as never,
+        () => ops,
+        () => configWithPref
+      );
+
+      const result = await capturedCallback?.({ id: "both2024" });
+
+      // With preferredType=markdown, markdown content should come first
+      expect(result.content.length).toBeGreaterThanOrEqual(1);
+      expect(result.content[0].text).toContain("Markdown Content");
+    });
   });
 
   describe("registerFulltextDetachTool", () => {

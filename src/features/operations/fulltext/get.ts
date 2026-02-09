@@ -30,6 +30,8 @@ export interface FulltextGetOptions {
   identifier: string;
   /** Specific type to get (pdf or markdown) */
   type?: FulltextType | undefined;
+  /** Preferred type ordering when type is not specified (pdf or markdown) */
+  preferredType?: FulltextType | undefined;
   /** If true, return file content instead of path */
   stdout?: boolean | undefined;
   /** Identifier type: 'id' (default), 'uuid', 'doi', 'pmid', or 'isbn' */
@@ -113,7 +115,8 @@ function getAllFulltextPaths(
   attachments: Attachments,
   fulltextFiles: AttachmentFile[],
   fulltextDirectory: string,
-  identifier: string
+  identifier: string,
+  preferredType?: FulltextType
 ): FulltextGetResult {
   const paths: { pdf?: string; markdown?: string } = {};
   for (const file of fulltextFiles) {
@@ -127,6 +130,18 @@ function getAllFulltextPaths(
 
   if (Object.keys(paths).length === 0) {
     return { success: false, error: `No fulltext attached to '${identifier}'` };
+  }
+
+  // Reorder paths based on preferredType
+  if (preferredType && paths[preferredType]) {
+    const ordered: { pdf?: string; markdown?: string } = {};
+    ordered[preferredType] = paths[preferredType];
+    for (const key of Object.keys(paths) as FulltextType[]) {
+      if (key !== preferredType && paths[key]) {
+        ordered[key] = paths[key];
+      }
+    }
+    return { success: true, paths: ordered };
   }
 
   return { success: true, paths };
@@ -143,7 +158,7 @@ export async function fulltextGet(
   library: ILibrary,
   options: FulltextGetOptions
 ): Promise<FulltextGetResult> {
-  const { identifier, type, stdout, idType = "id", fulltextDirectory } = options;
+  const { identifier, type, preferredType, stdout, idType = "id", fulltextDirectory } = options;
 
   // Find reference
   const item = await library.find(identifier, { idType });
@@ -175,5 +190,11 @@ export async function fulltextGet(
     return { success: false, error: `No fulltext attached to '${identifier}'` };
   }
 
-  return getAllFulltextPaths(attachments, fulltextFiles, fulltextDirectory, identifier);
+  return getAllFulltextPaths(
+    attachments,
+    fulltextFiles,
+    fulltextDirectory,
+    identifier,
+    preferredType
+  );
 }

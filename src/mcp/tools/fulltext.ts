@@ -114,11 +114,13 @@ export function registerFulltextGetTool(
     async (args: FulltextGetToolParams) => {
       const libraryOps = getLibraryOperations();
       const config = getConfig();
+      const preferredType = config.fulltext?.preferredType;
 
       // First, check what types are attached
       const pathResult = await fulltextGet(libraryOps, {
         identifier: args.id,
         fulltextDirectory: config.attachments.directory,
+        ...(preferredType && { preferredType }),
       });
 
       if (!pathResult.success) {

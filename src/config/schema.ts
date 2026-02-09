@@ -111,12 +111,14 @@ export const pubmedConfigSchema = z.object({
  * Fulltext source enum schema
  */
 export const fulltextSourceSchema = z.enum(["pmc", "arxiv", "unpaywall", "core"]);
+const fulltextPreferredTypeSchema = z.enum(["pdf", "markdown"]);
 
 /**
  * Fulltext retrieval configuration schema
  */
 export const fulltextConfigSchema = z.object({
   preferSources: z.array(fulltextSourceSchema),
+  preferredType: fulltextPreferredTypeSchema.optional(),
   autoFetchOnAdd: z.boolean(),
   sources: z.object({
     unpaywallEmail: z.string().optional(),
@@ -211,6 +213,8 @@ export const partialConfigSchema = z
       .object({
         preferSources: z.array(fulltextSourceSchema).optional(),
         prefer_sources: z.array(fulltextSourceSchema).optional(),
+        preferredType: fulltextPreferredTypeSchema.optional(),
+        preferred_type: fulltextPreferredTypeSchema.optional(),
         autoFetchOnAdd: z.boolean().optional(),
         auto_fetch_on_add: z.boolean().optional(),
         sources: z
@@ -272,6 +276,7 @@ export type CitationKeyFormat = z.infer<typeof citationKeyFormatSchema>;
 export type CitationConfig = z.infer<typeof citationConfigSchema>;
 export type PubmedConfig = z.infer<typeof pubmedConfigSchema>;
 export type FulltextSource = z.infer<typeof fulltextSourceSchema>;
+export type FulltextPreferredType = z.infer<typeof fulltextPreferredTypeSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type TuiConfig = z.infer<typeof tuiConfigSchema>;
@@ -482,6 +487,8 @@ function normalizeFulltextConfig(
   fulltext: Partial<{
     preferSources?: FulltextSource[];
     prefer_sources?: FulltextSource[];
+    preferredType?: FulltextPreferredType;
+    preferred_type?: FulltextPreferredType;
     autoFetchOnAdd?: boolean;
     auto_fetch_on_add?: boolean;
     sources?: Partial<{
@@ -499,27 +506,46 @@ function normalizeFulltextConfig(
     normalized.preferSources = preferSources;
   }
 
+  const preferredType = fulltext.preferredType ?? fulltext.preferred_type;
+  if (preferredType !== undefined) {
+    normalized.preferredType = preferredType;
+  }
+
   const autoFetchOnAdd = fulltext.autoFetchOnAdd ?? fulltext.auto_fetch_on_add;
   if (autoFetchOnAdd !== undefined) {
     normalized.autoFetchOnAdd = autoFetchOnAdd;
   }
 
-  if (fulltext.sources !== undefined) {
-    const sources: Partial<FulltextConfig["sources"]> = {};
+  const sources = normalizeFulltextSources(fulltext.sources);
+  if (sources !== undefined) {
+    normalized.sources = sources;
+  }
 
-    const unpaywallEmail = fulltext.sources.unpaywallEmail ?? fulltext.sources.unpaywall_email;
-    if (unpaywallEmail !== undefined) {
-      sources.unpaywallEmail = unpaywallEmail;
-    }
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
 
-    const coreApiKey = fulltext.sources.coreApiKey ?? fulltext.sources.core_api_key;
-    if (coreApiKey !== undefined) {
-      sources.coreApiKey = coreApiKey;
-    }
+function normalizeFulltextSources(
+  sources?: Partial<{
+    unpaywallEmail?: string;
+    unpaywall_email?: string;
+    coreApiKey?: string;
+    core_api_key?: string;
+  }>
+): Partial<FulltextConfig["sources"]> | undefined {
+  if (sources === undefined) {
+    return undefined;
+  }
 
-    if (Object.keys(sources).length > 0) {
-      normalized.sources = sources;
-    }
+  const normalized: Partial<FulltextConfig["sources"]> = {};
+
+  const unpaywallEmail = sources.unpaywallEmail ?? sources.unpaywall_email;
+  if (unpaywallEmail !== undefined) {
+    normalized.unpaywallEmail = unpaywallEmail;
+  }
+
+  const coreApiKey = sources.coreApiKey ?? sources.core_api_key;
+  if (coreApiKey !== undefined) {
+    normalized.coreApiKey = coreApiKey;
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

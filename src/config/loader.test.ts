@@ -18,6 +18,7 @@ describe("Config Loader", () => {
   let originalPubmedApiKey: string | undefined;
   let originalUnpaywallEmail: string | undefined;
   let originalCoreApiKey: string | undefined;
+  let originalPreferredType: string | undefined;
 
   beforeEach(() => {
     // Create a temporary test directory
@@ -31,6 +32,7 @@ describe("Config Loader", () => {
     originalPubmedApiKey = process.env.PUBMED_API_KEY;
     originalUnpaywallEmail = process.env.UNPAYWALL_EMAIL;
     originalCoreApiKey = process.env.CORE_API_KEY;
+    originalPreferredType = process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE;
   });
 
   afterEach(() => {
@@ -73,6 +75,12 @@ describe("Config Loader", () => {
       delete process.env.CORE_API_KEY;
     } else {
       process.env.CORE_API_KEY = originalCoreApiKey;
+    }
+    if (originalPreferredType === undefined) {
+      // biome-ignore lint/performance/noDelete: delete is required for env vars
+      delete process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE;
+    } else {
+      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = originalPreferredType;
     }
   });
 
@@ -1105,6 +1113,101 @@ unpaywall_email = "user@example.com"
       expect(config.fulltext.autoFetchOnAdd).toBe(true);
       expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
       expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
+    });
+
+    it("should default preferredType to undefined", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferredType).toBeUndefined();
+    });
+
+    it("should load fulltext.preferred_type from config (snake_case)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+preferred_type = "markdown"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferredType).toBe("markdown");
+    });
+
+    it("should load fulltext.preferredType from config (camelCase)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+preferredType = "pdf"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferredType).toBe("pdf");
+    });
+
+    it("should reject invalid preferred_type values", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+preferred_type = "invalid"
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
+    });
+
+    it("should load preferred_type from REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE env var", () => {
+      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "markdown";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferredType).toBe("markdown");
+    });
+
+    it("should prioritize env var over config file for preferred_type", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+preferred_type = "pdf"
+`
+      );
+
+      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "markdown";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferredType).toBe("markdown");
+    });
+
+    it("should reject invalid REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE env var values", () => {
+      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "html";
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow(
+        'Invalid value for REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE: "html". Must be "pdf" or "markdown".'
+      );
+    });
+
+    it("should merge preferred_type with other fulltext settings", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext]
+preferred_type = "markdown"
+auto_fetch_on_add = true
+prefer_sources = ["unpaywall", "pmc"]
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.preferredType).toBe("markdown");
+      expect(config.fulltext.autoFetchOnAdd).toBe(true);
+      expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
     });
   });
 });

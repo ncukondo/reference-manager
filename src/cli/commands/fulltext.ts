@@ -62,6 +62,7 @@ export interface FulltextAttachOptions {
 export interface FulltextGetOptions {
   identifier: string;
   type?: FulltextType;
+  preferredType?: FulltextType;
   stdout?: boolean;
   idType?: IdentifierType;
   fulltextDirectory: string;
@@ -85,6 +86,7 @@ export interface FulltextDetachOptions {
 export interface FulltextOpenOptions {
   identifier: string;
   type?: FulltextType;
+  preferredType?: FulltextType;
   idType?: IdentifierType;
   fulltextDirectory: string;
 }
@@ -159,6 +161,7 @@ export async function executeFulltextGet(
   const operationOptions: OperationGetOptions = {
     identifier: options.identifier,
     type: options.type,
+    preferredType: options.preferredType,
     stdout: options.stdout,
     idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
@@ -195,6 +198,7 @@ export async function executeFulltextOpen(
   const operationOptions: OperationOpenOptions = {
     identifier: options.identifier,
     type: options.type,
+    preferredType: options.preferredType,
     idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
   };
@@ -532,6 +536,7 @@ export async function handleFulltextAttachAction(
 export interface FulltextGetActionOptions {
   pdf?: boolean;
   markdown?: boolean;
+  prefer?: "pdf" | "markdown";
   stdout?: boolean;
   uuid?: boolean;
 }
@@ -584,6 +589,9 @@ export async function handleFulltextGetAction(
       identifier = stdinId;
     }
 
+    // Resolve preferredType: CLI --prefer > config
+    const preferValue = options.prefer ?? config.fulltext.preferredType;
+
     const getOptions: FulltextGetOptions = {
       identifier,
       fulltextDirectory: config.attachments.directory,
@@ -591,6 +599,7 @@ export async function handleFulltextGetAction(
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.stdout && { stdout: options.stdout }),
       ...(options.uuid && { idType: "uuid" as const }),
+      ...(preferValue && { preferredType: preferValue }),
     };
 
     const result = await executeFulltextGet(getOptions, context);
@@ -671,6 +680,7 @@ export async function handleFulltextDetachAction(
 export interface FulltextOpenActionOptions {
   pdf?: boolean;
   markdown?: boolean;
+  prefer?: "pdf" | "markdown";
   uuid?: boolean;
 }
 
@@ -705,12 +715,16 @@ export async function handleFulltextOpenAction(
       identifier = stdinId;
     }
 
+    // Resolve preferredType: CLI --prefer > config
+    const preferValue = options.prefer ?? config.fulltext.preferredType;
+
     const openOptions: FulltextOpenOptions = {
       identifier,
       fulltextDirectory: config.attachments.directory,
       ...(options.pdf && { type: "pdf" as const }),
       ...(options.markdown && { type: "markdown" as const }),
       ...(options.uuid && { idType: "uuid" as const }),
+      ...(preferValue && { preferredType: preferValue }),
     };
 
     const result = await executeFulltextOpen(openOptions, context);

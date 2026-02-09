@@ -766,6 +766,75 @@ describe("fulltext command", () => {
         expect(result.success).toBe(false);
         expect(result.error).toContain("not found");
       });
+
+      it("should open markdown when preferredType is markdown", async () => {
+        vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
+        mockExistsSync.mockReturnValue(true);
+        mockOpenWithSystemApp.mockResolvedValue(undefined);
+
+        const options: FulltextOpenOptions = {
+          identifier: "Smith-2024",
+          preferredType: "markdown",
+          fulltextDirectory,
+        };
+
+        const result = await executeFulltextOpen(options, localContext);
+
+        expect(result.success).toBe(true);
+        expect(result.openedType).toBe("markdown");
+      });
+
+      it("should ignore preferredType when explicit type is specified", async () => {
+        vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
+        mockExistsSync.mockReturnValue(true);
+        mockOpenWithSystemApp.mockResolvedValue(undefined);
+
+        const options: FulltextOpenOptions = {
+          identifier: "Smith-2024",
+          type: "pdf",
+          preferredType: "markdown",
+          fulltextDirectory,
+        };
+
+        const result = await executeFulltextOpen(options, localContext);
+
+        expect(result.success).toBe(true);
+        expect(result.openedType).toBe("pdf");
+      });
+    });
+  });
+
+  describe("executeFulltextGet with preferredType", () => {
+    const itemWithFulltext: CslItem = {
+      ...mockItem,
+      custom: {
+        uuid: "123e4567-e89b-12d3-a456-426614174000",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        attachments: {
+          directory: "Smith-2024-123e4567",
+          files: [
+            { filename: "fulltext.pdf", role: "fulltext", format: "pdf" },
+            { filename: "fulltext.md", role: "fulltext", format: "markdown" },
+          ],
+        },
+      },
+    };
+
+    it("should pass preferredType to operation", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(itemWithFulltext);
+
+      const options: FulltextGetOptions = {
+        identifier: "Smith-2024",
+        preferredType: "markdown",
+        fulltextDirectory,
+      };
+
+      const result = await executeFulltextGet(options, localContext);
+
+      expect(result.success).toBe(true);
+      const pathKeys = Object.keys(result.paths ?? {});
+      expect(pathKeys[0]).toBe("markdown");
     });
   });
 
@@ -815,6 +884,40 @@ describe("fulltext command", () => {
         requiresConfirmation: true,
       };
       expect(getFulltextExitCode(result)).toBe(1);
+    });
+  });
+
+  describe("--prefer option validation", () => {
+    it("should reject invalid --prefer values for get command", { timeout: 15000 }, async () => {
+      const { createProgram } = await import("../index.js");
+      const program = createProgram();
+      program.exitOverride();
+      const errors: string[] = [];
+      program.configureOutput({
+        writeOut: () => {},
+        writeErr: (str: string) => errors.push(str),
+      });
+
+      await expect(
+        program.parseAsync(["node", "test", "fulltext", "get", "Smith-2024", "--prefer", "html"])
+      ).rejects.toThrow();
+      expect(errors.some((e) => e.includes("html"))).toBe(true);
+    });
+
+    it("should reject invalid --prefer values for open command", { timeout: 15000 }, async () => {
+      const { createProgram } = await import("../index.js");
+      const program = createProgram();
+      program.exitOverride();
+      const errors: string[] = [];
+      program.configureOutput({
+        writeOut: () => {},
+        writeErr: (str: string) => errors.push(str),
+      });
+
+      await expect(
+        program.parseAsync(["node", "test", "fulltext", "open", "Smith-2024", "--prefer", "html"])
+      ).rejects.toThrow();
+      expect(errors.some((e) => e.includes("html"))).toBe(true);
     });
   });
 

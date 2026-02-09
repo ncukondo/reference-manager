@@ -30,56 +30,56 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Add `fulltext.preferred_type` to the config schema and wire up environment variable override.
 
-- [ ] Write test: `src/config/schema.test.ts` — add tests for `fulltext.preferred_type` field validation (accepts `"pdf"`, `"markdown"`, rejects invalid values, optional/undefined by default)
-- [ ] Write test: `src/config/env-override.test.ts` — add test for `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` mapping
-- [ ] Write test: `src/config/key-parser.test.ts` — add test for `fulltext.preferred_type` key parsing
-- [ ] Write test: `src/config/loader.test.ts` — add test for loading `fulltext.preferred_type` from config file and env override
-- [ ] Implement: Update `src/config/schema.ts` — add `preferred_type` to fulltext config schema
-- [ ] Implement: Update `src/config/env-override.ts` — add `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` to `ENV_OVERRIDE_MAP`
-- [ ] Verify Green: `npm run test:unit -- schema.test.ts env-override.test.ts key-parser.test.ts loader.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/config/schema.test.ts` — add tests for `fulltext.preferred_type` field validation (accepts `"pdf"`, `"markdown"`, rejects invalid values, optional/undefined by default)
+- [x] Write test: `src/config/env-override.test.ts` — add test for `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` mapping
+- [x] Write test: `src/config/key-parser.test.ts` — add test for `fulltext.preferred_type` key parsing
+- [x] Write test: `src/config/loader.test.ts` — add test for loading `fulltext.preferred_type` from config file and env override
+- [x] Implement: Update `src/config/schema.ts` — add `preferred_type` to fulltext config schema
+- [x] Implement: Update `src/config/env-override.ts` — add `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` to `ENV_OVERRIDE_MAP`
+- [x] Verify Green: `npm run test:unit -- schema.test.ts env-override.test.ts key-parser.test.ts loader.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Operation Layer (open.ts, get.ts)
 
 Update `fulltextOpen` to use `preferred_type` from config when type is not specified. Update `fulltextGet` to order results by preferred type.
 
-- [ ] Write test: `src/features/operations/fulltext/open.test.ts` — add tests for `preferred_type` behavior:
+- [x] Write test: `src/features/operations/fulltext/open.test.ts` — add tests for `preferred_type` behavior:
   - When both PDF and markdown exist and `preferred_type` is `"markdown"`, opens markdown
   - When both exist and `preferred_type` is `"pdf"`, opens PDF
   - When both exist and `preferred_type` is undefined, opens PDF (backward compatible)
   - When only one type exists, opens that type regardless of preference
   - When explicit type is specified (`--pdf`/`--markdown`), preference is ignored
-- [ ] Write test: `src/features/operations/fulltext/get.test.ts` — add tests for `preferred_type` behavior:
+- [x] Write test: `src/features/operations/fulltext/get.test.ts` — add tests for `preferred_type` behavior:
   - When both types exist and `preferred_type` is `"markdown"`, markdown path is listed first
   - When both types exist and `preferred_type` is undefined, PDF path is listed first (backward compatible)
-- [ ] Implement: Update `src/features/operations/fulltext/open.ts` — accept `preferredType` option, use it in type resolution
-- [ ] Implement: Update `src/features/operations/fulltext/get.ts` — accept `preferredType` option, use it for ordering
-- [ ] Verify Green: `npm run test:unit -- fulltext/open.test.ts fulltext/get.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Update `src/features/operations/fulltext/open.ts` — accept `preferredType` option, use it in type resolution
+- [x] Implement: Update `src/features/operations/fulltext/get.ts` — accept `preferredType` option, use it for ordering
+- [x] Verify Green: `npm run test:unit -- fulltext/open.test.ts fulltext/get.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: CLI Layer (fulltext.ts, index.ts)
 
 Add `--prefer <type>` option to `fulltext open` and `fulltext get` CLI commands, passing it through to operations.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` — add tests for `--prefer` option:
+- [x] Write test: `src/cli/commands/fulltext.test.ts` — add tests for `--prefer` option:
   - `fulltext open <id> --prefer markdown` passes `preferredType: "markdown"` to operation
   - `fulltext get <id> --prefer pdf` passes `preferredType: "pdf"` to operation
   - Invalid `--prefer` value shows error
   - When `--prefer` not specified, uses config value
-- [ ] Implement: Update `src/cli/commands/fulltext.ts` — add `--prefer` option to open and get subcommands
-- [ ] Verify Green: `npm run test:unit -- fulltext.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Update `src/cli/commands/fulltext.ts` — add `--prefer` option to open and get subcommands
+- [x] Verify Green: `npm run test:unit -- fulltext.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: MCP Layer (fulltext.ts)
 
 Pass config-level `preferred_type` through MCP tool handlers for `fulltext_open` and `fulltext_get`.
 
-- [ ] Write test: `src/mcp/tools/fulltext.test.ts` — add tests for config passthrough:
+- [x] Write test: `src/mcp/tools/fulltext.test.ts` — add tests for config passthrough:
   - `fulltext_open` uses `preferred_type` from config
   - `fulltext_get` uses `preferred_type` from config
-- [ ] Implement: Update `src/mcp/tools/fulltext.ts` — read `preferred_type` from config and pass to operations
-- [ ] Verify Green: `npm run test:unit -- mcp/tools/fulltext.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Update `src/mcp/tools/fulltext.ts` — read `preferred_type` from config and pass to operations
+- [x] Verify Green: `npm run test:unit -- mcp/tools/fulltext.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 
@@ -94,10 +94,10 @@ Non-TTY tests (automated):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification: `./test-fixtures/test-fulltext-preferred-type.sh`
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
