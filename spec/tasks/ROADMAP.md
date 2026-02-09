@@ -91,6 +91,17 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Next Steps
 
+### Phase 35: Resource Indicators
+
+Display emoji indicators in reference lists to show available resources at a glance.
+
+- **Spec**: `spec/features/resource-indicators.md`
+- **Task**: `spec/tasks/20260209-01-resource-indicators.md`
+- **Scope**:
+  - `buildResourceIndicators()` shared function (📄📝📎🔗🏷)
+  - Pretty format: indicator line at end of each entry
+  - TUI interactive: indicator prefix on meta line
+
 ### MCPB Registry Submission
 
 Submit to Anthropic's official extension registry when ready.
