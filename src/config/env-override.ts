@@ -11,6 +11,7 @@ export const ENV_OVERRIDE_MAP: Record<string, string> = {
   REFERENCE_MANAGER_CLI_DEFAULT_LIMIT: "cli.default_limit",
   REFERENCE_MANAGER_MCP_DEFAULT_LIMIT: "mcp.default_limit",
   REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY: "cli.tui.clipboard_auto_copy",
+  REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE: "fulltext.preferred_type",
   PUBMED_EMAIL: "pubmed.email",
   PUBMED_API_KEY: "pubmed.api_key",
   UNPAYWALL_EMAIL: "fulltext.sources.unpaywall_email",

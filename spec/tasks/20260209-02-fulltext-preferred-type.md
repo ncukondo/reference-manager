@@ -30,14 +30,14 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Add `fulltext.preferred_type` to the config schema and wire up environment variable override.
 
-- [ ] Write test: `src/config/schema.test.ts` — add tests for `fulltext.preferred_type` field validation (accepts `"pdf"`, `"markdown"`, rejects invalid values, optional/undefined by default)
-- [ ] Write test: `src/config/env-override.test.ts` — add test for `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` mapping
-- [ ] Write test: `src/config/key-parser.test.ts` — add test for `fulltext.preferred_type` key parsing
-- [ ] Write test: `src/config/loader.test.ts` — add test for loading `fulltext.preferred_type` from config file and env override
-- [ ] Implement: Update `src/config/schema.ts` — add `preferred_type` to fulltext config schema
-- [ ] Implement: Update `src/config/env-override.ts` — add `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` to `ENV_OVERRIDE_MAP`
-- [ ] Verify Green: `npm run test:unit -- schema.test.ts env-override.test.ts key-parser.test.ts loader.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/config/schema.test.ts` — add tests for `fulltext.preferred_type` field validation (accepts `"pdf"`, `"markdown"`, rejects invalid values, optional/undefined by default)
+- [x] Write test: `src/config/env-override.test.ts` — add test for `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` mapping
+- [x] Write test: `src/config/key-parser.test.ts` — add test for `fulltext.preferred_type` key parsing
+- [x] Write test: `src/config/loader.test.ts` — add test for loading `fulltext.preferred_type` from config file and env override
+- [x] Implement: Update `src/config/schema.ts` — add `preferred_type` to fulltext config schema
+- [x] Implement: Update `src/config/env-override.ts` — add `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE` to `ENV_OVERRIDE_MAP`
+- [x] Verify Green: `npm run test:unit -- schema.test.ts env-override.test.ts key-parser.test.ts loader.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Operation Layer (open.ts, get.ts)
 

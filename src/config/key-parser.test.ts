@@ -36,6 +36,7 @@ describe("key-parser", () => {
       expect(isValidConfigKey("citation.default_key_format")).toBe(true);
       expect(isValidConfigKey("backup.max_generations")).toBe(true);
       expect(isValidConfigKey("server.auto_start")).toBe(true);
+      expect(isValidConfigKey("fulltext.preferred_type")).toBe(true);
     });
 
     it("returns true for valid deeply nested keys", () => {

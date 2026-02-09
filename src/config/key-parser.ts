@@ -87,6 +87,13 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "Fulltext source priority order",
   },
   {
+    key: "fulltext.preferred_type",
+    type: "enum",
+    description: "Preferred fulltext type for open/get",
+    enumValues: ["pdf", "markdown"],
+    optional: true,
+  },
+  {
     key: "fulltext.auto_fetch_on_add",
     type: "boolean",
     description: "Auto-fetch fulltext when adding references",

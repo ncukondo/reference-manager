@@ -65,6 +65,11 @@ describe("env-override", () => {
       expect(getEnvOverride("fulltext.sources.core_api_key")).toBe("my-core-key");
     });
 
+    it("returns value when REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE is set", () => {
+      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "markdown";
+      expect(getEnvOverride("fulltext.preferred_type")).toBe("markdown");
+    });
+
     it("returns null when no override is set", () => {
       expect(getEnvOverride("library")).toBeNull();
       expect(getEnvOverride("pubmed.email")).toBeNull();
