@@ -1,7 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import { dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 import { parse as parseTOML, stringify as stringifyTOML } from "@iarna/toml";
+import { writeFileAtomic } from "../utils/file.js";
 
 type TOMLValue = string | number | boolean | string[] | number[];
 type TOMLObject = { [key: string]: TOMLValue | TOMLObject };
@@ -102,10 +101,6 @@ export async function writeTOMLValue(
   key: string,
   value: TOMLValue
 ): Promise<void> {
-  // Ensure parent directory exists
-  const dir = dirname(filePath);
-  await mkdir(dir, { recursive: true });
-
   // Load existing content
   const obj = loadExistingTOML(filePath);
 
@@ -113,9 +108,9 @@ export async function writeTOMLValue(
   const keyPath = parseKeyPath(key);
   setNestedValue(obj, keyPath, value);
 
-  // Write back
+  // Write back atomically
   const content = serializeToTOML(obj);
-  writeFileSync(filePath, content, "utf-8");
+  await writeFileAtomic(filePath, content);
 }
 
 /**
@@ -134,7 +129,7 @@ export async function removeTOMLKey(filePath: string, key: string): Promise<void
 
   if (removed) {
     const content = serializeToTOML(obj);
-    writeFileSync(filePath, content, "utf-8");
+    await writeFileAtomic(filePath, content);
   }
 }
 

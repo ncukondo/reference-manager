@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { writeFileAtomic } from "../utils/file.js";
 
 /**
  * Get the default portfile path.
@@ -26,17 +27,13 @@ export async function writePortfile(
   library: string,
   started_at?: string
 ): Promise<void> {
-  // Create parent directory if it doesn't exist
-  const dir = path.dirname(portfilePath);
-  await fs.mkdir(dir, { recursive: true });
-
   // Write portfile with port, pid, library, and optionally started_at
   const data: Record<string, unknown> = { port, pid, library };
   if (started_at !== undefined) {
     data.started_at = started_at;
   }
   const content = JSON.stringify(data, null, 2);
-  await fs.writeFile(portfilePath, content, "utf-8");
+  await writeFileAtomic(portfilePath, content);
 }
 
 /**

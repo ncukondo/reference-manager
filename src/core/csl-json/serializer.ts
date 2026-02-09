@@ -1,5 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { writeFileAtomic } from "../../utils/file.js";
 import type { CslLibrary } from "./types";
 
 /**
@@ -46,11 +45,7 @@ export function serializeCslJson(library: CslLibrary): string {
  * @throws Error if file cannot be written
  */
 export async function writeCslJson(filePath: string, library: CslLibrary): Promise<void> {
-  // Ensure parent directory exists
-  const dir = dirname(filePath);
-  await mkdir(dir, { recursive: true });
-
-  // Serialize and write
+  // Serialize and write atomically
   const content = serializeCslJson(library);
-  await writeFile(filePath, content, "utf-8");
+  await writeFileAtomic(filePath, content);
 }
