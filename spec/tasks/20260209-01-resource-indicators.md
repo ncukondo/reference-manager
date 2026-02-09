@@ -27,7 +27,7 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Create `buildResourceIndicators(item: CslItem): string` that returns the concatenated emoji string based on item data.
 
-- [ ] Write test: `src/features/format/resource-indicators.test.ts`
+- [x] Write test: `src/features/format/resource-indicators.test.ts`
   - Item with fulltext PDF → `"📄"`
   - Item with fulltext Markdown → `"📝"`
   - Item with both fulltext formats → `"📄📝"`
@@ -38,34 +38,34 @@ Create `buildResourceIndicators(item: CslItem): string` that returns the concate
   - Item with all resources → `"📄📝📎🔗🏷"`
   - Item with no resources → `""`
   - Icon order is always fixed regardless of data order
-- [ ] Create stub: `src/features/format/resource-indicators.ts` (export function with `throw new Error("Not implemented")`)
-- [ ] Verify Red: `npm run test:unit -- resource-indicators.test.ts` (tests fail with "Not implemented")
-- [ ] Implement: Write actual logic using `findFulltextFiles()` and direct field checks
-- [ ] Verify Green: `npm run test:unit -- resource-indicators.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Create stub: `src/features/format/resource-indicators.ts` (export function with `throw new Error("Not implemented")`)
+- [x] Verify Red: `npm run test:unit -- resource-indicators.test.ts` (tests fail with "Not implemented")
+- [x] Implement: Write actual logic using `findFulltextFiles()` and direct field checks
+- [x] Verify Green: `npm run test:unit -- resource-indicators.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Integrate into pretty formatter
 
 Add indicator line as the last line of `formatSingleReference()` in `pretty.ts`.
 
-- [ ] Write test: `src/features/format/pretty.test.ts` (add cases for indicator line)
+- [x] Write test: `src/features/format/pretty.test.ts` (add cases for indicator line)
   - Reference with indicators → last line contains emoji
   - Reference without indicators → no extra line added
   - Indicator line is indented with 2 spaces like other fields
-- [ ] Implement: Call `buildResourceIndicators()` in `formatSingleReference()`, append line if non-empty
-- [ ] Verify Green: `npm run test:unit -- pretty.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Call `buildResourceIndicators()` in `formatSingleReference()`, append line if non-empty
+- [x] Verify Green: `npm run test:unit -- pretty.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Integrate into TUI interactive mode
 
 Prepend indicator string to the meta line in `toChoice()` in `runSearchFlow.ts`.
 
-- [ ] Write test: `src/features/interactive/apps/runSearchFlow.test.ts` (add cases for indicator prefix)
+- [x] Write test: `src/features/interactive/apps/runSearchFlow.test.ts` (add cases for indicator prefix)
   - Choice with indicators → meta starts with emoji string followed by space
   - Choice without indicators → meta unchanged
-- [ ] Implement: Call `buildResourceIndicators()` in `toChoice()`, prepend to `meta` if non-empty
-- [ ] Verify Green: `npm run test:unit -- runSearchFlow.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Call `buildResourceIndicators()` in `toChoice()`, prepend to `meta` if non-empty
+- [x] Verify Green: `npm run test:unit -- runSearchFlow.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 
@@ -82,10 +82,10 @@ TTY-required tests (run manually in a terminal):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification: `./test-fixtures/test-resource-indicators.sh` (if applicable)
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

@@ -8,6 +8,7 @@ import { render } from "ink";
 import { createElement } from "react";
 import type { CitationKeyFormat } from "../../../config/schema.js";
 import type { CslItem } from "../../../core/csl-json/types.js";
+import { buildResourceIndicators } from "../../format/resource-indicators.js";
 import type { SearchResult } from "../../search/types.js";
 import type { ActionMenuResult } from "../action-menu.js";
 import { restoreStdinAfterInk } from "../alternate-screen.js";
@@ -111,7 +112,7 @@ function formatType(type: string): string {
 /**
  * Convert CslItem to Choice for SearchableMultiSelect
  */
-function toChoice(item: CslItem): Choice<CslItem> {
+export function toChoice(item: CslItem): Choice<CslItem> {
   const authors = formatAuthors(item.author);
   const year = extractYear(item);
   const identifiers = formatIdentifiers(item);
@@ -127,11 +128,16 @@ function toChoice(item: CslItem): Choice<CslItem> {
   const createdDate = extractCreatedDate(item);
   const publishedDate = extractPublishedDate(item);
 
+  // Prepend resource indicators to meta if present
+  const indicators = buildResourceIndicators(item);
+  const metaStr = metaParts.join(" · ");
+  const meta = indicators ? `${indicators} ${metaStr}` : metaStr;
+
   return {
     id: item.id,
     title: item.title ?? "(No title)",
     subtitle: authors || "(No authors)",
-    meta: metaParts.join(" · "),
+    meta,
     value: item,
     ...(updatedDate && { updatedDate }),
     ...(createdDate && { createdDate }),

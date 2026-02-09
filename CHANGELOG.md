@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Resource Indicators**: Emoji icons in reference displays showing available resources at a glance
+  - Pretty format: indicator line (📄📝📎🔗🏷) at end of each reference entry
+  - TUI interactive: indicator prefix on meta line in search results
+  - Icons: 📄 PDF fulltext, 📝 Markdown fulltext, 📎 attachments, 🔗 URL, 🏷 tags
+
 - **Auto-Fetch Fulltext on Add**: Automatically discover and download OA fulltext when adding references
   - New CLI option: `--fetch-fulltext` / `--no-fetch-fulltext` on `ref add`
   - New config option: `fulltext.auto_fetch_on_add` (default: `false`) to enable auto-fetch globally
