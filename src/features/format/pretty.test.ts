@@ -212,5 +212,47 @@ describe("Pretty Output Formatter", () => {
 
       expect(result).toContain("UUID: (no uuid)");
     });
+
+    it("should show indicator line for item with resources", () => {
+      const itemWithResources: CslItem = {
+        id: "res-2024",
+        type: "article-journal",
+        title: "Test",
+        URL: "https://example.com",
+        custom: {
+          uuid: "test-uuid",
+          tags: ["ml"],
+          attachments: {
+            directory: "test-dir",
+            files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+          },
+        },
+      };
+      const result = formatPretty([itemWithResources]);
+      const lines = result.split("\n");
+      const lastLine = lines[lines.length - 1];
+      expect(lastLine).toBe("  📄🔗🏷");
+    });
+
+    it("should not add indicator line for item without resources", () => {
+      const result = formatPretty([sampleItem2]);
+      const lines = result.split("\n");
+      const lastLine = lines[lines.length - 1];
+      // Last line should be UUID, not an indicator
+      expect(lastLine).toContain("UUID:");
+    });
+
+    it("should indent indicator line with 2 spaces", () => {
+      const itemWithUrl: CslItem = {
+        id: "url-2024",
+        type: "article",
+        URL: "https://example.com",
+        custom: { uuid: "test-uuid" },
+      };
+      const result = formatPretty([itemWithUrl]);
+      const lines = result.split("\n");
+      const lastLine = lines[lines.length - 1];
+      expect(lastLine).toBe("  🔗");
+    });
   });
 });

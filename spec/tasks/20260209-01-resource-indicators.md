@@ -48,13 +48,13 @@ Create `buildResourceIndicators(item: CslItem): string` that returns the concate
 
 Add indicator line as the last line of `formatSingleReference()` in `pretty.ts`.
 
-- [ ] Write test: `src/features/format/pretty.test.ts` (add cases for indicator line)
+- [x] Write test: `src/features/format/pretty.test.ts` (add cases for indicator line)
   - Reference with indicators → last line contains emoji
   - Reference without indicators → no extra line added
   - Indicator line is indented with 2 spaces like other fields
-- [ ] Implement: Call `buildResourceIndicators()` in `formatSingleReference()`, append line if non-empty
-- [ ] Verify Green: `npm run test:unit -- pretty.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: Call `buildResourceIndicators()` in `formatSingleReference()`, append line if non-empty
+- [x] Verify Green: `npm run test:unit -- pretty.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Integrate into TUI interactive mode
 

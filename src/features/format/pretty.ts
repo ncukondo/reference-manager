@@ -1,4 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
+import { buildResourceIndicators } from "./resource-indicators.js";
 
 /**
  * Format a single author as "Family, Given-Initial."
@@ -73,6 +74,12 @@ function formatSingleReference(item: CslItem): string {
   // UUID (always)
   const uuid = item.custom?.uuid || "(no uuid)";
   lines.push(`  UUID: ${uuid}`);
+
+  // Resource indicators (if any)
+  const indicators = buildResourceIndicators(item);
+  if (indicators) {
+    lines.push(`  ${indicators}`);
+  }
 
   return lines.join("\n");
 }
