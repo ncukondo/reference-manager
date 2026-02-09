@@ -227,10 +227,17 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
     defaultConfig.fulltext.sources.coreApiKey;
 
   const envPreferredType = process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE;
+  if (
+    envPreferredType !== undefined &&
+    envPreferredType !== "pdf" &&
+    envPreferredType !== "markdown"
+  ) {
+    throw new Error(
+      `Invalid value for REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE: "${envPreferredType}". Must be "pdf" or "markdown".`
+    );
+  }
   const preferredType =
-    envPreferredType === "pdf" || envPreferredType === "markdown"
-      ? envPreferredType
-      : (partial?.preferredType ?? defaultConfig.fulltext.preferredType);
+    envPreferredType ?? partial?.preferredType ?? defaultConfig.fulltext.preferredType;
 
   return {
     preferSources: partial?.preferSources ?? defaultConfig.fulltext.preferSources,

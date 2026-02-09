@@ -1184,6 +1184,14 @@ preferred_type = "pdf"
       expect(config.fulltext.preferredType).toBe("markdown");
     });
 
+    it("should reject invalid REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE env var values", () => {
+      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "html";
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow(
+        'Invalid value for REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE: "html". Must be "pdf" or "markdown".'
+      );
+    });
+
     it("should merge preferred_type with other fulltext settings", () => {
       const configPath = join(testDir, ".reference-manager.config.toml");
       writeFileSync(
