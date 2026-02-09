@@ -82,10 +82,10 @@ TTY-required tests (run manually in a terminal):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification: `./test-fixtures/test-resource-indicators.sh` (if applicable)
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
