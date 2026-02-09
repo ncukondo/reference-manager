@@ -85,19 +85,13 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 33**: Sync Interactive Role Assignment (context-based role suggestion, interactive prompt, rename support)
 - **Phase 34**: Fulltext Retrieval (OA Discovery & Download, `fulltext discover/fetch/convert`, `add --fetch-fulltext`)
 - **Phase 35**: Resource Indicators (emoji indicators 📄📝📎🔗🏷 in pretty format and TUI interactive mode)
+- **Phase 36**: Fulltext Preferred Type (configurable preferred type with 3-layer priority: config < env < CLI)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
 ## Next Steps
-
-### Phase 36: Fulltext Preferred Type
-
-Configurable preferred fulltext type (pdf/markdown) with 3-layer priority:
-config file < environment variable < CLI option.
-
-- Task: `spec/tasks/20260209-02-fulltext-preferred-type.md`
 
 ### MCPB Registry Submission
 
