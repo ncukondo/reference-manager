@@ -27,7 +27,7 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Create `buildResourceIndicators(item: CslItem): string` that returns the concatenated emoji string based on item data.
 
-- [ ] Write test: `src/features/format/resource-indicators.test.ts`
+- [x] Write test: `src/features/format/resource-indicators.test.ts`
   - Item with fulltext PDF → `"📄"`
   - Item with fulltext Markdown → `"📝"`
   - Item with both fulltext formats → `"📄📝"`
@@ -38,11 +38,11 @@ Create `buildResourceIndicators(item: CslItem): string` that returns the concate
   - Item with all resources → `"📄📝📎🔗🏷"`
   - Item with no resources → `""`
   - Icon order is always fixed regardless of data order
-- [ ] Create stub: `src/features/format/resource-indicators.ts` (export function with `throw new Error("Not implemented")`)
-- [ ] Verify Red: `npm run test:unit -- resource-indicators.test.ts` (tests fail with "Not implemented")
-- [ ] Implement: Write actual logic using `findFulltextFiles()` and direct field checks
-- [ ] Verify Green: `npm run test:unit -- resource-indicators.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Create stub: `src/features/format/resource-indicators.ts` (export function with `throw new Error("Not implemented")`)
+- [x] Verify Red: `npm run test:unit -- resource-indicators.test.ts` (tests fail with "Not implemented")
+- [x] Implement: Write actual logic using `findFulltextFiles()` and direct field checks
+- [x] Verify Green: `npm run test:unit -- resource-indicators.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Integrate into pretty formatter
 
