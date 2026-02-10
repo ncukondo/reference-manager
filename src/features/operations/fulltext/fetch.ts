@@ -83,24 +83,30 @@ async function tryDownloadPdf(
   tempDir: string,
   ctx: AttachContext
 ): Promise<{ attached: boolean; source: string }> {
-  const pdfLocation = locations.find((loc) => loc.urlType === "pdf");
-  if (!pdfLocation) return { attached: false, source: "" };
+  const pdfLocations = locations.filter((loc) => loc.urlType === "pdf");
+  if (pdfLocations.length === 0) return { attached: false, source: "" };
 
   const pdfPath = join(tempDir, "fulltext.pdf");
-  const pdfResult = await downloadPdf(pdfLocation.url, pdfPath);
-  if (!pdfResult.success) return { attached: false, source: pdfLocation.source };
+  for (const pdfLocation of pdfLocations) {
+    const pdfResult = await downloadPdf(pdfLocation.url, pdfPath);
+    if (!pdfResult.success) continue;
 
-  const attachResult = await fulltextAttach(ctx.library, {
-    identifier: ctx.identifier,
-    idType: ctx.idType,
-    filePath: pdfPath,
-    type: "pdf",
-    force: ctx.force,
-    move: true,
-    fulltextDirectory: ctx.fulltextDirectory,
-  });
+    const attachResult = await fulltextAttach(ctx.library, {
+      identifier: ctx.identifier,
+      idType: ctx.idType,
+      filePath: pdfPath,
+      type: "pdf",
+      force: ctx.force,
+      move: true,
+      fulltextDirectory: ctx.fulltextDirectory,
+    });
 
-  return { attached: attachResult.success, source: pdfLocation.source };
+    if (attachResult.success) {
+      return { attached: true, source: pdfLocation.source };
+    }
+  }
+
+  return { attached: false, source: pdfLocations[0]?.source ?? "" };
 }
 
 async function tryDownloadPmcXmlAndConvert(

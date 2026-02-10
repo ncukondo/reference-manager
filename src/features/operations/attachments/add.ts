@@ -2,7 +2,7 @@
  * Attachment add operation
  */
 
-import { copyFile, rename, stat } from "node:fs/promises";
+import { copyFile, rename, stat, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
@@ -123,7 +123,16 @@ async function copyOrMoveFile(
 ): Promise<string | null> {
   try {
     if (move) {
-      await rename(sourcePath, destPath);
+      try {
+        await rename(sourcePath, destPath);
+      } catch (renameError: unknown) {
+        if (renameError instanceof Error && "code" in renameError && renameError.code === "EXDEV") {
+          await copyFile(sourcePath, destPath);
+          await unlink(sourcePath);
+        } else {
+          throw renameError;
+        }
+      }
     } else {
       await copyFile(sourcePath, destPath);
     }
