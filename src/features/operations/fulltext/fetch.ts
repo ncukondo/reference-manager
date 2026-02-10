@@ -59,6 +59,22 @@ interface AttachContext {
   force: boolean;
 }
 
+/**
+ * Extract PMCID from PMC locations as a fallback when discoveredIds is empty.
+ * Matches PMC PDF URLs like /pmc/articles/PMC12345678/pdf/
+ * and efetch XML URLs like efetch.fcgi?db=pmc&id=12345678
+ */
+function extractPmcidFromLocations(locations: OALocation[]): string | undefined {
+  for (const loc of locations) {
+    if (loc.source !== "pmc") continue;
+    const pdfMatch = loc.url.match(/\/pmc\/articles\/(PMC\d+)\//);
+    if (pdfMatch) return pdfMatch[1];
+    const xmlMatch = loc.url.match(/[?&]id=(\d+)/);
+    if (xmlMatch) return `PMC${xmlMatch[1]}`;
+  }
+  return undefined;
+}
+
 function buildDiscoveryArticle(item: CslItem): DiscoveryArticle {
   const article: DiscoveryArticle = {};
   if (item.DOI) article.doi = item.DOI;
@@ -222,7 +238,8 @@ export async function fulltextFetch(
     return { success: false, error: `No OA sources found for ${identifier}` };
   }
 
-  const effectivePmcid = item.PMCID ?? discovery.discoveredIds?.pmcid;
+  const effectivePmcid =
+    item.PMCID ?? discovery.discoveredIds?.pmcid ?? extractPmcidFromLocations(locations);
 
   const tempDir = await mkdtemp(join(tmpdir(), "ref-fulltext-"));
   const ctx: AttachContext = {
