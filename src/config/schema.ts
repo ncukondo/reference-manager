@@ -123,6 +123,8 @@ export const fulltextConfigSchema = z.object({
   sources: z.object({
     unpaywallEmail: z.string().optional(),
     coreApiKey: z.string().optional(),
+    ncbiEmail: z.string().optional(),
+    ncbiTool: z.string().optional(),
   }),
 });
 
@@ -223,6 +225,10 @@ export const partialConfigSchema = z
             unpaywall_email: z.string().optional(),
             coreApiKey: z.string().optional(),
             core_api_key: z.string().optional(),
+            ncbiEmail: z.string().optional(),
+            ncbi_email: z.string().optional(),
+            ncbiTool: z.string().optional(),
+            ncbi_tool: z.string().optional(),
           })
           .optional(),
       })
@@ -530,6 +536,10 @@ function normalizeFulltextSources(
     unpaywall_email?: string;
     coreApiKey?: string;
     core_api_key?: string;
+    ncbiEmail?: string;
+    ncbi_email?: string;
+    ncbiTool?: string;
+    ncbi_tool?: string;
   }>
 ): Partial<FulltextConfig["sources"]> | undefined {
   if (sources === undefined) {
@@ -546,6 +556,16 @@ function normalizeFulltextSources(
   const coreApiKey = sources.coreApiKey ?? sources.core_api_key;
   if (coreApiKey !== undefined) {
     normalized.coreApiKey = coreApiKey;
+  }
+
+  const ncbiEmail = sources.ncbiEmail ?? sources.ncbi_email;
+  if (ncbiEmail !== undefined) {
+    normalized.ncbiEmail = ncbiEmail;
+  }
+
+  const ncbiTool = sources.ncbiTool ?? sources.ncbi_tool;
+  if (ncbiTool !== undefined) {
+    normalized.ncbiTool = ncbiTool;
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

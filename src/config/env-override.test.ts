@@ -70,6 +70,16 @@ describe("env-override", () => {
       expect(getEnvOverride("fulltext.preferred_type")).toBe("markdown");
     });
 
+    it("returns value when NCBI_EMAIL is set", () => {
+      process.env.NCBI_EMAIL = "ncbi@example.com";
+      expect(getEnvOverride("fulltext.sources.ncbi_email")).toBe("ncbi@example.com");
+    });
+
+    it("returns value when NCBI_TOOL is set", () => {
+      process.env.NCBI_TOOL = "my-tool";
+      expect(getEnvOverride("fulltext.sources.ncbi_tool")).toBe("my-tool");
+    });
+
     it("returns null when no override is set", () => {
       expect(getEnvOverride("library")).toBeNull();
       expect(getEnvOverride("pubmed.email")).toBeNull();

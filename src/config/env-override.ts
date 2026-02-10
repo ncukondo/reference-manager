@@ -16,6 +16,8 @@ export const ENV_OVERRIDE_MAP: Record<string, string> = {
   PUBMED_API_KEY: "pubmed.api_key",
   UNPAYWALL_EMAIL: "fulltext.sources.unpaywall_email",
   CORE_API_KEY: "fulltext.sources.core_api_key",
+  NCBI_EMAIL: "fulltext.sources.ncbi_email",
+  NCBI_TOOL: "fulltext.sources.ncbi_tool",
 };
 
 /**

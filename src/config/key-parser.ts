@@ -110,6 +110,18 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "API key for CORE",
     optional: true,
   },
+  {
+    key: "fulltext.sources.ncbi_email",
+    type: "string",
+    description: "Email for NCBI E-utilities",
+    optional: true,
+  },
+  {
+    key: "fulltext.sources.ncbi_tool",
+    type: "string",
+    description: "Tool name for NCBI E-utilities",
+    optional: true,
+  },
 
   // attachments section
   { key: "attachments.directory", type: "string", description: "Attachments storage directory" },

@@ -225,6 +225,12 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
     process.env.CORE_API_KEY ??
     partial?.sources?.coreApiKey ??
     defaultConfig.fulltext.sources.coreApiKey;
+  const ncbiEmail =
+    process.env.NCBI_EMAIL ??
+    partial?.sources?.ncbiEmail ??
+    defaultConfig.fulltext.sources.ncbiEmail;
+  const ncbiTool =
+    process.env.NCBI_TOOL ?? partial?.sources?.ncbiTool ?? defaultConfig.fulltext.sources.ncbiTool;
 
   const envPreferredType = process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE;
   if (
@@ -246,6 +252,8 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
     sources: {
       unpaywallEmail,
       coreApiKey,
+      ncbiEmail,
+      ncbiTool,
     },
   };
 }

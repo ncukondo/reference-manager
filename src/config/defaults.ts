@@ -93,6 +93,8 @@ export const defaultConfig: Config = {
     sources: {
       unpaywallEmail: undefined,
       coreApiKey: undefined,
+      ncbiEmail: undefined,
+      ncbiTool: undefined,
     },
   },
   attachments: {

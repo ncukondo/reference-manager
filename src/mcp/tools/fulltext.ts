@@ -302,7 +302,7 @@ export function registerFulltextFetchTool(
     "fulltext_fetch",
     {
       description:
-        "Download and attach Open Access full-text for a reference. Automatically discovers OA sources, downloads PDF/XML, converts PMC XML to Markdown, and attaches files.",
+        "Download and attach Open Access full-text for a reference. Automatically discovers OA sources, downloads PDF/XML/HTML, converts PMC XML and arXiv HTML to Markdown, and attaches files.",
       inputSchema: {
         id: z.string().describe("Reference ID"),
         source: z

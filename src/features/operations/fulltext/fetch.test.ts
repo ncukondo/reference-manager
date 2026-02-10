@@ -10,6 +10,8 @@ vi.mock("@ncukondo/academic-fulltext", () => ({
   downloadPdf: vi.fn(),
   downloadPmcXml: vi.fn(),
   convertPmcXmlToMarkdown: vi.fn(),
+  downloadArxivHtml: vi.fn(),
+  convertArxivHtmlToMarkdown: vi.fn(),
 }));
 
 vi.mock("./attach.js", () => ({
@@ -21,8 +23,10 @@ vi.mock("./get.js", () => ({
 }));
 
 import {
+  convertArxivHtmlToMarkdown,
   convertPmcXmlToMarkdown,
   discoverOA,
+  downloadArxivHtml,
   downloadPdf,
   downloadPmcXml,
 } from "@ncukondo/academic-fulltext";
@@ -33,6 +37,8 @@ const mockedDiscoverOA = vi.mocked(discoverOA);
 const mockedDownloadPdf = vi.mocked(downloadPdf);
 const mockedDownloadPmcXml = vi.mocked(downloadPmcXml);
 const mockedConvertPmcXml = vi.mocked(convertPmcXmlToMarkdown);
+const mockedDownloadArxivHtml = vi.mocked(downloadArxivHtml);
+const mockedConvertArxivHtml = vi.mocked(convertArxivHtmlToMarkdown);
 const mockedFulltextAttach = vi.mocked(fulltextAttach);
 const mockedFulltextGet = vi.mocked(fulltextGet);
 
@@ -134,6 +140,7 @@ describe("fulltextFetch", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -159,6 +166,7 @@ describe("fulltextFetch", () => {
       oaStatus: "closed",
       locations: [],
       errors: [],
+      discoveredIds: {},
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -184,6 +192,7 @@ describe("fulltextFetch", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -222,6 +231,7 @@ describe("fulltextFetch", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
@@ -266,6 +276,7 @@ describe("fulltextFetch", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -302,6 +313,7 @@ describe("fulltextFetch", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "403 Forbidden" });
 
@@ -313,6 +325,82 @@ describe("fulltextFetch", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("Failed to download");
+  });
+
+  it("should use discoveredIds.pmcid when item has no PMCID", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "pmc",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9999999/",
+          urlType: "xml",
+          version: "published",
+        },
+      ],
+      errors: [],
+      discoveredIds: { pmcid: "PMC9999999" },
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
+    mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
+    mockedConvertPmcXml.mockResolvedValue({ success: true, title: "Test", sections: 5 });
+    mockedFulltextAttach.mockResolvedValue({
+      success: true,
+      filename: "fulltext.md",
+      type: "markdown",
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.attachedFiles).toContain("markdown");
+    expect(mockedDownloadPmcXml).toHaveBeenCalledWith(
+      "PMC9999999",
+      expect.stringContaining("fulltext.xml")
+    );
+  });
+
+  it("should prioritize item PMCID over discoveredIds.pmcid", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(
+      createItem("test-id", { DOI: "10.1234/test", PMCID: "PMC1111111" })
+    );
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "pmc",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1111111/",
+          urlType: "xml",
+          version: "published",
+        },
+      ],
+      errors: [],
+      discoveredIds: { pmcid: "PMC9999999" },
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
+    mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
+    mockedConvertPmcXml.mockResolvedValue({ success: true, title: "Test", sections: 5 });
+    mockedFulltextAttach.mockResolvedValue({
+      success: true,
+      filename: "fulltext.md",
+      type: "markdown",
+    });
+
+    await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(mockedDownloadPmcXml).toHaveBeenCalledWith(
+      "PMC1111111",
+      expect.stringContaining("fulltext.xml")
+    );
   });
 
   it("should support uuid identifier type", async () => {
@@ -328,6 +416,7 @@ describe("fulltextFetch", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -344,5 +433,170 @@ describe("fulltextFetch", () => {
     });
 
     expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { idType: "uuid" });
+  });
+
+  it("should download arXiv HTML and convert when available", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "arxiv",
+          url: "https://arxiv.org/html/2301.13867v2",
+          urlType: "html",
+          version: "submitted",
+        },
+      ],
+      errors: [],
+      discoveredIds: {},
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
+    mockedDownloadArxivHtml.mockResolvedValue({ success: true, size: 10000 });
+    mockedConvertArxivHtml.mockResolvedValue({ success: true, title: "Test", sections: 3 });
+    mockedFulltextAttach.mockResolvedValue({
+      success: true,
+      filename: "fulltext.md",
+      type: "markdown",
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.attachedFiles).toContain("markdown");
+    expect(result.source).toBe("arxiv");
+    expect(mockedDownloadArxivHtml).toHaveBeenCalledWith(
+      "2301.13867v2",
+      expect.stringContaining("fulltext.html")
+    );
+    expect(mockedConvertArxivHtml).toHaveBeenCalled();
+  });
+
+  it("should skip arXiv HTML if markdown already from PMC", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(
+      createItem("test-id", { DOI: "10.1234/test", PMCID: "PMC1234567" })
+    );
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "pmc",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1234567/",
+          urlType: "xml",
+          version: "published",
+        },
+        {
+          source: "arxiv",
+          url: "https://arxiv.org/html/2301.13867v2",
+          urlType: "html",
+          version: "submitted",
+        },
+      ],
+      errors: [],
+      discoveredIds: {},
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
+    mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
+    mockedConvertPmcXml.mockResolvedValue({ success: true, title: "Test", sections: 5 });
+    mockedFulltextAttach.mockResolvedValue({
+      success: true,
+      filename: "fulltext.md",
+      type: "markdown",
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.attachedFiles).toContain("markdown");
+    expect(mockedDownloadArxivHtml).not.toHaveBeenCalled();
+  });
+
+  it("should try arXiv HTML alongside PDF (both attached)", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "arxiv",
+          url: "https://arxiv.org/pdf/2301.13867",
+          urlType: "pdf",
+          version: "submitted",
+        },
+        {
+          source: "arxiv",
+          url: "https://arxiv.org/html/2301.13867",
+          urlType: "html",
+          version: "submitted",
+        },
+      ],
+      errors: [],
+      discoveredIds: {},
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
+    mockedDownloadArxivHtml.mockResolvedValue({ success: true, size: 10000 });
+    mockedConvertArxivHtml.mockResolvedValue({ success: true, title: "Test", sections: 3 });
+    mockedFulltextAttach.mockResolvedValue({
+      success: true,
+      filename: "fulltext.pdf",
+      type: "pdf",
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.attachedFiles).toContain("pdf");
+    expect(result.attachedFiles).toContain("markdown");
+    expect(mockedDownloadArxivHtml).toHaveBeenCalled();
+  });
+
+  it("should handle arXiv HTML download failure gracefully", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "arxiv",
+          url: "https://arxiv.org/pdf/2301.13867",
+          urlType: "pdf",
+          version: "submitted",
+        },
+        {
+          source: "arxiv",
+          url: "https://arxiv.org/html/2301.13867",
+          urlType: "html",
+          version: "submitted",
+        },
+      ],
+      errors: [],
+      discoveredIds: {},
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
+    mockedDownloadArxivHtml.mockResolvedValue({ success: false, error: "404 Not Found" });
+    mockedFulltextAttach.mockResolvedValue({
+      success: true,
+      filename: "fulltext.pdf",
+      type: "pdf",
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.attachedFiles).toContain("pdf");
+    expect(result.attachedFiles).not.toContain("markdown");
   });
 });

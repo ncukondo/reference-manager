@@ -12,13 +12,27 @@ import { getPaths } from "./paths.js";
 
 describe("Config Loader", () => {
   let testDir: string;
-  let originalEnv: string | undefined;
-  let originalLibrary: string | undefined;
-  let originalPubmedEmail: string | undefined;
-  let originalPubmedApiKey: string | undefined;
-  let originalUnpaywallEmail: string | undefined;
-  let originalCoreApiKey: string | undefined;
-  let originalPreferredType: string | undefined;
+
+  const ENV_VARS_TO_SAVE = [
+    "REFERENCE_MANAGER_CONFIG",
+    "REFERENCE_MANAGER_LIBRARY",
+    "PUBMED_EMAIL",
+    "PUBMED_API_KEY",
+    "UNPAYWALL_EMAIL",
+    "CORE_API_KEY",
+    "REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE",
+    "NCBI_EMAIL",
+    "NCBI_TOOL",
+  ] as const;
+  const savedEnv: Record<string, string | undefined> = {};
+
+  function restoreEnvVar(name: string, original: string | undefined): void {
+    if (original === undefined) {
+      delete process.env[name];
+    } else {
+      process.env[name] = original;
+    }
+  }
 
   beforeEach(() => {
     // Create a temporary test directory
@@ -26,13 +40,9 @@ describe("Config Loader", () => {
     mkdirSync(testDir, { recursive: true });
 
     // Save original environment variables
-    originalEnv = process.env.REFERENCE_MANAGER_CONFIG;
-    originalLibrary = process.env.REFERENCE_MANAGER_LIBRARY;
-    originalPubmedEmail = process.env.PUBMED_EMAIL;
-    originalPubmedApiKey = process.env.PUBMED_API_KEY;
-    originalUnpaywallEmail = process.env.UNPAYWALL_EMAIL;
-    originalCoreApiKey = process.env.CORE_API_KEY;
-    originalPreferredType = process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE;
+    for (const name of ENV_VARS_TO_SAVE) {
+      savedEnv[name] = process.env[name];
+    }
   });
 
   afterEach(() => {
@@ -40,47 +50,8 @@ describe("Config Loader", () => {
     rmSync(testDir, { recursive: true, force: true });
 
     // Restore environment variables
-    if (originalEnv === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.REFERENCE_MANAGER_CONFIG;
-    } else {
-      process.env.REFERENCE_MANAGER_CONFIG = originalEnv;
-    }
-    if (originalLibrary === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.REFERENCE_MANAGER_LIBRARY;
-    } else {
-      process.env.REFERENCE_MANAGER_LIBRARY = originalLibrary;
-    }
-    if (originalPubmedEmail === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.PUBMED_EMAIL;
-    } else {
-      process.env.PUBMED_EMAIL = originalPubmedEmail;
-    }
-    if (originalPubmedApiKey === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.PUBMED_API_KEY;
-    } else {
-      process.env.PUBMED_API_KEY = originalPubmedApiKey;
-    }
-    if (originalUnpaywallEmail === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.UNPAYWALL_EMAIL;
-    } else {
-      process.env.UNPAYWALL_EMAIL = originalUnpaywallEmail;
-    }
-    if (originalCoreApiKey === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.CORE_API_KEY;
-    } else {
-      process.env.CORE_API_KEY = originalCoreApiKey;
-    }
-    if (originalPreferredType === undefined) {
-      // biome-ignore lint/performance/noDelete: delete is required for env vars
-      delete process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE;
-    } else {
-      process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = originalPreferredType;
+    for (const name of ENV_VARS_TO_SAVE) {
+      restoreEnvVar(name, savedEnv[name]);
     }
   });
 
@@ -900,6 +871,8 @@ debounce_ms = 0
       expect(config.fulltext.preferSources).toEqual(["pmc", "arxiv", "unpaywall", "core"]);
       expect(config.fulltext.sources.unpaywallEmail).toBeUndefined();
       expect(config.fulltext.sources.coreApiKey).toBeUndefined();
+      expect(config.fulltext.sources.ncbiEmail).toBeUndefined();
+      expect(config.fulltext.sources.ncbiTool).toBeUndefined();
     });
 
     it("should load fulltext.prefer_sources from config", () => {
@@ -1208,6 +1181,95 @@ prefer_sources = ["unpaywall", "pmc"]
       expect(config.fulltext.preferredType).toBe("markdown");
       expect(config.fulltext.autoFetchOnAdd).toBe(true);
       expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
+    });
+
+    it("should load fulltext.sources.ncbi_email from config (snake_case)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+ncbi_email = "ncbi@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiEmail).toBe("ncbi@example.com");
+    });
+
+    it("should load fulltext.sources.ncbiEmail from config (camelCase)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+ncbiEmail = "ncbi@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiEmail).toBe("ncbi@example.com");
+    });
+
+    it("should load fulltext.sources.ncbi_tool from config (snake_case)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+ncbi_tool = "my-tool"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiTool).toBe("my-tool");
+    });
+
+    it("should load fulltext.sources.ncbiTool from config (camelCase)", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+ncbiTool = "my-tool"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiTool).toBe("my-tool");
+    });
+
+    it("should load ncbiEmail from NCBI_EMAIL environment variable", () => {
+      process.env.NCBI_EMAIL = "env-ncbi@example.com";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiEmail).toBe("env-ncbi@example.com");
+    });
+
+    it("should load ncbiTool from NCBI_TOOL environment variable", () => {
+      process.env.NCBI_TOOL = "env-tool";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiTool).toBe("env-tool");
+    });
+
+    it("should prioritize environment variables over config file for NCBI settings", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[fulltext.sources]
+ncbi_email = "config@example.com"
+ncbi_tool = "config-tool"
+`
+      );
+
+      process.env.NCBI_EMAIL = "env@example.com";
+      process.env.NCBI_TOOL = "env-tool";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.ncbiEmail).toBe("env@example.com");
+      expect(config.fulltext.sources.ncbiTool).toBe("env-tool");
     });
   });
 });

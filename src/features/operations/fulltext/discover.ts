@@ -36,6 +36,8 @@ export interface FulltextDiscoverResult {
   locations?: OALocation[];
   /** Source-level errors (non-fatal) */
   errors?: Array<{ source: string; error: string }>;
+  /** IDs discovered during OA resolution (e.g. PMCID from DOI via NCBI) */
+  discoveredIds?: { pmcid?: string; pmid?: string };
 }
 
 export async function fulltextDiscover(
@@ -74,6 +76,8 @@ export async function fulltextDiscover(
     coreApiKey: fulltextConfig.sources.coreApiKey ?? "",
     preferSources: fulltextConfig.preferSources,
   };
+  if (fulltextConfig.sources.ncbiEmail) config.ncbiEmail = fulltextConfig.sources.ncbiEmail;
+  if (fulltextConfig.sources.ncbiTool) config.ncbiTool = fulltextConfig.sources.ncbiTool;
 
   const result = await discoverOA(article, config);
 
@@ -82,6 +86,7 @@ export async function fulltextDiscover(
     referenceId: item.id,
     oaStatus: result.oaStatus,
     locations: result.locations,
+    discoveredIds: result.discoveredIds,
   };
   if (result.errors.length > 0) {
     discoverResult.errors = result.errors;

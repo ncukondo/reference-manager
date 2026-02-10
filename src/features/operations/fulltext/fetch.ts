@@ -12,8 +12,10 @@ import {
   type DiscoveryArticle,
   type DiscoveryConfig,
   type OALocation,
+  convertArxivHtmlToMarkdown,
   convertPmcXmlToMarkdown,
   discoverOA,
+  downloadArxivHtml,
   downloadPdf,
   downloadPmcXml,
 } from "@ncukondo/academic-fulltext";
@@ -66,11 +68,14 @@ function buildDiscoveryArticle(item: CslItem): DiscoveryArticle {
 }
 
 function buildDiscoveryConfig(fulltextConfig: FulltextConfig): DiscoveryConfig {
-  return {
+  const config: DiscoveryConfig = {
     unpaywallEmail: fulltextConfig.sources.unpaywallEmail ?? "",
     coreApiKey: fulltextConfig.sources.coreApiKey ?? "",
     preferSources: fulltextConfig.preferSources,
   };
+  if (fulltextConfig.sources.ncbiEmail) config.ncbiEmail = fulltextConfig.sources.ncbiEmail;
+  if (fulltextConfig.sources.ncbiTool) config.ncbiTool = fulltextConfig.sources.ncbiTool;
+  return config;
 }
 
 async function tryDownloadPdf(
@@ -109,6 +114,44 @@ async function tryDownloadPmcXmlAndConvert(
 
   const mdPath = join(tempDir, "fulltext.md");
   const convertResult = await convertPmcXmlToMarkdown(xmlPath, mdPath);
+  if (!convertResult.success) return false;
+
+  const attachResult = await fulltextAttach(ctx.library, {
+    identifier: ctx.identifier,
+    idType: ctx.idType,
+    filePath: mdPath,
+    type: "markdown",
+    force: ctx.force,
+    move: true,
+    fulltextDirectory: ctx.fulltextDirectory,
+  });
+
+  return attachResult.success;
+}
+
+/**
+ * Extract arXiv ID from an arXiv URL.
+ * Handles formats like:
+ *   https://arxiv.org/abs/2301.13867
+ *   https://arxiv.org/html/2301.13867v2
+ *   https://arxiv.org/pdf/2301.13867
+ */
+function extractArxivId(url: string): string | undefined {
+  const match = url.match(/arxiv\.org\/(?:abs|html|pdf)\/(\d{4}\.\d{4,5}(?:v\d+)?)/);
+  return match?.[1];
+}
+
+async function tryDownloadArxivHtmlAndConvert(
+  arxivId: string,
+  tempDir: string,
+  ctx: AttachContext
+): Promise<boolean> {
+  const htmlPath = join(tempDir, "fulltext.html");
+  const htmlResult = await downloadArxivHtml(arxivId, htmlPath);
+  if (!htmlResult.success) return false;
+
+  const mdPath = join(tempDir, "fulltext.md");
+  const convertResult = await convertArxivHtmlToMarkdown(htmlPath, mdPath);
   if (!convertResult.success) return false;
 
   const attachResult = await fulltextAttach(ctx.library, {
@@ -173,6 +216,8 @@ export async function fulltextFetch(
     return { success: false, error: `No OA sources found for ${identifier}` };
   }
 
+  const effectivePmcid = item.PMCID ?? discovery.discoveredIds?.pmcid;
+
   const tempDir = await mkdtemp(join(tmpdir(), "ref-fulltext-"));
   const ctx: AttachContext = {
     library,
@@ -183,10 +228,38 @@ export async function fulltextFetch(
   };
 
   try {
-    return await downloadAndAttach(locations, item.PMCID, tempDir, ctx, item.id, identifier);
+    return await downloadAndAttach(locations, effectivePmcid, tempDir, ctx, item.id, identifier);
   } finally {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
+}
+
+async function tryArxivHtmlFromLocations(
+  locations: OALocation[],
+  tempDir: string,
+  ctx: AttachContext
+): Promise<{ attached: boolean; source: string }> {
+  const arxivHtmlLocation = locations.find(
+    (loc) => loc.source === "arxiv" && loc.urlType === "html"
+  );
+  if (!arxivHtmlLocation) return { attached: false, source: "" };
+
+  const arxivId = extractArxivId(arxivHtmlLocation.url);
+  if (!arxivId) return { attached: false, source: "arxiv" };
+
+  const mdAttached = await tryDownloadArxivHtmlAndConvert(arxivId, tempDir, ctx);
+  return { attached: mdAttached, source: "arxiv" };
+}
+
+function buildDownloadError(locations: OALocation[], identifier: string): FulltextFetchResult {
+  const pdfLocation = locations.find((loc) => loc.urlType === "pdf");
+  if (pdfLocation) {
+    return {
+      success: false,
+      error: `Failed to download from ${pdfLocation.source}: download failed`,
+    };
+  }
+  return { success: false, error: `Failed to download fulltext for ${identifier}` };
 }
 
 async function downloadAndAttach(
@@ -206,6 +279,7 @@ async function downloadAndAttach(
     usedSource = pdfResult.source;
   }
 
+  // Try PMC XML -> Markdown
   if (pmcid) {
     const mdAttached = await tryDownloadPmcXmlAndConvert(pmcid, tempDir, ctx);
     if (mdAttached) {
@@ -214,21 +288,18 @@ async function downloadAndAttach(
     }
   }
 
-  if (attachedFiles.length === 0) {
-    const pdfLocation = locations.find((loc) => loc.urlType === "pdf");
-    if (pdfLocation) {
-      return {
-        success: false,
-        error: `Failed to download from ${pdfLocation.source}: download failed`,
-      };
+  // Try arXiv HTML -> Markdown if no markdown yet
+  if (!attachedFiles.includes("markdown")) {
+    const arxivResult = await tryArxivHtmlFromLocations(locations, tempDir, ctx);
+    if (arxivResult.attached) {
+      attachedFiles.push("markdown");
+      if (!usedSource) usedSource = arxivResult.source;
     }
-    return { success: false, error: `Failed to download fulltext for ${identifier}` };
   }
 
-  return {
-    success: true,
-    referenceId,
-    source: usedSource,
-    attachedFiles,
-  };
+  if (attachedFiles.length > 0) {
+    return { success: true, referenceId, source: usedSource, attachedFiles };
+  }
+
+  return buildDownloadError(locations, identifier);
 }

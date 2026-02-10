@@ -86,6 +86,7 @@ describe("fulltextDiscover", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
 
     const result = await fulltextDiscover(mockLibrary, {
@@ -120,6 +121,7 @@ describe("fulltextDiscover", () => {
         },
       ],
       errors: [],
+      discoveredIds: {},
     });
 
     const result = await fulltextDiscover(mockLibrary, {
@@ -140,6 +142,7 @@ describe("fulltextDiscover", () => {
       oaStatus: "open",
       locations: [],
       errors: [],
+      discoveredIds: {},
     });
 
     await fulltextDiscover(mockLibrary, {
@@ -159,6 +162,7 @@ describe("fulltextDiscover", () => {
       oaStatus: "closed",
       locations: [],
       errors: [],
+      discoveredIds: {},
     });
 
     const result = await fulltextDiscover(mockLibrary, {
@@ -177,6 +181,7 @@ describe("fulltextDiscover", () => {
       oaStatus: "open",
       locations: [],
       errors: [],
+      discoveredIds: {},
     });
 
     await fulltextDiscover(mockLibrary, {
@@ -188,12 +193,66 @@ describe("fulltextDiscover", () => {
     expect(mockLibrary.find).toHaveBeenCalledWith("test-uuid", { idType: "uuid" });
   });
 
+  it("should pass ncbiEmail and ncbiTool to discovery config", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [],
+      errors: [],
+      discoveredIds: {},
+    });
+
+    const configWithNcbi: FulltextConfig = {
+      ...defaultConfig,
+      sources: {
+        ...defaultConfig.sources,
+        ncbiEmail: "ncbi@example.com",
+        ncbiTool: "my-tool",
+      },
+    };
+
+    await fulltextDiscover(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: configWithNcbi,
+    });
+
+    expect(mockedDiscoverOA).toHaveBeenCalledWith(
+      { doi: "10.1234/test" },
+      {
+        unpaywallEmail: "test@example.com",
+        coreApiKey: "test-key",
+        preferSources: ["pmc", "arxiv", "unpaywall", "core"],
+        ncbiEmail: "ncbi@example.com",
+        ncbiTool: "my-tool",
+      }
+    );
+  });
+
+  it("should surface discoveredIds from discovery result", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [],
+      errors: [],
+      discoveredIds: { pmcid: "PMC9999999" },
+    });
+
+    const result = await fulltextDiscover(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.discoveredIds).toEqual({ pmcid: "PMC9999999" });
+  });
+
   it("should propagate discovery errors in result", async () => {
     vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
     mockedDiscoverOA.mockResolvedValue({
       oaStatus: "unknown",
       locations: [],
       errors: [{ source: "unpaywall", error: "Rate limited" }],
+      discoveredIds: {},
     });
 
     const result = await fulltextDiscover(mockLibrary, {
