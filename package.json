@@ -1,6 +1,6 @@
 {
   "name": "@ncukondo/reference-manager",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "description": "A local reference management tool using CSL-JSON as the single source of truth",
   "publishConfig": {
     "access": "public"
