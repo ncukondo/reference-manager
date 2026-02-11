@@ -10,6 +10,7 @@ import { createElement } from "react";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { SearchResult } from "../search/types.js";
 import { restoreStdinAfterInk } from "./alternate-screen.js";
+import { toChoice } from "./choice-builder.js";
 import {
   type Choice,
   SearchableMultiSelect,
@@ -18,7 +19,6 @@ import {
   getTerminalHeight,
   getTerminalWidth,
 } from "./components/index.js";
-import { formatAuthors } from "./format.js";
 
 /**
  * Configuration for the search prompt
@@ -46,111 +46,6 @@ export interface SearchPromptResult {
 }
 
 export { calculateEffectiveLimit, getTerminalHeight, getTerminalWidth };
-
-/**
- * Extract year from CSL item
- */
-function extractYear(item: CslItem): number | undefined {
-  const dateParts = item.issued?.["date-parts"];
-  if (!dateParts || dateParts.length === 0) return undefined;
-  const firstDatePart = dateParts[0];
-  if (!firstDatePart || firstDatePart.length === 0) return undefined;
-  return firstDatePart[0];
-}
-
-/**
- * Extract published date from CSL item
- */
-function extractPublishedDate(item: CslItem): Date | undefined {
-  const dateParts = item.issued?.["date-parts"];
-  if (!dateParts || dateParts.length === 0) return undefined;
-  const firstDatePart = dateParts[0];
-  if (!firstDatePart || firstDatePart.length === 0) return undefined;
-  const [year, month = 1, day = 1] = firstDatePart;
-  if (year === undefined) return undefined;
-  return new Date(year, month - 1, day);
-}
-
-/**
- * Extract updated date from CSL item (from custom.timestamp)
- */
-function extractUpdatedDate(item: CslItem): Date | undefined {
-  const dateStr = item.custom?.timestamp;
-  if (!dateStr || typeof dateStr !== "string") return undefined;
-  const date = new Date(dateStr);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-/**
- * Extract created date from CSL item (from custom.created_at)
- */
-function extractCreatedDate(item: CslItem): Date | undefined {
-  const dateStr = item.custom?.created_at;
-  if (!dateStr || typeof dateStr !== "string") return undefined;
-  const date = new Date(dateStr);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-/**
- * Format identifiers for meta line
- */
-function formatIdentifiers(item: CslItem): string {
-  const parts: string[] = [];
-  if (item.DOI) parts.push(`DOI: ${item.DOI}`);
-  if (item.PMID) parts.push(`PMID: ${item.PMID}`);
-  if (item.PMCID) parts.push(`PMCID: ${item.PMCID}`);
-  if (item.ISBN) parts.push(`ISBN: ${item.ISBN}`);
-  return parts.join(" · ");
-}
-
-/**
- * Format item type for display
- */
-function formatType(type: string): string {
-  const typeMap: Record<string, string> = {
-    "article-journal": "Journal article",
-    "article-magazine": "Magazine article",
-    "article-newspaper": "Newspaper article",
-    book: "Book",
-    chapter: "Book chapter",
-    "paper-conference": "Conference paper",
-    thesis: "Thesis",
-    report: "Report",
-    webpage: "Web page",
-  };
-  return typeMap[type] ?? type;
-}
-
-/**
- * Convert CslItem to Choice for SearchableMultiSelect
- */
-function toChoice(item: CslItem): Choice<CslItem> {
-  const authors = formatAuthors(item.author);
-  const year = extractYear(item);
-  const identifiers = formatIdentifiers(item);
-  const itemType = formatType(item.type);
-
-  // Build meta line: Year · Type · Identifiers
-  const metaParts: string[] = [];
-  if (year) metaParts.push(String(year));
-  metaParts.push(itemType);
-  if (identifiers) metaParts.push(identifiers);
-
-  const updatedDate = extractUpdatedDate(item);
-  const createdDate = extractCreatedDate(item);
-  const publishedDate = extractPublishedDate(item);
-
-  return {
-    id: item.id,
-    title: item.title ?? "(No title)",
-    subtitle: authors || "(No authors)",
-    meta: metaParts.join(" · "),
-    value: item,
-    ...(updatedDate && { updatedDate }),
-    ...(createdDate && { createdDate }),
-    ...(publishedDate && { publishedDate }),
-  };
-}
 
 /**
  * Props for the SearchPromptApp component
@@ -268,44 +163,4 @@ export async function runSearchPrompt(
         });
       });
   });
-}
-
-// Export legacy functions for backward compatibility with existing tests
-// These are no longer used by the React Ink implementation
-export interface AutoCompleteChoice {
-  name: string;
-  message: string;
-}
-
-/**
- * Creates choices from search results (legacy, for test compatibility)
- */
-export function createChoices(
-  results: SearchResult[],
-  _terminalWidth: number
-): AutoCompleteChoice[] {
-  return results.map((result, index) => ({
-    name: JSON.stringify({ index, item: result.reference }),
-    message: `[${index + 1}] ${result.reference.title ?? "(No title)"}`,
-  }));
-}
-
-/**
- * Parses selected values back to CslItems (legacy, for test compatibility)
- */
-export function parseSelectedValues(values: string | string[]): CslItem[] {
-  const valueArray = Array.isArray(values) ? values : [values];
-  const items: CslItem[] = [];
-
-  for (const value of valueArray) {
-    if (!value) continue;
-    try {
-      const data = JSON.parse(value) as { index: number; item: CslItem };
-      items.push(data.item);
-    } catch {
-      // Ignore parse errors
-    }
-  }
-
-  return items;
 }
