@@ -91,6 +91,20 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
+## Active Tasks
+
+### Phase 37: TUI Indicator & Meta Line Improvements
+
+Task: `spec/tasks/20260211-01-tui-indicator-improvements.md`
+
+- **Scope**:
+  - Replace emoji indicators with dim-compatible text labels (`pdf`, `md`, `file`, `url`, `tag`)
+  - Show journal/publisher name instead of item type in TUI meta line
+  - Fix missing indicators in `ref fulltext get` and other interactive selection TUIs
+  - Unify duplicated `toChoice` into shared `choice-builder.ts` module
+
+---
+
 ## Next Steps
 
 ### MCPB Registry Submission
