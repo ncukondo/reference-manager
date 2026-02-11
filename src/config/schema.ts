@@ -251,6 +251,8 @@ export const partialConfigSchema = z
             limit: z.number().int().nonnegative().optional(),
             debounceMs: z.number().int().nonnegative().optional(),
             debounce_ms: z.number().int().nonnegative().optional(),
+            clipboardAutoCopy: z.boolean().optional(),
+            clipboard_auto_copy: z.boolean().optional(),
           })
           .optional(),
         edit: z
