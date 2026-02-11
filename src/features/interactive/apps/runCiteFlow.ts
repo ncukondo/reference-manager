@@ -9,6 +9,7 @@ import { createElement } from "react";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { SearchResult } from "../../search/types.js";
 import { restoreStdinAfterInk } from "../alternate-screen.js";
+import { formatIdentifiers } from "../choice-builder.js";
 import {
   type Choice,
   type SelectOption,
@@ -73,18 +74,6 @@ function extractCreatedDate(item: CslItem): Date | undefined {
   if (!dateStr || typeof dateStr !== "string") return undefined;
   const date = new Date(dateStr);
   return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-/**
- * Format identifiers for meta line
- */
-function formatIdentifiers(item: CslItem): string {
-  const parts: string[] = [];
-  if (item.DOI) parts.push(`DOI: ${item.DOI}`);
-  if (item.PMID) parts.push(`PMID: ${item.PMID}`);
-  if (item.PMCID) parts.push(`PMCID: ${item.PMCID}`);
-  if (item.ISBN) parts.push(`ISBN: ${item.ISBN}`);
-  return parts.join(" · ");
 }
 
 /**

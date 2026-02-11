@@ -44,6 +44,7 @@ export const CslItemSchema = z
     issued: CslDateSchema.optional(),
     accessed: CslDateSchema.optional(),
     "container-title": z.string().optional(),
+    "container-title-short": z.string().optional(),
     volume: z.string().optional(),
     issue: z.string().optional(),
     page: z.string().optional(),

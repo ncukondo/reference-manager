@@ -14,7 +14,7 @@ describe("buildResourceIndicators", () => {
     expect(result).toBe("");
   });
 
-  it("should return 📄 for item with fulltext PDF", () => {
+  it("should return pdf for item with fulltext PDF", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -25,10 +25,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📄");
+    expect(result).toBe("pdf");
   });
 
-  it("should return 📝 for item with fulltext Markdown", () => {
+  it("should return md for item with fulltext Markdown", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -39,10 +39,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📝");
+    expect(result).toBe("md");
   });
 
-  it("should return 📝 for item with .markdown extension", () => {
+  it("should return md for item with .markdown extension", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -53,10 +53,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📝");
+    expect(result).toBe("md");
   });
 
-  it("should return 📄📝 for item with both fulltext formats", () => {
+  it("should return pdf md for item with both fulltext formats", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -70,10 +70,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📄📝");
+    expect(result).toBe("pdf md");
   });
 
-  it("should return 📎 for item with non-fulltext attachments", () => {
+  it("should return file for item with non-fulltext attachments", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -84,10 +84,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📎");
+    expect(result).toBe("file");
   });
 
-  it("should return 📄📎 for item with fulltext and other attachments", () => {
+  it("should return pdf file for item with fulltext and other attachments", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -101,19 +101,19 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📄📎");
+    expect(result).toBe("pdf file");
   });
 
-  it("should return 🔗 for item with URL", () => {
+  it("should return url for item with URL", () => {
     const item: CslItem = {
       ...baseItem,
       URL: "https://example.com",
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("🔗");
+    expect(result).toBe("url");
   });
 
-  it("should return 🏷 for item with tags", () => {
+  it("should return tag for item with tags", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -121,10 +121,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("🏷");
+    expect(result).toBe("tag");
   });
 
-  it("should return 📄📝📎🔗🏷 for item with all resources", () => {
+  it("should return pdf md file url tag for item with all resources", () => {
     const item: CslItem = {
       ...baseItem,
       URL: "https://example.com",
@@ -141,10 +141,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📄📝📎🔗🏷");
+    expect(result).toBe("pdf md file url tag");
   });
 
-  it("should maintain fixed icon order regardless of data order", () => {
+  it("should maintain fixed label order regardless of data order", () => {
     const item: CslItem = {
       ...baseItem,
       URL: "https://example.com",
@@ -161,10 +161,10 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).toBe("📄📝📎🔗🏷");
+    expect(result).toBe("pdf md file url tag");
   });
 
-  it("should not show 📎 when only fulltext attachments exist", () => {
+  it("should not show file when only fulltext attachments exist", () => {
     const item: CslItem = {
       ...baseItem,
       custom: {
@@ -178,7 +178,7 @@ describe("buildResourceIndicators", () => {
       },
     };
     const result = buildResourceIndicators(item);
-    expect(result).not.toContain("📎");
+    expect(result).not.toContain("file");
   });
 
   it("should return empty string for item with empty tags array", () => {

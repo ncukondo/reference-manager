@@ -16,10 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 3-layer priority: config file < environment variable < CLI option
   - MCP tools pass config-level preferred type through to operations
 
-- **Resource Indicators**: Emoji icons in reference displays showing available resources at a glance
-  - Pretty format: indicator line (📄📝📎🔗🏷) at end of each reference entry
+- **Resource Indicators**: Text-based labels in reference displays showing available resources at a glance
+  - Pretty format: indicator line (`pdf md file url tag`) at end of each reference entry
   - TUI interactive: indicator prefix on meta line in search results
-  - Icons: 📄 PDF fulltext, 📝 Markdown fulltext, 📎 attachments, 🔗 URL, 🏷 tags
+  - Labels: `pdf` PDF fulltext, `md` Markdown fulltext, `file` attachments, `url` URL, `tag` tags
+  - Dim-compatible design: blends with surrounding dimmed text
+
+- **TUI Meta Line Source Display**: Show journal/publisher name instead of item type
+  - Fallback order: container-title-short → container-title → type-specific (book→publisher, others→formatted type)
+
+- **Shared Choice Builder**: Unified `toChoice` and helper functions in `choice-builder.ts`
+  - Eliminates duplication between `runSearchFlow.ts` and `search-prompt.ts`
+  - Resource indicators now shown in all interactive TUI selections (search, fulltext, edit, attach)
 
 - **Auto-Fetch Fulltext on Add**: Automatically discover and download OA fulltext when adding references
   - New CLI option: `--fetch-fulltext` / `--no-fetch-fulltext` on `ref add`

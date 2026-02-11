@@ -9,37 +9,37 @@ import {
 /**
  * Build a resource indicator string showing available resources for a reference.
  *
- * Icons (in fixed order): 📄 (PDF) 📝 (Markdown) 📎 (attachments) 🔗 (URL) 🏷 (tags)
+ * Labels (in fixed order): pdf, md, file, url, tag
  */
 export function buildResourceIndicators(item: CslItem): string {
-  const icons: string[] = [];
+  const labels: string[] = [];
 
   const attachments = item.custom?.attachments as Attachments | undefined;
   const fulltextFiles = findFulltextFiles(attachments);
 
-  // 📄 Fulltext PDF
+  // pdf - Fulltext PDF
   const hasFulltextPdf = fulltextFiles.some(
     (f) => extensionToFormat(getExtension(f.filename)) === "pdf"
   );
-  if (hasFulltextPdf) icons.push("📄");
+  if (hasFulltextPdf) labels.push("pdf");
 
-  // 📝 Fulltext Markdown
+  // md - Fulltext Markdown
   const hasFulltextMd = fulltextFiles.some(
     (f) => extensionToFormat(getExtension(f.filename)) === "markdown"
   );
-  if (hasFulltextMd) icons.push("📝");
+  if (hasFulltextMd) labels.push("md");
 
-  // 📎 Other (non-fulltext) attachments
+  // file - Other (non-fulltext) attachments
   const allFiles = attachments?.files ?? [];
   const hasOtherAttachments = allFiles.length > fulltextFiles.length;
-  if (hasOtherAttachments) icons.push("📎");
+  if (hasOtherAttachments) labels.push("file");
 
-  // 🔗 URL
-  if (item.URL) icons.push("🔗");
+  // url - URL
+  if (item.URL) labels.push("url");
 
-  // 🏷 Tags
+  // tag - Tags
   const tags = item.custom?.tags;
-  if (Array.isArray(tags) && tags.length > 0) icons.push("🏷");
+  if (Array.isArray(tags) && tags.length > 0) labels.push("tag");
 
-  return icons.join("");
+  return labels.join(" ");
 }
