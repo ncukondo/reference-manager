@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../../core/csl-json/types.js";
-import { toChoice } from "./runSearchFlow.js";
+import { toChoice } from "../choice-builder.js";
 
-describe("toChoice", () => {
-  it("should prepend indicators to meta when item has resources", () => {
+describe("toChoice (re-exported via choice-builder)", () => {
+  it("should prepend text indicators to meta when item has resources", () => {
     const item: CslItem = {
       id: "test-2024",
       type: "article-journal",
@@ -19,7 +19,7 @@ describe("toChoice", () => {
       },
     };
     const choice = toChoice(item);
-    expect(choice.meta).toMatch(/^📄🔗🏷 /);
+    expect(choice.meta).toMatch(/^pdf url tag · /);
   });
 
   it("should not modify meta when item has no resources", () => {
@@ -30,7 +30,7 @@ describe("toChoice", () => {
       issued: { "date-parts": [[2024]] },
     };
     const choice = toChoice(item);
-    // Meta should start with year, no emoji prefix
+    // Meta should start with year, no indicator prefix
     expect(choice.meta).toBe("2024 · Journal article");
   });
 });

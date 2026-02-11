@@ -8,12 +8,11 @@ import { render } from "ink";
 import { createElement } from "react";
 import type { CitationKeyFormat } from "../../../config/schema.js";
 import type { CslItem } from "../../../core/csl-json/types.js";
-import { buildResourceIndicators } from "../../format/resource-indicators.js";
 import type { SearchResult } from "../../search/types.js";
 import type { ActionMenuResult } from "../action-menu.js";
 import { restoreStdinAfterInk } from "../alternate-screen.js";
+import { toChoice } from "../choice-builder.js";
 import { type Choice, type SortOption, calculateEffectiveLimit } from "../components/index.js";
-import { formatAuthors } from "../format.js";
 import { SearchFlowApp } from "./SearchFlowApp.js";
 
 /**
@@ -34,116 +33,6 @@ export interface SearchFlowConfig {
  * Search function type for filtering references
  */
 export type SearchFunction = (query: string) => SearchResult[];
-
-/**
- * Extract year from CSL item
- */
-function extractYear(item: CslItem): number | undefined {
-  const dateParts = item.issued?.["date-parts"];
-  if (!dateParts || dateParts.length === 0) return undefined;
-  const firstDatePart = dateParts[0];
-  if (!firstDatePart || firstDatePart.length === 0) return undefined;
-  return firstDatePart[0];
-}
-
-/**
- * Extract published date from CSL item
- */
-function extractPublishedDate(item: CslItem): Date | undefined {
-  const dateParts = item.issued?.["date-parts"];
-  if (!dateParts || dateParts.length === 0) return undefined;
-  const firstDatePart = dateParts[0];
-  if (!firstDatePart || firstDatePart.length === 0) return undefined;
-  const [year, month = 1, day = 1] = firstDatePart;
-  if (year === undefined) return undefined;
-  return new Date(year, month - 1, day);
-}
-
-/**
- * Extract updated date from CSL item (from custom.timestamp)
- */
-function extractUpdatedDate(item: CslItem): Date | undefined {
-  const dateStr = item.custom?.timestamp;
-  if (!dateStr || typeof dateStr !== "string") return undefined;
-  const date = new Date(dateStr);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-/**
- * Extract created date from CSL item (from custom.created_at)
- */
-function extractCreatedDate(item: CslItem): Date | undefined {
-  const dateStr = item.custom?.created_at;
-  if (!dateStr || typeof dateStr !== "string") return undefined;
-  const date = new Date(dateStr);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-/**
- * Format identifiers for meta line
- */
-function formatIdentifiers(item: CslItem): string {
-  const parts: string[] = [];
-  if (item.DOI) parts.push(`DOI: ${item.DOI}`);
-  if (item.PMID) parts.push(`PMID: ${item.PMID}`);
-  if (item.PMCID) parts.push(`PMCID: ${item.PMCID}`);
-  if (item.ISBN) parts.push(`ISBN: ${item.ISBN}`);
-  return parts.join(" · ");
-}
-
-/**
- * Format item type for display
- */
-function formatType(type: string): string {
-  const typeMap: Record<string, string> = {
-    "article-journal": "Journal article",
-    "article-magazine": "Magazine article",
-    "article-newspaper": "Newspaper article",
-    book: "Book",
-    chapter: "Book chapter",
-    "paper-conference": "Conference paper",
-    thesis: "Thesis",
-    report: "Report",
-    webpage: "Web page",
-  };
-  return typeMap[type] ?? type;
-}
-
-/**
- * Convert CslItem to Choice for SearchableMultiSelect
- */
-export function toChoice(item: CslItem): Choice<CslItem> {
-  const authors = formatAuthors(item.author);
-  const year = extractYear(item);
-  const identifiers = formatIdentifiers(item);
-  const itemType = formatType(item.type);
-
-  // Build meta line: Year · Type · Identifiers
-  const metaParts: string[] = [];
-  if (year) metaParts.push(String(year));
-  metaParts.push(itemType);
-  if (identifiers) metaParts.push(identifiers);
-
-  const updatedDate = extractUpdatedDate(item);
-  const createdDate = extractCreatedDate(item);
-  const publishedDate = extractPublishedDate(item);
-
-  // Prepend resource indicators to meta if present
-  const indicators = buildResourceIndicators(item);
-  const metaStr = metaParts.join(" · ");
-  const meta = indicators ? `${indicators} ${metaStr}` : metaStr;
-
-  return {
-    id: item.id,
-    title: item.title ?? "(No title)",
-    subtitle: authors || "(No authors)",
-    meta,
-    value: item,
-    ...(updatedDate && { updatedDate }),
-    ...(createdDate && { createdDate }),
-    ...(publishedDate && { publishedDate }),
-  };
-}
 
 /**
  * Run the search flow (search → action → style if needed)
