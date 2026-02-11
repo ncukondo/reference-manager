@@ -231,7 +231,7 @@ describe("Pretty Output Formatter", () => {
       const result = formatPretty([itemWithResources]);
       const lines = result.split("\n");
       const lastLine = lines[lines.length - 1];
-      expect(lastLine).toBe("  📄🔗🏷");
+      expect(lastLine).toBe("  pdf url tag");
     });
 
     it("should not add indicator line for item without resources", () => {
@@ -252,7 +252,7 @@ describe("Pretty Output Formatter", () => {
       const result = formatPretty([itemWithUrl]);
       const lines = result.split("\n");
       const lastLine = lines[lines.length - 1];
-      expect(lastLine).toBe("  🔗");
+      expect(lastLine).toBe("  url");
     });
   });
 });
