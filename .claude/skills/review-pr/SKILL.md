@@ -13,7 +13,7 @@ PR #$ARGUMENTS をレビューします。
 !`gh pr view $ARGUMENTS --json title,author,body,additions,deletions,changedFiles --jq '"Title: \(.title)\nAuthor: \(.author.login)\nChanges: +\(.additions)/-\(.deletions) in \(.changedFiles) files\n\nDescription:\n\(.body)"' 2>/dev/null`
 
 ## CI Status
-!`gh pr checks $ARGUMENTS 2>/dev/null`
+!`gh pr checks $ARGUMENTS 2>/dev/null || true`
 
 ## 手順
 
