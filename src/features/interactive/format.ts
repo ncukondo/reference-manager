@@ -3,6 +3,7 @@
  */
 
 import type { CslItem } from "../../core/csl-json/types.js";
+import { formatIdentifiers } from "./choice-builder.js";
 
 /**
  * CSL name type (author structure)
@@ -83,31 +84,6 @@ export function formatTitle(title: string | undefined, maxWidth: number): string
 }
 
 /**
- * Format identifiers (DOI, PMID, PMCID, ISBN) for display
- *
- * @param item - CSL item
- * @returns Formatted identifier string (e.g., "DOI: 10.1000/example | PMID: 12345678")
- */
-export function formatIdentifiers(item: CslItem): string {
-  const identifiers: string[] = [];
-
-  if (item.DOI) {
-    identifiers.push(`DOI: ${item.DOI}`);
-  }
-  if (item.PMID) {
-    identifiers.push(`PMID: ${item.PMID}`);
-  }
-  if (item.PMCID) {
-    identifiers.push(`PMCID: ${item.PMCID}`);
-  }
-  if (item.ISBN) {
-    identifiers.push(`ISBN: ${item.ISBN}`);
-  }
-
-  return identifiers.join(" | ");
-}
-
-/**
  * Extract year from CSL item
  */
 function extractYear(item: CslItem): number | undefined {
@@ -156,7 +132,7 @@ export function formatSearchResult(item: CslItem, index: number, terminalWidth: 
   }
 
   // Line 3: Identifiers (indented)
-  const identifiers = formatIdentifiers(item);
+  const identifiers = formatIdentifiers(item, " | ");
   if (identifiers) {
     lines.push(`${indent}${identifiers}`);
   }

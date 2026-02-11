@@ -44,8 +44,8 @@ function extractYear(item: CslItem): string {
  * Get journal abbreviation (prefer short title)
  */
 function getJournalAbbrev(item: CslItem): string {
-  const containerTitleShort = (item as Record<string, unknown>)["container-title-short"];
-  if (typeof containerTitleShort === "string") {
+  const containerTitleShort = item["container-title-short"];
+  if (containerTitleShort) {
     return containerTitleShort;
   }
   return item["container-title"] || "";

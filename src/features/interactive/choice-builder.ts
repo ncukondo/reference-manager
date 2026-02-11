@@ -6,7 +6,7 @@ import { formatAuthors } from "./format.js";
 /**
  * Extract year from CSL item
  */
-export function extractYear(item: CslItem): number | undefined {
+function extractYear(item: CslItem): number | undefined {
   const dateParts = item.issued?.["date-parts"];
   if (!dateParts || dateParts.length === 0) return undefined;
   const firstDatePart = dateParts[0];
@@ -17,7 +17,7 @@ export function extractYear(item: CslItem): number | undefined {
 /**
  * Extract published date from CSL item
  */
-export function extractPublishedDate(item: CslItem): Date | undefined {
+function extractPublishedDate(item: CslItem): Date | undefined {
   const dateParts = item.issued?.["date-parts"];
   if (!dateParts || dateParts.length === 0) return undefined;
   const firstDatePart = dateParts[0];
@@ -30,7 +30,7 @@ export function extractPublishedDate(item: CslItem): Date | undefined {
 /**
  * Extract updated date from CSL item (custom.timestamp)
  */
-export function extractUpdatedDate(item: CslItem): Date | undefined {
+function extractUpdatedDate(item: CslItem): Date | undefined {
   const dateStr = item.custom?.timestamp;
   if (!dateStr || typeof dateStr !== "string") return undefined;
   const date = new Date(dateStr);
@@ -40,7 +40,7 @@ export function extractUpdatedDate(item: CslItem): Date | undefined {
 /**
  * Extract created date from CSL item (custom.created_at)
  */
-export function extractCreatedDate(item: CslItem): Date | undefined {
+function extractCreatedDate(item: CslItem): Date | undefined {
   const dateStr = item.custom?.created_at;
   if (!dateStr || typeof dateStr !== "string") return undefined;
   const date = new Date(dateStr);
@@ -50,13 +50,13 @@ export function extractCreatedDate(item: CslItem): Date | undefined {
 /**
  * Format identifiers (DOI, PMID, PMCID, ISBN) for display
  */
-export function formatIdentifiers(item: CslItem): string {
+export function formatIdentifiers(item: CslItem, separator = " · "): string {
   const parts: string[] = [];
   if (item.DOI) parts.push(`DOI: ${item.DOI}`);
   if (item.PMID) parts.push(`PMID: ${item.PMID}`);
   if (item.PMCID) parts.push(`PMCID: ${item.PMCID}`);
   if (item.ISBN) parts.push(`ISBN: ${item.ISBN}`);
-  return parts.join(" · ");
+  return parts.join(separator);
 }
 
 /**
@@ -86,8 +86,8 @@ function formatType(type: string): string {
  * 3. Type-specific: book → publisher, others → formatted type name
  */
 export function formatSource(item: CslItem): string {
-  const shortTitle = (item as Record<string, unknown>)["container-title-short"];
-  if (typeof shortTitle === "string" && shortTitle) return shortTitle;
+  const shortTitle = item["container-title-short"];
+  if (shortTitle) return shortTitle;
 
   const containerTitle = item["container-title"];
   if (containerTitle) return containerTitle;

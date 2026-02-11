@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import { toChoice } from "../choice-builder.js";
 
-describe("toChoice (re-exported via choice-builder)", () => {
+describe("toChoice (from choice-builder)", () => {
   it("should prepend text indicators to meta when item has resources", () => {
     const item: CslItem = {
       id: "test-2024",

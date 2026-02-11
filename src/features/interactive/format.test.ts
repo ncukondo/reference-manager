@@ -4,7 +4,8 @@
 
 import { describe, expect, it } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
-import { formatAuthors, formatIdentifiers, formatSearchResult, formatTitle } from "./format.js";
+import { formatIdentifiers } from "./choice-builder.js";
+import { formatAuthors, formatSearchResult, formatTitle } from "./format.js";
 
 describe("Interactive search format functions", () => {
   describe("formatAuthors", () => {
@@ -119,7 +120,7 @@ describe("Interactive search format functions", () => {
         DOI: "10.1000/example",
         PMID: "12345678",
       };
-      expect(formatIdentifiers(item)).toBe("DOI: 10.1000/example | PMID: 12345678");
+      expect(formatIdentifiers(item, " | ")).toBe("DOI: 10.1000/example | PMID: 12345678");
     });
 
     it("should format all identifiers", () => {
@@ -131,7 +132,7 @@ describe("Interactive search format functions", () => {
         PMCID: "PMC1234567",
         ISBN: "978-4-00-000000-0",
       };
-      expect(formatIdentifiers(item)).toBe(
+      expect(formatIdentifiers(item, " | ")).toBe(
         "DOI: 10.1000/example | PMID: 12345678 | PMCID: PMC1234567 | ISBN: 978-4-00-000000-0"
       );
     });
