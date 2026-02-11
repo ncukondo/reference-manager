@@ -86,6 +86,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 34**: Fulltext Retrieval (OA Discovery & Download, `fulltext discover/fetch/convert`, `add --fetch-fulltext`)
 - **Phase 35**: Resource Indicators (emoji indicators 📄📝📎🔗🏷 in pretty format and TUI interactive mode)
 - **Phase 36**: Fulltext Preferred Type (configurable preferred type with 3-layer priority: config < env < CLI)
+- **Phase 37**: TUI Indicator & Meta Line Improvements (text labels, formatSource, shared choice-builder, formatIdentifiers consolidation)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -93,15 +94,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-### Phase 37: TUI Indicator & Meta Line Improvements
-
-Task: `spec/tasks/20260211-01-tui-indicator-improvements.md`
-
-- **Scope**:
-  - Replace emoji indicators with dim-compatible text labels (`pdf`, `md`, `file`, `url`, `tag`)
-  - Show journal/publisher name instead of item type in TUI meta line
-  - Fix missing indicators in `ref fulltext get` and other interactive selection TUIs
-  - Unify duplicated `toChoice` into shared `choice-builder.ts` module
+(No active tasks)
 
 ---
 
