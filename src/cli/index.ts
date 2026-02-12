@@ -54,6 +54,7 @@ import { collectSetOption, handleUpdateAction } from "./commands/update.js";
 import { handleUrlAction } from "./commands/url.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
+import { buildSearchHelpText } from "./help/search-help.js";
 import type { CliOptions } from "./helpers.js";
 import {
   ExitCode,
@@ -274,8 +275,14 @@ async function handleSearchAction(
 function registerSearchCommand(program: Command): void {
   program
     .command("search")
-    .description("Search references")
+    .description(
+      "Search references in the library.\n\n" +
+        "Supports field-specific search with field:value syntax and phrase search\n" +
+        "with quoted strings. Consecutive uppercase letters (AI, RNA) are matched\n" +
+        "case-sensitively; other text is matched case-insensitively."
+    )
     .argument("[query]", "Search query (required unless using --tui)")
+    .addHelpText("after", buildSearchHelpText())
     .option("-t, --tui", "Enable TUI (interactive) search mode")
     .option(
       "-o, --output <format>",

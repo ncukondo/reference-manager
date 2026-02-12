@@ -32,6 +32,30 @@ describe("CLI Entry", () => {
       expect(searchCmd).toBeDefined();
     });
 
+    it("search command help should include custom help sections", () => {
+      const program = createProgram();
+      const searchCmd = program.commands.find((cmd) => cmd.name() === "search");
+      expect(searchCmd).toBeDefined();
+      let helpText = "";
+      searchCmd?.configureOutput({
+        writeOut: (str) => {
+          helpText = str;
+        },
+      });
+      searchCmd?.outputHelp();
+      expect(helpText).toContain("QUERY SYNTAX");
+      expect(helpText).toContain("FIELDS");
+      expect(helpText).toContain("CASE SENSITIVITY");
+      expect(helpText).toContain("EXAMPLES");
+    });
+
+    it("search command description should mention field-specific search", () => {
+      const program = createProgram();
+      const searchCmd = program.commands.find((cmd) => cmd.name() === "search");
+      expect(searchCmd).toBeDefined();
+      expect(searchCmd?.description()).toContain("field");
+    });
+
     it("should register 'add' command", () => {
       const program = createProgram();
       const addCmd = program.commands.find((cmd) => cmd.name() === "add");
