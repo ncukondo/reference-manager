@@ -87,6 +87,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 35**: Resource Indicators (emoji indicators 📄📝📎🔗🏷 in pretty format and TUI interactive mode)
 - **Phase 36**: Fulltext Preferred Type (configurable preferred type with 3-layer priority: config < env < CLI)
 - **Phase 37**: TUI Indicator & Meta Line Improvements (text labels, formatSource, shared choice-builder, formatIdentifiers consolidation)
+- **Phase 38**: CLI Help Enhancement (search help with query syntax, fields, case sensitivity, examples)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -94,13 +95,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-### Phase 38: CLI Help Enhancement
-
-Improve CLI help output to be more informative for users and AI agents.
-
-- **Task**: [`20260212-01-search-help-enhancement.md`](20260212-01-search-help-enhancement.md)
-  - Enhance `ref search --help` with query syntax, fields, case sensitivity rules, and examples
-  - Pattern: GitHub CLI style with EXAMPLES section
+(No active tasks)
 
 ---
 
