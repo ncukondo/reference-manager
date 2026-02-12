@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Search Help Enhancement**: `ref search --help` now includes query syntax documentation, searchable field list, case sensitivity rules, and usage examples
+
 - **Fulltext Preferred Type**: Configurable preferred fulltext type (pdf/markdown) for `fulltext open` and `fulltext get`
   - New config option: `fulltext.preferred_type` (`"pdf"` or `"markdown"`, default: none → PDF)
   - Environment variable: `REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE`
