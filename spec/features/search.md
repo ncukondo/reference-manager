@@ -150,3 +150,16 @@ Use `--tui` / `-t` for interactive search with real-time filtering.
 Running `ref` with no subcommand also launches TUI search when in a TTY.
 
 See `spec/features/interactive-search.md` for details.
+
+## CLI Help Output
+
+The `ref search --help` output should include comprehensive documentation for users and AI agents:
+
+1. **Brief description**: Overview with key features (field search, phrase, case sensitivity)
+2. **QUERY SYNTAX section**: Table showing syntax patterns with examples
+3. **FIELDS section**: List of available field prefixes
+4. **CASE SENSITIVITY section**: Explanation with examples of consecutive uppercase behavior
+5. **OPTIONS section**: Standard commander.js options (auto-generated)
+6. **EXAMPLES section**: Practical usage examples covering common use cases
+
+This follows the pattern used by GitHub CLI (`gh search repos --help`).

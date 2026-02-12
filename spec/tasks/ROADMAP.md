@@ -94,7 +94,13 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-(No active tasks)
+### Phase 38: CLI Help Enhancement
+
+Improve CLI help output to be more informative for users and AI agents.
+
+- **Task**: [`20260212-01-search-help-enhancement.md`](20260212-01-search-help-enhancement.md)
+  - Enhance `ref search --help` with query syntax, fields, case sensitivity rules, and examples
+  - Pattern: GitHub CLI style with EXAMPLES section
 
 ---
 
