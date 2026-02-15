@@ -191,13 +191,17 @@ export async function handleCheckAction(
     if (ids === null) return;
 
     const result = await executeCheck({ ...options, identifiers: ids }, context, config);
-    const jsonOptions = await buildJsonOptions(options, outputFormat, result, context);
+
+    // Fetch all refs once for --full JSON and --fix (avoids redundant getAll calls)
+    const needAllRefs = (options.full && outputFormat === "json") || options.fix;
+    const allRefs = needAllRefs ? await context.library.getAll() : undefined;
+
+    const jsonOptions = buildJsonOptionsFromRefs(options, outputFormat, result, allRefs);
     outputCheckResult(result, outputFormat, jsonOptions);
 
     // Interactive repair if --fix and there are warnings
-    if (options.fix && result.summary.warnings > 0) {
+    if (options.fix && result.summary.warnings > 0 && allRefs) {
       const { runFixInteraction } = await import("../../features/check/fix-interaction.js");
-      const allRefs = await context.library.getAll();
       const findItem = (id: string): ReturnType<typeof allRefs.find> =>
         allRefs.find((item) => item.id === id);
 
@@ -218,18 +222,17 @@ export async function handleCheckAction(
 }
 
 /**
- * Build JSON formatting options for --full output.
+ * Build JSON formatting options for --full output using pre-fetched refs.
  */
-async function buildJsonOptions(
+function buildJsonOptionsFromRefs(
   options: Omit<CheckCommandOptions, "identifiers">,
   outputFormat: string,
   result: CheckOperationResult,
-  context: ExecutionContext
-): Promise<FormatCheckJsonOptions | undefined> {
-  if (!options.full || outputFormat !== "json") return undefined;
+  allRefs?: CslItem[]
+): FormatCheckJsonOptions | undefined {
+  if (!options.full || outputFormat !== "json" || !allRefs) return undefined;
 
   const items = new Map<string, CslItem>();
-  const allRefs = await context.library.getAll();
   for (const r of result.results) {
     const item = allRefs.find((ref) => ref.id === r.id);
     if (item) items.set(r.id, item);
