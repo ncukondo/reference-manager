@@ -1,4 +1,5 @@
 import type { Config } from "../../config/schema.js";
+import type { CslItem } from "../../core/csl-json/types.js";
 import { Library } from "../../core/library.js";
 import type { CheckFinding, CheckResult } from "../../features/check/types.js";
 import type {
@@ -127,11 +128,28 @@ export function formatCheckTextOutput(result: CheckOperationResult): string {
   return lines.join("\n");
 }
 
+export interface FormatCheckJsonOptions {
+  full?: boolean;
+  items?: Map<string, CslItem>;
+}
+
 /**
  * Format check result as JSON output.
  */
-export function formatCheckJsonOutput(result: CheckOperationResult): CheckOperationResult {
-  return result;
+export function formatCheckJsonOutput(
+  result: CheckOperationResult,
+  options?: FormatCheckJsonOptions
+): CheckOperationResult & { results: (CheckResult & { item?: CslItem })[] } {
+  if (!options?.full || !options.items) {
+    return result;
+  }
+
+  const results = result.results.map((r) => {
+    const item = options.items?.get(r.id);
+    return item ? { ...r, item } : r;
+  });
+
+  return { ...result, results };
 }
 
 /**
@@ -159,7 +177,8 @@ export async function handleCheckAction(
     if (ids === null) return;
 
     const result = await executeCheck({ ...options, identifiers: ids }, context);
-    outputCheckResult(result, outputFormat);
+    const jsonOptions = await buildJsonOptions(options, outputFormat, result, context);
+    outputCheckResult(result, outputFormat, jsonOptions);
 
     // Interactive repair if --fix and there are warnings
     if (options.fix && result.summary.warnings > 0) {
@@ -182,6 +201,26 @@ export async function handleCheckAction(
     outputCheckError(error, outputFormat);
     setExitCode(ExitCode.ERROR);
   }
+}
+
+/**
+ * Build JSON formatting options for --full output.
+ */
+async function buildJsonOptions(
+  options: Omit<CheckCommandOptions, "identifiers">,
+  outputFormat: string,
+  result: CheckOperationResult,
+  context: ExecutionContext
+): Promise<FormatCheckJsonOptions | undefined> {
+  if (!options.full || outputFormat !== "json") return undefined;
+
+  const items = new Map<string, CslItem>();
+  const allRefs = await context.library.getAll();
+  for (const r of result.results) {
+    const item = allRefs.find((ref) => ref.id === r.id);
+    if (item) items.set(r.id, item);
+  }
+  return { full: true, items };
 }
 
 /**
@@ -221,9 +260,13 @@ async function resolveIdentifiers(
 /**
  * Output check result in the specified format.
  */
-function outputCheckResult(result: CheckOperationResult, format: string): void {
+function outputCheckResult(
+  result: CheckOperationResult,
+  format: string,
+  jsonOptions?: FormatCheckJsonOptions
+): void {
   if (format === "json") {
-    process.stdout.write(`${JSON.stringify(formatCheckJsonOutput(result))}\n`);
+    process.stdout.write(`${JSON.stringify(formatCheckJsonOutput(result, jsonOptions))}\n`);
   } else {
     process.stderr.write(`${formatCheckTextOutput(result)}\n`);
   }

@@ -255,6 +255,53 @@ describe("check command", () => {
       expect(output.summary.total).toBe(1);
       expect(output.summary.warnings).toBe(1);
     });
+
+    it("should not include item data without --full", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "smith-2024",
+            uuid: "uuid-1",
+            status: "ok",
+            findings: [],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 1, warnings: 0, skipped: 0 },
+      };
+
+      const output = formatCheckJsonOutput(result);
+
+      expect((output.results[0] as Record<string, unknown>).item).toBeUndefined();
+    });
+
+    it("should include item data with --full", () => {
+      const item = {
+        id: "smith-2024",
+        type: "article-journal" as const,
+        title: "Test Article",
+        DOI: "10.1234/test",
+      };
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "smith-2024",
+            uuid: "uuid-1",
+            status: "ok",
+            findings: [],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 1, warnings: 0, skipped: 0 },
+      };
+
+      const items = new Map([["smith-2024", item]]);
+      const output = formatCheckJsonOutput(result, { full: true, items });
+
+      expect((output.results[0] as Record<string, unknown>).item).toEqual(item);
+    });
   });
 
   describe("handleCheckAction --fix", () => {
