@@ -197,6 +197,7 @@ With a custom library:
 | `fulltext_attach` | Attach PDF/Markdown to reference | `id`: Reference ID, `path`: File path |
 | `fulltext_get` | Get full-text content | `id`: Reference ID |
 | `fulltext_detach` | Detach full-text from reference | `id`: Reference ID |
+| `check` | Check references for retractions and updates | `ids?`: Array of IDs, `all?`: Check all, `skipDays?`: Skip recent |
 
 ### Available Resources
 
@@ -417,6 +418,38 @@ ref attach detach smith2024 supplement-data.xlsx --delete  # Also delete file
 
 Files are organized by reference in directories named `Author-Year-ID-UUID` under the attachments directory.
 
+### Reference Checking
+
+Check your references for retractions, expressions of concern, and preprint-to-published version changes:
+
+```bash
+# Check specific references
+ref check smith2024
+ref check smith2024 jones2023
+
+# Check all references in library
+ref check --all
+
+# Skip references checked within the last 30 days
+ref check --all --days 30
+
+# JSON output
+ref check --all -o json
+ref check --all -o json --full    # Include full details
+
+# Report only (do not save results to library)
+ref check --all --no-save
+
+# Interactive repair for findings (TTY only)
+ref check --all --fix
+```
+
+Sources queried:
+- **Crossref** (when DOI is present): Retractions, expressions of concern, version changes via `update-to` field
+- **PubMed** (when PMID is present): Retraction status, expression of concern
+
+Results are saved to `custom.check` by default for skip-if-recent logic.
+
 ### Edit Command
 
 Edit references interactively using your preferred text editor:
@@ -582,6 +615,10 @@ library = "~/references.json"
 # Logging level: silent, info, debug
 log_level = "info"
 
+# Shared email for API services (Crossref, PubMed, Unpaywall, NCBI)
+# Each service uses this as a fallback when no service-specific email is set
+email = "your@email.com"
+
 [backup]
 max_generations = 50
 max_age_days = 365
@@ -601,6 +638,11 @@ auto_stop_minutes = 60
 |----------|-------------|
 | `REFERENCE_MANAGER_LIBRARY` | Override library file path |
 | `REFERENCE_MANAGER_ATTACHMENTS_DIR` | Override attachments directory |
+| `EMAIL` | Shared email for API services (fallback for all services) |
+| `PUBMED_EMAIL` | Email for PubMed API (overrides `EMAIL`) |
+| `PUBMED_API_KEY` | API key for PubMed (higher rate limits) |
+| `UNPAYWALL_EMAIL` | Email for Unpaywall API (overrides `EMAIL`) |
+| `NCBI_EMAIL` | Email for NCBI API (overrides `EMAIL`) |
 
 ### Config Command
 
@@ -632,11 +674,12 @@ ref config edit --local           # Edit project-local config
 ```
 
 **Key categories:**
-- `library`, `log_level` — Core settings
+- `library`, `log_level`, `email` — Core settings
 - `backup.*` — Backup configuration
 - `server.*` — HTTP server settings
 - `citation.*` — Citation defaults (style, locale, format)
 - `pubmed.*` — PubMed API credentials
+- `fulltext.*` — Fulltext settings and source credentials
 - `attachments.*` — Attachments storage
 - `cli.*` — CLI behavior (limits, sorting, TUI mode)
 - `mcp.*` — MCP server settings

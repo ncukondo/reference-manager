@@ -194,6 +194,7 @@ claude mcp add reference-manager --scope project -- npx -y @ncukondo/reference-m
 | `fulltext_attach` | PDF/Markdownを添付 | `id`: 文献ID、`path`: ファイルパス |
 | `fulltext_get` | フルテキストを取得 | `id`: 文献ID |
 | `fulltext_detach` | フルテキストを切り離す | `id`: 文献ID |
+| `check` | 文献の撤回・更新状況を確認 | `ids?`: ID配列, `all?`: 全件チェック, `skipDays?`: 最近チェック済みをスキップ |
 
 ### 利用可能なリソース
 
@@ -416,6 +417,38 @@ ref attach detach smith2024 supplement-data.xlsx --delete  # ファイルも削�
 
 ファイルは添付ファイルディレクトリ配下の`著者-年-ID-UUID`形式のディレクトリに整理されます。
 
+### 文献ステータスチェック
+
+文献の撤回、懸念表明、プレプリントから出版版への更新を検出：
+
+```bash
+# 特定の文献をチェック
+ref check smith2024
+ref check smith2024 jones2023
+
+# ライブラリ内のすべての文献をチェック
+ref check --all
+
+# 過去30日以内にチェック済みの文献をスキップ
+ref check --all --days 30
+
+# JSON出力
+ref check --all -o json
+ref check --all -o json --full    # 詳細情報を含む
+
+# レポートのみ（結果をライブラリに保存しない）
+ref check --all --no-save
+
+# 問題が見つかった場合のインタラクティブ修復（TTYのみ）
+ref check --all --fix
+```
+
+照会先：
+- **Crossref**（DOIがある場合）: 撤回、懸念表明、`update-to`フィールドによるバージョン変更
+- **PubMed**（PMIDがある場合）: 撤回ステータス、懸念表明
+
+結果はデフォルトで`custom.check`に保存され、再チェックのスキップ判定に使用されます。
+
 ### editコマンド
 
 外部エディタを使って文献をインタラクティブに編集：
@@ -580,6 +613,10 @@ library = "~/references.json"
 # ログレベル: silent, info, debug
 log_level = "info"
 
+# APIサービス共通のメールアドレス（Crossref、PubMed、Unpaywall、NCBI）
+# サービス固有のメールが未設定の場合にフォールバックとして使用
+email = "your@email.com"
+
 [backup]
 max_generations = 50
 max_age_days = 365
@@ -599,6 +636,11 @@ auto_stop_minutes = 60
 |------|------|
 | `REFERENCE_MANAGER_LIBRARY` | ライブラリファイルパスを上書き |
 | `REFERENCE_MANAGER_ATTACHMENTS_DIR` | 添付ファイルディレクトリを上書き |
+| `EMAIL` | APIサービス共通のメールアドレス（全サービスのフォールバック） |
+| `PUBMED_EMAIL` | PubMed API用メールアドレス（`EMAIL`より優先） |
+| `PUBMED_API_KEY` | PubMed APIキー（レートリミット向上） |
+| `UNPAYWALL_EMAIL` | Unpaywall API用メールアドレス（`EMAIL`より優先） |
+| `NCBI_EMAIL` | NCBI API用メールアドレス（`EMAIL`より優先） |
 
 ### configコマンド
 
@@ -630,11 +672,12 @@ ref config edit --local           # プロジェクトローカル設定を編�
 ```
 
 **キーのカテゴリ：**
-- `library`, `log_level` — 基本設定
+- `library`, `log_level`, `email` — 基本設定
 - `backup.*` — バックアップ設定
 - `server.*` — HTTPサーバー設定
 - `citation.*` — 引用のデフォルト（スタイル、ロケール、フォーマット）
 - `pubmed.*` — PubMed API認証情報
+- `fulltext.*` — フルテキスト設定とソース認証情報
 - `attachments.*` — 添付ファイル保存先
 - `cli.*` — CLI動作（制限、ソート、TUIモード）
 - `mcp.*` — MCPサーバー設定
