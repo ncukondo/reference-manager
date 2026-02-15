@@ -7,6 +7,7 @@
  */
 export const ENV_OVERRIDE_MAP: Record<string, string> = {
   REFERENCE_MANAGER_LIBRARY: "library",
+  EMAIL: "email",
   REFERENCE_MANAGER_ATTACHMENTS_DIR: "attachments.directory",
   REFERENCE_MANAGER_CLI_DEFAULT_LIMIT: "cli.default_limit",
   REFERENCE_MANAGER_MCP_DEFAULT_LIMIT: "mcp.default_limit",

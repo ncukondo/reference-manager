@@ -24,6 +24,7 @@ import type {
   SyncAttachmentOptions,
   SyncAttachmentResult,
 } from "./attachments/index.js";
+import type { CheckOperationOptions, CheckOperationResult } from "./check.js";
 import type { CiteOperationOptions, CiteResult } from "./cite.js";
 import type { ListOptions, ListResult } from "./list.js";
 import type { SearchOperationOptions, SearchResult } from "./search.js";
@@ -81,6 +82,14 @@ export interface ILibraryOperations extends ILibrary {
    * @returns Import results with added, failed, and skipped items
    */
   import(inputs: string[], options?: ImportOptions): Promise<ImportResult>;
+
+  /**
+   * Check references for status changes (retractions, version updates)
+   *
+   * @param options - Check options including identifiers and skip logic
+   * @returns Check results with summary
+   */
+  check(options: CheckOperationOptions): Promise<CheckOperationResult>;
 
   // Attachment operations
 

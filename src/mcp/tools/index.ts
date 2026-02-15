@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Config } from "../../config/schema.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
 import { registerAddTool } from "./add.js";
+import { registerCheckTool } from "./check.js";
 import { registerCiteTool } from "./cite.js";
 import {
   registerFulltextAttachTool,
@@ -30,6 +31,7 @@ export function registerAllTools(
   registerSearchTool(server, getLibraryOperations, getConfig);
   registerListTool(server, getLibraryOperations, getConfig);
   registerCiteTool(server, getLibraryOperations);
+  registerCheckTool(server, getLibraryOperations);
   registerAddTool(server, getLibraryOperations);
   registerRemoveTool(server, getLibraryOperations);
   registerFulltextAttachTool(server, getLibraryOperations, getConfig);

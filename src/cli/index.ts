@@ -21,6 +21,7 @@ import {
   handleAttachOpenAction,
   handleAttachSyncAction,
 } from "./commands/attach.js";
+import { handleCheckAction } from "./commands/check.js";
 import { handleCiteAction } from "./commands/cite.js";
 import { registerConfigCommand } from "./commands/config.js";
 import { handleEditAction } from "./commands/edit.js";
@@ -107,6 +108,7 @@ export function createProgram(): Command {
   registerRemoveCommand(program);
   registerUpdateCommand(program);
   registerEditCommand(program);
+  registerCheckCommand(program);
   registerCiteCommand(program);
   registerServerCommand(program);
   registerFulltextCommand(program);
@@ -535,6 +537,27 @@ function registerEditCommand(program: Command): void {
     .option("--editor <editor>", "Editor command (overrides $VISUAL/$EDITOR)")
     .action(async (identifiers: string[], options) => {
       await handleEditAction(identifiers, options, program.opts());
+    });
+}
+
+/**
+ * Register 'check' command
+ */
+function registerCheckCommand(program: Command): void {
+  program
+    .command("check")
+    .description("Check references for retractions, expressions of concern, and version changes")
+    .argument("[ids...]", "Citation keys or UUIDs to check (interactive selection if omitted)")
+    .option("--all", "Check all references in library")
+    .option("--search <query>", "Check references matching search query")
+    .option("--uuid", "Interpret identifiers as UUIDs")
+    .option("-o, --output <format>", "Output format: text|json", "text")
+    .option("--full", "Include full details in JSON output")
+    .option("--no-save", "Report only, do not save results to library")
+    .option("--days <n>", "Skip references checked within n days (default: 7)", Number.parseInt)
+    .option("--fix", "Interactive repair for findings (TTY only)")
+    .action(async (ids: string[], options) => {
+      await handleCheckAction(ids, options, program.opts());
     });
 }
 

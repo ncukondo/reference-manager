@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Check Command**: `ref check` to detect retractions, expressions of concern, and preprint-to-published version changes
+  - Queries Crossref REST API and PubMed E-utilities
+  - Selection modes: `[ids...]`, `--all`, `--search`, interactive (TTY)
+  - Output formats: text (default), JSON (`-o json`)
+  - Results saved to `custom.check` (skip with `--no-save`)
+  - `--days <n>` to skip recently checked references (default: 7)
+  - `--fix` interactive repair: add tags, notes, update metadata, or remove references
+  - HTTP server endpoint: `POST /api/check`
+  - MCP tool: `check`
+
 - **Search Help Enhancement**: `ref search --help` now includes query syntax documentation, searchable field list, case sensitivity rules, and usage examples
 
 - **Fulltext Preferred Type**: Configurable preferred fulltext type (pdf/markdown) for `fulltext open` and `fulltext get`

@@ -141,6 +141,7 @@ export const attachmentsConfigSchema = z.object({
 export const configSchema = z.object({
   library: z.string().min(1),
   logLevel: logLevelSchema,
+  email: z.string().optional(),
   backup: backupConfigSchema,
   watch: watchConfigSchema,
   server: serverConfigSchema,
@@ -161,6 +162,7 @@ export const partialConfigSchema = z
     library: z.string().min(1).optional(),
     logLevel: logLevelSchema.optional(),
     log_level: logLevelSchema.optional(), // snake_case support
+    email: z.string().optional(),
     backup: z
       .object({
         maxGenerations: z.number().int().positive().optional(),
@@ -301,6 +303,7 @@ export type PartialConfig = z.infer<typeof partialConfigSchema>;
 export type DeepPartialConfig = {
   library?: string;
   logLevel?: LogLevel;
+  email?: string;
   backup?: Partial<BackupConfig>;
   watch?: Partial<WatchConfig>;
   server?: Partial<ServerConfig>;
@@ -621,6 +624,9 @@ export function normalizePartialConfig(partial: PartialConfig): DeepPartialConfi
   const logLevel = partial.logLevel ?? partial.log_level;
   if (logLevel !== undefined) {
     normalized.logLevel = logLevel;
+  }
+  if (partial.email !== undefined) {
+    normalized.email = partial.email;
   }
 
   // Section fields

@@ -26,6 +26,13 @@ export type { UpdateCommandOptions, UpdateCommandResult } from "./update.js";
 export { serverStart, serverStop, serverStatus } from "./server.js";
 export type { ServerStartOptions, ServerInfo } from "./server.js";
 
+export {
+  executeCheck,
+  formatCheckTextOutput,
+  formatCheckJsonOutput,
+} from "./check.js";
+export type { CheckCommandOptions, CheckCommandResult } from "./check.js";
+
 export { executeCite, formatCiteOutput, formatCiteErrors, getCiteExitCode } from "./cite.js";
 export type { CiteCommandOptions, CiteCommandResult } from "./cite.js";
 

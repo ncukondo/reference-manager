@@ -10,6 +10,8 @@ import type {
   AddAttachmentOptions,
   AddAttachmentResult,
   AddReferencesResult,
+  CheckOperationOptions,
+  CheckOperationResult,
   CiteResult,
   DetachAttachmentOptions,
   DetachAttachmentResult,
@@ -221,6 +223,21 @@ export class ServerClient implements ILibraryOperations {
     }
 
     return (await response.json()) as AddReferencesResult;
+  }
+
+  async check(options: CheckOperationOptions): Promise<CheckOperationResult> {
+    const url = `${this.baseUrl}/api/check`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return (await response.json()) as CheckOperationResult;
   }
 
   /**

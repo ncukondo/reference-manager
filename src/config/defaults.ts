@@ -60,6 +60,7 @@ export function getDefaultAttachmentsDirectory(): string {
 export const defaultConfig: Config = {
   library: getDefaultLibraryPath(),
   logLevel: "info",
+  email: undefined,
   backup: {
     maxGenerations: 50,
     maxAgeDays: 365,

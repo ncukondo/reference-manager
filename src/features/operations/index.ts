@@ -20,6 +20,7 @@ export { OperationsLibrary } from "./operations-library.js";
 // Re-export operation types for convenience
 export type { SearchOperationOptions, SearchResult } from "./search.js";
 export type { ListOptions, ListResult } from "./list.js";
+export type { CheckOperationOptions, CheckOperationResult } from "./check.js";
 export type { CiteOperationOptions, CiteResult, CiteItemResult } from "./cite.js";
 export type { AddReferencesOptions, AddReferencesResult } from "./add.js";
 
