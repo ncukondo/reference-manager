@@ -3,6 +3,7 @@ import type { Config } from "../config/schema.js";
 import { Library } from "../core/library.js";
 import { FileWatcher } from "../features/file-watcher/file-watcher.js";
 import { createAddRoute } from "./routes/add.js";
+import { createCheckRoute } from "./routes/check.js";
 import { createCiteRoute } from "./routes/cite.js";
 import { healthRoute } from "./routes/health.js";
 import { createListRoute } from "./routes/list.js";
@@ -54,6 +55,10 @@ export function createServer(library: Library, config: Config) {
   // Search route
   const searchRoute = createSearchRoute(library);
   app.route("/api/search", searchRoute);
+
+  // Check route
+  const checkRoute = createCheckRoute(library);
+  app.route("/api/check", checkRoute);
 
   return app;
 }
