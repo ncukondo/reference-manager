@@ -29,53 +29,53 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Query Crossref REST API (`/works/{DOI}`) and parse `update-to` field for retraction/version info.
 
-- [ ] Write test: `src/features/check/crossref-client.test.ts`
-- [ ] Create stub: `src/features/check/crossref-client.ts`
-- [ ] Verify Red
-- [ ] Implement: HTTP fetch to Crossref, parse `update-to` array, extract retraction/concern/new_version
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/check/crossref-client.test.ts`
+- [x] Create stub: `src/features/check/crossref-client.ts`
+- [x] Verify Red
+- [x] Implement: HTTP fetch to Crossref, parse `update-to` array, extract retraction/concern/new_version
+- [x] Verify Green
+- [x] Lint/Type check
 
 #### Step 2: Check types and checker core
 
 Define `CheckFinding`, `CheckResult` types. Implement checker that takes a reference and returns findings.
 
-- [ ] Write test: `src/features/check/checker.test.ts`
-- [ ] Create stub: `src/features/check/types.ts`, `src/features/check/checker.ts`
-- [ ] Verify Red
-- [ ] Implement: Orchestrate Crossref queries, build findings from API responses
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/check/checker.test.ts`
+- [x] Create stub: `src/features/check/types.ts`, `src/features/check/checker.ts`
+- [x] Verify Red
+- [x] Implement: Orchestrate Crossref queries, build findings from API responses
+- [x] Verify Green
+- [x] Lint/Type check
 
 #### Step 3: Check operation
 
 Implement `check` operation in operations layer. Handle multi-ID selection (`[ids...]`, `--all`, `--search`), `--days` skip logic, and `custom.check` saving.
 
-- [ ] Write test: `src/features/operations/check.test.ts`
-- [ ] Create stub: `src/features/operations/check.ts`
-- [ ] Verify Red
-- [ ] Implement: Reference selection, checker invocation, result saving, summary
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/operations/check.test.ts`
+- [x] Create stub: `src/features/operations/check.ts`
+- [x] Verify Red
+- [x] Implement: Reference selection, checker invocation, result saving, summary
+- [x] Verify Green
+- [x] Lint/Type check
 
 #### Step 4: ILibraryOperations integration
 
 Add `check()` method to `ILibraryOperations` interface and implement in `OperationsLibrary`.
 
-- [ ] Update `src/features/operations/library-operations.ts` (interface)
-- [ ] Update `src/features/operations/operations-library.ts` (implementation)
-- [ ] Verify Green: existing tests still pass
-- [ ] Lint/Type check
+- [x] Update `src/features/operations/library-operations.ts` (interface)
+- [x] Update `src/features/operations/operations-library.ts` (implementation)
+- [x] Verify Green: existing tests still pass
+- [x] Lint/Type check
 
 #### Step 5: CLI command
 
 Add `ref check` command with all options.
 
-- [ ] Write test: (CLI integration)
-- [ ] Create stub: `src/cli/check.ts`
-- [ ] Implement: Commander command definition, text/JSON output formatting
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: (CLI integration)
+- [x] Create stub: `src/cli/commands/check.ts`
+- [x] Implement: Commander command definition, text/JSON output formatting
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Phase 2: PubMed Status Detection
 
@@ -83,21 +83,21 @@ Add `ref check` command with all options.
 
 Query PubMed E-utilities for publication status and retraction notices (PMID-only references).
 
-- [ ] Write test: `src/features/check/pubmed-client.test.ts`
-- [ ] Create stub: `src/features/check/pubmed-client.ts`
-- [ ] Verify Red
-- [ ] Implement: E-utilities query, parse retraction/status fields
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/check/pubmed-client.test.ts`
+- [x] Create stub: `src/features/check/pubmed-client.ts`
+- [x] Verify Red
+- [x] Implement: E-utilities query, parse retraction/status fields
+- [x] Verify Green
+- [x] Lint/Type check
 
 #### Step 7: Integrate PubMed into checker
 
 Extend checker to use PubMed for PMID-only references and as supplementary source.
 
-- [ ] Update tests: `src/features/check/checker.test.ts`
-- [ ] Implement: Add PubMed path to checker orchestration
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update tests: `src/features/check/checker.test.ts`
+- [x] Implement: Add PubMed path to checker orchestration
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Phase 3: Interactive Repair (`--fix`)
 
