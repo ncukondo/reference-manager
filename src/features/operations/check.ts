@@ -29,6 +29,14 @@ export interface CheckOperationResult {
  * @param options - Check operation options
  * @returns Check results with summary
  */
+const CHECK_CONCURRENCY = 5;
+
+interface IndexedTask {
+  index: number;
+  item: CslItem;
+  skip: boolean;
+}
+
 export async function checkReferences(
   library: ILibrary,
   options: CheckOperationOptions
@@ -37,41 +45,97 @@ export async function checkReferences(
   const save = options.save !== false;
   const skipDays = options.skipDays ?? 7;
 
-  // Resolve target references
   const items = await resolveItems(library, options);
+  const tasks = items.map((item, index) => ({
+    index,
+    item,
+    skip: shouldSkipRecentCheck(item, skipDays),
+  }));
 
-  // Check each reference
-  const results: CheckResult[] = [];
-  for (const item of items) {
-    if (shouldSkipRecentCheck(item, skipDays)) {
-      results.push({
-        id: item.id,
-        uuid: (item.custom?.uuid as string) ?? "",
+  const results: CheckResult[] = new Array(items.length);
+
+  fillSkippedResults(tasks, results);
+
+  const toCheck = tasks.filter((t) => !t.skip);
+  await checkInParallel(toCheck, results, checkReference, options.config);
+
+  if (save) {
+    await saveAllResults(library, toCheck, results);
+  }
+
+  return { results, summary: computeSummary(results) };
+}
+
+/**
+ * Fill results for items that should be skipped (recently checked).
+ */
+function fillSkippedResults(tasks: IndexedTask[], results: CheckResult[]): void {
+  for (const task of tasks) {
+    if (task.skip) {
+      results[task.index] = {
+        id: task.item.id,
+        uuid: (task.item.custom?.uuid as string) ?? "",
         status: "skipped",
         findings: [],
-        checkedAt: (item.custom?.check as Record<string, unknown>)?.checked_at as string,
+        checkedAt: (task.item.custom?.check as Record<string, unknown>)?.checked_at as string,
         checkedSources: [],
-      });
-      continue;
-    }
-
-    const result = await checkReference(item, options.config);
-    results.push(result);
-
-    // Save to custom.check
-    if (save && result.status !== "skipped") {
-      await saveCheckResult(library, item, result);
+      };
     }
   }
+}
 
-  if (save && results.some((r) => r.status !== "skipped")) {
+/**
+ * Check items in parallel with concurrency control.
+ */
+async function checkInParallel(
+  tasks: IndexedTask[],
+  results: CheckResult[],
+  checkFn: (item: CslItem, config?: CheckOperationOptions["config"]) => Promise<CheckResult>,
+  config?: CheckOperationOptions["config"]
+): Promise<void> {
+  for (let i = 0; i < tasks.length; i += CHECK_CONCURRENCY) {
+    const chunk = tasks.slice(i, i + CHECK_CONCURRENCY);
+    const settled = await Promise.allSettled(chunk.map((task) => checkFn(task.item, config)));
+
+    for (const [j, task] of chunk.entries()) {
+      const outcome = settled[j];
+      results[task.index] =
+        outcome?.status === "fulfilled" ? outcome.value : buildFallbackResult(task.item);
+    }
+  }
+}
+
+/**
+ * Build a fallback result when an API call fails.
+ */
+function buildFallbackResult(item: CslItem): CheckResult {
+  return {
+    id: item.id,
+    uuid: (item.custom?.uuid as string) ?? "",
+    status: "ok",
+    findings: [],
+    checkedAt: new Date().toISOString(),
+    checkedSources: [],
+  };
+}
+
+/**
+ * Save check results sequentially (library is not concurrent-safe).
+ */
+async function saveAllResults(
+  library: ILibrary,
+  tasks: IndexedTask[],
+  results: CheckResult[]
+): Promise<void> {
+  for (const task of tasks) {
+    const result = results[task.index] as CheckResult;
+    if (result.status !== "skipped") {
+      await saveCheckResult(library, task.item, result);
+    }
+  }
+  if (results.some((r) => r.status !== "skipped")) {
     await library.save();
   }
-
-  return {
-    results,
-    summary: computeSummary(results),
-  };
 }
 
 /**

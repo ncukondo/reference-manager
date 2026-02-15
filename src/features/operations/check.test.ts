@@ -240,4 +240,67 @@ describe("checkReferences", () => {
       expect(result.summary.total).toBe(result.results.length);
     });
   });
+
+  describe("parallel execution", () => {
+    it("should process multiple references concurrently", async () => {
+      const { checkReference } = await import("../check/checker.js");
+      const mockCheck = vi.mocked(checkReference);
+
+      // Track concurrent execution
+      let maxConcurrent = 0;
+      let currentConcurrent = 0;
+
+      mockCheck.mockImplementation(async (item) => {
+        currentConcurrent++;
+        if (currentConcurrent > maxConcurrent) {
+          maxConcurrent = currentConcurrent;
+        }
+        // Simulate async work
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        currentConcurrent--;
+        return {
+          id: item.id,
+          uuid: (item.custom?.uuid as string) ?? "",
+          status: "ok",
+          findings: [],
+          checkedAt: new Date().toISOString(),
+          checkedSources: ["crossref"],
+        };
+      });
+
+      const options: CheckOperationOptions = { all: true, skipDays: 0 };
+      const result = await checkReferences(mockLibrary, options);
+
+      // Should have processed all items
+      expect(result.summary.total).toBe(4);
+      // Should have had some concurrency (at least 2 running at once)
+      expect(maxConcurrent).toBeGreaterThan(1);
+    });
+
+    it("should maintain result order matching input order", async () => {
+      const { checkReference } = await import("../check/checker.js");
+      const mockCheck = vi.mocked(checkReference);
+
+      mockCheck.mockImplementation(async (item) => {
+        // Vary delay to test ordering
+        const delay = item.id === "smith-2024" ? 20 : 5;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return {
+          id: item.id,
+          uuid: (item.custom?.uuid as string) ?? "",
+          status: "ok",
+          findings: [],
+          checkedAt: new Date().toISOString(),
+          checkedSources: ["crossref"],
+        };
+      });
+
+      const options: CheckOperationOptions = { all: true, skipDays: 0 };
+      const result = await checkReferences(mockLibrary, options);
+
+      // Results should preserve input order
+      const ids = result.results.map((r) => r.id);
+      expect(ids).toEqual(["smith-2024", "jones-2023", "book-2022", "checked-2024"]);
+    });
+  });
 });
