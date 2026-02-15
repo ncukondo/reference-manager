@@ -14,12 +14,6 @@ export type CrossrefResult =
   | { success: false; error: string };
 
 /**
- * Query Crossref REST API for a DOI and extract update-to information.
- *
- * @param doi - The DOI to query
- * @returns Crossref result with update information
- */
-/**
  * Format date-parts from Crossref API response to ISO date string.
  */
 function formatDateParts(updated: unknown): { date?: string } {
@@ -34,6 +28,12 @@ function formatDateParts(updated: unknown): { date?: string } {
   return { date: `${year}-${m}-${d}` };
 }
 
+/**
+ * Query Crossref REST API for a DOI and extract update-to information.
+ *
+ * @param doi - The DOI to query
+ * @returns Crossref result with update information
+ */
 export async function queryCrossref(doi: string): Promise<CrossrefResult> {
   const rateLimiter = getRateLimiter("crossref", {});
   await rateLimiter.acquire();

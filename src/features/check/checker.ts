@@ -47,9 +47,6 @@ export async function checkReference(item: CslItem): Promise<CheckResult> {
 }
 
 /**
- * Map a Crossref update-to entry to a CheckFinding.
- */
-/**
  * Query Crossref and return findings.
  */
 async function checkCrossref(doi: string): Promise<CheckFinding[]> {
@@ -91,6 +88,9 @@ async function checkPubmed(pmid: string): Promise<CheckFinding[]> {
   return findings;
 }
 
+/**
+ * Map a Crossref update-to entry to a CheckFinding.
+ */
 function mapCrossrefUpdate(update: CrossrefUpdateInfo): CheckFinding | null {
   const doiDetail = update.doi ? { retractionDoi: update.doi } : {};
   const dateDetail = update.date ? { retractionDate: update.date } : {};

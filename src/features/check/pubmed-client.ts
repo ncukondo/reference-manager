@@ -7,13 +7,6 @@ export type PubmedResult =
   | { success: false; error: string };
 
 /**
- * Query PubMed E-utilities for publication status of a PMID.
- *
- * @param pmid - The PubMed ID to query
- * @param config - Optional PubMed config (email, apiKey)
- * @returns PubMed result with retraction status
- */
-/**
  * Build PubMed E-utilities esummary URL.
  */
 function buildEsummaryUrl(pmid: string, config?: { email?: string; apiKey?: string }): string {
@@ -30,6 +23,13 @@ function buildEsummaryUrl(pmid: string, config?: { email?: string; apiKey?: stri
   return url.toString();
 }
 
+/**
+ * Query PubMed E-utilities for publication status of a PMID.
+ *
+ * @param pmid - The PubMed ID to query
+ * @param config - Optional PubMed config (email, apiKey)
+ * @returns PubMed result with retraction status
+ */
 export async function queryPubmed(
   pmid: string,
   config?: { email?: string; apiKey?: string }

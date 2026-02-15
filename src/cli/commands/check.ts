@@ -185,9 +185,6 @@ export async function handleCheckAction(
 }
 
 /**
- * Interactive reference selection for check command.
- */
-/**
  * Resolve identifiers from args, stdin, or interactive selection.
  * Returns null if the caller should return early (e.g. cancelled selection).
  */
@@ -244,6 +241,9 @@ function outputCheckError(error: unknown, format: string): void {
   }
 }
 
+/**
+ * Interactive reference selection for check command.
+ */
 async function selectReferencesInteractively(
   context: ExecutionContext,
   config: Config
