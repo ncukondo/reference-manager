@@ -116,9 +116,9 @@ Implement interactive repair flow for retraction and version change findings.
 
 Wire `--fix` flag to interactive repair in CLI command (TTY-only).
 
-- [ ] Update CLI command to handle `--fix`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update CLI command to handle `--fix`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Phase 4: Server & MCP Integration
 
