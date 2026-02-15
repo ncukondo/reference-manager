@@ -26,15 +26,18 @@ export async function checkReference(item: CslItem): Promise<CheckResult> {
   // Query Crossref if DOI is present
   if (hasDoi) {
     checkedSources.push("crossref");
-    const { queryCrossref } = await import("./crossref-client.js");
-    const crossrefResult = await queryCrossref(item.DOI as string);
+    const crossrefFindings = await checkCrossref(item.DOI as string);
+    findings.push(...crossrefFindings);
+  }
 
-    if (crossrefResult.success) {
-      for (const update of crossrefResult.updates) {
-        const finding = mapCrossrefUpdate(update);
-        if (finding) {
-          findings.push(finding);
-        }
+  // Query PubMed if PMID is present
+  if (hasPmid) {
+    checkedSources.push("pubmed");
+    const pubmedFindings = await checkPubmed(item.PMID as string);
+    // Only add PubMed findings that aren't already found via Crossref
+    for (const pf of pubmedFindings) {
+      if (!findings.some((f) => f.type === pf.type)) {
+        findings.push(pf);
       }
     }
   }
@@ -46,6 +49,48 @@ export async function checkReference(item: CslItem): Promise<CheckResult> {
 /**
  * Map a Crossref update-to entry to a CheckFinding.
  */
+/**
+ * Query Crossref and return findings.
+ */
+async function checkCrossref(doi: string): Promise<CheckFinding[]> {
+  const { queryCrossref } = await import("./crossref-client.js");
+  const result = await queryCrossref(doi);
+  if (!result.success) return [];
+
+  const findings: CheckFinding[] = [];
+  for (const update of result.updates) {
+    const finding = mapCrossrefUpdate(update);
+    if (finding) {
+      findings.push(finding);
+    }
+  }
+  return findings;
+}
+
+/**
+ * Query PubMed and return findings.
+ */
+async function checkPubmed(pmid: string): Promise<CheckFinding[]> {
+  const { queryPubmed } = await import("./pubmed-client.js");
+  const result = await queryPubmed(pmid);
+  if (!result.success) return [];
+
+  const findings: CheckFinding[] = [];
+  if (result.isRetracted) {
+    findings.push({
+      type: "retracted",
+      message: "This article is marked as retracted in PubMed",
+    });
+  }
+  if (result.hasConcern) {
+    findings.push({
+      type: "concern",
+      message: "Expression of concern noted in PubMed",
+    });
+  }
+  return findings;
+}
+
 function mapCrossrefUpdate(update: CrossrefUpdateInfo): CheckFinding | null {
   const doiDetail = update.doi ? { retractionDoi: update.doi } : {};
   const dateDetail = update.date ? { retractionDate: update.date } : {};
