@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CheckOperationResult } from "../../features/operations/check.js";
 import type { ExecutionContext } from "../execution-context.js";
 import {
@@ -6,6 +6,7 @@ import {
   executeCheck,
   formatCheckJsonOutput,
   formatCheckTextOutput,
+  handleCheckAction,
 } from "./check.js";
 
 describe("check command", () => {
@@ -253,6 +254,37 @@ describe("check command", () => {
       expect(output.results).toHaveLength(1);
       expect(output.summary.total).toBe(1);
       expect(output.summary.warnings).toBe(1);
+    });
+  });
+
+  describe("handleCheckAction --fix", () => {
+    let stderrOutput: string;
+    let originalStderrWrite: typeof process.stderr.write;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      stderrOutput = "";
+      originalStderrWrite = process.stderr.write;
+      process.stderr.write = ((chunk: string) => {
+        stderrOutput += chunk;
+        return true;
+      }) as typeof process.stderr.write;
+    });
+
+    afterEach(() => {
+      process.stderr.write = originalStderrWrite;
+    });
+
+    it("should error when --fix is used in non-TTY", async () => {
+      // Mock isTTY to return false
+      const helpers = await import("../helpers.js");
+      vi.spyOn(helpers, "isTTY").mockReturnValue(false);
+      const setExitCodeSpy = vi.spyOn(helpers, "setExitCode");
+
+      await handleCheckAction(["smith-2024"], { fix: true }, {});
+
+      expect(stderrOutput).toContain("--fix requires an interactive terminal");
+      expect(setExitCodeSpy).toHaveBeenCalledWith(1);
     });
   });
 });

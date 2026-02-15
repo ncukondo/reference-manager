@@ -23,6 +23,7 @@ export interface CheckCommandOptions {
   full?: boolean;
   noSave?: boolean;
   days?: number;
+  fix?: boolean;
 }
 
 export type CheckCommandResult = CheckOperationResult;
@@ -143,6 +144,13 @@ export async function handleCheckAction(
 ): Promise<void> {
   const outputFormat = options.output ?? "text";
 
+  // --fix requires TTY
+  if (options.fix && !isTTY()) {
+    outputCheckError(new Error("--fix requires an interactive terminal (TTY)"), outputFormat);
+    setExitCode(ExitCode.ERROR);
+    return;
+  }
+
   try {
     const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
     const context = await createExecutionContext(config, Library.load);
@@ -152,6 +160,23 @@ export async function handleCheckAction(
 
     const result = await executeCheck({ ...options, identifiers: ids }, context);
     outputCheckResult(result, outputFormat);
+
+    // Interactive repair if --fix and there are warnings
+    if (options.fix && result.summary.warnings > 0) {
+      const { runFixInteraction } = await import("../../features/check/fix-interaction.js");
+      const allRefs = await context.library.getAll();
+      const findItem = (id: string): ReturnType<typeof allRefs.find> =>
+        allRefs.find((item) => item.id === id);
+
+      const fixResult = await runFixInteraction(result.results, context.library, findItem);
+
+      const removedSuffix =
+        fixResult.removed.length > 0 ? `, ${fixResult.removed.length} removed` : "";
+      process.stderr.write(
+        `\nFix summary: ${fixResult.applied} applied, ${fixResult.skipped} skipped${removedSuffix}\n`
+      );
+    }
+
     setExitCode(ExitCode.SUCCESS);
   } catch (error) {
     outputCheckError(error, outputFormat);
