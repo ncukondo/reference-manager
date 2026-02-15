@@ -105,12 +105,12 @@ Extend checker to use PubMed for PMID-only references and as supplementary sourc
 
 Implement interactive repair flow for retraction and version change findings.
 
-- [ ] Write test: `src/features/check/fix-actions.test.ts`
-- [ ] Create stub: `src/features/check/fix-actions.ts`
-- [ ] Verify Red
-- [ ] Implement: Tag addition, metadata update from published version, removal
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/features/check/fix-actions.test.ts`
+- [x] Create stub: `src/features/check/fix-actions.ts`
+- [x] Verify Red
+- [x] Implement: Tag addition, metadata update from published version, removal
+- [x] Verify Green
+- [x] Lint/Type check
 
 #### Step 9: CLI `--fix` integration
 
