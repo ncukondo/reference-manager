@@ -32,14 +32,22 @@ function formatDateParts(updated: unknown): { date?: string } {
  * Query Crossref REST API for a DOI and extract update-to information.
  *
  * @param doi - The DOI to query
+ * @param config - Optional config with email for polite pool
  * @returns Crossref result with update information
  */
-export async function queryCrossref(doi: string): Promise<CrossrefResult> {
+export async function queryCrossref(
+  doi: string,
+  config?: { email?: string }
+): Promise<CrossrefResult> {
   const rateLimiter = getRateLimiter("crossref", {});
   await rateLimiter.acquire();
 
   try {
-    const response = await fetch(`${CROSSREF_API_BASE}/${encodeURIComponent(doi)}`);
+    const url = new URL(`${CROSSREF_API_BASE}/${encodeURIComponent(doi)}`);
+    if (config?.email) {
+      url.searchParams.set("mailto", config.email);
+    }
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
       return {

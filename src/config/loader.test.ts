@@ -16,6 +16,7 @@ describe("Config Loader", () => {
   const ENV_VARS_TO_SAVE = [
     "REFERENCE_MANAGER_CONFIG",
     "REFERENCE_MANAGER_LIBRARY",
+    "EMAIL",
     "PUBMED_EMAIL",
     "PUBMED_API_KEY",
     "UNPAYWALL_EMAIL",
@@ -676,6 +677,65 @@ apiKey = "my-api-key"
       const config = loadConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("user@example.com");
       expect(config.pubmed.apiKey).toBe("my-api-key");
+    });
+  });
+
+  describe("top-level email fallback", () => {
+    it("should load top-level email from config", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(configPath, `email = "shared@example.com"\n`);
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.email).toBe("shared@example.com");
+    });
+
+    it("should load top-level email from EMAIL environment variable", () => {
+      process.env.EMAIL = "env-shared@example.com";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.email).toBe("env-shared@example.com");
+    });
+
+    it("should use top-level email as fallback for pubmed.email", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(configPath, `email = "shared@example.com"\n`);
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("shared@example.com");
+    });
+
+    it("should use top-level email as fallback for fulltext sources", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(configPath, `email = "shared@example.com"\n`);
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.fulltext.sources.unpaywallEmail).toBe("shared@example.com");
+      expect(config.fulltext.sources.ncbiEmail).toBe("shared@example.com");
+    });
+
+    it("should prioritize service-specific email over top-level email", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+email = "shared@example.com"
+
+[pubmed]
+email = "pubmed@example.com"
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("pubmed@example.com");
+    });
+
+    it("should prioritize PUBMED_EMAIL env over top-level email", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(configPath, `email = "shared@example.com"\n`);
+      process.env.PUBMED_EMAIL = "pubmed-env@example.com";
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.pubmed.email).toBe("pubmed-env@example.com");
     });
   });
 

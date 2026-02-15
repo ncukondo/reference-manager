@@ -112,6 +112,9 @@ function applyOverride(result: DeepPartialConfig, override: DeepPartialConfig): 
   if (override.logLevel !== undefined) {
     result.logLevel = override.logLevel;
   }
+  if (override.email !== undefined) {
+    result.email = override.email;
+  }
 
   // Merge flat section configs
   for (const key of flatSectionKeys) {
@@ -156,9 +159,11 @@ function mergeConfigs(
 function fillDefaults(partial: DeepPartialConfig): Config {
   const envLibrary = process.env.REFERENCE_MANAGER_LIBRARY;
   const library = envLibrary ?? partial.library ?? defaultConfig.library;
+  const email = process.env.EMAIL ?? partial.email ?? defaultConfig.email;
   return {
     library: expandTilde(library),
     logLevel: partial.logLevel ?? defaultConfig.logLevel,
+    email,
     backup: {
       maxGenerations: partial.backup?.maxGenerations ?? defaultConfig.backup.maxGenerations,
       maxAgeDays: partial.backup?.maxAgeDays ?? defaultConfig.backup.maxAgeDays,
@@ -175,8 +180,8 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       autoStopMinutes: partial.server?.autoStopMinutes ?? defaultConfig.server.autoStopMinutes,
     },
     citation: fillCitationDefaults(partial.citation),
-    pubmed: fillPubmedDefaults(partial.pubmed),
-    fulltext: fillFulltextDefaults(partial.fulltext),
+    pubmed: fillPubmedDefaults(partial.pubmed, email),
+    fulltext: fillFulltextDefaults(partial.fulltext, email),
     attachments: fillAttachmentsDefaults(partial.attachments),
     cli: fillCliDefaults(partial.cli),
     mcp: fillMcpDefaults(partial.mcp),
@@ -200,9 +205,13 @@ function fillCitationDefaults(partial: DeepPartialConfig["citation"]): Config["c
  * Fill pubmed config with defaults
  * Environment variables take priority over config file values
  */
-function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubmed"] {
-  // Environment variables take priority
-  const email = process.env.PUBMED_EMAIL ?? partial?.email ?? defaultConfig.pubmed.email;
+function fillPubmedDefaults(
+  partial: DeepPartialConfig["pubmed"],
+  fallbackEmail?: string
+): Config["pubmed"] {
+  // Priority: PUBMED_EMAIL env > pubmed.email config > EMAIL env / top-level email > undefined
+  const email =
+    process.env.PUBMED_EMAIL ?? partial?.email ?? fallbackEmail ?? defaultConfig.pubmed.email;
   const apiKey = process.env.PUBMED_API_KEY ?? partial?.apiKey ?? defaultConfig.pubmed.apiKey;
 
   return {
@@ -215,11 +224,15 @@ function fillPubmedDefaults(partial: DeepPartialConfig["pubmed"]): Config["pubme
  * Fill fulltext config with defaults
  * Environment variables take priority over config file values
  */
-function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["fulltext"] {
-  // Environment variables take priority
+function fillFulltextDefaults(
+  partial: DeepPartialConfig["fulltext"],
+  fallbackEmail?: string
+): Config["fulltext"] {
+  // Priority: service-specific env > service-specific config > EMAIL env / top-level email > undefined
   const unpaywallEmail =
     process.env.UNPAYWALL_EMAIL ??
     partial?.sources?.unpaywallEmail ??
+    fallbackEmail ??
     defaultConfig.fulltext.sources.unpaywallEmail;
   const coreApiKey =
     process.env.CORE_API_KEY ??
@@ -228,6 +241,7 @@ function fillFulltextDefaults(partial: DeepPartialConfig["fulltext"]): Config["f
   const ncbiEmail =
     process.env.NCBI_EMAIL ??
     partial?.sources?.ncbiEmail ??
+    fallbackEmail ??
     defaultConfig.fulltext.sources.ncbiEmail;
   const ncbiTool =
     process.env.NCBI_TOOL ?? partial?.sources?.ncbiTool ?? defaultConfig.fulltext.sources.ncbiTool;
@@ -384,7 +398,7 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
     normalizedEnv,
     normalizedCurrent,
     normalizedCli,
-    options.overrides
+    options.overrides as DeepPartialConfig
   );
 
   // Fill missing fields with defaults

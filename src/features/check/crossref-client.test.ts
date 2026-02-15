@@ -204,6 +204,36 @@ describe("queryCrossref", () => {
     expect(result.updates[0].date).toBe("2024-01-05");
   });
 
+  it("should include mailto query parameter when email is provided", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        message: { DOI: "10.1234/test" },
+      }),
+    });
+
+    await queryCrossref("10.1234/test", { email: "user@example.com" });
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).toContain("mailto=user%40example.com");
+  });
+
+  it("should not include mailto when no email is provided", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        message: { DOI: "10.1234/test" },
+      }),
+    });
+
+    await queryCrossref("10.1234/test");
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain("mailto");
+  });
+
   it("should handle missing date in update-to entry", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

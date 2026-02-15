@@ -32,7 +32,10 @@ export type CheckCommandResult = CheckOperationResult;
 /**
  * Build check operation options from command options.
  */
-function buildCheckOptions(options: CheckCommandOptions): CheckOperationOptions {
+function buildCheckOptions(
+  options: CheckCommandOptions,
+  appConfig?: Config
+): CheckOperationOptions {
   const opOptions: CheckOperationOptions = {};
 
   if (options.all) {
@@ -53,6 +56,16 @@ function buildCheckOptions(options: CheckCommandOptions): CheckOperationOptions 
     opOptions.save = false;
   }
 
+  if (appConfig) {
+    const pubmed: { email?: string; apiKey?: string } = {};
+    if (appConfig.pubmed.email) pubmed.email = appConfig.pubmed.email;
+    if (appConfig.pubmed.apiKey) pubmed.apiKey = appConfig.pubmed.apiKey;
+    opOptions.config = {
+      ...(appConfig.email ? { email: appConfig.email } : {}),
+      pubmed,
+    };
+  }
+
   return opOptions;
 }
 
@@ -61,9 +74,10 @@ function buildCheckOptions(options: CheckCommandOptions): CheckOperationOptions 
  */
 export async function executeCheck(
   options: CheckCommandOptions,
-  context: ExecutionContext
+  context: ExecutionContext,
+  appConfig?: Config
 ): Promise<CheckCommandResult> {
-  return context.library.check(buildCheckOptions(options));
+  return context.library.check(buildCheckOptions(options, appConfig));
 }
 
 /**
@@ -176,7 +190,7 @@ export async function handleCheckAction(
     const ids = await resolveIdentifiers(identifiers, options, context, config);
     if (ids === null) return;
 
-    const result = await executeCheck({ ...options, identifiers: ids }, context);
+    const result = await executeCheck({ ...options, identifiers: ids }, context, config);
     const jsonOptions = await buildJsonOptions(options, outputFormat, result, context);
     outputCheckResult(result, outputFormat, jsonOptions);
 

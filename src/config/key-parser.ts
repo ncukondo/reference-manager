@@ -35,6 +35,7 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "Log level",
     enumValues: ["silent", "info", "debug"],
   },
+  { key: "email", type: "string", description: "Fallback email for API services", optional: true },
 
   // backup section
   { key: "backup.max_generations", type: "integer", description: "Maximum backup generations" },

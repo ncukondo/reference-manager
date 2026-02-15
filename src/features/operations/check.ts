@@ -9,6 +9,7 @@ export interface CheckOperationOptions {
   searchQuery?: string;
   skipDays?: number;
   save?: boolean;
+  config?: { email?: string; pubmed?: { email?: string; apiKey?: string } };
 }
 
 export interface CheckOperationResult {
@@ -54,7 +55,7 @@ export async function checkReferences(
       continue;
     }
 
-    const result = await checkReference(item);
+    const result = await checkReference(item, options.config);
     results.push(result);
 
     // Save to custom.check
