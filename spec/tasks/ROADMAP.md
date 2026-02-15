@@ -95,7 +95,17 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-(No active tasks)
+### Phase 38: Check Command — Reference Status Verification
+
+Detect retractions, expressions of concern, and preprint-to-published version changes by querying Crossref and PubMed APIs.
+
+- **Spec**: `spec/features/check.md`
+- **Task**: `spec/tasks/20260215-01-check-command.md`
+- **Scope**:
+  - Phase 1: Crossref API client, checker core, check operation, CLI command
+  - Phase 2: PubMed status detection
+  - Phase 3: Interactive repair (`--fix`)
+  - Phase 4: Server & MCP integration
 
 ---
 

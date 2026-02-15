@@ -104,6 +104,7 @@ spec/
 | ID-less invocation (cite, edit, etc.) | `features/interactive-id-selection.md` |
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |
+| `check` | `features/check.md` |
 | `completion` | `features/shell-completion.md` |
 
 ### Core Concepts

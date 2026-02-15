@@ -93,6 +93,7 @@ This follows the same pattern as `ref attach` → `ref attach open`.
 | `cite <id>...` | Generate formatted citations |
 | `edit [ids...]` | Edit references in external editor |
 | `url [ids...]` | Show/open reference URLs (DOI, PubMed, etc.) |
+| `check [ids...]` | Check reference status (retraction, version changes) |
 | `fulltext <subcommand>` | Manage full-text files (attach/get/detach/open) |
 | `config <subcommand>` | Manage configuration (show/get/set/edit) |
 | `server start\|stop\|status` | Manage HTTP server |
@@ -278,6 +279,31 @@ ref url [ids...] [options]
 - Multiple IDs, no filter: TSV format (id\turl)
 - With type filter (`--default`, `--doi`, etc.): Plain URL, one per line
 - Interactive selection if identifier omitted (TTY only)
+
+### check
+
+```
+ref check [ids...] [options]
+```
+
+Multiple IDs accepted (same as `cite`, `export`).
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--all` | | Check all references |
+| `--search <query>` | | Check references matching search query |
+| `--uuid` | | Interpret identifiers as UUIDs |
+| `--output <format>` | `-o` | Output format: text\|json (default: text) |
+| `--full` | | Include full details in JSON output |
+| `--no-save` | | Report only, do not save results |
+| `--fix` | | Interactive repair (TTY only) |
+| `--days <n>` | | Skip recently checked (default: 7) |
+
+**Selection modes** (mutually exclusive): `[ids...]`, `--all`, `--search`
+
+Interactive selection if identifier omitted (TTY only).
+
+See `spec/features/check.md` for full specification.
 
 ### fulltext
 
