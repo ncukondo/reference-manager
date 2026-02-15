@@ -31,6 +31,7 @@ import type {
   SyncAttachmentOptions,
   SyncAttachmentResult,
 } from "./attachments/index.js";
+import type { CheckOperationOptions, CheckOperationResult } from "./check.js";
 import type { CiteOperationOptions, CiteResult } from "./cite.js";
 import type { ILibraryOperations, ImportOptions, ImportResult } from "./library-operations.js";
 import type { ListOptions, ListResult } from "./list.js";
@@ -106,6 +107,11 @@ export class OperationsLibrary implements ILibraryOperations {
   async import(inputs: string[], options?: ImportOptions): Promise<ImportResult> {
     const { addReferences } = await import("./add.js");
     return addReferences(inputs, this.library, options ?? {});
+  }
+
+  async check(options: CheckOperationOptions): Promise<CheckOperationResult> {
+    const { checkReferences } = await import("./check.js");
+    return checkReferences(this.library, options);
   }
 
   // Attachment operations
