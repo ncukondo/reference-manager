@@ -89,6 +89,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 37**: TUI Indicator & Meta Line Improvements (text labels, formatSource, shared choice-builder, formatIdentifiers consolidation)
 - **Phase 38**: CLI Help Enhancement (search help with query syntax, fields, case sensitivity, examples)
 - **Phase 38**: Check Command (retraction/concern/version detection via Crossref & PubMed)
+- **Phase 39**: Check Command — Metadata Comparison (title/author similarity, metadata drift detection, fix actions)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -96,19 +97,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-### Phase 39: Check Command — Metadata Comparison
-
-Compare local metadata against remote sources (Crossref, PubMed) to detect metadata drift. Distinguish between `metadata_mismatch` (likely wrong registration) and `metadata_outdated` (remote data updated). Enabled by default; `--no-metadata` to skip.
-
-- **Spec**: `spec/features/check.md`
-- **Task**: `spec/tasks/20260216-01-check-metadata-comparison.md`
-- **Scope**:
-  - Phase 1: Title/author similarity functions (Jaccard, Containment, family name overlap)
-  - Phase 2: Crossref metadata extraction from existing response
-  - Phase 3: Metadata comparator & integration into checker
-  - Phase 4: Types, output formatting, CLI `--metadata`/`--no-metadata`
-  - Phase 5: Fix actions (`update_all_fields`, `update_selected_fields`)
-  - Phase 6: Server, MCP integration & README update
+(No active tasks)
 
 ---
 
