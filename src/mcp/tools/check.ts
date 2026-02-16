@@ -8,6 +8,7 @@ export interface CheckToolParams {
   all?: boolean | undefined;
   skipDays?: number | undefined;
   save?: boolean | undefined;
+  metadata?: boolean | undefined;
 }
 
 function formatCheckResult(result: Awaited<ReturnType<ILibraryOperations["check"]>>): string {
@@ -53,6 +54,10 @@ export function registerCheckTool(
           .optional()
           .describe("Skip references checked within n days (default: 7)"),
         save: z.boolean().optional().describe("Whether to save results to library (default: true)"),
+        metadata: z
+          .boolean()
+          .optional()
+          .describe("Compare metadata against remote sources (default: true)"),
       },
     },
     async (args: CheckToolParams) => {
@@ -63,6 +68,7 @@ export function registerCheckTool(
       if (args.all) options.all = true;
       if (args.skipDays !== undefined) options.skipDays = args.skipDays;
       if (args.save !== undefined) options.save = args.save;
+      if (args.metadata !== undefined) options.metadata = args.metadata;
 
       const result = await libraryOps.check(options);
 
