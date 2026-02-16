@@ -95,8 +95,10 @@ function getStatusLabel(result: CheckResult): string {
       return "[CONCERN]";
     case "version_changed":
       return "[VERSION]";
-    case "metadata_changed":
-      return "[METADATA]";
+    case "metadata_mismatch":
+      return "[MISMATCH]";
+    case "metadata_outdated":
+      return "[OUTDATED]";
     default:
       return "[WARNING]";
   }

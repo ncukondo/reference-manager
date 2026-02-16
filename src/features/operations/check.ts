@@ -9,6 +9,7 @@ export interface CheckOperationOptions {
   searchQuery?: string;
   skipDays?: number;
   save?: boolean;
+  metadata?: boolean;
   config?: { email?: string; pubmed?: { email?: string; apiKey?: string } };
 }
 
