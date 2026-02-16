@@ -25,6 +25,7 @@ export interface CheckCommandOptions {
   noSave?: boolean;
   days?: number;
   fix?: boolean;
+  metadata?: boolean;
 }
 
 export type CheckCommandResult = CheckOperationResult;
@@ -54,6 +55,9 @@ function buildCheckOptions(
   }
   if (options.noSave) {
     opOptions.save = false;
+  }
+  if (options.metadata !== undefined) {
+    opOptions.metadata = options.metadata;
   }
 
   if (appConfig) {
