@@ -9,8 +9,19 @@ export interface CrossrefUpdateInfo {
   date?: string;
 }
 
+export interface RemoteMetadata {
+  title?: string;
+  author?: Array<{ family?: string; given?: string }>;
+  containerTitle?: string;
+  type?: string;
+  page?: string;
+  volume?: string;
+  issue?: string;
+  issued?: { "date-parts"?: number[][] };
+}
+
 export type CrossrefResult =
-  | { success: true; updates: CrossrefUpdateInfo[] }
+  | { success: true; updates: CrossrefUpdateInfo[]; metadata?: RemoteMetadata }
   | { success: false; error: string };
 
 /**
@@ -26,6 +37,59 @@ function formatDateParts(updated: unknown): { date?: string } {
   const m = String(month ?? 1).padStart(2, "0");
   const d = String(day ?? 1).padStart(2, "0");
   return { date: `${year}-${m}-${d}` };
+}
+
+/**
+ * Extract comparable metadata fields from a Crossref message object.
+ */
+function extractMetadata(message: Record<string, unknown> | undefined): RemoteMetadata | undefined {
+  if (!message) return undefined;
+
+  const metadata: RemoteMetadata = {};
+
+  // Title: array in Crossref, take first element
+  const titleArr = message.title as string[] | undefined;
+  const firstTitle = Array.isArray(titleArr) ? titleArr[0] : undefined;
+  if (firstTitle) {
+    metadata.title = firstTitle;
+  }
+
+  // Author
+  const authorArr = message.author as Array<{ family?: string; given?: string }> | undefined;
+  if (Array.isArray(authorArr) && authorArr.length > 0) {
+    metadata.author = authorArr.map((a) => ({
+      ...(a.family ? { family: a.family } : {}),
+      ...(a.given ? { given: a.given } : {}),
+    }));
+  }
+
+  // Container title: array in Crossref, take first
+  const containerArr = message["container-title"] as string[] | undefined;
+  const firstContainer = Array.isArray(containerArr) ? containerArr[0] : undefined;
+  if (firstContainer) {
+    metadata.containerTitle = firstContainer;
+  }
+
+  // Type
+  if (typeof message.type === "string") {
+    metadata.type = message.type;
+  }
+
+  // Page, volume, issue
+  if (typeof message.page === "string") metadata.page = message.page;
+  if (typeof message.volume === "string") metadata.volume = message.volume;
+  if (typeof message.issue === "string") metadata.issue = message.issue;
+
+  // Issued
+  const issued = message.issued as { "date-parts"?: number[][] } | undefined;
+  if (issued && Array.isArray(issued["date-parts"])) {
+    metadata.issued = issued;
+  }
+
+  // Return undefined if no metadata fields were populated (prevents spurious diffs)
+  if (Object.keys(metadata).length === 0) return undefined;
+
+  return metadata;
 }
 
 /**
@@ -70,7 +134,9 @@ export async function queryCrossref(
       };
     });
 
-    return { success: true, updates };
+    const metadata = extractMetadata(message);
+
+    return metadata ? { success: true, updates, metadata } : { success: true, updates };
   } catch (error) {
     return {
       success: false,

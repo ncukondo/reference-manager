@@ -1,10 +1,16 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { CrossrefUpdateInfo } from "./crossref-client.js";
+import type { CrossrefUpdateInfo, RemoteMetadata } from "./crossref-client.js";
 import type { CheckFinding, CheckResult } from "./types.js";
 
 export interface CheckConfig {
   email?: string;
   pubmed?: { email?: string; apiKey?: string };
+  metadata?: boolean;
+}
+
+interface CrossrefCheckResult {
+  findings: CheckFinding[];
+  metadata?: RemoteMetadata;
 }
 
 /**
@@ -29,23 +35,27 @@ export async function checkReference(item: CslItem, config?: CheckConfig): Promi
     return { id, uuid, status: "skipped", findings: [], checkedAt, checkedSources: [] };
   }
 
+  let crossrefMetadata: RemoteMetadata | undefined;
+
   // Query Crossref if DOI is present
   if (hasDoi) {
     checkedSources.push("crossref");
-    const crossrefFindings = await checkCrossref(item.DOI as string, config);
-    findings.push(...crossrefFindings);
+    const crossrefResult = await checkCrossref(item.DOI as string, config);
+    findings.push(...crossrefResult.findings);
+    crossrefMetadata = crossrefResult.metadata;
   }
 
   // Query PubMed if PMID is present
   if (hasPmid) {
     checkedSources.push("pubmed");
     const pubmedFindings = await checkPubmed(item.PMID as string, config);
-    // Only add PubMed findings that aren't already found via Crossref
-    for (const pf of pubmedFindings) {
-      if (!findings.some((f) => f.type === pf.type)) {
-        findings.push(pf);
-      }
-    }
+    addUniqueFindings(findings, pubmedFindings);
+  }
+
+  // Metadata comparison (default: enabled)
+  const metadataFinding = await checkMetadata(item, config, crossrefMetadata, hasPmid, hasDoi);
+  if (metadataFinding) {
+    findings.push(metadataFinding);
   }
 
   const status = findings.length > 0 ? "warning" : "ok";
@@ -53,13 +63,49 @@ export async function checkReference(item: CslItem, config?: CheckConfig): Promi
 }
 
 /**
- * Query Crossref and return findings.
+ * Add findings that aren't already present (by type) to the target list.
  */
-async function checkCrossref(doi: string, config?: CheckConfig): Promise<CheckFinding[]> {
+function addUniqueFindings(target: CheckFinding[], source: CheckFinding[]): void {
+  for (const finding of source) {
+    if (!target.some((f) => f.type === finding.type)) {
+      target.push(finding);
+    }
+  }
+}
+
+/**
+ * Perform metadata comparison if enabled.
+ */
+async function checkMetadata(
+  item: CslItem,
+  config: CheckConfig | undefined,
+  crossrefMetadata: RemoteMetadata | undefined,
+  hasPmid: boolean,
+  hasDoi: boolean
+): Promise<CheckFinding | null> {
+  if (config?.metadata === false) return null;
+
+  if (crossrefMetadata) {
+    // DOI-based: compare against Crossref metadata
+    return compareItemMetadata(item, crossrefMetadata);
+  }
+
+  if (hasPmid && !hasDoi) {
+    // PubMed-only: fetch remote CSL-JSON via PubMed and compare
+    return comparePubmedMetadata(item, config);
+  }
+
+  return null;
+}
+
+/**
+ * Query Crossref and return findings plus metadata.
+ */
+async function checkCrossref(doi: string, config?: CheckConfig): Promise<CrossrefCheckResult> {
   const { queryCrossref } = await import("./crossref-client.js");
   const crossrefConfig = config?.email ? { email: config.email } : undefined;
   const result = await queryCrossref(doi, crossrefConfig);
-  if (!result.success) return [];
+  if (!result.success) return { findings: [] };
 
   const findings: CheckFinding[] = [];
   for (const update of result.updates) {
@@ -68,7 +114,98 @@ async function checkCrossref(doi: string, config?: CheckConfig): Promise<CheckFi
       findings.push(finding);
     }
   }
-  return findings;
+  return result.metadata ? { findings, metadata: result.metadata } : { findings };
+}
+
+/**
+ * Compare item metadata against Crossref metadata.
+ */
+async function compareItemMetadata(
+  item: CslItem,
+  remoteMetadata: RemoteMetadata
+): Promise<CheckFinding | null> {
+  const { compareMetadata } = await import("./metadata-comparator.js");
+
+  const local = extractLocalMetadata(item);
+  const comparison = compareMetadata(local, remoteMetadata);
+
+  if (comparison.classification === "no_change") return null;
+
+  const type = comparison.classification;
+  const message =
+    type === "metadata_mismatch"
+      ? "Local metadata significantly differs from the remote record"
+      : "Remote metadata has been updated since import";
+
+  return {
+    type,
+    message,
+    details: {
+      updatedFields: comparison.changedFields,
+      fieldDiffs: comparison.fieldDiffs,
+    },
+  };
+}
+
+/**
+ * Fetch PubMed CSL-JSON and compare metadata for PMID-only references.
+ */
+async function comparePubmedMetadata(
+  item: CslItem,
+  config?: CheckConfig
+): Promise<CheckFinding | null> {
+  const { fetchPmids } = await import("../import/fetcher.js");
+  const pubmedConfig = config?.pubmed ?? {};
+  const results = await fetchPmids([item.PMID as string], pubmedConfig);
+  const result = results[0];
+  if (!result || !result.success) {
+    console.error(
+      `PubMed metadata fetch failed for PMID ${item.PMID}: ${result?.error ?? "unknown error"}`
+    );
+    return null;
+  }
+
+  const remoteMetadata = cslItemToRemoteMetadata(result.item);
+  return compareItemMetadata(item, remoteMetadata);
+}
+
+/**
+ * Convert a CslItem (from PubMed) to RemoteMetadata format for comparison.
+ */
+function cslItemToRemoteMetadata(item: CslItem): RemoteMetadata {
+  const metadata: RemoteMetadata = {};
+  if (item.title !== undefined) metadata.title = item.title;
+  if (item.author !== undefined) {
+    metadata.author = item.author as Array<{ family?: string; given?: string }>;
+  }
+  if (item["container-title"] !== undefined) metadata.containerTitle = item["container-title"];
+  if (item.type !== undefined) metadata.type = item.type;
+  if (item.page !== undefined) metadata.page = item.page;
+  if (item.volume !== undefined) metadata.volume = item.volume;
+  if (item.issue !== undefined) metadata.issue = item.issue;
+  if (item.issued !== undefined) {
+    metadata.issued = item.issued as { "date-parts"?: number[][] };
+  }
+  return metadata;
+}
+
+/**
+ * Extract local metadata fields from a CslItem for comparison.
+ */
+function extractLocalMetadata(
+  item: CslItem
+): import("./metadata-comparator.js").LocalMetadataFields {
+  const local: import("./metadata-comparator.js").LocalMetadataFields = {};
+  if (item.title !== undefined) local.title = item.title;
+  if (item.author !== undefined)
+    local.author = item.author as Array<{ family?: string; given?: string }>;
+  if (item["container-title"] !== undefined) local["container-title"] = item["container-title"];
+  if (item.type !== undefined) local.type = item.type;
+  if (item.page !== undefined) local.page = item.page;
+  if (item.volume !== undefined) local.volume = item.volume;
+  if (item.issue !== undefined) local.issue = item.issue;
+  if (item.issued !== undefined) local.issued = item.issued as { "date-parts"?: number[][] };
+  return local;
 }
 
 /**

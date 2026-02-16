@@ -546,7 +546,9 @@ function registerEditCommand(program: Command): void {
 function registerCheckCommand(program: Command): void {
   program
     .command("check")
-    .description("Check references for retractions, expressions of concern, and version changes")
+    .description(
+      "Check references for retractions, expressions of concern, version changes, and metadata drift"
+    )
     .argument("[ids...]", "Citation keys or UUIDs to check (interactive selection if omitted)")
     .option("--all", "Check all references in library")
     .option("--search <query>", "Check references matching search query")
@@ -556,6 +558,7 @@ function registerCheckCommand(program: Command): void {
     .option("--no-save", "Report only, do not save results to library")
     .option("--days <n>", "Skip references checked within n days (default: 7)", Number.parseInt)
     .option("--fix", "Interactive repair for findings (TTY only)")
+    .option("--no-metadata", "Skip metadata comparison against remote sources")
     .action(async (ids: string[], options) => {
       await handleCheckAction(ids, options, program.opts());
     });

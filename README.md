@@ -420,7 +420,7 @@ Files are organized by reference in directories named `Author-Year-ID-UUID` unde
 
 ### Reference Checking
 
-Check your references for retractions, expressions of concern, and preprint-to-published version changes:
+Check your references for retractions, expressions of concern, preprint-to-published version changes, and metadata drift:
 
 ```bash
 # Check specific references
@@ -432,6 +432,9 @@ ref check --all
 
 # Skip references checked within the last 30 days
 ref check --all --days 30
+
+# Skip metadata comparison (only check retractions/concerns/versions)
+ref check --all --no-metadata
 
 # JSON output
 ref check --all -o json
@@ -445,8 +448,14 @@ ref check --all --fix
 ```
 
 Sources queried:
-- **Crossref** (when DOI is present): Retractions, expressions of concern, version changes via `update-to` field
+- **Crossref** (when DOI is present): Retractions, expressions of concern, version changes via `update-to` field, metadata comparison
 - **PubMed** (when PMID is present): Retraction status, expression of concern
+
+**Metadata comparison** detects drift between local and remote records:
+- **Mismatch**: Title or author significantly differs from remote (likely wrong registration). Example: `[MISMATCH] smith-2024 — title: "Wrong Title" → "Correct Title"`
+- **Outdated**: Publication fields (page, volume, issue, type) updated remotely since import. Example: `[OUTDATED] jones-2023 — page: (none) → "123-145"`
+
+Use `--fix` to interactively update changed fields from the remote source.
 
 Results are saved to `custom.check` by default for skip-if-recent logic.
 
