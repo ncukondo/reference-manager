@@ -546,7 +546,9 @@ function registerEditCommand(program: Command): void {
 function registerCheckCommand(program: Command): void {
   program
     .command("check")
-    .description("Check references for retractions, expressions of concern, and version changes")
+    .description(
+      "Check references for retractions, expressions of concern, version changes, and metadata drift"
+    )
     .argument("[ids...]", "Citation keys or UUIDs to check (interactive selection if omitted)")
     .option("--all", "Check all references in library")
     .option("--search <query>", "Check references matching search query")

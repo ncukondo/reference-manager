@@ -336,6 +336,25 @@ describe("queryCrossref", () => {
       expect(result.metadata?.title).toBe("Primary Title");
     });
 
+    it("should return undefined metadata when message has no recognized fields", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ok",
+          message: {
+            DOI: "10.1234/test",
+            "some-unknown-field": "value",
+          },
+        }),
+      });
+
+      const result = await queryCrossref("10.1234/test");
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.metadata).toBeUndefined();
+    });
+
     it("should extract first container-title from array", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,

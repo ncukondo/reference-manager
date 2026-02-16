@@ -415,6 +415,78 @@ describe("check command", () => {
     });
   });
 
+  describe("getStatusLabel priority", () => {
+    it("should show RETRACTED even when metadata findings come first", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "mixed-findings",
+            uuid: "uuid-1",
+            status: "warning",
+            findings: [
+              { type: "metadata_mismatch", message: "Mismatch" },
+              { type: "retracted", message: "Retracted" },
+            ],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 0, warnings: 1, skipped: 0 },
+      };
+
+      const output = formatCheckTextOutput(result);
+
+      // Retracted is highest priority, should be the label even if metadata finding is first
+      expect(output).toContain("[RETRACTED] mixed-findings");
+    });
+
+    it("should show CONCERN over metadata findings", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "concern-and-outdated",
+            uuid: "uuid-1",
+            status: "warning",
+            findings: [
+              { type: "metadata_outdated", message: "Outdated" },
+              { type: "concern", message: "Concern" },
+            ],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 0, warnings: 1, skipped: 0 },
+      };
+
+      const output = formatCheckTextOutput(result);
+
+      expect(output).toContain("[CONCERN] concern-and-outdated");
+    });
+
+    it("should show MISMATCH over OUTDATED", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "both-metadata",
+            uuid: "uuid-1",
+            status: "warning",
+            findings: [
+              { type: "metadata_outdated", message: "Outdated" },
+              { type: "metadata_mismatch", message: "Mismatch" },
+            ],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 0, warnings: 1, skipped: 0 },
+      };
+
+      const output = formatCheckTextOutput(result);
+
+      expect(output).toContain("[MISMATCH] both-metadata");
+    });
+  });
+
   describe("handleCheckAction --fix", () => {
     let stderrOutput: string;
     let originalStderrWrite: typeof process.stderr.write;

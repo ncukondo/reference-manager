@@ -37,6 +37,16 @@ const CROSSREF_TO_CSL_TYPE: Record<string, string> = {
   "book-chapter": "chapter",
   "proceedings-article": "paper-conference",
   "posted-content": "article",
+  monograph: "book",
+  "edited-book": "book",
+  "reference-book": "book",
+  report: "report",
+  dataset: "dataset",
+  dissertation: "thesis",
+  "peer-review": "review",
+  "book-part": "chapter",
+  "reference-entry": "entry",
+  component: "article",
 };
 
 function normalizeType(type: string | undefined, isCrossref: boolean): string | null {
@@ -93,6 +103,10 @@ function collectFieldDiffs(
   );
 
   // Container title
+  // NOTE: Compared as raw strings. Abbreviation differences (e.g., "J. Am. Chem. Soc."
+  // vs "Journal of the American Chemical Society") will show as diffs. This is acceptable
+  // because such differences are classified as "outdated" (not "mismatch"), and updating
+  // to the canonical remote form is generally desirable.
   addDiffIfChanged(
     fieldDiffs,
     changedFields,

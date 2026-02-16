@@ -18,6 +18,11 @@ vi.mock("./metadata-comparator.js", () => ({
   compareMetadata: vi.fn(),
 }));
 
+// Mock import fetcher for PubMed metadata comparison
+vi.mock("../import/fetcher.js", () => ({
+  fetchPmids: vi.fn(),
+}));
+
 /**
  * Helper to mock Crossref response with matching metadata.
  * When metadata matches the item, compareMetadata returns no_change.
@@ -43,6 +48,9 @@ describe("checkReference", () => {
       changedFields: [],
       fieldDiffs: [],
     });
+    // Default: PubMed fetcher returns empty (no remote data)
+    const { fetchPmids } = await import("../import/fetcher.js");
+    vi.mocked(fetchPmids).mockResolvedValue([]);
   });
 
   it("should return skipped for references without DOI or PMID", async () => {
@@ -505,6 +513,155 @@ describe("checkReference", () => {
 
       expect(result.status).toBe("ok");
       expect(result.findings).toHaveLength(0);
+    });
+
+    describe("PubMed-only metadata comparison", () => {
+      it("should compare metadata for PubMed-only references via fetchPmids", async () => {
+        const { queryPubmed } = await import("./pubmed-client.js");
+        const { compareMetadata } = await import("./metadata-comparator.js");
+        const { fetchPmids } = await import("../import/fetcher.js");
+        const mockPubmed = vi.mocked(queryPubmed);
+        const mockCompare = vi.mocked(compareMetadata);
+        const mockFetchPmids = vi.mocked(fetchPmids);
+
+        mockPubmed.mockResolvedValueOnce({
+          success: true,
+          isRetracted: false,
+          hasConcern: false,
+        });
+
+        mockFetchPmids.mockResolvedValueOnce([
+          {
+            pmid: "12345678",
+            success: true,
+            item: {
+              id: "remote-2024",
+              type: "article-journal",
+              title: "Updated Title From PubMed",
+              author: [{ family: "Smith" }],
+              page: "100-110",
+            },
+          },
+        ]);
+
+        mockCompare.mockReturnValueOnce({
+          classification: "metadata_outdated",
+          changedFields: ["title", "page"],
+          fieldDiffs: [
+            { field: "title", local: "Old Title", remote: "Updated Title From PubMed" },
+            { field: "page", local: null, remote: "100-110" },
+          ],
+        });
+
+        const item: CslItem = {
+          id: "pmid-meta-2024",
+          type: "article-journal",
+          title: "Old Title",
+          PMID: "12345678",
+          custom: { uuid: "uuid-pmid-meta" },
+        };
+
+        const result = await checkReference(item);
+
+        expect(mockFetchPmids).toHaveBeenCalledWith(["12345678"], {});
+        expect(mockCompare).toHaveBeenCalled();
+        const finding = result.findings.find((f) => f.type === "metadata_outdated");
+        expect(finding).toBeDefined();
+        expect(finding?.details?.fieldDiffs).toHaveLength(2);
+      });
+
+      it("should skip PubMed metadata comparison when fetchPmids fails", async () => {
+        const { queryPubmed } = await import("./pubmed-client.js");
+        const { compareMetadata } = await import("./metadata-comparator.js");
+        const { fetchPmids } = await import("../import/fetcher.js");
+        const mockPubmed = vi.mocked(queryPubmed);
+        const mockCompare = vi.mocked(compareMetadata);
+        const mockFetchPmids = vi.mocked(fetchPmids);
+
+        mockPubmed.mockResolvedValueOnce({
+          success: true,
+          isRetracted: false,
+          hasConcern: false,
+        });
+
+        mockFetchPmids.mockResolvedValueOnce([
+          {
+            pmid: "12345678",
+            success: false,
+            error: "Not found",
+            reason: "not_found",
+          },
+        ]);
+
+        const item: CslItem = {
+          id: "pmid-fail-2024",
+          type: "article-journal",
+          title: "Some Title",
+          PMID: "12345678",
+          custom: { uuid: "uuid-pmid-fail" },
+        };
+
+        const result = await checkReference(item);
+
+        expect(mockCompare).not.toHaveBeenCalled();
+        expect(result.findings).toHaveLength(0);
+      });
+
+      it("should not use PubMed metadata when DOI is also present", async () => {
+        const { queryCrossref } = await import("./crossref-client.js");
+        const { queryPubmed } = await import("./pubmed-client.js");
+        const { fetchPmids } = await import("../import/fetcher.js");
+        const mockCrossref = vi.mocked(queryCrossref);
+        const mockPubmed = vi.mocked(queryPubmed);
+        const mockFetchPmids = vi.mocked(fetchPmids);
+
+        mockCrossrefWithMatchingMetadata(mockCrossref);
+        mockPubmed.mockResolvedValueOnce({
+          success: true,
+          isRetracted: false,
+          hasConcern: false,
+        });
+
+        const item: CslItem = {
+          id: "doi-pmid-2024",
+          type: "article-journal",
+          title: "Test Article",
+          DOI: "10.1234/test",
+          PMID: "12345678",
+          custom: { uuid: "uuid-doi-pmid" },
+        };
+
+        const result = await checkReference(item);
+
+        // fetchPmids should NOT be called when Crossref metadata is available
+        expect(mockFetchPmids).not.toHaveBeenCalled();
+        expect(result.status).toBe("ok");
+      });
+
+      it("should skip PubMed metadata comparison when metadata option is false", async () => {
+        const { queryPubmed } = await import("./pubmed-client.js");
+        const { fetchPmids } = await import("../import/fetcher.js");
+        const mockPubmed = vi.mocked(queryPubmed);
+        const mockFetchPmids = vi.mocked(fetchPmids);
+
+        mockPubmed.mockResolvedValueOnce({
+          success: true,
+          isRetracted: false,
+          hasConcern: false,
+        });
+
+        const item: CslItem = {
+          id: "pmid-no-meta-2024",
+          type: "article-journal",
+          title: "Some Title",
+          PMID: "12345678",
+          custom: { uuid: "uuid-pmid-no-meta" },
+        };
+
+        await checkReference(item, { metadata: false });
+
+        expect(mockFetchPmids).not.toHaveBeenCalled();
+      });
     });
   });
 });

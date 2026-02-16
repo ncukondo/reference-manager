@@ -88,6 +88,9 @@ function extractMetadata(
     metadata.issued = issued;
   }
 
+  // Return undefined if no metadata fields were populated (prevents spurious diffs)
+  if (Object.keys(metadata).length === 0) return undefined;
+
   return metadata;
 }
 

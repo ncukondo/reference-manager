@@ -260,5 +260,57 @@ describe("compareMetadata", () => {
       // Type mapping should recognize these as equivalent
       expect(result.changedFields).not.toContain("type");
     });
+
+    it("should handle additional type mappings (monograph → book)", () => {
+      const local = {
+        title: "A Book",
+        type: "book",
+      };
+      const remote: CrossrefMetadata = {
+        title: "A Book",
+        type: "monograph",
+      };
+
+      const result = compareMetadata(local, remote);
+      expect(result.changedFields).not.toContain("type");
+    });
+
+    it("should handle additional type mappings (dissertation → thesis)", () => {
+      const local = {
+        title: "A Thesis",
+        type: "thesis",
+      };
+      const remote: CrossrefMetadata = {
+        title: "A Thesis",
+        type: "dissertation",
+      };
+
+      const result = compareMetadata(local, remote);
+      expect(result.changedFields).not.toContain("type");
+    });
+
+    it("should detect type diff for unmapped Crossref types", () => {
+      const local = {
+        title: "A Study",
+        type: "article-journal",
+      };
+      const remote: CrossrefMetadata = {
+        title: "A Study",
+        type: "standard",
+      };
+
+      const result = compareMetadata(local, remote);
+      // "standard" is not in CROSSREF_TO_CSL_TYPE, so it passes through as-is
+      expect(result.changedFields).toContain("type");
+    });
+
+    it("should handle both local and remote having empty fields", () => {
+      const local = {};
+      const remote: CrossrefMetadata = {};
+
+      const result = compareMetadata(local, remote);
+      expect(result.classification).toBe("no_change");
+      expect(result.changedFields).toHaveLength(0);
+    });
   });
 });

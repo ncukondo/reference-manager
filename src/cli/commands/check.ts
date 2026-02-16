@@ -90,9 +90,28 @@ export async function executeCheck(
 function getStatusLabel(result: CheckResult): string {
   if (result.status === "skipped") return "[SKIPPED]";
   if (result.status === "ok") return "[OK]";
-  const finding = result.findings[0];
-  if (!finding) return "[WARNING]";
-  switch (finding.type) {
+  if (result.findings.length === 0) return "[WARNING]";
+
+  // Priority order: most severe first
+  const priorityOrder: Record<string, number> = {
+    retracted: 0,
+    concern: 1,
+    version_changed: 2,
+    metadata_mismatch: 3,
+    metadata_outdated: 4,
+  };
+
+  let highestPriority = Number.MAX_SAFE_INTEGER;
+  let highestType = "unknown";
+  for (const finding of result.findings) {
+    const priority = priorityOrder[finding.type] ?? 99;
+    if (priority < highestPriority) {
+      highestPriority = priority;
+      highestType = finding.type;
+    }
+  }
+
+  switch (highestType) {
     case "retracted":
       return "[RETRACTED]";
     case "concern":
@@ -135,8 +154,8 @@ function formatFindingDetails(finding: CheckFinding, refId: string): string[] {
   }
 
   // Show message
-  const icon = finding.type === "metadata_mismatch" ? "\u26A0" : "\u2139";
   if (finding.type === "metadata_mismatch" || finding.type === "metadata_outdated") {
+    const icon = finding.type === "metadata_mismatch" ? "\u26A0" : "\u2139";
     lines.push(`  ${icon} ${finding.message}`);
     lines.push(`  \u2192 Run: ref update ${refId}`);
   } else {

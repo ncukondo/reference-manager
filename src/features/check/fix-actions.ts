@@ -201,6 +201,9 @@ export async function applyFixAction(
     case "update_all_fields":
       return applyUpdateAllFields(library, item, finding);
 
+    // Placeholder for programmatic API (MCP/server) use.
+    // Individual field selection is not available in interactive CLI mode,
+    // but can be used via the MCP tool or HTTP server API.
     case "update_selected_fields":
       return { applied: false, message: "Field selection not available in CLI mode" };
 

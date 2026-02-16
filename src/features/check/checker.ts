@@ -49,25 +49,53 @@ export async function checkReference(item: CslItem, config?: CheckConfig): Promi
   if (hasPmid) {
     checkedSources.push("pubmed");
     const pubmedFindings = await checkPubmed(item.PMID as string, config);
-    // Only add PubMed findings that aren't already found via Crossref
-    for (const pf of pubmedFindings) {
-      if (!findings.some((f) => f.type === pf.type)) {
-        findings.push(pf);
-      }
-    }
+    addUniqueFindings(findings, pubmedFindings);
   }
 
   // Metadata comparison (default: enabled)
-  const metadataEnabled = config?.metadata !== false;
-  if (metadataEnabled && crossrefMetadata) {
-    const metadataFinding = await compareItemMetadata(item, crossrefMetadata);
-    if (metadataFinding) {
-      findings.push(metadataFinding);
-    }
+  const metadataFinding = await checkMetadata(item, config, crossrefMetadata, hasPmid, hasDoi);
+  if (metadataFinding) {
+    findings.push(metadataFinding);
   }
 
   const status = findings.length > 0 ? "warning" : "ok";
   return { id, uuid, status, findings, checkedAt, checkedSources };
+}
+
+/**
+ * Add findings that aren't already present (by type) to the target list.
+ */
+function addUniqueFindings(target: CheckFinding[], source: CheckFinding[]): void {
+  for (const finding of source) {
+    if (!target.some((f) => f.type === finding.type)) {
+      target.push(finding);
+    }
+  }
+}
+
+/**
+ * Perform metadata comparison if enabled.
+ */
+async function checkMetadata(
+  item: CslItem,
+  config: CheckConfig | undefined,
+  crossrefMetadata: CrossrefMetadata | undefined,
+  hasPmid: boolean,
+  hasDoi: boolean
+): Promise<CheckFinding | null> {
+  if (config?.metadata === false) return null;
+
+  if (crossrefMetadata) {
+    // DOI-based: compare against Crossref metadata
+    return compareItemMetadata(item, crossrefMetadata);
+  }
+
+  if (hasPmid && !hasDoi) {
+    // PubMed-only: fetch remote CSL-JSON via PubMed and compare
+    return comparePubmedMetadata(item, config);
+  }
+
+  return null;
 }
 
 /**
@@ -120,20 +148,58 @@ async function compareItemMetadata(
 }
 
 /**
+ * Fetch PubMed CSL-JSON and compare metadata for PMID-only references.
+ */
+async function comparePubmedMetadata(
+  item: CslItem,
+  config?: CheckConfig
+): Promise<CheckFinding | null> {
+  const { fetchPmids } = await import("../import/fetcher.js");
+  const pubmedConfig = config?.pubmed ?? {};
+  const results = await fetchPmids([item.PMID as string], pubmedConfig);
+  const result = results[0];
+  if (!result || !result.success) return null;
+
+  const remoteMetadata = cslItemToRemoteMetadata(result.item);
+  return compareItemMetadata(item, remoteMetadata);
+}
+
+/**
+ * Convert a CslItem (from PubMed) to CrossrefMetadata format for comparison.
+ */
+function cslItemToRemoteMetadata(item: CslItem): CrossrefMetadata {
+  const metadata: CrossrefMetadata = {};
+  if (item.title !== undefined) metadata.title = item.title;
+  if (item.author !== undefined) {
+    metadata.author = item.author as Array<{ family?: string; given?: string }>;
+  }
+  if (item["container-title"] !== undefined) metadata.containerTitle = item["container-title"];
+  if (item.type !== undefined) metadata.type = item.type;
+  if (item.page !== undefined) metadata.page = item.page;
+  if (item.volume !== undefined) metadata.volume = item.volume;
+  if (item.issue !== undefined) metadata.issue = item.issue;
+  if (item.issued !== undefined) {
+    metadata.issued = item.issued as { "date-parts"?: number[][] };
+  }
+  return metadata;
+}
+
+/**
  * Extract local metadata fields from a CslItem for comparison.
  */
 function extractLocalMetadata(
   item: CslItem
 ): import("./metadata-comparator.js").LocalMetadataFields {
   const local: import("./metadata-comparator.js").LocalMetadataFields = {};
-  if (item.title) local.title = item.title;
-  if (item.author) local.author = item.author as Array<{ family?: string; given?: string }>;
-  if (item["container-title"]) local["container-title"] = item["container-title"];
-  if (item.type) local.type = item.type;
-  if (item.page) local.page = item.page;
-  if (item.volume) local.volume = item.volume;
-  if (item.issue) local.issue = item.issue;
-  if (item.issued) local.issued = item.issued as { "date-parts"?: number[][] };
+  if (item.title !== undefined) local.title = item.title;
+  if (item.author !== undefined)
+    local.author = item.author as Array<{ family?: string; given?: string }>;
+  if (item["container-title"] !== undefined) local["container-title"] = item["container-title"];
+  if (item.type !== undefined) local.type = item.type;
+  if (item.page !== undefined) local.page = item.page;
+  if (item.volume !== undefined) local.volume = item.volume;
+  if (item.issue !== undefined) local.issue = item.issue;
+  if (item.issued !== undefined) local.issued = item.issued as { "date-parts"?: number[][] };
   return local;
 }
 

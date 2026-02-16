@@ -80,6 +80,11 @@ export function isAuthorSimilar(
     if (remoteFamilies.has(family)) overlapCount++;
   }
 
+  // Asymmetric by design: measures how many local authors appear in remote.
+  // This correctly handles co-authors being added to the remote record (local is
+  // a subset of remote → overlap = 1.0). The trade-off is that if remote has many
+  // extra unrelated authors plus one coincidental match, overlap could be high.
+  // In practice, this is rare for academic metadata.
   const overlap = overlapCount / localFamilies.size;
   return overlap >= 0.5;
 }
