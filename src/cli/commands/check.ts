@@ -105,18 +105,67 @@ function getStatusLabel(result: CheckResult): string {
 }
 
 /**
+ * Format a field diff as "field: local → remote".
+ */
+function formatFieldDiff(diff: {
+  field: string;
+  local: string | null;
+  remote: string | null;
+}): string {
+  const local = diff.local ?? "(none)";
+  const remote = diff.remote ?? "(none)";
+  return `  ${diff.field}: "${local}" → "${remote}"`;
+}
+
+/**
  * Format a single finding's details.
  */
-function formatFindingDetails(finding: CheckFinding): string[] {
+function formatFindingDetails(finding: CheckFinding, refId: string): string[] {
   const lines: string[] = [];
-  lines.push(`  ${finding.message}`);
-  if (finding.details?.retractionDoi) {
-    lines.push(`  Retraction notice: https://doi.org/${finding.details.retractionDoi}`);
+
+  // Show field diffs for metadata findings
+  if (finding.details?.fieldDiffs && finding.details.fieldDiffs.length > 0) {
+    for (const diff of finding.details.fieldDiffs) {
+      lines.push(formatFieldDiff(diff));
+    }
   }
-  if (finding.details?.newDoi) {
-    lines.push(`  New DOI: https://doi.org/${finding.details.newDoi}`);
+
+  // Show message
+  const icon = finding.type === "metadata_mismatch" ? "\u26A0" : "\u2139";
+  if (finding.type === "metadata_mismatch" || finding.type === "metadata_outdated") {
+    lines.push(`  ${icon} ${finding.message}`);
+    lines.push(`  \u2192 Run: ref update ${refId}`);
+  } else {
+    lines.push(`  ${finding.message}`);
+    if (finding.details?.retractionDoi) {
+      lines.push(`  Retraction notice: https://doi.org/${finding.details.retractionDoi}`);
+    }
+    if (finding.details?.newDoi) {
+      lines.push(`  New DOI: https://doi.org/${finding.details.newDoi}`);
+    }
   }
   return lines;
+}
+
+const FINDING_TYPE_KEYS: Record<string, string> = {
+  retracted: "retracted",
+  concern: "concern",
+  metadata_mismatch: "mismatch",
+  metadata_outdated: "outdated",
+  version_changed: "versionChanged",
+};
+
+/**
+ * Count finding types across all results.
+ */
+function countFindingTypes(result: CheckOperationResult): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const allFindings = result.results.flatMap((r) => r.findings);
+  for (const f of allFindings) {
+    const key = FINDING_TYPE_KEYS[f.type];
+    if (key) counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
 }
 
 /**
@@ -129,14 +178,26 @@ export function formatCheckTextOutput(result: CheckOperationResult): string {
     const label = getStatusLabel(r);
     lines.push(`${label} ${r.id}`);
     for (const finding of r.findings) {
-      lines.push(...formatFindingDetails(finding));
+      lines.push(...formatFindingDetails(finding, r.id));
     }
     lines.push("");
   }
 
   const { summary } = result;
   const parts: string[] = [`${summary.total} checked`];
-  if (summary.warnings > 0) parts.push(`${summary.warnings} warning(s)`);
+  // Count specific finding types
+  const fc = countFindingTypes(result);
+  const summaryItems: [string, string][] = [
+    ["retracted", "retracted"],
+    ["concern", "concern"],
+    ["mismatch", "mismatch"],
+    ["outdated", "outdated"],
+    ["versionChanged", "version changed"],
+  ];
+  for (const [key, label] of summaryItems) {
+    const count = fc[key] ?? 0;
+    if (count > 0) parts.push(`${count} ${label}`);
+  }
   if (summary.ok > 0) parts.push(`${summary.ok} ok`);
   if (summary.skipped > 0) parts.push(`${summary.skipped} skipped`);
   lines.push(`Summary: ${parts.join(", ")}`);

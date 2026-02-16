@@ -231,6 +231,117 @@ describe("check command", () => {
       expect(output).toContain("Summary: 2 checked");
       expect(output).toContain("1 ok");
     });
+
+    it("should format metadata mismatch with field diffs", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "smith-2024",
+            uuid: "uuid-1",
+            status: "warning",
+            findings: [
+              {
+                type: "metadata_mismatch",
+                message: "Local metadata significantly differs from the remote record",
+                details: {
+                  updatedFields: ["title", "author"],
+                  fieldDiffs: [
+                    { field: "title", local: "Wrong Title", remote: "Correct Title" },
+                    { field: "author", local: "Smith", remote: "Brown" },
+                  ],
+                },
+              },
+            ],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 0, warnings: 1, skipped: 0 },
+      };
+
+      const output = formatCheckTextOutput(result);
+
+      expect(output).toContain("[MISMATCH] smith-2024");
+      expect(output).toContain('title: "Wrong Title" → "Correct Title"');
+      expect(output).toContain('author: "Smith" → "Brown"');
+      expect(output).toContain("significantly differs");
+      expect(output).toContain("ref update smith-2024");
+    });
+
+    it("should format metadata outdated with field diffs", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "jones-2023",
+            uuid: "uuid-2",
+            status: "warning",
+            findings: [
+              {
+                type: "metadata_outdated",
+                message: "Remote metadata has been updated since import",
+                details: {
+                  updatedFields: ["page", "volume"],
+                  fieldDiffs: [
+                    { field: "page", local: null, remote: "123-145" },
+                    { field: "volume", local: null, remote: "42" },
+                  ],
+                },
+              },
+            ],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 1, ok: 0, warnings: 1, skipped: 0 },
+      };
+
+      const output = formatCheckTextOutput(result);
+
+      expect(output).toContain("[OUTDATED] jones-2023");
+      expect(output).toContain('page: "(none)" → "123-145"');
+      expect(output).toContain('volume: "(none)" → "42"');
+      expect(output).toContain("updated since import");
+      expect(output).toContain("ref update jones-2023");
+    });
+
+    it("should include mismatch and outdated in summary", () => {
+      const result: CheckOperationResult = {
+        results: [
+          {
+            id: "a",
+            uuid: "u1",
+            status: "warning",
+            findings: [{ type: "metadata_mismatch", message: "Mismatch" }],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+          {
+            id: "b",
+            uuid: "u2",
+            status: "warning",
+            findings: [{ type: "metadata_outdated", message: "Outdated" }],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+          {
+            id: "c",
+            uuid: "u3",
+            status: "ok",
+            findings: [],
+            checkedAt: "2026-02-15T10:00:00.000Z",
+            checkedSources: ["crossref"],
+          },
+        ],
+        summary: { total: 3, ok: 1, warnings: 2, skipped: 0 },
+      };
+
+      const output = formatCheckTextOutput(result);
+
+      expect(output).toContain("3 checked");
+      expect(output).toContain("1 mismatch");
+      expect(output).toContain("1 outdated");
+      expect(output).toContain("1 ok");
+    });
   });
 
   describe("formatCheckJsonOutput", () => {
