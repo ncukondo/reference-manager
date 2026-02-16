@@ -2,7 +2,7 @@
  * Metadata comparator for classifying differences between local and remote metadata.
  */
 
-import type { CrossrefMetadata } from "./crossref-client.js";
+import type { RemoteMetadata } from "./crossref-client.js";
 import { isAuthorSimilar, isTitleSimilar } from "./metadata-similarity.js";
 
 export interface MetadataComparisonResult {
@@ -85,7 +85,7 @@ function addDiffIfChanged(
 
 function collectFieldDiffs(
   local: LocalMetadataFields,
-  remote: CrossrefMetadata
+  remote: RemoteMetadata
 ): { changedFields: string[]; fieldDiffs: FieldDiff[] } {
   const changedFields: string[] = [];
   const fieldDiffs: FieldDiff[] = [];
@@ -151,7 +151,7 @@ function collectFieldDiffs(
  */
 export function compareMetadata(
   local: LocalMetadataFields,
-  remote: CrossrefMetadata
+  remote: RemoteMetadata
 ): MetadataComparisonResult {
   const { changedFields, fieldDiffs } = collectFieldDiffs(local, remote);
 

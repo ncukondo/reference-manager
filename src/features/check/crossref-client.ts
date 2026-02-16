@@ -9,7 +9,7 @@ export interface CrossrefUpdateInfo {
   date?: string;
 }
 
-export interface CrossrefMetadata {
+export interface RemoteMetadata {
   title?: string;
   author?: Array<{ family?: string; given?: string }>;
   containerTitle?: string;
@@ -21,7 +21,7 @@ export interface CrossrefMetadata {
 }
 
 export type CrossrefResult =
-  | { success: true; updates: CrossrefUpdateInfo[]; metadata?: CrossrefMetadata }
+  | { success: true; updates: CrossrefUpdateInfo[]; metadata?: RemoteMetadata }
   | { success: false; error: string };
 
 /**
@@ -42,12 +42,10 @@ function formatDateParts(updated: unknown): { date?: string } {
 /**
  * Extract comparable metadata fields from a Crossref message object.
  */
-function extractMetadata(
-  message: Record<string, unknown> | undefined
-): CrossrefMetadata | undefined {
+function extractMetadata(message: Record<string, unknown> | undefined): RemoteMetadata | undefined {
   if (!message) return undefined;
 
-  const metadata: CrossrefMetadata = {};
+  const metadata: RemoteMetadata = {};
 
   // Title: array in Crossref, take first element
   const titleArr = message.title as string[] | undefined;

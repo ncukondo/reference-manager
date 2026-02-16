@@ -1,5 +1,5 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { CrossrefMetadata, CrossrefUpdateInfo } from "./crossref-client.js";
+import type { CrossrefUpdateInfo, RemoteMetadata } from "./crossref-client.js";
 import type { CheckFinding, CheckResult } from "./types.js";
 
 export interface CheckConfig {
@@ -10,7 +10,7 @@ export interface CheckConfig {
 
 interface CrossrefCheckResult {
   findings: CheckFinding[];
-  metadata?: CrossrefMetadata;
+  metadata?: RemoteMetadata;
 }
 
 /**
@@ -35,7 +35,7 @@ export async function checkReference(item: CslItem, config?: CheckConfig): Promi
     return { id, uuid, status: "skipped", findings: [], checkedAt, checkedSources: [] };
   }
 
-  let crossrefMetadata: CrossrefMetadata | undefined;
+  let crossrefMetadata: RemoteMetadata | undefined;
 
   // Query Crossref if DOI is present
   if (hasDoi) {
@@ -79,7 +79,7 @@ function addUniqueFindings(target: CheckFinding[], source: CheckFinding[]): void
 async function checkMetadata(
   item: CslItem,
   config: CheckConfig | undefined,
-  crossrefMetadata: CrossrefMetadata | undefined,
+  crossrefMetadata: RemoteMetadata | undefined,
   hasPmid: boolean,
   hasDoi: boolean
 ): Promise<CheckFinding | null> {
@@ -122,7 +122,7 @@ async function checkCrossref(doi: string, config?: CheckConfig): Promise<Crossre
  */
 async function compareItemMetadata(
   item: CslItem,
-  remoteMetadata: CrossrefMetadata
+  remoteMetadata: RemoteMetadata
 ): Promise<CheckFinding | null> {
   const { compareMetadata } = await import("./metadata-comparator.js");
 
@@ -158,17 +158,22 @@ async function comparePubmedMetadata(
   const pubmedConfig = config?.pubmed ?? {};
   const results = await fetchPmids([item.PMID as string], pubmedConfig);
   const result = results[0];
-  if (!result || !result.success) return null;
+  if (!result || !result.success) {
+    console.error(
+      `PubMed metadata fetch failed for PMID ${item.PMID}: ${result?.error ?? "unknown error"}`
+    );
+    return null;
+  }
 
   const remoteMetadata = cslItemToRemoteMetadata(result.item);
   return compareItemMetadata(item, remoteMetadata);
 }
 
 /**
- * Convert a CslItem (from PubMed) to CrossrefMetadata format for comparison.
+ * Convert a CslItem (from PubMed) to RemoteMetadata format for comparison.
  */
-function cslItemToRemoteMetadata(item: CslItem): CrossrefMetadata {
-  const metadata: CrossrefMetadata = {};
+function cslItemToRemoteMetadata(item: CslItem): RemoteMetadata {
+  const metadata: RemoteMetadata = {};
   if (item.title !== undefined) metadata.title = item.title;
   if (item.author !== undefined) {
     metadata.author = item.author as Array<{ family?: string; given?: string }>;

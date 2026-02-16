@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CrossrefMetadata } from "./crossref-client.js";
+import type { RemoteMetadata } from "./crossref-client.js";
 import { compareMetadata } from "./metadata-comparator.js";
 
 describe("compareMetadata", () => {
@@ -14,7 +14,7 @@ describe("compareMetadata", () => {
         volume: "42",
         issue: "3",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith", given: "John" }],
         containerTitle: "Journal of AI",
@@ -35,7 +35,7 @@ describe("compareMetadata", () => {
         title: "Quantum Mechanics in Modern Physics",
         author: [{ family: "Smith" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "Economic Growth in Developing Countries",
         author: [{ family: "Smith" }],
       };
@@ -50,7 +50,7 @@ describe("compareMetadata", () => {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }, { family: "Jones" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Brown" }, { family: "Davis" }],
       };
@@ -65,7 +65,7 @@ describe("compareMetadata", () => {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
         page: "123-145",
@@ -83,7 +83,7 @@ describe("compareMetadata", () => {
         title: "Effect of Drug X on Blood Pressure",
         author: [{ family: "Smith" }, { family: "Jones" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "Effect of Drug X on Blood Pressure: A Randomized Trial",
         author: [{ family: "Smith" }, { family: "Jones" }, { family: "Brown" }],
       };
@@ -97,7 +97,7 @@ describe("compareMetadata", () => {
         title: "A Study of Quantum Physics",
         author: [{ family: "Smith" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "Economic Trends in Asia",
         author: [{ family: "Brown" }],
       };
@@ -112,7 +112,7 @@ describe("compareMetadata", () => {
         author: [{ family: "Smith" }],
         "container-title": "Proc. of ICML",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
         containerTitle: "Proceedings of ICML 2024",
@@ -129,7 +129,7 @@ describe("compareMetadata", () => {
         author: [{ family: "Smith" }],
         issued: { "date-parts": [[2024]] },
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
         issued: { "date-parts": [[2024, 6, 15]] },
@@ -147,7 +147,7 @@ describe("compareMetadata", () => {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
         page: "123-145",
@@ -173,7 +173,7 @@ describe("compareMetadata", () => {
         title: "Old Title",
         author: [{ family: "Smith" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "Completely New Title About Different Things",
         author: [{ family: "Brown" }],
       };
@@ -190,7 +190,7 @@ describe("compareMetadata", () => {
         title: "A Study",
         author: [{ family: "Smith" }],
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "Different Study Entirely About Other Topics",
         author: [{ family: "Brown" }, { family: "Jones" }],
       };
@@ -206,7 +206,7 @@ describe("compareMetadata", () => {
       const local = {
         title: "A Study",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study",
         author: [{ family: "Smith" }],
         page: "123",
@@ -223,7 +223,7 @@ describe("compareMetadata", () => {
         author: [{ family: "Smith" }],
         page: "123-145",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study of Machine Learning",
         author: [{ family: "Smith" }],
       };
@@ -237,7 +237,7 @@ describe("compareMetadata", () => {
       const local = {
         title: "A Study",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study",
       };
 
@@ -251,7 +251,7 @@ describe("compareMetadata", () => {
         title: "A Study",
         type: "article-journal",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study",
         type: "journal-article",
       };
@@ -266,7 +266,7 @@ describe("compareMetadata", () => {
         title: "A Book",
         type: "book",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Book",
         type: "monograph",
       };
@@ -280,7 +280,7 @@ describe("compareMetadata", () => {
         title: "A Thesis",
         type: "thesis",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Thesis",
         type: "dissertation",
       };
@@ -294,7 +294,7 @@ describe("compareMetadata", () => {
         title: "A Study",
         type: "article-journal",
       };
-      const remote: CrossrefMetadata = {
+      const remote: RemoteMetadata = {
         title: "A Study",
         type: "standard",
       };
@@ -306,7 +306,7 @@ describe("compareMetadata", () => {
 
     it("should handle both local and remote having empty fields", () => {
       const local = {};
-      const remote: CrossrefMetadata = {};
+      const remote: RemoteMetadata = {};
 
       const result = compareMetadata(local, remote);
       expect(result.classification).toBe("no_change");

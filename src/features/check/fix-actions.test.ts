@@ -6,6 +6,7 @@ import type { CheckFinding } from "./types.js";
 // Mock fetcher for metadata update
 vi.mock("../import/fetcher.js", () => ({
   fetchDoi: vi.fn(),
+  fetchPmids: vi.fn(),
 }));
 
 describe("getFixActionsForFinding", () => {
@@ -547,12 +548,12 @@ describe("applyFixAction", () => {
       expect(mockLibrary.save).toHaveBeenCalled();
     });
 
-    it("should fail if item has no DOI", async () => {
-      const itemNoDoi: CslItem = {
-        id: "no-doi-2024",
+    it("should fail if item has no DOI or PMID", async () => {
+      const itemNoId: CslItem = {
+        id: "no-id-2024",
         type: "article-journal",
         title: "Test",
-        custom: { uuid: "uuid-no-doi" },
+        custom: { uuid: "uuid-no-id" },
       };
 
       const finding: CheckFinding = {
@@ -563,13 +564,98 @@ describe("applyFixAction", () => {
 
       const result = await applyFixAction(
         mockLibrary as never,
-        itemNoDoi,
+        itemNoId,
         finding,
         "update_all_fields"
       );
 
       expect(result.applied).toBe(false);
-      expect(result.message).toContain("No DOI");
+      expect(result.message).toContain("No DOI or PMID");
+    });
+
+    it("should fetch via PubMed for PMID-only items", async () => {
+      const { fetchPmids } = await import("../import/fetcher.js");
+      const mockFetchPmids = vi.mocked(fetchPmids);
+      mockFetchPmids.mockResolvedValueOnce([
+        {
+          pmid: "12345678",
+          success: true,
+          item: {
+            id: "fetched-pmid",
+            type: "article-journal",
+            title: "Updated Title",
+            page: "100-110",
+            volume: "5",
+          },
+        },
+      ]);
+
+      const pmidItem: CslItem = {
+        id: "pmid-2024",
+        type: "article-journal",
+        title: "Old Title",
+        PMID: "12345678",
+        custom: { uuid: "uuid-pmid" },
+      };
+
+      const finding: CheckFinding = {
+        type: "metadata_outdated",
+        message: "Outdated",
+        details: { updatedFields: ["page", "volume"] },
+      };
+
+      const result = await applyFixAction(
+        mockLibrary as never,
+        pmidItem,
+        finding,
+        "update_all_fields"
+      );
+
+      expect(result.applied).toBe(true);
+      expect(result.message).toContain("page");
+      expect(result.message).toContain("volume");
+      expect(mockLibrary.update).toHaveBeenCalledWith(
+        "pmid-2024",
+        expect.objectContaining({ page: "100-110", volume: "5" }),
+        { idType: "id" }
+      );
+    });
+
+    it("should fail if PubMed fetch fails for PMID-only items", async () => {
+      const { fetchPmids } = await import("../import/fetcher.js");
+      const mockFetchPmids = vi.mocked(fetchPmids);
+      mockFetchPmids.mockResolvedValueOnce([
+        {
+          pmid: "12345678",
+          success: false,
+          error: "Not found",
+          reason: "not_found",
+        },
+      ]);
+
+      const pmidItem: CslItem = {
+        id: "pmid-fail-2024",
+        type: "article-journal",
+        title: "Title",
+        PMID: "12345678",
+        custom: { uuid: "uuid-pmid-fail" },
+      };
+
+      const finding: CheckFinding = {
+        type: "metadata_outdated",
+        message: "Outdated",
+        details: { updatedFields: ["page"] },
+      };
+
+      const result = await applyFixAction(
+        mockLibrary as never,
+        pmidItem,
+        finding,
+        "update_all_fields"
+      );
+
+      expect(result.applied).toBe(false);
+      expect(result.message).toContain("Failed to fetch metadata for PMID");
     });
 
     it("should fail if DOI fetch fails", async () => {

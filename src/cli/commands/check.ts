@@ -185,8 +185,8 @@ function countFindingTypes(result: CheckOperationResult): Record<string, number>
   const counts: Record<string, number> = {};
   const allFindings = result.results.flatMap((r) => r.findings);
   for (const f of allFindings) {
-    const key = FINDING_TYPE_KEYS[f.type];
-    if (key) counts[key] = (counts[key] ?? 0) + 1;
+    const key = FINDING_TYPE_KEYS[f.type] ?? f.type;
+    counts[key] = (counts[key] ?? 0) + 1;
   }
   return counts;
 }
@@ -217,9 +217,14 @@ export function formatCheckTextOutput(result: CheckOperationResult): string {
     ["outdated", "outdated"],
     ["versionChanged", "version changed"],
   ];
+  const knownKeys = new Set(summaryItems.map(([key]) => key));
   for (const [key, label] of summaryItems) {
     const count = fc[key] ?? 0;
     if (count > 0) parts.push(`${count} ${label}`);
+  }
+  // Include any finding types not in the known mapping
+  for (const [key, count] of Object.entries(fc)) {
+    if (!knownKeys.has(key) && count > 0) parts.push(`${count} ${key}`);
   }
   if (summary.ok > 0) parts.push(`${summary.ok} ok`);
   if (summary.skipped > 0) parts.push(`${summary.skipped} skipped`);

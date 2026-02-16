@@ -137,19 +137,34 @@ async function applyUpdateAllFields(
   item: CslItem,
   finding: CheckFinding
 ): Promise<FixActionResult> {
-  if (!item.DOI) {
-    return { applied: false, message: "No DOI available for metadata update" };
+  let fetchedItem: CslItem;
+
+  if (item.DOI) {
+    const { fetchDoi } = await import("../import/fetcher.js");
+    const fetchResult = await fetchDoi(item.DOI);
+    if (!fetchResult.success) {
+      return {
+        applied: false,
+        message: `Failed to fetch metadata for DOI ${item.DOI}: ${fetchResult.error}`,
+      };
+    }
+    fetchedItem = fetchResult.item;
+  } else if (item.PMID) {
+    const { fetchPmids } = await import("../import/fetcher.js");
+    const results = await fetchPmids([item.PMID], {});
+    const result = results[0];
+    if (!result || !result.success) {
+      return {
+        applied: false,
+        message: `Failed to fetch metadata for PMID ${item.PMID}: ${result?.error ?? "unknown error"}`,
+      };
+    }
+    fetchedItem = result.item;
+  } else {
+    return { applied: false, message: "No DOI or PMID available for metadata update" };
   }
-  const { fetchDoi } = await import("../import/fetcher.js");
-  const fetchResult = await fetchDoi(item.DOI);
-  if (!fetchResult.success) {
-    return {
-      applied: false,
-      message: `Failed to fetch metadata for ${item.DOI}: ${fetchResult.error}`,
-    };
-  }
+
   const updatedFields = finding.details?.updatedFields ?? [];
-  const fetchedItem = fetchResult.item;
   const updates: Partial<CslItem> = {};
   for (const field of updatedFields) {
     if (field in fetchedItem) {
