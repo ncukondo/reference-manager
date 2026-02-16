@@ -58,7 +58,11 @@ export async function checkReferences(
   fillSkippedResults(tasks, results);
 
   const toCheck = tasks.filter((t) => !t.skip);
-  await checkInParallel(toCheck, results, checkReference, options.config);
+  const checkConfig = {
+    ...options.config,
+    ...(options.metadata !== undefined ? { metadata: options.metadata } : {}),
+  };
+  await checkInParallel(toCheck, results, checkReference, checkConfig);
 
   if (save) {
     await saveAllResults(library, toCheck, results);
