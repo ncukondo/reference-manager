@@ -556,6 +556,7 @@ function registerCheckCommand(program: Command): void {
     .option("--no-save", "Report only, do not save results to library")
     .option("--days <n>", "Skip references checked within n days (default: 7)", Number.parseInt)
     .option("--fix", "Interactive repair for findings (TTY only)")
+    .option("--no-metadata", "Skip metadata comparison against remote sources")
     .action(async (ids: string[], options) => {
       await handleCheckAction(ids, options, program.opts());
     });

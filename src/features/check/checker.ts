@@ -1,10 +1,16 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { CrossrefUpdateInfo } from "./crossref-client.js";
+import type { CrossrefMetadata, CrossrefUpdateInfo } from "./crossref-client.js";
 import type { CheckFinding, CheckResult } from "./types.js";
 
 export interface CheckConfig {
   email?: string;
   pubmed?: { email?: string; apiKey?: string };
+  metadata?: boolean;
+}
+
+interface CrossrefCheckResult {
+  findings: CheckFinding[];
+  metadata?: CrossrefMetadata;
 }
 
 /**
@@ -29,11 +35,14 @@ export async function checkReference(item: CslItem, config?: CheckConfig): Promi
     return { id, uuid, status: "skipped", findings: [], checkedAt, checkedSources: [] };
   }
 
+  let crossrefMetadata: CrossrefMetadata | undefined;
+
   // Query Crossref if DOI is present
   if (hasDoi) {
     checkedSources.push("crossref");
-    const crossrefFindings = await checkCrossref(item.DOI as string, config);
-    findings.push(...crossrefFindings);
+    const crossrefResult = await checkCrossref(item.DOI as string, config);
+    findings.push(...crossrefResult.findings);
+    crossrefMetadata = crossrefResult.metadata;
   }
 
   // Query PubMed if PMID is present
@@ -48,18 +57,27 @@ export async function checkReference(item: CslItem, config?: CheckConfig): Promi
     }
   }
 
+  // Metadata comparison (default: enabled)
+  const metadataEnabled = config?.metadata !== false;
+  if (metadataEnabled && crossrefMetadata) {
+    const metadataFinding = await compareItemMetadata(item, crossrefMetadata);
+    if (metadataFinding) {
+      findings.push(metadataFinding);
+    }
+  }
+
   const status = findings.length > 0 ? "warning" : "ok";
   return { id, uuid, status, findings, checkedAt, checkedSources };
 }
 
 /**
- * Query Crossref and return findings.
+ * Query Crossref and return findings plus metadata.
  */
-async function checkCrossref(doi: string, config?: CheckConfig): Promise<CheckFinding[]> {
+async function checkCrossref(doi: string, config?: CheckConfig): Promise<CrossrefCheckResult> {
   const { queryCrossref } = await import("./crossref-client.js");
   const crossrefConfig = config?.email ? { email: config.email } : undefined;
   const result = await queryCrossref(doi, crossrefConfig);
-  if (!result.success) return [];
+  if (!result.success) return { findings: [] };
 
   const findings: CheckFinding[] = [];
   for (const update of result.updates) {
@@ -68,7 +86,55 @@ async function checkCrossref(doi: string, config?: CheckConfig): Promise<CheckFi
       findings.push(finding);
     }
   }
-  return findings;
+  return result.metadata ? { findings, metadata: result.metadata } : { findings };
+}
+
+/**
+ * Compare item metadata against Crossref metadata.
+ */
+async function compareItemMetadata(
+  item: CslItem,
+  remoteMetadata: CrossrefMetadata
+): Promise<CheckFinding | null> {
+  const { compareMetadata } = await import("./metadata-comparator.js");
+
+  const local = extractLocalMetadata(item);
+  const comparison = compareMetadata(local, remoteMetadata);
+
+  if (comparison.classification === "no_change") return null;
+
+  const type = comparison.classification;
+  const message =
+    type === "metadata_mismatch"
+      ? "Local metadata significantly differs from the remote record"
+      : "Remote metadata has been updated since import";
+
+  return {
+    type,
+    message,
+    details: {
+      updatedFields: comparison.changedFields,
+      fieldDiffs: comparison.fieldDiffs,
+    },
+  };
+}
+
+/**
+ * Extract local metadata fields from a CslItem for comparison.
+ */
+function extractLocalMetadata(
+  item: CslItem
+): import("./metadata-comparator.js").LocalMetadataFields {
+  const local: import("./metadata-comparator.js").LocalMetadataFields = {};
+  if (item.title) local.title = item.title;
+  if (item.author) local.author = item.author as Array<{ family?: string; given?: string }>;
+  if (item["container-title"]) local["container-title"] = item["container-title"];
+  if (item.type) local.type = item.type;
+  if (item.page) local.page = item.page;
+  if (item.volume) local.volume = item.volume;
+  if (item.issue) local.issue = item.issue;
+  if (item.issued) local.issued = item.issued as { "date-parts"?: number[][] };
+  return local;
 }
 
 /**

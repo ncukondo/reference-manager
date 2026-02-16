@@ -11,6 +11,7 @@ const CheckRequestSchema = z
     searchQuery: z.string().optional(),
     skipDays: z.number().optional(),
     save: z.boolean().optional(),
+    metadata: z.boolean().optional(),
   })
   .refine((data) => data.identifiers?.length || data.all || data.searchQuery, {
     message: "Must provide identifiers, all, or searchQuery",
@@ -24,6 +25,7 @@ function buildCheckOptions(data: z.infer<typeof CheckRequestSchema>): CheckOpera
   if (data.searchQuery) options.searchQuery = data.searchQuery;
   if (data.skipDays !== undefined) options.skipDays = data.skipDays;
   if (data.save !== undefined) options.save = data.save;
+  if (data.metadata !== undefined) options.metadata = data.metadata;
   return options;
 }
 

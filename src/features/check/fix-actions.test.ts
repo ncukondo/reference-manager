@@ -458,6 +458,147 @@ describe("applyFixAction", () => {
     });
   });
 
+  describe("metadata findings", () => {
+    it("should return metadata actions for metadata_mismatch finding", () => {
+      const finding: CheckFinding = {
+        type: "metadata_mismatch",
+        message: "Local metadata significantly differs from the remote record",
+        details: {
+          updatedFields: ["title", "author"],
+          fieldDiffs: [
+            { field: "title", local: "Wrong Title", remote: "Correct Title" },
+            { field: "author", local: "Smith", remote: "Brown" },
+          ],
+        },
+      };
+
+      const actions = getFixActionsForFinding(finding);
+
+      expect(actions).toHaveLength(2);
+      expect(actions.map((a) => a.type)).toEqual(["update_all_fields", "skip"]);
+    });
+
+    it("should return metadata actions for metadata_outdated finding", () => {
+      const finding: CheckFinding = {
+        type: "metadata_outdated",
+        message: "Remote metadata has been updated since import",
+        details: {
+          updatedFields: ["page", "volume"],
+          fieldDiffs: [
+            { field: "page", local: null, remote: "123-145" },
+            { field: "volume", local: null, remote: "42" },
+          ],
+        },
+      };
+
+      const actions = getFixActionsForFinding(finding);
+
+      expect(actions).toHaveLength(2);
+      expect(actions.map((a) => a.type)).toEqual(["update_all_fields", "skip"]);
+    });
+  });
+
+  describe("update_all_fields", () => {
+    it("should fetch DOI and update changed fields", async () => {
+      const { fetchDoi } = await import("../import/fetcher.js");
+      const mockFetch = vi.mocked(fetchDoi);
+      mockFetch.mockResolvedValueOnce({
+        success: true,
+        item: {
+          id: "fetched-2024",
+          type: "article-journal",
+          title: "Correct Title",
+          page: "123-145",
+          volume: "42",
+          DOI: "10.1234/test",
+        },
+      });
+
+      const finding: CheckFinding = {
+        type: "metadata_outdated",
+        message: "Remote metadata has been updated since import",
+        details: {
+          updatedFields: ["page", "volume"],
+          fieldDiffs: [
+            { field: "page", local: null, remote: "123-145" },
+            { field: "volume", local: null, remote: "42" },
+          ],
+        },
+      };
+
+      const result = await applyFixAction(
+        mockLibrary as never,
+        baseItem,
+        finding,
+        "update_all_fields"
+      );
+
+      expect(result.applied).toBe(true);
+      expect(result.message).toContain("page");
+      expect(result.message).toContain("volume");
+      expect(mockLibrary.update).toHaveBeenCalledWith(
+        "test-2024",
+        expect.objectContaining({
+          page: "123-145",
+          volume: "42",
+        }),
+        { idType: "id" }
+      );
+      expect(mockLibrary.save).toHaveBeenCalled();
+    });
+
+    it("should fail if item has no DOI", async () => {
+      const itemNoDoi: CslItem = {
+        id: "no-doi-2024",
+        type: "article-journal",
+        title: "Test",
+        custom: { uuid: "uuid-no-doi" },
+      };
+
+      const finding: CheckFinding = {
+        type: "metadata_outdated",
+        message: "Outdated",
+        details: { updatedFields: ["page"] },
+      };
+
+      const result = await applyFixAction(
+        mockLibrary as never,
+        itemNoDoi,
+        finding,
+        "update_all_fields"
+      );
+
+      expect(result.applied).toBe(false);
+      expect(result.message).toContain("No DOI");
+    });
+
+    it("should fail if DOI fetch fails", async () => {
+      const { fetchDoi } = await import("../import/fetcher.js");
+      const mockFetch = vi.mocked(fetchDoi);
+      mockFetch.mockResolvedValueOnce({
+        success: false,
+        error: "Not found",
+        reason: "not_found",
+      });
+
+      const finding: CheckFinding = {
+        type: "metadata_mismatch",
+        message: "Mismatch",
+        details: { updatedFields: ["title"] },
+      };
+
+      const result = await applyFixAction(
+        mockLibrary as never,
+        baseItem,
+        finding,
+        "update_all_fields"
+      );
+
+      expect(result.applied).toBe(false);
+      expect(result.message).toContain("Failed to fetch");
+    });
+  });
+
   describe("skip", () => {
     it("should do nothing and return applied=true", async () => {
       const finding: CheckFinding = {

@@ -96,6 +96,29 @@ describe("MCP check tool", () => {
       expect(mockCheck).toHaveBeenCalledWith(expect.objectContaining({ all: true }));
     });
 
+    it("should pass metadata option", async () => {
+      mockCheck.mockResolvedValue({
+        results: [],
+        summary: { total: 0, ok: 0, warnings: 0, skipped: 0 },
+      });
+
+      let capturedCallback: (
+        args: CheckToolParams
+      ) => Promise<{ content: Array<{ type: string; text: string }> }>;
+
+      const mockServer = {
+        registerTool: (_name: string, _config: unknown, cb: typeof capturedCallback) => {
+          capturedCallback = cb;
+        },
+      };
+
+      registerCheckTool(mockServer as never, createMockOps);
+
+      await capturedCallback?.({ ids: ["test-2024"], metadata: false });
+
+      expect(mockCheck).toHaveBeenCalledWith(expect.objectContaining({ metadata: false }));
+    });
+
     it("should report findings for warnings", async () => {
       mockCheck.mockResolvedValue({
         results: [

@@ -2,7 +2,13 @@
  * Check feature types
  */
 
-export type CheckStatus = "ok" | "retracted" | "concern" | "version_changed" | "metadata_changed";
+export type CheckStatus =
+  | "ok"
+  | "retracted"
+  | "concern"
+  | "version_changed"
+  | "metadata_mismatch"
+  | "metadata_outdated";
 
 export interface CheckFinding {
   type: CheckStatus;
@@ -12,6 +18,11 @@ export interface CheckFinding {
     retractionDate?: string;
     newDoi?: string;
     updatedFields?: string[];
+    fieldDiffs?: Array<{
+      field: string;
+      local: string | null;
+      remote: string | null;
+    }>;
   };
 }
 

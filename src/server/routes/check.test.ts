@@ -130,6 +130,27 @@ describe("Check Route", () => {
       );
     });
 
+    it("should pass metadata option", async () => {
+      mockCheckReferences.mockResolvedValue({
+        results: [],
+        summary: { total: 0, ok: 0, warnings: 0, skipped: 0 },
+      });
+
+      const req = new Request("http://localhost/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifiers: ["test-2024"], metadata: false }),
+      });
+
+      const res = await route.fetch(req);
+
+      expect(res.status).toBe(200);
+      expect(mockCheckReferences).toHaveBeenCalledWith(
+        library,
+        expect.objectContaining({ metadata: false })
+      );
+    });
+
     it("should return 400 for invalid JSON", async () => {
       const req = new Request("http://localhost/", {
         method: "POST",

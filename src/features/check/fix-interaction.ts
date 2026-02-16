@@ -55,6 +55,10 @@ function getStatusLabel(type: string): string {
       return "CONCERN";
     case "version_changed":
       return "VERSION";
+    case "metadata_mismatch":
+      return "MISMATCH";
+    case "metadata_outdated":
+      return "OUTDATED";
     default:
       return "WARNING";
   }

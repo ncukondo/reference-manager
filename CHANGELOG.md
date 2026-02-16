@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Check Metadata Comparison**: `ref check` now compares local metadata against Crossref remote records
+  - Detects **metadata mismatch** (title/author significantly differs from remote) and **metadata outdated** (publication fields updated remotely)
+  - Title similarity using Jaccard and Containment coefficients; author overlap ratio
+  - Field diffs shown in text output: `title: "Old" → "New"`
+  - Summary counts: `1 mismatch, 2 outdated`
+  - `--no-metadata` option to skip metadata comparison
+  - `--fix` interactive repair: update all changed fields from remote
+  - Server endpoint and MCP tool support `metadata` option
+
 - **Check Command**: `ref check` to detect retractions, expressions of concern, and preprint-to-published version changes
   - Queries Crossref REST API and PubMed E-utilities
   - Selection modes: `[ids...]`, `--all`, `--search`, interactive (TTY)

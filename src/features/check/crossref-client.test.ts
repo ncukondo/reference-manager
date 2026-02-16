@@ -234,6 +234,129 @@ describe("queryCrossref", () => {
     expect(calledUrl).not.toContain("mailto");
   });
 
+  describe("metadata extraction", () => {
+    it("should extract metadata from Crossref response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ok",
+          message: {
+            DOI: "10.1234/test",
+            title: ["A Study of Machine Learning"],
+            author: [
+              { family: "Smith", given: "John" },
+              { family: "Jones", given: "Alice" },
+            ],
+            "container-title": ["Journal of AI"],
+            type: "journal-article",
+            page: "123-145",
+            volume: "42",
+            issue: "3",
+            issued: { "date-parts": [[2024, 6, 15]] },
+          },
+        }),
+      });
+
+      const result = await queryCrossref("10.1234/test");
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata?.title).toBe("A Study of Machine Learning");
+      expect(result.metadata?.author).toEqual([
+        { family: "Smith", given: "John" },
+        { family: "Jones", given: "Alice" },
+      ]);
+      expect(result.metadata?.containerTitle).toBe("Journal of AI");
+      expect(result.metadata?.type).toBe("journal-article");
+      expect(result.metadata?.page).toBe("123-145");
+      expect(result.metadata?.volume).toBe("42");
+      expect(result.metadata?.issue).toBe("3");
+      expect(result.metadata?.issued).toEqual({ "date-parts": [[2024, 6, 15]] });
+    });
+
+    it("should handle missing metadata fields gracefully", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ok",
+          message: {
+            DOI: "10.1234/test",
+            title: ["Minimal Article"],
+          },
+        }),
+      });
+
+      const result = await queryCrossref("10.1234/test");
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata?.title).toBe("Minimal Article");
+      expect(result.metadata?.author).toBeUndefined();
+      expect(result.metadata?.containerTitle).toBeUndefined();
+      expect(result.metadata?.page).toBeUndefined();
+    });
+
+    it("should handle empty title array", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ok",
+          message: {
+            DOI: "10.1234/test",
+            title: [],
+          },
+        }),
+      });
+
+      const result = await queryCrossref("10.1234/test");
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.metadata?.title).toBeUndefined();
+    });
+
+    it("should extract first title from title array", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ok",
+          message: {
+            DOI: "10.1234/test",
+            title: ["Primary Title", "Subtitle"],
+          },
+        }),
+      });
+
+      const result = await queryCrossref("10.1234/test");
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.metadata?.title).toBe("Primary Title");
+    });
+
+    it("should extract first container-title from array", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ok",
+          message: {
+            DOI: "10.1234/test",
+            title: ["Test"],
+            "container-title": ["Journal of Science", "J. Sci."],
+          },
+        }),
+      });
+
+      const result = await queryCrossref("10.1234/test");
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.metadata?.containerTitle).toBe("Journal of Science");
+    });
+  });
+
   it("should handle missing date in update-to entry", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
