@@ -22,7 +22,7 @@ export interface CheckCommandOptions {
   search?: string;
   output?: "text" | "json";
   full?: boolean;
-  noSave?: boolean;
+  save?: boolean;
   days?: number;
   fix?: boolean;
   metadata?: boolean;
@@ -53,11 +53,11 @@ function buildCheckOptions(
   if (options.days !== undefined) {
     opOptions.skipDays = options.days;
   }
-  if (options.noSave) {
+  if (options.save === false) {
     opOptions.save = false;
   }
-  if (options.metadata !== undefined) {
-    opOptions.metadata = options.metadata;
+  if (options.metadata === false) {
+    opOptions.metadata = false;
   }
 
   if (appConfig) {

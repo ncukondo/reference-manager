@@ -111,7 +111,7 @@ describe("check command", () => {
 
       const options: CheckCommandOptions = {
         identifiers: ["smith-2024"],
-        noSave: true,
+        save: false,
       };
       const context = createContext();
       await executeCheck(options, context);

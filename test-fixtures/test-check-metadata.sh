@@ -40,17 +40,21 @@ JSON
 
 echo "--- Test 1: ref check with metadata comparison (default) ---"
 echo "Expect: metadata findings (mismatch or outdated) for modified title"
-$REF check --all --library "$TMP_LIB" 2>&1 || true
+$REF check --all --no-save --library "$TMP_LIB" 2>&1 || true
 echo ""
+
+sleep 3
 
 echo "--- Test 2: ref check --no-metadata ---"
 echo "Expect: no metadata findings (comparison skipped)"
-$REF check --all --no-metadata --library "$TMP_LIB" 2>&1 || true
+$REF check --all --no-metadata --no-save --library "$TMP_LIB" 2>&1 || true
 echo ""
+
+sleep 3
 
 echo "--- Test 3: ref check -o json ---"
 echo "Expect: JSON output with fieldDiffs in finding details"
-$REF check --all -o json --library "$TMP_LIB" 2>&1 || true
+$REF check --all --no-save -o json --library "$TMP_LIB" 2>&1 || true
 echo ""
 
 echo "=== Done ==="

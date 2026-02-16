@@ -376,6 +376,106 @@ describe("queryCrossref", () => {
     });
   });
 
+  it("should detect retraction from updated-by field", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        message: {
+          DOI: "10.1234/retracted-article",
+          title: ["Retracted Article"],
+          "updated-by": [
+            {
+              type: "retraction",
+              DOI: "10.1234/retraction-notice",
+              label: "Retraction",
+              updated: { "date-parts": [[2024, 6, 1]] },
+            },
+          ],
+        },
+      }),
+    });
+
+    const result = await queryCrossref("10.1234/retracted-article");
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.updates).toHaveLength(1);
+    expect(result.updates[0].type).toBe("retraction");
+    expect(result.updates[0].doi).toBe("10.1234/retraction-notice");
+    expect(result.updates[0].date).toBe("2024-06-01");
+  });
+
+  it("should combine update-to and updated-by entries", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        message: {
+          DOI: "10.1234/test",
+          "update-to": [
+            {
+              type: "correction",
+              DOI: "10.1234/correction",
+              updated: { "date-parts": [[2024, 1, 1]] },
+            },
+          ],
+          "updated-by": [
+            {
+              type: "retraction",
+              DOI: "10.1234/retraction",
+              updated: { "date-parts": [[2024, 6, 1]] },
+            },
+          ],
+        },
+      }),
+    });
+
+    const result = await queryCrossref("10.1234/test");
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.updates).toHaveLength(2);
+    expect(result.updates.map((u) => u.type)).toContain("correction");
+    expect(result.updates.map((u) => u.type)).toContain("retraction");
+  });
+
+  it("should deduplicate updates with same type and DOI from different sources", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        message: {
+          DOI: "10.1234/retracted-article",
+          title: ["Retracted Article"],
+          "updated-by": [
+            {
+              type: "retraction",
+              DOI: "10.1234/retraction-notice",
+              label: "Retraction",
+              source: "retraction-watch",
+              updated: { "date-parts": [[2024, 6, 1]] },
+            },
+            {
+              type: "retraction",
+              DOI: "10.1234/retraction-notice",
+              label: "Retraction",
+              source: "publisher",
+              updated: { "date-parts": [[2024, 6, 1]] },
+            },
+          ],
+        },
+      }),
+    });
+
+    const result = await queryCrossref("10.1234/retracted-article");
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.updates).toHaveLength(1);
+    expect(result.updates[0].type).toBe("retraction");
+  });
+
   it("should handle missing date in update-to entry", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

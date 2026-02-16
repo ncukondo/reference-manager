@@ -124,7 +124,8 @@ export async function queryCrossref(
     const message = data.message as Record<string, unknown> | undefined;
 
     const updateTo = (message?.["update-to"] ?? []) as Record<string, unknown>[];
-    const updates: CrossrefUpdateInfo[] = updateTo.map((e) => {
+    const updatedBy = (message?.["updated-by"] ?? []) as Record<string, unknown>[];
+    const allEntries: CrossrefUpdateInfo[] = [...updateTo, ...updatedBy].map((e) => {
       const datePart = formatDateParts(e.updated);
       return {
         type: String(e.type ?? ""),
@@ -132,6 +133,14 @@ export async function queryCrossref(
         ...(e.label ? { label: String(e.label) } : {}),
         ...(datePart.date ? { date: datePart.date } : {}),
       };
+    });
+
+    const seen = new Set<string>();
+    const updates = allEntries.filter((e) => {
+      const key = `${e.type}:${e.doi ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
     const metadata = extractMetadata(message);
