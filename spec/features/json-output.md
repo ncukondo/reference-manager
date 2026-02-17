@@ -20,6 +20,7 @@ Provide machine-readable JSON output for external tool integration.
 | `update` | Yes | Yes |
 | `list` | Use `-o json` or `--json` | N/A (always full) |
 | `search` | Use `-o json` or `--json` | N/A (always full) |
+| `fulltext get` | Yes | N/A |
 
 ## Output Destination
 
@@ -243,6 +244,81 @@ interface UpdateJsonOutput {
 |------|-----------|
 | `0` | Successfully updated or unchanged |
 | `1` | Not found or validation error |
+
+### fulltext get
+
+**Schema:**
+
+```typescript
+interface FulltextGetJsonOutput {
+  id: string;            // Reference identifier
+  success: boolean;
+  paths?: {
+    pdf?: string;        // Absolute path to PDF
+    markdown?: string;   // Absolute path to Markdown
+  };
+  error?: string;        // Error message (failure only)
+}
+```
+
+Single ID returns an object; multiple IDs return an array (consistent with `export` command convention).
+
+**Example (single ID, success):**
+
+```json
+{
+  "id": "smith-2024",
+  "success": true,
+  "paths": {
+    "pdf": "/path/to/attachments/smith-2024/fulltext.pdf",
+    "markdown": "/path/to/attachments/smith-2024/fulltext.md"
+  }
+}
+```
+
+**Example (single ID, failure):**
+
+```json
+{
+  "id": "doe-2022",
+  "success": false,
+  "error": "No fulltext attached to 'doe-2022'"
+}
+```
+
+**Example (multiple IDs):**
+
+```json
+[
+  {
+    "id": "smith-2024",
+    "success": true,
+    "paths": {
+      "pdf": "/path/to/attachments/smith-2024/fulltext.pdf",
+      "markdown": "/path/to/attachments/smith-2024/fulltext.md"
+    }
+  },
+  {
+    "id": "jones-2023",
+    "success": true,
+    "paths": {
+      "pdf": "/path/to/attachments/jones-2023/fulltext.pdf"
+    }
+  },
+  {
+    "id": "doe-2022",
+    "success": false,
+    "error": "No fulltext attached to 'doe-2022'"
+  }
+]
+```
+
+**Exit Codes:**
+
+| Code | Condition |
+|------|-----------|
+| `0` | All identifiers succeeded |
+| `1` | Any identifier failed |
 
 ## Fatal Error Output
 

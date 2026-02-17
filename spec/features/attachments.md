@@ -176,17 +176,54 @@ ref fulltext get <ref-id> --pdf              # PDF path only
 ref fulltext get <ref-id> --markdown         # Markdown path only
 ref fulltext get <ref-id> --pdf --stdout     # Output content
 ref fulltext get <ref-id> --prefer markdown  # Preferred type path first
+ref fulltext get id1 id2 id3                 # Multiple IDs
+ref fulltext get id1 id2 -o json             # JSON output
 ```
 
 **Options:**
 ```
 --pdf              PDF path only
 --markdown         Markdown path only
---stdout           Output content to stdout
+--stdout           Output content to stdout (single ID only)
 --prefer <type>    Preferred fulltext type (pdf or markdown); overrides config
+-o, --output <format>  Output format: json|text (default: text)
 ```
 
 When `--prefer` is specified and type is not explicitly selected (`--pdf`/`--markdown`), the preferred type path is listed first. Both paths are still returned.
+
+**Multiple ID support:**
+
+Accepts variadic arguments, multiple lines from stdin, or multi-select in interactive mode.
+
+| Input | Single ID | Multiple IDs |
+|-------|-----------|--------------|
+| Argument | `ref fulltext get id1` | `ref fulltext get id1 id2 id3` |
+| stdin | First line | All lines (whitespace/newline separated) |
+| Interactive (TTY) | Single select | Multi select |
+
+`--stdout` cannot be used with multiple identifiers.
+
+**Text output (multiple IDs):**
+
+stdout (success entries):
+```
+smith2020:
+  pdf: /path/to/fulltext.pdf
+  markdown: /path/to/fulltext.md
+jones2021:
+  pdf: /path/to/fulltext.pdf
+```
+
+stderr (failure entries):
+```
+Error: No fulltext attached to 'doe2022'
+```
+
+Single ID output is unchanged (backward compatible).
+
+**JSON output (`-o json`):**
+
+Single ID returns an object; multiple IDs return an array. See `spec/features/json-output.md` for schema.
 
 #### `fulltext open`
 

@@ -97,7 +97,19 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-(No active tasks)
+### Phase 39: Fulltext Get Multi-ID Support
+
+Support multiple identifiers in `fulltext get` command with `-o json` output.
+
+- **Task**: `spec/tasks/20260217-01-fulltext-get-multi-id.md`
+- **Scope**:
+  - Variadic `[identifiers...]` argument
+  - stdin multi-line input, interactive multi-select
+  - Multi-ID text output (success→stdout, error→stderr)
+  - `-o json` output format (single ID→object, multiple→array)
+  - `--stdout` restricted to single ID only
+  - Operations layer unchanged (CLI loop)
+  - README / CHANGELOG documentation updates
 
 ---
 
