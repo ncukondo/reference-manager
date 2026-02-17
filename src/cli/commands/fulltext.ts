@@ -533,6 +533,66 @@ export async function handleFulltextAttachAction(
 /**
  * Options for fulltext get action
  */
+
+export interface FulltextGetIdResult {
+  id: string;
+  result: FulltextGetResult;
+}
+
+export function formatMultiFulltextGetOutput(results: FulltextGetIdResult[]): {
+  stdout: string;
+  stderr: string;
+} {
+  const isSingle = results.length === 1;
+
+  if (isSingle) {
+    const { result } = results[0] as FulltextGetIdResult;
+    const formatted = formatFulltextGetOutput(result);
+    return {
+      stdout: result.success ? formatted : "",
+      stderr: result.success ? "" : formatted,
+    };
+  }
+
+  // Multiple IDs: grouped format
+  const stdoutLines: string[] = [];
+  const stderrLines: string[] = [];
+
+  for (const { id, result } of results) {
+    if (result.success) {
+      stdoutLines.push(`${id}:`);
+      if (result.paths?.pdf) {
+        stdoutLines.push(`  pdf: ${result.paths.pdf}`);
+      }
+      if (result.paths?.markdown) {
+        stdoutLines.push(`  markdown: ${result.paths.markdown}`);
+      }
+    } else {
+      stderrLines.push(`Error: ${result.error}`);
+    }
+  }
+
+  return {
+    stdout: stdoutLines.join("\n"),
+    stderr: stderrLines.join("\n"),
+  };
+}
+
+export function formatFulltextGetJsonOutput(results: FulltextGetIdResult[]): string {
+  const toJsonItem = ({ id, result }: FulltextGetIdResult): Record<string, unknown> => {
+    if (result.success) {
+      return { id, success: true, paths: result.paths };
+    }
+    return { id, success: false, error: result.error };
+  };
+
+  if (results.length === 1) {
+    return JSON.stringify(toJsonItem(results[0] as FulltextGetIdResult), null, 2);
+  }
+
+  return JSON.stringify(results.map(toJsonItem), null, 2);
+}
+
 export interface FulltextGetActionOptions {
   pdf?: boolean;
   markdown?: boolean;

@@ -9,6 +9,7 @@ import {
   type FulltextAttachResult,
   type FulltextDetachOptions,
   type FulltextDetachResult,
+  type FulltextGetIdResult,
   type FulltextGetOptions,
   type FulltextGetResult,
   type FulltextOpenOptions,
@@ -19,8 +20,10 @@ import {
   executeFulltextOpen,
   formatFulltextAttachOutput,
   formatFulltextDetachOutput,
+  formatFulltextGetJsonOutput,
   formatFulltextGetOutput,
   formatFulltextOpenOutput,
+  formatMultiFulltextGetOutput,
   getFulltextExitCode,
 } from "./fulltext.js";
 
@@ -672,6 +675,247 @@ describe("fulltext command", () => {
       const output = formatFulltextGetOutput(result);
 
       expect(output).toContain("Error");
+    });
+  });
+
+  describe("formatMultiFulltextGetOutput", () => {
+    it("should format single ID result same as formatFulltextGetOutput (backward compat)", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "smith2020",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+              markdown: "/path/to/attachments/smith2020/fulltext.md",
+            },
+          },
+        },
+      ];
+
+      const output = formatMultiFulltextGetOutput(results);
+
+      // Single ID should produce same format as formatFulltextGetOutput
+      expect(output.stdout).toBe(
+        "pdf: /path/to/attachments/smith2020/fulltext.pdf\nmarkdown: /path/to/attachments/smith2020/fulltext.md"
+      );
+      expect(output.stderr).toBe("");
+    });
+
+    it("should format single ID error on stderr", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "doe2022",
+          result: {
+            success: false,
+            error: "No fulltext attached to 'doe2022'",
+          },
+        },
+      ];
+
+      const output = formatMultiFulltextGetOutput(results);
+
+      expect(output.stdout).toBe("");
+      expect(output.stderr).toBe("Error: No fulltext attached to 'doe2022'");
+    });
+
+    it("should format multiple IDs with grouped output", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "smith2020",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+              markdown: "/path/to/attachments/smith2020/fulltext.md",
+            },
+          },
+        },
+        {
+          id: "jones2021",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/jones2021/fulltext.pdf",
+            },
+          },
+        },
+      ];
+
+      const output = formatMultiFulltextGetOutput(results);
+
+      expect(output.stdout).toBe(
+        [
+          "smith2020:",
+          "  pdf: /path/to/attachments/smith2020/fulltext.pdf",
+          "  markdown: /path/to/attachments/smith2020/fulltext.md",
+          "jones2021:",
+          "  pdf: /path/to/attachments/jones2021/fulltext.pdf",
+        ].join("\n")
+      );
+      expect(output.stderr).toBe("");
+    });
+
+    it("should put errors on stderr and successes on stdout for multiple IDs", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "smith2020",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+            },
+          },
+        },
+        {
+          id: "doe2022",
+          result: {
+            success: false,
+            error: "No fulltext attached to 'doe2022'",
+          },
+        },
+      ];
+
+      const output = formatMultiFulltextGetOutput(results);
+
+      expect(output.stdout).toBe(
+        ["smith2020:", "  pdf: /path/to/attachments/smith2020/fulltext.pdf"].join("\n")
+      );
+      expect(output.stderr).toBe("Error: No fulltext attached to 'doe2022'");
+    });
+  });
+
+  describe("formatFulltextGetJsonOutput", () => {
+    it("should format single ID success as object", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "smith2020",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+              markdown: "/path/to/attachments/smith2020/fulltext.md",
+            },
+          },
+        },
+      ];
+
+      const output = formatFulltextGetJsonOutput(results);
+      const parsed = JSON.parse(output);
+
+      expect(parsed).toEqual({
+        id: "smith2020",
+        success: true,
+        paths: {
+          pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+          markdown: "/path/to/attachments/smith2020/fulltext.md",
+        },
+      });
+    });
+
+    it("should format single ID failure as object", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "doe2022",
+          result: {
+            success: false,
+            error: "No fulltext attached to 'doe2022'",
+          },
+        },
+      ];
+
+      const output = formatFulltextGetJsonOutput(results);
+      const parsed = JSON.parse(output);
+
+      expect(parsed).toEqual({
+        id: "doe2022",
+        success: false,
+        error: "No fulltext attached to 'doe2022'",
+      });
+    });
+
+    it("should format multiple IDs as array", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "smith2020",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+              markdown: "/path/to/attachments/smith2020/fulltext.md",
+            },
+          },
+        },
+        {
+          id: "jones2021",
+          result: {
+            success: true,
+            paths: {
+              pdf: "/path/to/attachments/jones2021/fulltext.pdf",
+            },
+          },
+        },
+        {
+          id: "doe2022",
+          result: {
+            success: false,
+            error: "No fulltext attached to 'doe2022'",
+          },
+        },
+      ];
+
+      const output = formatFulltextGetJsonOutput(results);
+      const parsed = JSON.parse(output);
+
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed).toHaveLength(3);
+      expect(parsed[0]).toEqual({
+        id: "smith2020",
+        success: true,
+        paths: {
+          pdf: "/path/to/attachments/smith2020/fulltext.pdf",
+          markdown: "/path/to/attachments/smith2020/fulltext.md",
+        },
+      });
+      expect(parsed[2]).toEqual({
+        id: "doe2022",
+        success: false,
+        error: "No fulltext attached to 'doe2022'",
+      });
+    });
+
+    it("should not include paths key for failed results", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "doe2022",
+          result: {
+            success: false,
+            error: "No fulltext attached to 'doe2022'",
+          },
+        },
+      ];
+
+      const output = formatFulltextGetJsonOutput(results);
+      const parsed = JSON.parse(output);
+
+      expect(parsed).not.toHaveProperty("paths");
+    });
+
+    it("should not include error key for successful results", () => {
+      const results: FulltextGetIdResult[] = [
+        {
+          id: "smith2020",
+          result: {
+            success: true,
+            paths: { pdf: "/path/to/file.pdf" },
+          },
+        },
+      ];
+
+      const output = formatFulltextGetJsonOutput(results);
+      const parsed = JSON.parse(output);
+
+      expect(parsed).not.toHaveProperty("error");
     });
   });
 
