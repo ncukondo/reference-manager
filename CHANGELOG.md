@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Fulltext Get Multi-ID Support**: `ref fulltext get` now accepts multiple identifiers
+  - Variadic argument: `ref fulltext get id1 id2 id3`
+  - Multi-line stdin input: pipe multiple IDs via stdin
+  - Interactive multi-select in TTY mode
+  - JSON output format: `-o json` (single ID → object, multiple IDs → array)
+  - `--stdout` restricted to single ID (errors with multiple)
+  - Backward compatible: single-ID output unchanged
+
 - **Check Metadata Comparison**: `ref check` now compares local metadata against Crossref remote records
   - Detects **metadata mismatch** (title/author significantly differs from remote) and **metadata outdated** (publication fields updated remotely)
   - Title similarity using Jaccard and Containment coefficients; author overlap ratio

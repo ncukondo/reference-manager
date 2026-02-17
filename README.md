@@ -357,6 +357,9 @@ ref fulltext attach smith2024 paper.pdf --force   # Overwrite existing
 ref fulltext get smith2024 --pdf                  # Get PDF path
 ref fulltext get smith2024 --md                   # Get Markdown path
 ref fulltext get smith2024 --pdf --stdout         # Output content to stdout
+ref fulltext get smith2024 jones2023              # Multiple IDs at once
+ref fulltext get smith2024 jones2023 -o json      # JSON output (array)
+ref fulltext get smith2024 -o json                # JSON output (object)
 
 # Open files with default application
 ref fulltext open smith2024                       # Open PDF (or Markdown if no PDF)
