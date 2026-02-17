@@ -145,47 +145,47 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Add formatting functions for multi-ID results.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` — add tests for `formatMultiFulltextGetOutput` (single ID backward compat, multiple IDs with success/failure mix)
-- [ ] Create stub: Add function signatures with `throw new Error("Not implemented")`
-- [ ] Verify Red: `npm run test:unit -- fulltext.test.ts` (tests fail with "Not implemented")
-- [ ] Implement: Write formatting logic
-- [ ] Verify Green: `npm run test:unit -- fulltext.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/cli/commands/fulltext.test.ts` — add tests for `formatMultiFulltextGetOutput` (single ID backward compat, multiple IDs with success/failure mix)
+- [x] Create stub: Add function signatures with `throw new Error("Not implemented")`
+- [x] Verify Red: `npm run test:unit -- fulltext.test.ts` (tests fail with "Not implemented")
+- [x] Implement: Write formatting logic
+- [x] Verify Green: `npm run test:unit -- fulltext.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: JSON output formatting
 
 Add JSON output formatting for fulltext get results.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` — add tests for JSON output (single ID → object, multiple IDs → array, success/failure/mixed)
-- [ ] Create stub
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/fulltext.test.ts` — add tests for JSON output (single ID → object, multiple IDs → array, success/failure/mixed)
+- [x] Create stub
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: handleFulltextGetAction multi-ID support
 
 Update the action handler to accept multiple identifiers, loop and collect results.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` — test multi-ID execution flow, --stdout restriction, stdin multi-line input
-- [ ] Implement: Update `handleFulltextGetAction` signature (`identifiers: string[]`), add loop, collect results
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Write test: `src/cli/commands/fulltext.test.ts` — test multi-ID execution flow, --stdout restriction, stdin multi-line input
+- [x] Implement: Update `handleFulltextGetAction` signature (`identifiers: string[]`), add loop, collect results
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Commander registration and interactive selection
 
 Update Commander `.argument()` to variadic, add `-o` option, update interactive selection to multiSelect.
 
-- [ ] Update Commander registration in `src/cli/index.ts`: `.argument("[identifiers...]")`, `.option("-o, --output <format>", ...)`
-- [ ] Update interactive selection: `multiSelect: true`
-- [ ] Verify Green: all existing + new tests pass
-- [ ] Lint/Type check
+- [x] Update Commander registration in `src/cli/index.ts`: `.argument("[identifiers...]")`, `.option("-o, --output <format>", ...)`
+- [x] Update interactive selection: `multiSelect: true`
+- [x] Verify Green: all existing + new tests pass
+- [x] Lint/Type check
 
 ### Step 5: E2E test
 
-- [ ] Update `src/cli/fulltext.e2e.test.ts` with multi-ID scenarios
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Update `src/cli/fulltext.e2e.test.ts` with multi-ID scenarios
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Manual Verification
 
@@ -204,15 +204,15 @@ TTY-required tests (run manually in a terminal):
 
 ### Step 6: Documentation updates
 
-- [ ] Update README.md with multi-ID usage examples for `fulltext get`
-- [ ] Update CHANGELOG.md with feature entry
+- [x] Update README.md with multi-ID usage examples for `fulltext get`
+- [x] Update CHANGELOG.md with feature entry
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification: `./test-fixtures/test-fulltext-get-multi-id.sh` (if applicable)
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

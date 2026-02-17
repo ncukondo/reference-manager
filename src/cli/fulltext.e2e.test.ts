@@ -363,6 +363,177 @@ describe("Fulltext Command E2E", () => {
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("No markdown fulltext attached");
     });
+
+    describe("multi-ID support", () => {
+      it("should get paths for multiple identifiers", async () => {
+        // Also attach PDF to Jones-2023
+        const pdfPath2 = path.join(testDir, "paper2.pdf");
+        await fs.writeFile(pdfPath2, "Jones PDF content", "utf-8");
+        await runWithFulltext([
+          "fulltext",
+          "attach",
+          "Jones-2023",
+          pdfPath2,
+          "--library",
+          libraryPath,
+        ]);
+
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "Jones-2023",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain("Smith-2024:");
+        expect(result.stdout).toContain("Jones-2023:");
+        expect(result.stdout).toContain("pdf:");
+      });
+
+      it("should show mixed success and failure for multiple IDs", async () => {
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "Jones-2023",
+          "--library",
+          libraryPath,
+        ]);
+
+        // Smith-2024 has fulltext, Jones-2023 does not (in this beforeEach)
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("Smith-2024:");
+        expect(result.stdout).toContain("pdf:");
+        expect(result.stderr).toContain("No fulltext attached");
+      });
+
+      it("should return JSON object for single ID with -o json", async () => {
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "-o",
+          "json",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(0);
+        const parsed = JSON.parse(result.stdout);
+        expect(parsed.id).toBe("Smith-2024");
+        expect(parsed.success).toBe(true);
+        expect(parsed.paths.pdf).toBeDefined();
+        // Should be an object, not an array
+        expect(Array.isArray(parsed)).toBe(false);
+      });
+
+      it("should return JSON array for multiple IDs with -o json", async () => {
+        // Also attach PDF to Jones-2023
+        const pdfPath2 = path.join(testDir, "paper2.pdf");
+        await fs.writeFile(pdfPath2, "Jones PDF content", "utf-8");
+        await runWithFulltext([
+          "fulltext",
+          "attach",
+          "Jones-2023",
+          pdfPath2,
+          "--library",
+          libraryPath,
+        ]);
+
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "Jones-2023",
+          "-o",
+          "json",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(0);
+        const parsed = JSON.parse(result.stdout);
+        expect(Array.isArray(parsed)).toBe(true);
+        expect(parsed).toHaveLength(2);
+        expect(parsed[0].id).toBe("Smith-2024");
+        expect(parsed[1].id).toBe("Jones-2023");
+      });
+
+      it("should return JSON failure for single ID error with -o json", async () => {
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Jones-2023",
+          "-o",
+          "json",
+          "--library",
+          libraryPath,
+        ]);
+
+        // Jones-2023 has no fulltext
+        expect(result.exitCode).toBe(1);
+        const parsed = JSON.parse(result.stdout);
+        expect(parsed.id).toBe("Jones-2023");
+        expect(parsed.success).toBe(false);
+        expect(parsed.error).toBeDefined();
+      });
+
+      it("should error when --stdout used with multiple IDs", async () => {
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "Jones-2023",
+          "--stdout",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain("--stdout cannot be used with multiple identifiers");
+      });
+
+      it("should accept multiple IDs from stdin", async () => {
+        // Also attach PDF to Jones-2023
+        const pdfPath2 = path.join(testDir, "paper2.pdf");
+        await fs.writeFile(pdfPath2, "Jones PDF content", "utf-8");
+        await runWithFulltext([
+          "fulltext",
+          "attach",
+          "Jones-2023",
+          pdfPath2,
+          "--library",
+          libraryPath,
+        ]);
+
+        const result = await runWithFulltext(
+          ["fulltext", "get", "--library", libraryPath],
+          "Smith-2024\nJones-2023\n"
+        );
+
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain("Smith-2024:");
+        expect(result.stdout).toContain("Jones-2023:");
+      });
+
+      it("should maintain backward compatible single ID output", async () => {
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(0);
+        // Single ID should NOT have "Smith-2024:" prefix
+        expect(result.stdout).not.toContain("Smith-2024:");
+        expect(result.stdout).toContain("pdf:");
+      });
+    });
   });
 
   describe("fulltext detach", () => {
