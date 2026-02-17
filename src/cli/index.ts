@@ -840,7 +840,11 @@ function registerFulltextCommand(program: Command): void {
     )
     .option("--stdout", "Output file content to stdout")
     .option("--uuid", "Interpret identifiers as UUIDs")
-    .option("-o, --output <format>", "Output format: json|text", "text")
+    .addOption(
+      new Option("-o, --output <format>", "Output format: json|text")
+        .choices(["json", "text"])
+        .default("text")
+    )
     .action(async (identifiers: string[], options) => {
       await handleFulltextGetAction(identifiers, options, program.opts());
     });

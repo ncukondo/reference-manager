@@ -502,6 +502,7 @@ export async function handleFulltextAttachAction(
         setExitCode(ExitCode.ERROR);
         return;
       }
+      // Safe: selectReferencesOrExit guarantees a non-empty array
       identifier = (await executeInteractiveSelect(context, config))[0] as string;
     }
 
@@ -530,10 +531,6 @@ export async function handleFulltextAttachAction(
     setExitCode(ExitCode.INTERNAL_ERROR);
   }
 }
-
-/**
- * Options for fulltext get action
- */
 
 export interface FulltextGetIdResult {
   id: string;
@@ -594,6 +591,7 @@ export function formatFulltextGetJsonOutput(results: FulltextGetIdResult[]): str
   return JSON.stringify(results.map(toJsonItem), null, 2);
 }
 
+/** Options for fulltext get action */
 export interface FulltextGetActionOptions {
   pdf?: boolean;
   markdown?: boolean;
@@ -756,6 +754,7 @@ export async function handleFulltextDetachAction(
       identifier = identifierArg;
     } else if (isTTY()) {
       // TTY mode: interactive selection
+      // Safe: selectReferencesOrExit guarantees a non-empty array
       identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       // Non-TTY mode: read from stdin (pipeline support)
@@ -818,6 +817,7 @@ export async function handleFulltextOpenAction(
       identifier = identifierArg;
     } else if (isTTY()) {
       // TTY mode: interactive selection
+      // Safe: selectReferencesOrExit guarantees a non-empty array
       identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       // Non-TTY mode: read from stdin (pipeline support)
@@ -877,6 +877,7 @@ export async function handleFulltextDiscoverAction(
     if (identifierArg) {
       identifier = identifierArg;
     } else if (isTTY()) {
+      // Safe: selectReferencesOrExit guarantees a non-empty array
       identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       const stdinId = await readIdentifierFromStdin();
@@ -934,6 +935,7 @@ export async function handleFulltextFetchAction(
     if (identifierArg) {
       identifier = identifierArg;
     } else if (isTTY()) {
+      // Safe: selectReferencesOrExit guarantees a non-empty array
       identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       const stdinId = await readIdentifierFromStdin();
@@ -990,6 +992,7 @@ export async function handleFulltextConvertAction(
     if (identifierArg) {
       identifier = identifierArg;
     } else if (isTTY()) {
+      // Safe: selectReferencesOrExit guarantees a non-empty array
       identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       const stdinId = await readIdentifierFromStdin();
