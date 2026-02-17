@@ -90,6 +90,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 38**: CLI Help Enhancement (search help with query syntax, fields, case sensitivity, examples)
 - **Phase 38**: Check Command (retraction/concern/version detection via Crossref & PubMed)
 - **Phase 39**: Check Command — Metadata Comparison (title/author similarity, metadata drift detection, fix actions)
+- **Phase 39**: Fulltext Get Multi-ID Support (variadic identifiers, JSON output format)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -97,19 +98,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-### Phase 39: Fulltext Get Multi-ID Support
-
-Support multiple identifiers in `fulltext get` command with `-o json` output.
-
-- **Task**: `spec/tasks/20260217-01-fulltext-get-multi-id.md`
-- **Scope**:
-  - Variadic `[identifiers...]` argument
-  - stdin multi-line input, interactive multi-select
-  - Multi-ID text output (success→stdout, error→stderr)
-  - `-o json` output format (single ID→object, multiple→array)
-  - `--stdout` restricted to single ID only
-  - Operations layer unchanged (CLI loop)
-  - README / CHANGELOG documentation updates
+(No active tasks)
 
 ---
 
