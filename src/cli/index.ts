@@ -832,16 +832,17 @@ function registerFulltextCommand(program: Command): void {
   fulltextCmd
     .command("get")
     .description("Get full-text file path or content")
-    .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
+    .argument("[identifiers...]", "Citation keys or UUIDs (interactive selection if omitted)")
     .option("--pdf", "Get PDF file only")
     .option("--markdown", "Get Markdown file only")
     .addOption(
       new Option("--prefer <type>", "Preferred fulltext type").choices(["pdf", "markdown"])
     )
     .option("--stdout", "Output file content to stdout")
-    .option("--uuid", "Interpret identifier as UUID")
-    .action(async (identifier: string | undefined, options) => {
-      await handleFulltextGetAction(identifier, options, program.opts());
+    .option("--uuid", "Interpret identifiers as UUIDs")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .action(async (identifiers: string[], options) => {
+      await handleFulltextGetAction(identifiers, options, program.opts());
     });
 
   fulltextCmd

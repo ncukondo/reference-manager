@@ -38,6 +38,7 @@ import {
   isTTY,
   loadConfigWithOverrides,
   readIdentifierFromStdin,
+  readIdentifiersFromStdin,
   readStdinBuffer,
   setExitCode,
 } from "../helpers.js";
@@ -424,8 +425,9 @@ export function getFulltextExitCode(
  */
 async function executeInteractiveSelect(
   context: ExecutionContext,
-  config: Config
-): Promise<string> {
+  config: Config,
+  multiSelect = false
+): Promise<string[]> {
   const { withAlternateScreen } = await import("../../features/interactive/alternate-screen.js");
   const { selectReferencesOrExit } = await import("../../features/interactive/reference-select.js");
 
@@ -433,11 +435,10 @@ async function executeInteractiveSelect(
 
   // Run TUI session in alternate screen to preserve terminal scrollback
   const identifiers = await withAlternateScreen(() =>
-    selectReferencesOrExit(allReferences, { multiSelect: false }, config.cli.tui)
+    selectReferencesOrExit(allReferences, { multiSelect }, config.cli.tui)
   );
 
-  // Type assertion is safe: selectReferencesOrExit guarantees non-empty array
-  return identifiers[0] as string;
+  return identifiers;
 }
 
 /**
@@ -501,7 +502,7 @@ export async function handleFulltextAttachAction(
         setExitCode(ExitCode.ERROR);
         return;
       }
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = (await executeInteractiveSelect(context, config))[0] as string;
     }
 
     const { type, filePath } = parseFulltextAttachTypeAndPath(filePathArg, options);
@@ -599,6 +600,7 @@ export interface FulltextGetActionOptions {
   prefer?: "pdf" | "markdown";
   stdout?: boolean;
   uuid?: boolean;
+  output?: "json" | "text";
 }
 
 /**
@@ -621,37 +623,38 @@ function outputFulltextGetResult(result: FulltextGetResult, useStdout: boolean):
 /**
  * Handle 'fulltext get' command action.
  */
-export async function handleFulltextGetAction(
-  identifierArg: string | undefined,
+async function resolveGetIdentifiers(
+  identifierArgs: string[],
+  context: ExecutionContext,
+  config: Config
+): Promise<string[] | null> {
+  if (identifierArgs.length > 0) {
+    return identifierArgs;
+  }
+  if (isTTY()) {
+    return executeInteractiveSelect(context, config, true);
+  }
+  // Non-TTY mode: read from stdin (pipeline support)
+  const stdinIds = await readIdentifiersFromStdin();
+  if (stdinIds.length === 0) {
+    process.stderr.write(
+      "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
+    );
+    return null;
+  }
+  return stdinIds;
+}
+
+async function collectFulltextGetResults(
+  identifiers: string[],
   options: FulltextGetActionOptions,
-  globalOpts: Record<string, unknown>
-): Promise<void> {
-  try {
-    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
-    const context = await createExecutionContext(config, Library.load);
+  config: Config,
+  context: ExecutionContext
+): Promise<FulltextGetIdResult[]> {
+  const preferValue = options.prefer ?? config.fulltext.preferredType;
+  const results: FulltextGetIdResult[] = [];
 
-    let identifier: string;
-    if (identifierArg) {
-      identifier = identifierArg;
-    } else if (isTTY()) {
-      // TTY mode: interactive selection
-      identifier = await executeInteractiveSelect(context, config);
-    } else {
-      // Non-TTY mode: read from stdin (pipeline support)
-      const stdinId = await readIdentifierFromStdin();
-      if (!stdinId) {
-        process.stderr.write(
-          "Error: No identifier provided. Provide an ID, pipe one via stdin, or run interactively in a TTY.\n"
-        );
-        setExitCode(ExitCode.ERROR);
-        return;
-      }
-      identifier = stdinId;
-    }
-
-    // Resolve preferredType: CLI --prefer > config
-    const preferValue = options.prefer ?? config.fulltext.preferredType;
-
+  for (const identifier of identifiers) {
     const getOptions: FulltextGetOptions = {
       identifier,
       fulltextDirectory: config.attachments.directory,
@@ -663,8 +666,62 @@ export async function handleFulltextGetAction(
     };
 
     const result = await executeFulltextGet(getOptions, context);
-    outputFulltextGetResult(result, Boolean(options.stdout));
-    setExitCode(getFulltextExitCode(result));
+    results.push({ id: identifier, result });
+  }
+
+  return results;
+}
+
+function outputFulltextGetResults(
+  results: FulltextGetIdResult[],
+  options: FulltextGetActionOptions
+): void {
+  if (options.output === "json") {
+    process.stdout.write(`${formatFulltextGetJsonOutput(results)}\n`);
+    return;
+  }
+
+  if (results.length === 1) {
+    outputFulltextGetResult((results[0] as FulltextGetIdResult).result, Boolean(options.stdout));
+    return;
+  }
+
+  const output = formatMultiFulltextGetOutput(results);
+  if (output.stdout) {
+    process.stdout.write(`${output.stdout}\n`);
+  }
+  if (output.stderr) {
+    process.stderr.write(`${output.stderr}\n`);
+  }
+}
+
+export async function handleFulltextGetAction(
+  identifierArgs: string[],
+  options: FulltextGetActionOptions,
+  globalOpts: Record<string, unknown>
+): Promise<void> {
+  try {
+    const config = await loadConfigWithOverrides({ ...globalOpts, ...options });
+    const context = await createExecutionContext(config, Library.load);
+
+    const identifiers = await resolveGetIdentifiers(identifierArgs, context, config);
+    if (!identifiers) {
+      setExitCode(ExitCode.ERROR);
+      return;
+    }
+
+    // --stdout is incompatible with multiple identifiers
+    if (options.stdout && identifiers.length > 1) {
+      process.stderr.write("Error: --stdout cannot be used with multiple identifiers\n");
+      setExitCode(ExitCode.ERROR);
+      return;
+    }
+
+    const results = await collectFulltextGetResults(identifiers, options, config, context);
+    outputFulltextGetResults(results, options);
+
+    const hasFailure = results.some((r) => !r.result.success);
+    setExitCode(hasFailure ? ExitCode.ERROR : ExitCode.SUCCESS);
   } catch (error) {
     process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
     setExitCode(ExitCode.INTERNAL_ERROR);
@@ -699,7 +756,7 @@ export async function handleFulltextDetachAction(
       identifier = identifierArg;
     } else if (isTTY()) {
       // TTY mode: interactive selection
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       // Non-TTY mode: read from stdin (pipeline support)
       const stdinId = await readIdentifierFromStdin();
@@ -761,7 +818,7 @@ export async function handleFulltextOpenAction(
       identifier = identifierArg;
     } else if (isTTY()) {
       // TTY mode: interactive selection
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       // Non-TTY mode: read from stdin (pipeline support)
       const stdinId = await readIdentifierFromStdin();
@@ -820,7 +877,7 @@ export async function handleFulltextDiscoverAction(
     if (identifierArg) {
       identifier = identifierArg;
     } else if (isTTY()) {
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       const stdinId = await readIdentifierFromStdin();
       if (!stdinId) {
@@ -877,7 +934,7 @@ export async function handleFulltextFetchAction(
     if (identifierArg) {
       identifier = identifierArg;
     } else if (isTTY()) {
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       const stdinId = await readIdentifierFromStdin();
       if (!stdinId) {
@@ -933,7 +990,7 @@ export async function handleFulltextConvertAction(
     if (identifierArg) {
       identifier = identifierArg;
     } else if (isTTY()) {
-      identifier = await executeInteractiveSelect(context, config);
+      identifier = (await executeInteractiveSelect(context, config))[0] as string;
     } else {
       const stdinId = await readIdentifierFromStdin();
       if (!stdinId) {
