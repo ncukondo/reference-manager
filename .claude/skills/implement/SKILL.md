@@ -21,6 +21,7 @@ spec/tasks/ROADMAP.md を確認し、並列実装可能なタスクを分析し�
 - タスク分析と優先順位付け
 - ワーカーのスポーン・監視
 - オーケストレーション管理
+- レビュー結果の報告・ユーザー判断の仲介
 - マージとROADMAP更新
 
 ## Planned Tasks
@@ -58,51 +59,73 @@ spawn-worker.sh automatically:
 3. Creates new pane in current window
 4. Starts Claude with the task
 
-### 3. Start Orchestration
-
-After spawning all workers:
+### 3. Start Orchestration & Apply Layout
 
 ```bash
-# Background orchestration (recommended)
 ./scripts/orchestrate.sh --background
-```
-
-Orchestrator automatically:
-- Worker completion → spawns Reviewer
-- Reviewer approval → notifies main agent
-- Changes requested → sends fix instructions
-- Errors → notifies main agent
-
-### 4. Apply Layout
-
-```bash
 ./scripts/apply-layout.sh
 ```
 
-### 5. Monitor (optional)
+Orchestrator (detect + notify model):
+- Detects agent state changes (idle, error, etc.)
+- Writes event files to `/tmp/claude-orchestrator/events/`
+- Sends 1-line notification to main agent pane
+- Does **NOT** auto-execute actions — main agent decides
 
+### 4. Monitor Implementation
+
+Periodically check worker progress:
 ```bash
-# Check orchestrator status
-./scripts/orchestrate.sh --status
-
-# View logs
-tail -f /tmp/claude-orchestrator/orchestrator.log
-
-# View notifications
-cat /tmp/claude-orchestrator/notifications
+tmux capture-pane -t <pane-id> -p | tail -30
 ```
 
-### 6. Merge (main agent only)
+**Context exhaustion handling:**
+If agent output shows signs of context exhaustion (repetitive output, no progress):
+1. Send commit instruction: `./scripts/send-to-agent.sh <pane-id> "現状をcommitしてpushしてください"`
+2. Wait for commit, then kill: `./scripts/kill-agent.sh <pane-id>`
+3. Re-spawn: `./scripts/spawn-worker.sh <branch-name> <task-keyword>`
 
-When notified of approval:
+### 5. Implementation Complete → Kill → Spawn Reviewer
+
+When worker finishes (PR created, visible in pane output):
+1. Confirm PR exists: `gh pr list --head <branch>`
+2. Kill implementation agent: `./scripts/kill-agent.sh <pane-id>`
+3. Spawn reviewer: `./scripts/spawn-reviewer.sh --pr <pr-number>`
+4. Apply layout: `./scripts/apply-layout.sh`
+
+### 6. Review Complete → Report to User
+
+When reviewer finishes (review comment posted, visible in pane output):
+1. Confirm review posted: `gh pr view <pr-number> --json reviews`
+2. Kill reviewer: `./scripts/kill-agent.sh <pane-id>`
+3. **Report ALL findings to user** (minor含む全件報告):
+   - Critical/Major issues
+   - Minor issues and suggestions
+   - Test/CI status
+4. **Ask user for decision** — merge or fix
+
+### 7. Fix (if user requests)
+
+When user requests fixes for review findings:
+1. Launch fix agent with specific instructions:
+   ```bash
+   ./scripts/launch-agent.sh <worktree-dir> "<fix instructions>"
+   ```
+2. Monitor until complete
+3. Kill fix agent: `./scripts/kill-agent.sh <pane-id>`
+4. Report to user and ask for next action (re-review or merge)
+
+### 8. Merge (after user approval)
+
 ```bash
 ./scripts/merge-pr.sh <pr-number>
 ```
 
-### 7. Post-Merge (main branch)
+### 9. Post-Merge (main branch)
 
 - Update ROADMAP.md status to "Done"
 - Move task file to `spec/tasks/completed/`
+- Clean up worktree if needed: `git worktree remove <path>`
 
 ## Notes
 
@@ -110,4 +133,5 @@ When notified of approval:
 - All agents run in panes within the same tmux window
 - Use `git worktree list` to see all worktrees
 - Use `./scripts/monitor-agents.sh` to see agent states
+- Orchestrator commands: `--status`, `--stop`, `--clean` (clear persisted states)
 - Be aware of dependency conflicts during parallel work

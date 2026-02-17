@@ -9,6 +9,9 @@ set -euo pipefail
 #   --background, -b    Run in background (detach from terminal)
 #   --interval <sec>    Check interval in seconds (default: 15)
 #   --main-pane <id>    Main agent pane ID for notifications (auto-detect if omitted)
+#   --stop              Stop a running background orchestrator
+#   --clean             Clear persisted terminal states
+#   --status            Show orchestrator status
 #
 # Model: Detect + Notify only
 #   - Detects state changes in worker/reviewer agents
@@ -27,6 +30,7 @@ STATE_DIR="/tmp/claude-orchestrator"
 EVENTS_DIR="$STATE_DIR/events"
 LOG_FILE="$STATE_DIR/orchestrator.log"
 PID_FILE="$STATE_DIR/orchestrator.pid"
+TERMINAL_STATES_FILE="$STATE_DIR/terminal-states"
 
 BACKGROUND=false
 INTERVAL=15
@@ -49,12 +53,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --stop)
       if [ -f "$PID_FILE" ]; then
-        kill "$(cat "$PID_FILE")" 2>/dev/null || true
+        PID=$(cat "$PID_FILE")
+        kill "$PID" 2>/dev/null || true
         rm -f "$PID_FILE"
-        echo "[orchestrate] Stopped"
+        echo "[orchestrate] Stopped (PID: $PID)"
       else
         echo "[orchestrate] Not running"
       fi
+      exit 0
+      ;;
+    --clean)
+      rm -f "$TERMINAL_STATES_FILE"
+      echo "[orchestrate] Cleared persisted terminal states"
       exit 0
       ;;
     --status)
@@ -182,6 +192,36 @@ get_current_role() {
 declare -A BRANCH_STATES
 declare -A BRANCH_LAST_ACTIVITY
 
+# Persist a terminal state to file (survives restarts)
+persist_terminal_state() {
+  local key="$1" state="$2"
+  # Remove old entry, append new
+  if [ -f "$TERMINAL_STATES_FILE" ]; then
+    grep -v "^${key}=" "$TERMINAL_STATES_FILE" > "${TERMINAL_STATES_FILE}.tmp" 2>/dev/null || true
+    mv "${TERMINAL_STATES_FILE}.tmp" "$TERMINAL_STATES_FILE"
+  fi
+  echo "${key}=${state}" >> "$TERMINAL_STATES_FILE"
+}
+
+# Load persisted terminal states (call at startup)
+load_terminal_states() {
+  if [ -f "$TERMINAL_STATES_FILE" ]; then
+    while IFS='=' read -r key state; do
+      [ -n "$key" ] && BRANCH_STATES[$key]="$state"
+    done < "$TERMINAL_STATES_FILE"
+    log "Loaded $(wc -l < "$TERMINAL_STATES_FILE") persisted terminal states"
+  fi
+}
+
+# Clear persisted terminal states for a branch (call on cleanup)
+clear_terminal_states_for_branch() {
+  local branch="$1"
+  if [ -f "$TERMINAL_STATES_FILE" ]; then
+    grep -v "^${branch}:" "$TERMINAL_STATES_FILE" > "${TERMINAL_STATES_FILE}.tmp" 2>/dev/null || true
+    mv "${TERMINAL_STATES_FILE}.tmp" "$TERMINAL_STATES_FILE"
+  fi
+}
+
 # Process a single branch
 process_branch() {
   local branch="$1"
@@ -288,6 +328,7 @@ process_implement_completion() {
           "$pr_num" "$pane_id"
 
         BRANCH_STATES["${branch}:implement"]="transitioned"
+        persist_terminal_state "${branch}:implement" "transitioned"
       else
         if [ "${BRANCH_STATES["${branch}:implement"]:-}" != "no-pr-notified" ]; then
           write_event "$branch" "worker-completed" \
@@ -297,6 +338,7 @@ gh pr list --head $branch" \
             "" "$pane_id"
 
           BRANCH_STATES["${branch}:implement"]="no-pr-notified"
+          persist_terminal_state "${branch}:implement" "no-pr-notified"
         fi
       fi
       ;;
@@ -379,6 +421,7 @@ gh pr list --head $branch" \
         "$pr_num" "$pane_id"
 
       BRANCH_STATES["${branch}:review"]="approved"
+      persist_terminal_state "${branch}:review" "approved"
       ;;
 
     changes_requested)
@@ -396,11 +439,13 @@ $review_body" \
         "$pr_num" "$pane_id"
 
       BRANCH_STATES["${branch}:review"]="fix-requested"
+      persist_terminal_state "${branch}:review" "fix-requested"
 
       # Clear implement terminal states to allow re-processing after fix
       unset 'BRANCH_STATES["${branch}:implement"]' 2>/dev/null || true
       unset 'BRANCH_STATES["${branch}:implement:ci-failed"]' 2>/dev/null || true
       unset 'BRANCH_STATES["${branch}:implement:error"]' 2>/dev/null || true
+      clear_terminal_states_for_branch "${branch}:implement"
       ;;
 
     commented)
@@ -417,6 +462,7 @@ gh pr view $pr_num --comments" \
         "$pr_num" "$pane_id"
 
       BRANCH_STATES["${branch}:review"]="commented"
+      persist_terminal_state "${branch}:review" "commented"
       ;;
 
     pending)
@@ -440,6 +486,7 @@ gh pr view $pr_num --comments" \
 # Main loop
 main_loop() {
   log "Orchestrator started (interval: ${INTERVAL}s, main pane: ${MAIN_PANE:-none}, events: $EVENTS_DIR)"
+  load_terminal_states
 
   while true; do
     # Main agent liveness check
@@ -457,17 +504,26 @@ main_loop() {
   done
 }
 
+# Guard: prevent concurrent instances
+if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+  echo "[orchestrate] Already running (PID: $(cat "$PID_FILE"))"
+  exit 0
+fi
+
 # Run
 if [ "$BACKGROUND" = true ]; then
-  # Daemonize
-  echo $$ > "$PID_FILE"
-  exec >> "$LOG_FILE" 2>&1
-  main_loop &
-  disown
-  echo "[orchestrate] Started in background (PID: $$)"
+  # Print info BEFORE redirecting stdout
   echo "[orchestrate] Log: $LOG_FILE"
   echo "[orchestrate] Events: $EVENTS_DIR"
   echo "[orchestrate] Stop: $0 --stop"
+
+  # Start main_loop in background with log redirection
+  main_loop >> "$LOG_FILE" 2>&1 &
+  LOOP_PID=$!
+  echo "$LOOP_PID" > "$PID_FILE"
+  disown "$LOOP_PID"
+
+  echo "[orchestrate] Started in background (PID: $LOOP_PID)"
 else
   # Foreground
   echo $$ > "$PID_FILE"
