@@ -29,3 +29,16 @@ EXAMPLES
   $ ref search id:smith2023 --output json
   $ ref search --tui                       # Interactive mode`;
 }
+
+export function buildNoResultsHintText(query: string): string {
+  return `No references found for "${query}"
+
+Hint: field search behavior differs by type:
+  Partial match   author, title, year, keyword, tag
+  Exact match     id, doi, pmid, pmcid, isbn, url
+
+  Example: id:smith2023  matches only "smith2023" exactly
+           author:Smith  matches "Smith", "Smithson", etc.
+
+Run 'ref search --help' for full syntax reference.`;
+}

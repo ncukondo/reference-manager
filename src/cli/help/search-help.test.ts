@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchHelpText } from "./search-help.js";
+import { buildNoResultsHintText, buildSearchHelpText } from "./search-help.js";
 
 describe("buildSearchHelpText", () => {
   const helpText = buildSearchHelpText();
@@ -93,5 +93,37 @@ describe("buildSearchHelpText", () => {
     it("should start with a newline for proper spacing after options", () => {
       expect(helpText).toMatch(/^\n/);
     });
+  });
+});
+
+describe("buildNoResultsHintText", () => {
+  it("should include the query string", () => {
+    const hint = buildNoResultsHintText("machine learning");
+    expect(hint).toContain('"machine learning"');
+  });
+
+  it("should mention partial match fields", () => {
+    const hint = buildNoResultsHintText("test");
+    for (const field of ["author", "title", "year", "keyword", "tag"]) {
+      expect(hint).toContain(field);
+    }
+  });
+
+  it("should mention exact match fields", () => {
+    const hint = buildNoResultsHintText("test");
+    for (const field of ["id", "doi", "pmid", "pmcid", "isbn", "url"]) {
+      expect(hint).toContain(field);
+    }
+  });
+
+  it("should include concrete examples", () => {
+    const hint = buildNoResultsHintText("test");
+    expect(hint).toContain("id:smith2023");
+    expect(hint).toContain("author:Smith");
+  });
+
+  it("should reference --help", () => {
+    const hint = buildNoResultsHintText("test");
+    expect(hint).toContain("--help");
   });
 });

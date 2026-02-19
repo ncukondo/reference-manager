@@ -55,7 +55,7 @@ import { collectSetOption, handleUpdateAction } from "./commands/update.js";
 import { handleUrlAction } from "./commands/url.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
-import { buildSearchHelpText } from "./help/search-help.js";
+import { buildNoResultsHintText, buildSearchHelpText } from "./help/search-help.js";
 import type { CliOptions } from "./helpers.js";
 import {
   ExitCode,
@@ -262,6 +262,8 @@ async function handleSearchAction(
     if (output) {
       const clipboardEnabled = resolveClipboardEnabled(globalOpts, config, false);
       await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
+    } else if (result.items.length === 0 && query) {
+      process.stderr.write(`${buildNoResultsHintText(query)}\n`);
     }
 
     setExitCode(ExitCode.SUCCESS);
