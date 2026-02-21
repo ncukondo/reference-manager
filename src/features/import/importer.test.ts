@@ -9,6 +9,7 @@ vi.mock("./fetcher.js", () => ({
   fetchPmids: vi.fn(),
   fetchDoi: vi.fn(),
   fetchIsbn: vi.fn(),
+  fetchArxiv: vi.fn(),
 }));
 
 // Mock the cache module
@@ -16,22 +17,26 @@ vi.mock("./cache.js", () => ({
   getPmidFromCache: vi.fn(),
   getDoiFromCache: vi.fn(),
   getIsbnFromCache: vi.fn(),
+  getArxivFromCache: vi.fn(),
   cachePmidResult: vi.fn(),
   cacheDoiResult: vi.fn(),
   cacheIsbnResult: vi.fn(),
+  cacheArxivResult: vi.fn(),
   resetCache: vi.fn(),
 }));
 
-import { getDoiFromCache, getIsbnFromCache, getPmidFromCache } from "./cache.js";
-import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
+import { getArxivFromCache, getDoiFromCache, getIsbnFromCache, getPmidFromCache } from "./cache.js";
+import { fetchArxiv, fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import { importFromContent, importFromIdentifiers } from "./importer.js";
 
 const mockFetchPmids = vi.mocked(fetchPmids);
 const mockFetchDoi = vi.mocked(fetchDoi);
 const mockFetchIsbn = vi.mocked(fetchIsbn);
+const mockFetchArxiv = vi.mocked(fetchArxiv);
 const mockGetPmidFromCache = vi.mocked(getPmidFromCache);
 const mockGetDoiFromCache = vi.mocked(getDoiFromCache);
 const mockGetIsbnFromCache = vi.mocked(getIsbnFromCache);
+const mockGetArxivFromCache = vi.mocked(getArxivFromCache);
 
 describe("importer", () => {
   beforeEach(() => {
@@ -39,6 +44,7 @@ describe("importer", () => {
     mockGetPmidFromCache.mockReturnValue(null);
     mockGetDoiFromCache.mockReturnValue(null);
     mockGetIsbnFromCache.mockReturnValue(null);
+    mockGetArxivFromCache.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -638,6 +644,105 @@ DP  - 2024`;
         const result = await importFromIdentifiers([], { pubmedConfig: {} });
 
         expect(result.results).toHaveLength(0);
+      });
+    });
+
+    describe("arXiv fetching", () => {
+      it("should fetch single arXiv ID", async () => {
+        const mockItem: CslItem = {
+          id: "",
+          type: "article",
+          title: "arXiv Paper",
+          custom: { arxiv_id: "2301.13867" },
+        };
+
+        mockFetchArxiv.mockResolvedValue({ success: true, item: mockItem });
+
+        const result = await importFromIdentifiers(["2301.13867"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        if (result.results[0].success) {
+          expect(result.results[0].source).toBe("2301.13867");
+        }
+        expect(mockFetchArxiv).toHaveBeenCalledWith("2301.13867");
+      });
+
+      it("should normalize arXiv URL before fetching", async () => {
+        const mockItem: CslItem = {
+          id: "",
+          type: "article",
+          title: "arXiv Paper",
+          custom: { arxiv_id: "2301.13867" },
+        };
+
+        mockFetchArxiv.mockResolvedValue({ success: true, item: mockItem });
+
+        const result = await importFromIdentifiers(["https://arxiv.org/abs/2301.13867"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        expect(mockFetchArxiv).toHaveBeenCalledWith("2301.13867");
+      });
+
+      it("should normalize arXiv: prefix before fetching", async () => {
+        const mockItem: CslItem = {
+          id: "",
+          type: "article",
+          title: "arXiv Paper",
+          custom: { arxiv_id: "2301.13867" },
+        };
+
+        mockFetchArxiv.mockResolvedValue({ success: true, item: mockItem });
+
+        const result = await importFromIdentifiers(["arXiv:2301.13867"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        expect(mockFetchArxiv).toHaveBeenCalledWith("2301.13867");
+      });
+
+      it("should handle arXiv not found", async () => {
+        mockFetchArxiv.mockResolvedValue({
+          success: false,
+          error: "arXiv not found",
+          reason: "not_found",
+        });
+
+        const result = await importFromIdentifiers(["2301.99999"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(false);
+      });
+
+      it("should use cached arXiv result", async () => {
+        const cachedItem: CslItem = {
+          id: "cached_arxiv",
+          type: "article",
+          title: "Cached arXiv Paper",
+          custom: { arxiv_id: "2301.13867" },
+        };
+
+        mockGetArxivFromCache.mockReturnValue(cachedItem);
+
+        const result = await importFromIdentifiers(["2301.13867"], {
+          pubmedConfig: {},
+        });
+
+        expect(result.results).toHaveLength(1);
+        expect(result.results[0].success).toBe(true);
+        if (result.results[0].success) {
+          expect(result.results[0].item.title).toBe("Cached arXiv Paper");
+        }
+        expect(mockFetchArxiv).not.toHaveBeenCalled();
       });
     });
 
