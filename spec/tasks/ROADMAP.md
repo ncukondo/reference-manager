@@ -91,6 +91,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 38**: Check Command (retraction/concern/version detection via Crossref & PubMed)
 - **Phase 39**: Check Command — Metadata Comparison (title/author similarity, metadata drift detection, fix actions)
 - **Phase 39**: Fulltext Get Multi-ID Support (variadic identifiers, JSON output format)
+- **Phase 40**: Fulltext Fetch Failure Diagnostics (checkedSources, skipped, attempts, actionable hints)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -98,15 +99,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-### Phase 40: Fulltext Fetch Failure Diagnostics
-
-Add structured diagnostic information to `fulltext fetch` failure output so users can understand which OA sources were checked, what was attempted, and why each attempt failed.
-
-- **Task**: `spec/tasks/20260221-01-fulltext-fetch-diagnostics.md`
-- **Scope**:
-  - Extend `FulltextFetchResult` with `checkedSources`, `discoveryErrors`, `attempts` fields
-  - Collect per-source discovery errors and per-download-attempt failure reasons
-  - Update CLI and MCP output formatting for diagnostic details
+(none)
 
 ---
 
