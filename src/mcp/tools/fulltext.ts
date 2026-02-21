@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Config } from "../../config/schema.js";
 import type { FulltextSource } from "../../config/schema.js";
 import {
+  type FulltextFetchResult,
   fulltextAttach,
   fulltextConvert,
   fulltextDetach,
@@ -326,7 +327,7 @@ export function registerFulltextFetchTool(
 
       if (!result.success) {
         return {
-          content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
+          content: [{ type: "text" as const, text: formatFetchError(result) }],
           isError: true,
         };
       }
@@ -342,6 +343,28 @@ export function registerFulltextFetchTool(
       };
     }
   );
+}
+
+function formatFetchError(result: FulltextFetchResult): string {
+  const lines: string[] = [result.error ?? "Unknown error"];
+  if (result.checkedSources && result.checkedSources.length > 0) {
+    lines.push(`Checked: ${result.checkedSources.join(", ")}`);
+  }
+  if (result.skipped && result.skipped.length > 0) {
+    const skippedParts = result.skipped.map((s) => `${s.source} (${s.reason})`);
+    lines.push(`Skipped: ${skippedParts.join(", ")}`);
+  }
+  for (const de of result.discoveryErrors ?? []) {
+    lines.push(`${de.source}: ${de.error}`);
+  }
+  for (const attempt of result.attempts ?? []) {
+    const fileType = attempt.fileType.toUpperCase();
+    lines.push(`${attempt.source}: ${fileType} ${attempt.phase} \u2192 ${attempt.error}`);
+  }
+  if (result.hint) {
+    lines.push(`Hint: ${result.hint}`);
+  }
+  return lines.join("\n");
 }
 
 /**

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Fulltext Fetch Failure Diagnostics**: `ref fulltext fetch` now provides structured diagnostic information on failure
+  - Shows which OA sources were checked (pmc, unpaywall, arxiv, core)
+  - Reports discovery-phase errors (API failures, missing config)
+  - Reports per-download-attempt failure reasons (HTTP 403, 404, conversion failure)
+  - Suggests `ref url <id>` when no OA sources found and reference has DOI
+  - MCP `fulltext_fetch` tool also includes diagnostics in error responses
+
 - **Fulltext Get Multi-ID Support**: `ref fulltext get` now accepts multiple identifiers
   - Variadic argument: `ref fulltext get id1 id2 id3`
   - Multi-line stdin input: pipe multiple IDs via stdin

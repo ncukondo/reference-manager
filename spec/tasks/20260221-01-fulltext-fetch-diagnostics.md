@@ -70,36 +70,36 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Extend the result type with `discoveryErrors`, `attempts`, and `checkedSources` fields.
 
-- [ ] Update `FulltextFetchResult` interface in `src/features/operations/fulltext/fetch.ts`
-- [ ] Add `FetchAttempt` interface
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Update `FulltextFetchResult` interface in `src/features/operations/fulltext/fetch.ts`
+- [x] Add `FetchAttempt` interface
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Collect discovery diagnostics in fulltextFetch
 
 Pass through `discovery.errors` and extract `checkedSources` from the discovery result.
 
-- [ ] Write test: `src/features/operations/fulltext/fetch.test.ts` — assert `discoveryErrors` and `checkedSources` are populated on failure
-- [ ] Implement: propagate `discovery.errors` and compute `checkedSources` from `discovery.locations` sources
-- [ ] Verify Green: `npm run test:unit -- fetch.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/operations/fulltext/fetch.test.ts` — assert `discoveryErrors` and `checkedSources` are populated on failure
+- [x] Implement: propagate `discovery.errors` and compute `checkedSources` from `discovery.locations` sources + `discovery.errors` sources
+- [x] Verify Green: `npm run test:unit -- fetch.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Collect download attempt details
 
 Modify `tryDownloadPdf`, `tryDownloadPmcXmlAndConvert`, `tryArxivHtmlFromLocations` to return failure reasons and accumulate `FetchAttempt[]`.
 
-- [ ] Write test: `src/features/operations/fulltext/fetch.test.ts` — assert `attempts` array contains per-source error details (HTTP 403, conversion failure, etc.)
-- [ ] Implement: thread `attempts` array through download helpers, capture `DownloadResult.error`
-- [ ] Verify Green: `npm run test:unit -- fetch.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/operations/fulltext/fetch.test.ts` — assert `attempts` array contains per-source error details (HTTP 403, conversion failure, etc.)
+- [x] Implement: thread `attempts` array through download helpers, capture `DownloadResult.error`
+- [x] Verify Green: `npm run test:unit -- fetch.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update CLI output formatting
 
 Update `formatFulltextFetchOutput` to display diagnostic details and hint on failure.
 
-- [ ] Write test: `src/cli/commands/fulltext.test.ts` — assert formatted output includes checked sources, attempt details, and hint
-- [ ] Implement: update `formatFulltextFetchOutput` in `src/cli/commands/fulltext.ts`
-- [ ] Verify Green: `npm run test:unit -- fulltext.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/cli/commands/fulltext.test.ts` — assert formatted output includes checked sources, attempt details, and hint
+- [x] Implement: update `formatFulltextFetchOutput` in `src/cli/commands/fulltext.ts`
+- [x] Verify Green: `npm run test:unit -- fulltext.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 Expected output format on failure (download failed):
 ```
@@ -123,10 +123,10 @@ The DOI URL (`https://doi.org/<DOI>`) is already available via `ref url` command
 
 Update `registerFulltextFetchTool` to include diagnostics in error response.
 
-- [ ] Write test: `src/mcp/tools/index.test.ts` — assert MCP error response includes diagnostic details
-- [ ] Implement: update MCP handler in `src/mcp/tools/fulltext.ts`
-- [ ] Verify Green: `npm run test:unit -- index.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/mcp/tools/fulltext.test.ts` — assert MCP error response includes diagnostic details
+- [x] Implement: update MCP handler in `src/mcp/tools/fulltext.ts`
+- [x] Verify Green: `npm run test:unit -- fulltext.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 

@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../../config/schema.js";
 import { Library } from "../../core/library.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
@@ -9,9 +9,11 @@ import { OperationsLibrary } from "../../features/operations/operations-library.
 import {
   type FulltextAttachToolParams,
   type FulltextDetachToolParams,
+  type FulltextFetchToolParams,
   type FulltextGetToolParams,
   registerFulltextAttachTool,
   registerFulltextDetachTool,
+  registerFulltextFetchTool,
   registerFulltextGetTool,
 } from "./fulltext.js";
 
@@ -375,6 +377,64 @@ describe("MCP fulltext tools", () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("No fulltext");
+    });
+  });
+
+  describe("registerFulltextFetchTool", () => {
+    it("should include diagnostic details in error response", async () => {
+      // Mock fulltextFetch to return a failure with diagnostics
+      vi.spyOn(
+        await import("../../features/operations/fulltext/index.js"),
+        "fulltextFetch"
+      ).mockResolvedValue({
+        success: false,
+        error: "No OA sources found for smith2024",
+        checkedSources: ["pmc", "unpaywall"],
+        discoveryErrors: [{ source: "core", error: "Invalid API key" }],
+        attempts: [
+          {
+            source: "unpaywall",
+            phase: "download" as const,
+            url: "https://example.com/paper.pdf",
+            fileType: "pdf" as const,
+            error: "HTTP 403 Forbidden",
+          },
+        ],
+        hint: "https://doi.org/10.1234/test",
+      });
+
+      let capturedCallback:
+        | ((
+            args: FulltextFetchToolParams
+          ) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }>)
+        | undefined;
+
+      const mockServer = {
+        registerTool: (
+          _name: string,
+          _config: unknown,
+          cb: NonNullable<typeof capturedCallback>
+        ) => {
+          capturedCallback = cb;
+        },
+      };
+
+      registerFulltextFetchTool(
+        mockServer as never,
+        () => libraryOperations,
+        () => config
+      );
+
+      const result = await capturedCallback?.({ id: "smith2024" });
+
+      expect(result?.isError).toBe(true);
+      const text = result?.content[0].text ?? "";
+      expect(text).toContain("No OA sources found for smith2024");
+      expect(text).toContain("Checked: pmc, unpaywall");
+      expect(text).toContain("core: Invalid API key");
+      expect(text).toContain("unpaywall: PDF download");
+      expect(text).toContain("HTTP 403 Forbidden");
+      expect(text).toContain("Hint: https://doi.org/10.1234/test");
     });
   });
 });
