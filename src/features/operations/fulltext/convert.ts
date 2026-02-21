@@ -54,12 +54,12 @@ export async function fulltextConvert(
     return { success: false, error: `Reference '${identifier}' not found` };
   }
 
-  const xmlFilename = findXmlFile(item as CslItem);
+  const xmlFilename = findXmlFile(item);
   if (!xmlFilename) {
     return { success: false, error: `No PMC XML file attached to '${identifier}'` };
   }
 
-  const xmlPath = getXmlPath(item as CslItem, xmlFilename, fulltextDirectory);
+  const xmlPath = getXmlPath(item, xmlFilename, fulltextDirectory);
 
   // Verify file exists on disk
   try {

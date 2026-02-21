@@ -342,7 +342,7 @@ export async function syncAttachments(
       }
     }
 
-    await updateAttachmentMetadata(library, item as CslItem, attachments, updatedFiles);
+    await updateAttachmentMetadata(library, item, attachments, updatedFiles);
     await library.save();
   }
 

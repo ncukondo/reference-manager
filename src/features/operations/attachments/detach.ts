@@ -178,7 +178,7 @@ export async function detachAttachment(
 
   // Update metadata
   const remainingFiles = attachments.files.filter((f) => !detachedFilenames.includes(f.filename));
-  await updateMetadata(library, item as CslItem, attachments, remainingFiles);
+  await updateMetadata(library, item, attachments, remainingFiles);
   await library.save();
 
   // Try to delete directory if empty and files were deleted

@@ -20,14 +20,14 @@ const CslDateSchema = z.object({
 });
 
 // Attachment file metadata
-const AttachmentFileSchema = z.object({
+export const AttachmentFileSchema = z.object({
   filename: z.string(),
   role: z.string(),
   label: z.string().optional(),
 });
 
 // Attachments container
-const AttachmentsSchema = z.object({
+export const AttachmentsSchema = z.object({
   directory: z.string(),
   files: z.array(AttachmentFileSchema),
 });

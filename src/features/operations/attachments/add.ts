@@ -197,7 +197,7 @@ export async function addAttachment(
   }
 
   // Check UUID
-  const uuid = (item as CslItem).custom?.uuid;
+  const uuid = item.custom?.uuid;
   if (!uuid) {
     return { success: false, error: "Reference has no UUID. Cannot create attachment directory." };
   }
@@ -264,7 +264,7 @@ export async function addAttachment(
     files: updatedFiles,
   };
 
-  await updateAttachmentMetadata(library, item as CslItem, updatedAttachments);
+  await updateAttachmentMetadata(library, item, updatedAttachments);
   await library.save();
 
   return {
