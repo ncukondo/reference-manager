@@ -40,6 +40,14 @@ export interface FulltextFetchOptions {
   force?: boolean | undefined;
 }
 
+export interface FetchAttempt {
+  source: string;
+  phase: "download" | "convert" | "attach";
+  url?: string;
+  fileType: "pdf" | "xml" | "html" | "markdown";
+  error: string;
+}
+
 export interface FulltextFetchResult {
   success: boolean;
   error?: string;
@@ -49,6 +57,14 @@ export interface FulltextFetchResult {
   source?: string;
   /** Which file types were attached */
   attachedFiles?: string[];
+  /** Discovery-phase errors from discoverOA */
+  discoveryErrors?: Array<{ source: string; error: string }>;
+  /** Per-download-attempt details */
+  attempts?: FetchAttempt[];
+  /** Which OA sources were checked */
+  checkedSources?: string[];
+  /** User-facing hint (e.g., suggesting manual download) */
+  hint?: string;
 }
 
 interface AttachContext {
