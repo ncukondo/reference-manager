@@ -394,6 +394,10 @@ function formatFetchErrorOutput(result: FulltextFetchResult): string {
   if (result.checkedSources && result.checkedSources.length > 0) {
     lines.push(`  Checked: ${result.checkedSources.join(", ")}`);
   }
+  if (result.skipped && result.skipped.length > 0) {
+    const skippedParts = result.skipped.map((s) => `${s.source} (${s.reason})`);
+    lines.push(`  Skipped: ${skippedParts.join(", ")}`);
+  }
   for (const de of result.discoveryErrors ?? []) {
     lines.push(`  ${de.source}: ${de.error}`);
   }

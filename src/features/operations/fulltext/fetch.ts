@@ -63,6 +63,8 @@ export interface FulltextFetchResult {
   attempts?: FetchAttempt[] | undefined;
   /** Which OA sources were checked */
   checkedSources?: string[] | undefined;
+  /** Sources that were skipped (e.g., missing credentials or identifiers) */
+  skipped?: Array<{ source: string; reason: string }> | undefined;
   /** User-facing hint (e.g., suggesting manual download) */
   hint?: string | undefined;
 }
@@ -284,11 +286,22 @@ async function checkExistingFulltext(
   return existing.success && existing.paths !== undefined;
 }
 
-function buildNoSourcesHint(item: CslItem): string | undefined {
+function buildHintUrls(item: CslItem): string[] {
   const urls: string[] = [];
   if (item.DOI) urls.push(`https://doi.org/${item.DOI}`);
   if (item.PMID) urls.push(`https://pubmed.ncbi.nlm.nih.gov/${item.PMID}/`);
-  return urls.length > 0 ? urls.join(", ") : undefined;
+  return urls;
+}
+
+function formatHint(prefix: string, urls: string[]): string {
+  if (urls.length === 0) return prefix;
+  if (urls.length === 1) return `${prefix}: ${urls[0]}`;
+  return `${prefix}:\n${urls.map((u) => `  ${u}`).join("\n")}`;
+}
+
+function buildNoSourcesHint(item: CslItem): string | undefined {
+  const urls = buildHintUrls(item);
+  return urls.length > 0 ? formatHint("open to download manually", urls) : undefined;
 }
 
 export async function fulltextFetch(
@@ -322,6 +335,7 @@ export async function fulltextFetch(
   );
 
   const discoveryErrors = discovery.errors.length > 0 ? discovery.errors : undefined;
+  const skipped = discovery.skipped.length > 0 ? discovery.skipped : undefined;
 
   const checkedSources = [
     ...new Set([
@@ -341,6 +355,7 @@ export async function fulltextFetch(
       error: `No OA sources found for ${identifier}`,
       discoveryErrors,
       checkedSources,
+      skipped,
       hint: buildNoSourcesHint(item),
     };
   }
@@ -366,7 +381,7 @@ export async function fulltextFetch(
       item.id,
       identifier
     );
-    return { ...result, discoveryErrors, checkedSources };
+    return { ...result, discoveryErrors, checkedSources, skipped };
   } finally {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
@@ -396,7 +411,10 @@ function buildDownloadError(
   attempts: FetchAttempt[]
 ): FulltextFetchResult {
   const attemptUrls = attempts.filter((a) => a.url).map((a) => a.url as string);
-  const hint = attemptUrls.length > 0 ? attemptUrls.join(", ") : undefined;
+  const hint =
+    attemptUrls.length > 0
+      ? formatHint("open to download manually (may require institutional access)", attemptUrls)
+      : undefined;
   const pdfLocation = locations.find((loc) => loc.urlType === "pdf");
   if (pdfLocation) {
     return {

@@ -1233,10 +1233,27 @@ describe("fulltext command", () => {
         success: false,
         error: "No OA sources found for Smith-2024",
         checkedSources: ["pmc", "unpaywall"],
-        hint: "https://doi.org/10.1234/test",
+        hint: "open to download manually: https://doi.org/10.1234/test",
       });
 
-      expect(output).toContain("Hint: https://doi.org/10.1234/test");
+      expect(output).toContain("Hint: open to download manually: https://doi.org/10.1234/test");
+    });
+
+    it("should format error with skipped sources", () => {
+      const output = formatFulltextFetchOutput({
+        success: false,
+        error: "No OA sources found for Smith-2024",
+        checkedSources: ["unpaywall"],
+        skipped: [
+          { source: "pmc", reason: "no PMCID or PMID available" },
+          { source: "core", reason: "coreApiKey not configured" },
+        ],
+      });
+
+      expect(output).toContain("Checked: unpaywall");
+      expect(output).toContain(
+        "Skipped: pmc (no PMCID or PMID available), core (coreApiKey not configured)"
+      );
     });
 
     it("should format error with discovery errors", () => {
