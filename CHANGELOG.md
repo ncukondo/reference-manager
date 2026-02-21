@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **arXiv ID Import Support**: `ref add` now accepts arXiv IDs as a fourth identifier type
+  - Supports bare IDs (`2301.13867`), versioned (`2301.13867v2`), prefixed (`arXiv:2301.13867`), and URLs (`https://arxiv.org/abs/2301.13867`)
+  - Fetches metadata from arXiv Atom API with journal DOI priority over arXiv DOI
+  - Stores arXiv ID in `custom.arxiv_id` for fulltext discovery and duplicate detection
+  - Rate-limited to 1 req/sec with in-memory cache
+  - Duplicate detection matches on `custom.arxiv_id` (version-insensitive)
+  - Fulltext discovery passes arXiv ID for direct OA source lookup
+  - CLI: `--input arxiv` format option, shell completion updated
+
 ### Changed
 
 - **CslCustomSchema Type Refinement**: Added typed zod schemas for `arxiv_id`, `attachments`, and `check` fields in `CslCustomSchema`
