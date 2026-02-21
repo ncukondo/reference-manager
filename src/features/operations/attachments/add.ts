@@ -213,7 +213,7 @@ export async function addAttachment(
   const filename = generateFilename(role, ext, label);
 
   // Get existing attachments
-  const existingAttachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const existingAttachments = item.custom?.attachments;
   const existingFiles = existingAttachments?.files ?? [];
 
   // Create new attachment file entry

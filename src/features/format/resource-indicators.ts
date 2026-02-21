@@ -1,5 +1,4 @@
 import type { CslItem } from "../../core/csl-json/types.js";
-import type { Attachments } from "../attachments/types.js";
 import { getExtension } from "../attachments/types.js";
 import {
   extensionToFormat,
@@ -14,7 +13,7 @@ import {
 export function buildResourceIndicators(item: CslItem): string {
   const labels: string[] = [];
 
-  const attachments = item.custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   const fulltextFiles = findFulltextFiles(attachments);
 
   // pdf - Fulltext PDF

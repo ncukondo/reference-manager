@@ -9,7 +9,7 @@ export interface AttachmentFile {
   /** Role identifier (e.g., "fulltext", "supplement", "notes") */
   role: string;
   /** Human-readable label (optional) */
-  label?: string;
+  label?: string | undefined;
 }
 
 /**

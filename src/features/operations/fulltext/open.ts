@@ -6,7 +6,6 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { openWithSystemApp } from "../../../utils/opener.js";
 import type { Attachments } from "../../attachments/types.js";
@@ -100,7 +99,7 @@ export async function fulltextOpen(
   }
 
   // Get attachments metadata
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
 
   // Determine which type to open
   const typeToOpen = type ?? determineTypeToOpen(attachments, preferredType);

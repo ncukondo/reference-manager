@@ -64,9 +64,9 @@ Affected files:
 - `src/features/attachments/directory-manager.ts`
 - Any other files accessing `custom.attachments` via cast
 
-- [ ] Implement: update to use typed custom fields
-- [ ] Verify Green: `npm run test:unit -- attachments`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: update to use typed custom fields
+- [x] Verify Green: `npm run test:unit -- attachments`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update metadata spec
 

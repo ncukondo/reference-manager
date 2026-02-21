@@ -155,7 +155,7 @@ export async function detachAttachment(
   }
 
   // Get attachments
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   if (!attachments || attachments.files.length === 0) {
     return errorResult(`No attachments for reference '${identifier}'`);
   }
