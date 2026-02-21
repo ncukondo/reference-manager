@@ -37,10 +37,10 @@ The `AttachmentsSchema` and `CheckDataSchema` should be zod schemas that match t
 
 **Important**: `.passthrough()` must be retained on `CslCustomSchema` for external tool compatibility.
 
-- [ ] Write test: `src/core/csl-json/types.test.ts` — validate that CslCustomSchema accepts and correctly parses `attachments`, `check`, and `arxiv_id` fields; verify passthrough still works for unknown fields
-- [ ] Implement: Add zod schemas and update `CslCustomSchema`
-- [ ] Verify Green: `npm run test:unit -- types.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/core/csl-json/types.test.ts` — validate that CslCustomSchema accepts and correctly parses `attachments`, `check`, and `arxiv_id` fields; verify passthrough still works for unknown fields
+- [x] Implement: Add zod schemas and update `CslCustomSchema`
+- [x] Verify Green: `npm run test:unit -- types.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Remove `as Record<string, unknown>` casts for `check`
 
@@ -51,10 +51,10 @@ Affected lines:
 - `const check = item.custom?.check as Record<string, unknown> | undefined` → direct typed access
 - `const existingCustom = (item.custom ?? {}) as Record<string, unknown>` → typed spread
 
-- [ ] Write test: verify existing check tests still pass with typed access
-- [ ] Implement: update `check.ts` to use typed custom fields
-- [ ] Verify Green: `npm run test:unit -- check`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: verify existing check tests still pass with typed access
+- [x] Implement: update `check.ts` to use typed custom fields
+- [x] Verify Green: `npm run test:unit -- check`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Remove untyped access for `attachments`
 
@@ -64,21 +64,21 @@ Affected files:
 - `src/features/attachments/directory-manager.ts`
 - Any other files accessing `custom.attachments` via cast
 
-- [ ] Implement: update to use typed custom fields
-- [ ] Verify Green: `npm run test:unit -- attachments`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: update to use typed custom fields
+- [x] Verify Green: `npm run test:unit -- attachments`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Update metadata spec
 
 Update `spec/features/metadata.md` to document the typed custom fields including `arxiv_id`.
 
-- [ ] Update spec with `arxiv_id`, `attachments`, and `check` field documentation
+- [x] Update spec with `arxiv_id`, `attachments`, and `check` field documentation (already documented)
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [ ] Move this file to `spec/tasks/completed/` (done on main after merge)

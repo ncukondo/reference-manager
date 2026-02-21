@@ -6,7 +6,6 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { normalizePathForOutput } from "../../../utils/path.js";
 import type { AttachmentFile, Attachments } from "../../attachments/types.js";
@@ -167,7 +166,7 @@ export async function fulltextGet(
   }
 
   // Get attachments metadata
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
 
   // Stdout mode with specific type
   if (stdout && type) {

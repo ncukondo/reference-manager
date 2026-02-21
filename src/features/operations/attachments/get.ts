@@ -4,10 +4,9 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { normalizePathForOutput } from "../../../utils/path.js";
-import type { AttachmentFile, Attachments } from "../../attachments/types.js";
+import type { AttachmentFile } from "../../attachments/types.js";
 
 /**
  * Options for getAttachment operation
@@ -77,7 +76,7 @@ export async function getAttachment(
   }
 
   // Get attachments
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   if (!attachments || attachments.files.length === 0) {
     return { success: false, error: `No attachments for reference '${identifier}'` };
   }

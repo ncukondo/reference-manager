@@ -4,7 +4,6 @@
  * Uses attachments system internally with role='fulltext'.
  */
 
-import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import type { AttachmentFile, Attachments } from "../../attachments/types.js";
 import { detachAttachment } from "../attachments/detach.js";
@@ -137,7 +136,7 @@ export async function fulltextDetach(
   }
 
   // Get attachments metadata
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
 
   // Find fulltext files
   const fulltextFiles = findFulltextFiles(attachments);

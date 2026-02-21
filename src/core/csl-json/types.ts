@@ -19,6 +19,33 @@ const CslDateSchema = z.object({
   literal: z.string().optional(),
 });
 
+// Attachment file metadata
+export const AttachmentFileSchema = z.object({
+  filename: z.string(),
+  role: z.string(),
+  label: z.string().optional(),
+});
+
+// Attachments container
+export const AttachmentsSchema = z.object({
+  directory: z.string(),
+  files: z.array(AttachmentFileSchema),
+});
+
+// Check finding
+const CheckFindingSchema = z.object({
+  type: z.string(),
+  message: z.string(),
+  details: z.record(z.string(), z.unknown()).optional(),
+});
+
+// Check result data
+const CheckDataSchema = z.object({
+  checked_at: z.string(),
+  status: z.string(),
+  findings: z.array(CheckFindingSchema),
+});
+
 // CSL-JSON Custom Metadata
 // uuid, created_at, timestamp are optional in schema because:
 // 1. Other software (e.g., Zotero) may set custom fields without these
@@ -30,6 +57,9 @@ const CslCustomSchema = z
     timestamp: z.string().optional(),
     additional_urls: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
+    arxiv_id: z.string().optional(),
+    attachments: AttachmentsSchema.optional(),
+    check: CheckDataSchema.optional(),
   })
   .passthrough();
 

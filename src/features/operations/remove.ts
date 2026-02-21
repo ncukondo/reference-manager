@@ -2,7 +2,6 @@ import { rmdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../core/library-interface.js";
-import type { Attachments } from "../attachments/types.js";
 import type { FulltextType } from "../fulltext/index.js";
 import { extensionToFormat, findFulltextFiles } from "./fulltext-adapter/index.js";
 
@@ -39,7 +38,7 @@ export function getFulltextAttachmentTypes(item: CslItem): FulltextType[] {
   const types: FulltextType[] = [];
 
   // Check attachments structure
-  const attachments = item.custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   const fulltextFiles = findFulltextFiles(attachments);
   for (const file of fulltextFiles) {
     const ext = file.filename.split(".").pop()?.toLowerCase();
@@ -59,7 +58,7 @@ async function deleteFulltextFiles(item: CslItem, fulltextDirectory: string): Pr
   const filesToDelete: string[] = [];
 
   // Check attachments structure
-  const attachments = item.custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   if (attachments?.directory) {
     const fulltextFiles = findFulltextFiles(attachments);
     for (const file of fulltextFiles) {

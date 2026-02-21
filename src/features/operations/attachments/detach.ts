@@ -155,7 +155,7 @@ export async function detachAttachment(
   }
 
   // Get attachments
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   if (!attachments || attachments.files.length === 0) {
     return errorResult(`No attachments for reference '${identifier}'`);
   }
@@ -178,7 +178,7 @@ export async function detachAttachment(
 
   // Update metadata
   const remainingFiles = attachments.files.filter((f) => !detachedFilenames.includes(f.filename));
-  await updateMetadata(library, item as CslItem, attachments, remainingFiles);
+  await updateMetadata(library, item, attachments, remainingFiles);
   await library.save();
 
   // Try to delete directory if empty and files were deleted

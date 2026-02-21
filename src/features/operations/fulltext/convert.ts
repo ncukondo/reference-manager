@@ -9,7 +9,6 @@ import { join } from "node:path";
 import { convertPmcXmlToMarkdown } from "@ncukondo/academic-fulltext";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
-import type { Attachments } from "../../attachments/types.js";
 import { fulltextAttach } from "./attach.js";
 
 export interface FulltextConvertOptions {
@@ -29,7 +28,7 @@ export interface FulltextConvertResult {
 }
 
 function findXmlFile(item: CslItem): string | undefined {
-  const attachments = item.custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   if (!attachments?.files) return undefined;
 
   const xmlFile = attachments.files.find(
@@ -39,7 +38,7 @@ function findXmlFile(item: CslItem): string | undefined {
 }
 
 function getXmlPath(item: CslItem, xmlFilename: string, fulltextDirectory: string): string {
-  const attachments = item.custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   const directory = attachments?.directory ?? "";
   return join(fulltextDirectory, directory, xmlFilename);
 }
@@ -55,12 +54,12 @@ export async function fulltextConvert(
     return { success: false, error: `Reference '${identifier}' not found` };
   }
 
-  const xmlFilename = findXmlFile(item as CslItem);
+  const xmlFilename = findXmlFile(item);
   if (!xmlFilename) {
     return { success: false, error: `No PMC XML file attached to '${identifier}'` };
   }
 
-  const xmlPath = getXmlPath(item as CslItem, xmlFilename, fulltextDirectory);
+  const xmlPath = getXmlPath(item, xmlFilename, fulltextDirectory);
 
   // Verify file exists on disk
   try {

@@ -298,7 +298,7 @@ export async function syncAttachments(
   }
 
   // Get attachments info
-  const attachments = (item as CslItem).custom?.attachments as Attachments | undefined;
+  const attachments = item.custom?.attachments;
   if (!attachments?.directory) {
     return errorResult(`No attachments for reference: ${identifier}`);
   }
@@ -342,7 +342,7 @@ export async function syncAttachments(
       }
     }
 
-    await updateAttachmentMetadata(library, item as CslItem, attachments, updatedFiles);
+    await updateAttachmentMetadata(library, item, attachments, updatedFiles);
     await library.save();
   }
 

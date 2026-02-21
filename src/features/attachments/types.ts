@@ -1,26 +1,18 @@
 import path from "node:path";
+import type { z } from "zod";
+import type { AttachmentFileSchema, AttachmentsSchema } from "../../core/csl-json/types.js";
 
 /**
- * Attachment file metadata stored in reference's custom field
+ * Attachment file metadata stored in reference's custom field.
+ * Derived from AttachmentFileSchema (Zod) to ensure single source of truth.
  */
-export interface AttachmentFile {
-  /** Filename without path (e.g., "fulltext.pdf") */
-  filename: string;
-  /** Role identifier (e.g., "fulltext", "supplement", "notes") */
-  role: string;
-  /** Human-readable label (optional) */
-  label?: string;
-}
+export type AttachmentFile = z.infer<typeof AttachmentFileSchema>;
 
 /**
- * Attachments container stored in reference's custom.attachments field
+ * Attachments container stored in reference's custom.attachments field.
+ * Derived from AttachmentsSchema (Zod) to ensure single source of truth.
  */
-export interface Attachments {
-  /** Directory name relative to attachments base (e.g., "Smith-2024-PMID12345678-123e4567") */
-  directory: string;
-  /** List of attached files */
-  files: AttachmentFile[];
-}
+export type Attachments = z.infer<typeof AttachmentsSchema>;
 
 /**
  * Reserved role identifiers with special constraints

@@ -118,12 +118,11 @@ async function resolveDirectory(
  */
 async function updateDirectoryMetadata(
   library: ILibrary,
-  ref: ReferenceForAttachments,
+  item: CslItem,
   dirPath: string
 ): Promise<void> {
   const dirName = basename(dirPath);
-  const item = ref as CslItem;
-  await library.update(ref.id, {
+  await library.update(item.id, {
     custom: {
       ...item.custom,
       attachments: {
@@ -206,7 +205,7 @@ export async function openAttachment(
 
   // Update metadata if directory was created and no attachments metadata exists yet
   if (directoryCreated && !attachments?.directory) {
-    await updateDirectoryMetadata(library, ref, dirPath);
+    await updateDirectoryMetadata(library, item, dirPath);
   }
 
   // Resolve target path
