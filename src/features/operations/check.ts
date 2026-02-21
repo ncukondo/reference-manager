@@ -79,10 +79,10 @@ function fillSkippedResults(tasks: IndexedTask[], results: CheckResult[]): void 
     if (task.skip) {
       results[task.index] = {
         id: task.item.id,
-        uuid: (task.item.custom?.uuid as string) ?? "",
+        uuid: task.item.custom?.uuid ?? "",
         status: "skipped",
         findings: [],
-        checkedAt: (task.item.custom?.check as Record<string, unknown>)?.checked_at as string,
+        checkedAt: task.item.custom?.check?.checked_at ?? "",
         checkedSources: [],
       };
     }
@@ -116,7 +116,7 @@ async function checkInParallel(
 function buildFallbackResult(item: CslItem): CheckResult {
   return {
     id: item.id,
-    uuid: (item.custom?.uuid as string) ?? "",
+    uuid: item.custom?.uuid ?? "",
     status: "ok",
     findings: [],
     checkedAt: new Date().toISOString(),
@@ -179,12 +179,12 @@ async function resolveItems(library: ILibrary, options: CheckOperationOptions): 
 function shouldSkipRecentCheck(item: CslItem, skipDays: number): boolean {
   if (skipDays <= 0) return false;
 
-  const check = item.custom?.check as Record<string, unknown> | undefined;
-  if (!check?.checked_at) return false;
+  const checkedAt = item.custom?.check?.checked_at;
+  if (!checkedAt) return false;
 
-  const checkedAt = new Date(check.checked_at as string);
+  const checkedAtDate = new Date(checkedAt);
   const now = new Date();
-  const daysSince = (now.getTime() - checkedAt.getTime()) / (1000 * 60 * 60 * 24);
+  const daysSince = (now.getTime() - checkedAtDate.getTime()) / (1000 * 60 * 60 * 24);
   return daysSince < skipDays;
 }
 
@@ -206,9 +206,8 @@ async function saveCheckResult(
     })),
   };
 
-  const existingCustom = (item.custom ?? {}) as Record<string, unknown>;
   await library.update(item.id, {
-    custom: { ...existingCustom, check: checkData },
+    custom: { ...item.custom, check: checkData },
   });
 }
 

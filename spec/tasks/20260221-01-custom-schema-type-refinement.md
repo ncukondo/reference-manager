@@ -51,10 +51,10 @@ Affected lines:
 - `const check = item.custom?.check as Record<string, unknown> | undefined` → direct typed access
 - `const existingCustom = (item.custom ?? {}) as Record<string, unknown>` → typed spread
 
-- [ ] Write test: verify existing check tests still pass with typed access
-- [ ] Implement: update `check.ts` to use typed custom fields
-- [ ] Verify Green: `npm run test:unit -- check`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: verify existing check tests still pass with typed access
+- [x] Implement: update `check.ts` to use typed custom fields
+- [x] Verify Green: `npm run test:unit -- check`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Remove untyped access for `attachments`
 
