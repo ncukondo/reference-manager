@@ -171,6 +171,32 @@ function checkIsbnMatch(item: CslItem, existing: CslItem): DuplicateMatch | null
 }
 
 /**
+ * Check for arXiv ID match
+ */
+function checkArxivMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
+  const itemArxivId = item.custom?.arxiv_id;
+  const existingArxivId = existing.custom?.arxiv_id;
+
+  if (!itemArxivId || !existingArxivId) {
+    return null;
+  }
+
+  // Compare base IDs (strip version suffix for matching)
+  const stripVersion = (id: string): string => id.replace(/v\d+$/, "");
+  if (stripVersion(itemArxivId) === stripVersion(existingArxivId)) {
+    return {
+      type: "arxiv",
+      existing,
+      details: {
+        arxiv_id: existingArxivId,
+      },
+    };
+  }
+
+  return null;
+}
+
+/**
  * Check if two items match by Title + Author + Year
  */
 function checkTitleAuthorYearMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
@@ -231,7 +257,13 @@ function checkSingleDuplicate(item: CslItem, existing: CslItem): DuplicateMatch 
     return isbnMatch;
   }
 
-  // Priority 4: Title + Author + Year matching (lowest priority)
+  // Priority 4: arXiv ID matching
+  const arxivMatch = checkArxivMatch(item, existing);
+  if (arxivMatch) {
+    return arxivMatch;
+  }
+
+  // Priority 5: Title + Author + Year matching (lowest priority)
   return checkTitleAuthorYearMatch(item, existing);
 }
 
