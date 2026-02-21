@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **CslCustomSchema Type Refinement**: Added typed zod schemas for `arxiv_id`, `attachments`, and `check` fields in `CslCustomSchema`
+  - Replaced `as Record<string, unknown>` casts with typed access throughout the codebase
+  - Passthrough preserved for external tool compatibility
+
 ### Added
 
 - **Fulltext Fetch Failure Diagnostics**: `ref fulltext fetch` now provides structured diagnostic information on failure
