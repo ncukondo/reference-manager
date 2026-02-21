@@ -1233,10 +1233,10 @@ describe("fulltext command", () => {
         success: false,
         error: "No OA sources found for Smith-2024",
         checkedSources: ["pmc", "unpaywall"],
-        hint: "try 'ref url Smith-2024' to open the publisher page",
+        hint: "https://doi.org/10.1234/test",
       });
 
-      expect(output).toContain("Hint: try 'ref url Smith-2024' to open the publisher page");
+      expect(output).toContain("Hint: https://doi.org/10.1234/test");
     });
 
     it("should format error with discovery errors", () => {

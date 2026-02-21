@@ -232,7 +232,7 @@ describe("fulltextFetch", () => {
     expect(result.checkedSources).toContain("unpaywall");
   });
 
-  it("should include hint when no OA sources found and reference has DOI", async () => {
+  it("should include DOI URL as hint when no OA sources found and reference has DOI", async () => {
     vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
     mockedDiscoverOA.mockResolvedValue({
       oaStatus: "closed",
@@ -247,10 +247,10 @@ describe("fulltextFetch", () => {
       fulltextDirectory: "/fulltext",
     });
 
-    expect(result.hint).toBe("try 'ref url test-id' to open the publisher page");
+    expect(result.hint).toBe("https://doi.org/10.1234/test");
   });
 
-  it("should not include hint when reference has no DOI", async () => {
+  it("should include PubMed URL as hint when reference has only PMID", async () => {
     vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { PMID: "12345678" }));
     mockedDiscoverOA.mockResolvedValue({
       oaStatus: "closed",
@@ -265,7 +265,29 @@ describe("fulltextFetch", () => {
       fulltextDirectory: "/fulltext",
     });
 
-    expect(result.hint).toBeUndefined();
+    expect(result.hint).toBe("https://pubmed.ncbi.nlm.nih.gov/12345678/");
+  });
+
+  it("should include both DOI and PubMed URLs as hint when reference has both", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(
+      createItem("test-id", { DOI: "10.1234/test", PMID: "12345678" })
+    );
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "closed",
+      locations: [],
+      errors: [],
+      discoveredIds: {},
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.hint).toBe(
+      "https://doi.org/10.1234/test, https://pubmed.ncbi.nlm.nih.gov/12345678/"
+    );
   });
 
   it("should download PDF and attach when source available", async () => {
@@ -450,6 +472,33 @@ describe("fulltextFetch", () => {
         error: "HTTP 403 Forbidden",
       })
     );
+  });
+
+  it("should include attempted URLs as hint when all downloads fail", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "unpaywall",
+          url: "https://example.com/paper.pdf",
+          urlType: "pdf",
+          version: "published",
+        },
+      ],
+      errors: [],
+      discoveredIds: {},
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: false, error: "HTTP 403 Forbidden" });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.hint).toBe("https://example.com/paper.pdf");
   });
 
   it("should include attempts for PMC XML download failure", async () => {

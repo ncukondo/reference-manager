@@ -284,6 +284,13 @@ async function checkExistingFulltext(
   return existing.success && existing.paths !== undefined;
 }
 
+function buildNoSourcesHint(item: CslItem): string | undefined {
+  const urls: string[] = [];
+  if (item.DOI) urls.push(`https://doi.org/${item.DOI}`);
+  if (item.PMID) urls.push(`https://pubmed.ncbi.nlm.nih.gov/${item.PMID}/`);
+  return urls.length > 0 ? urls.join(", ") : undefined;
+}
+
 export async function fulltextFetch(
   library: ILibrary,
   options: FulltextFetchOptions
@@ -329,13 +336,12 @@ export async function fulltextFetch(
   }
 
   if (locations.length === 0) {
-    const hint = item.DOI ? `try 'ref url ${identifier}' to open the publisher page` : undefined;
     return {
       success: false,
       error: `No OA sources found for ${identifier}`,
       discoveryErrors,
       checkedSources,
-      hint,
+      hint: buildNoSourcesHint(item),
     };
   }
 
@@ -384,15 +390,22 @@ async function tryArxivHtmlFromLocations(
   return { attached: mdAttached, source: "arxiv" };
 }
 
-function buildDownloadError(locations: OALocation[], identifier: string): FulltextFetchResult {
+function buildDownloadError(
+  locations: OALocation[],
+  identifier: string,
+  attempts: FetchAttempt[]
+): FulltextFetchResult {
+  const attemptUrls = attempts.filter((a) => a.url).map((a) => a.url as string);
+  const hint = attemptUrls.length > 0 ? attemptUrls.join(", ") : undefined;
   const pdfLocation = locations.find((loc) => loc.urlType === "pdf");
   if (pdfLocation) {
     return {
       success: false,
       error: `Failed to download from ${pdfLocation.source}: download failed`,
+      hint,
     };
   }
-  return { success: false, error: `Failed to download fulltext for ${identifier}` };
+  return { success: false, error: `Failed to download fulltext for ${identifier}`, hint };
 }
 
 async function downloadAndAttach(
@@ -436,7 +449,7 @@ async function downloadAndAttach(
   }
 
   return {
-    ...buildDownloadError(locations, identifier),
+    ...buildDownloadError(locations, identifier, attempts),
     attempts: attempts.length > 0 ? attempts : undefined,
   };
 }

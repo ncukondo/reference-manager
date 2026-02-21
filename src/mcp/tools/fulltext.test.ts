@@ -400,7 +400,7 @@ describe("MCP fulltext tools", () => {
             error: "HTTP 403 Forbidden",
           },
         ],
-        hint: "try 'ref url smith2024' to open the publisher page",
+        hint: "https://doi.org/10.1234/test",
       });
 
       let capturedCallback:
@@ -434,7 +434,7 @@ describe("MCP fulltext tools", () => {
       expect(text).toContain("core: Invalid API key");
       expect(text).toContain("unpaywall: PDF download");
       expect(text).toContain("HTTP 403 Forbidden");
-      expect(text).toContain("try 'ref url smith2024'");
+      expect(text).toContain("Hint: https://doi.org/10.1234/test");
     });
   });
 });
