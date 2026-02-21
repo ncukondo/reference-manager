@@ -375,7 +375,7 @@ export function formatFulltextDiscoverOutput(
  */
 export function formatFulltextFetchOutput(result: FulltextFetchResult): string {
   if (!result.success) {
-    return `Error: ${result.error}`;
+    return formatFetchErrorOutput(result);
   }
 
   const lines: string[] = [];
@@ -386,6 +386,24 @@ export function formatFulltextFetchOutput(result: FulltextFetchResult): string {
     lines.push(`Attached ${file}: fulltext.${file === "markdown" ? "md" : file}`);
   }
 
+  return lines.join("\n");
+}
+
+function formatFetchErrorOutput(result: FulltextFetchResult): string {
+  const lines: string[] = [`Error: ${result.error}`];
+  if (result.checkedSources && result.checkedSources.length > 0) {
+    lines.push(`  Checked: ${result.checkedSources.join(", ")}`);
+  }
+  for (const de of result.discoveryErrors ?? []) {
+    lines.push(`  ${de.source}: ${de.error}`);
+  }
+  for (const attempt of result.attempts ?? []) {
+    const fileType = attempt.fileType.toUpperCase();
+    lines.push(`  ${attempt.source}: ${fileType} ${attempt.phase} \u2192 ${attempt.error}`);
+  }
+  if (result.hint) {
+    lines.push(`  Hint: ${result.hint}`);
+  }
   return lines.join("\n");
 }
 

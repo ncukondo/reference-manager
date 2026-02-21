@@ -20,6 +20,7 @@ import {
   executeFulltextOpen,
   formatFulltextAttachOutput,
   formatFulltextDetachOutput,
+  formatFulltextFetchOutput,
   formatFulltextGetJsonOutput,
   formatFulltextGetOutput,
   formatFulltextOpenOutput,
@@ -1173,5 +1174,101 @@ describe("fulltext command", () => {
     it.todo("get should be tested via E2E tests");
     it.todo("detach should be tested via E2E tests");
     it.todo("open should be tested via E2E tests");
+  });
+
+  describe("formatFulltextFetchOutput", () => {
+    it("should format success output with source and attached files", () => {
+      const output = formatFulltextFetchOutput({
+        success: true,
+        referenceId: "Smith-2024",
+        source: "unpaywall",
+        attachedFiles: ["pdf", "markdown"],
+      });
+
+      expect(output).toContain("Source: unpaywall");
+      expect(output).toContain("Attached pdf: fulltext.pdf");
+      expect(output).toContain("Attached markdown: fulltext.md");
+    });
+
+    it("should format error with checked sources", () => {
+      const output = formatFulltextFetchOutput({
+        success: false,
+        error: "No OA sources found for Smith-2024",
+        checkedSources: ["pmc", "unpaywall"],
+      });
+
+      expect(output).toContain("Error: No OA sources found for Smith-2024");
+      expect(output).toContain("Checked: pmc, unpaywall");
+    });
+
+    it("should format error with attempt details", () => {
+      const output = formatFulltextFetchOutput({
+        success: false,
+        error: "Failed to download fulltext for Smith-2024",
+        checkedSources: ["pmc", "unpaywall", "arxiv"],
+        attempts: [
+          {
+            source: "unpaywall",
+            phase: "download",
+            url: "https://example.com/paper.pdf",
+            fileType: "pdf",
+            error: "HTTP 403 Forbidden",
+          },
+          {
+            source: "pmc",
+            phase: "download",
+            fileType: "xml",
+            error: "HTTP 404 Not Found",
+          },
+        ],
+      });
+
+      expect(output).toContain("Checked: pmc, unpaywall, arxiv");
+      expect(output).toContain("unpaywall: PDF download → HTTP 403 Forbidden");
+      expect(output).toContain("pmc: XML download → HTTP 404 Not Found");
+    });
+
+    it("should format error with hint", () => {
+      const output = formatFulltextFetchOutput({
+        success: false,
+        error: "No OA sources found for Smith-2024",
+        checkedSources: ["pmc", "unpaywall"],
+        hint: "try 'ref url Smith-2024' to open the publisher page",
+      });
+
+      expect(output).toContain("Hint: try 'ref url Smith-2024' to open the publisher page");
+    });
+
+    it("should format error with discovery errors", () => {
+      const output = formatFulltextFetchOutput({
+        success: false,
+        error: "No OA sources found for Smith-2024",
+        discoveryErrors: [
+          { source: "unpaywall", error: "API rate limit exceeded" },
+          { source: "core", error: "Invalid API key" },
+        ],
+        checkedSources: ["unpaywall", "core"],
+      });
+
+      expect(output).toContain("unpaywall: API rate limit exceeded");
+      expect(output).toContain("core: Invalid API key");
+    });
+
+    it("should include convert phase in attempt formatting", () => {
+      const output = formatFulltextFetchOutput({
+        success: false,
+        error: "Failed to download fulltext for Smith-2024",
+        attempts: [
+          {
+            source: "pmc",
+            phase: "convert",
+            fileType: "xml",
+            error: "Invalid XML structure",
+          },
+        ],
+      });
+
+      expect(output).toContain("pmc: XML convert → Invalid XML structure");
+    });
   });
 });
