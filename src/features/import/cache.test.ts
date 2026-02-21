@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CslItem } from "../../core/csl-json/types.js";
 import {
   type CacheConfig,
+  cacheArxivResult,
   cacheDoiResult,
   cacheIsbnResult,
   cachePmidResult,
+  getArxivFromCache,
   getDoiFromCache,
   getIsbnFromCache,
   getPmidFromCache,
@@ -209,20 +211,44 @@ describe("cache module", () => {
     });
   });
 
+  describe("arXiv cache", () => {
+    it("should return undefined for uncached arXiv ID", () => {
+      const result = getArxivFromCache("2301.13867");
+      expect(result).toBeUndefined();
+    });
+
+    it("should cache and retrieve arXiv result", () => {
+      cacheArxivResult("2301.13867", mockCslItem);
+      const result = getArxivFromCache("2301.13867");
+      expect(result).toEqual(mockCslItem);
+    });
+
+    it("should return undefined after TTL expires", () => {
+      cacheArxivResult("2301.13867", mockCslItem);
+
+      vi.advanceTimersByTime(60 * 60 * 1000 + 1);
+
+      const result = getArxivFromCache("2301.13867");
+      expect(result).toBeUndefined();
+    });
+  });
+
   describe("cache isolation", () => {
-    it("should keep PMID, DOI and ISBN caches separate", () => {
-      // Use same key for all (hypothetical edge case)
+    it("should keep PMID, DOI, ISBN, and arXiv caches separate", () => {
       const pmidItem: CslItem = { ...mockCslItem, title: "PMID Article" };
       const doiItem: CslItem = { ...mockCslItem, title: "DOI Article" };
       const isbnItem: CslItem = { ...mockCslItem, title: "ISBN Book" };
+      const arxivItem: CslItem = { ...mockCslItem, title: "arXiv Preprint" };
 
       cachePmidResult("12345678", pmidItem);
       cacheDoiResult("12345678", doiItem);
       cacheIsbnResult("12345678", isbnItem);
+      cacheArxivResult("12345678", arxivItem);
 
       expect(getPmidFromCache("12345678")?.title).toBe("PMID Article");
       expect(getDoiFromCache("12345678")?.title).toBe("DOI Article");
       expect(getIsbnFromCache("12345678")?.title).toBe("ISBN Book");
+      expect(getArxivFromCache("12345678")?.title).toBe("arXiv Preprint");
     });
   });
 
@@ -231,12 +257,14 @@ describe("cache module", () => {
       cachePmidResult("12345678", mockCslItem);
       cacheDoiResult("10.1000/test", mockCslItem);
       cacheIsbnResult("9784000000000", mockCslItem);
+      cacheArxivResult("2301.13867", mockCslItem);
 
       resetCache();
 
       expect(getPmidFromCache("12345678")).toBeUndefined();
       expect(getDoiFromCache("10.1000/test")).toBeUndefined();
       expect(getIsbnFromCache("9784000000000")).toBeUndefined();
+      expect(getArxivFromCache("2301.13867")).toBeUndefined();
     });
   });
 });

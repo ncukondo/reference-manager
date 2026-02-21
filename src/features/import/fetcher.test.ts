@@ -19,6 +19,7 @@ import {
   type FetchResult,
   type FetchResults,
   type PubmedConfig,
+  fetchArxiv,
   fetchDoi,
   fetchIsbn,
   fetchPmids,
@@ -466,6 +467,200 @@ describe("fetchIsbn", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No data");
+    });
+  });
+});
+
+describe("fetchArxiv", () => {
+  beforeEach(() => {
+    resetRateLimiters();
+    mockFetch.mockReset();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const makeAtomXml = (opts: {
+    title?: string;
+    authors?: string[];
+    summary?: string;
+    published?: string;
+    journalDoi?: string;
+    arxivId?: string;
+    pdfLink?: string;
+  }): string => {
+    const id = opts.arxivId ?? "2301.13867";
+    const authorEntries = (opts.authors ?? ["Test Author"]).map(
+      (a) => `<author><name>${a}</name></author>`
+    );
+    const doiEl = opts.journalDoi
+      ? `<arxiv:doi xmlns:arxiv="http://arxiv.org/schemas/atom">${opts.journalDoi}</arxiv:doi>`
+      : "";
+    const pdfLink = opts.pdfLink
+      ? `<link title="pdf" href="${opts.pdfLink}" rel="related" type="application/pdf"/>`
+      : "";
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/${id}</id>
+    <title>${opts.title ?? "Test Paper"}</title>
+    ${authorEntries.join("\n    ")}
+    <summary>${opts.summary ?? "Test abstract"}</summary>
+    <published>${opts.published ?? "2023-01-30T18:00:00Z"}</published>
+    ${doiEl}
+    ${pdfLink}
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.AI"/>
+  </entry>
+</feed>`;
+  };
+
+  describe("successful fetching", () => {
+    it("should fetch arXiv metadata and return CSL-JSON", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            makeAtomXml({
+              title: "Large Language Models",
+              authors: ["Alice Smith", "Bob Jones"],
+              summary: "We present a new approach.",
+              published: "2023-01-30T18:00:00Z",
+            })
+          ),
+      });
+
+      const result = await fetchArxiv("2301.13867");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.item.title).toBe("Large Language Models");
+        expect(result.item.author).toEqual([{ literal: "Alice Smith" }, { literal: "Bob Jones" }]);
+        expect(result.item.abstract).toBe("We present a new approach.");
+        expect(result.item.issued).toEqual({ "date-parts": [[2023, 1, 30]] });
+        expect(result.item.custom?.arxiv_id).toBe("2301.13867");
+        expect(result.item.URL).toBe("https://arxiv.org/abs/2301.13867");
+        // Without journal DOI, should use arXiv DOI
+        expect(result.item.DOI).toBe("10.48550/arXiv.2301.13867");
+      }
+    });
+
+    it("should prefer journal DOI over arXiv DOI", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            makeAtomXml({
+              title: "Published Paper",
+              journalDoi: "10.1234/journal.2023.001",
+            })
+          ),
+      });
+
+      const result = await fetchArxiv("2301.13867");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.item.DOI).toBe("10.1234/journal.2023.001");
+        expect(result.item.custom?.arxiv_id).toBe("2301.13867");
+      }
+    });
+
+    it("should handle arXiv ID with version suffix", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            makeAtomXml({
+              title: "Versioned Paper",
+              arxivId: "2301.13867v2",
+            })
+          ),
+      });
+
+      const result = await fetchArxiv("2301.13867v2");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.item.custom?.arxiv_id).toBe("2301.13867v2");
+      }
+    });
+
+    it("should set type to article", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(makeAtomXml({})),
+      });
+
+      const result = await fetchArxiv("2301.13867");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.item.type).toBe("article");
+      }
+    });
+  });
+
+  describe("error handling", () => {
+    it("should return error for invalid arXiv ID format", async () => {
+      const result = await fetchArxiv("invalid");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Invalid arXiv ID");
+        expect(result.reason).toBe("validation_error");
+      }
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("should return error for network failure", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      const result = await fetchArxiv("2301.13867");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Network error");
+        expect(result.reason).toBe("fetch_error");
+      }
+    });
+
+    it("should return error for HTTP error status", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve("Internal Server Error"),
+      });
+
+      const result = await fetchArxiv("2301.13867");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.reason).toBe("fetch_error");
+      }
+    });
+
+    it("should return not_found for empty feed (no entry)", async () => {
+      const emptyFeed = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <opensearch:totalResults xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">0</opensearch:totalResults>
+</feed>`;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(emptyFeed),
+      });
+
+      const result = await fetchArxiv("9999.99999");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.reason).toBe("not_found");
+      }
     });
   });
 });

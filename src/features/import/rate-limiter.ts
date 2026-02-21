@@ -10,7 +10,7 @@
 /**
  * API types supported by the rate limiter
  */
-export type ApiType = "pubmed" | "crossref" | "isbn";
+export type ApiType = "pubmed" | "crossref" | "isbn" | "arxiv";
 
 /**
  * Configuration for rate limiter
@@ -39,6 +39,7 @@ const RATE_LIMITS = {
   },
   crossref: 50, // 50 req/sec
   isbn: 10, // 10 req/sec (conservative for Google Books API daily limit)
+  arxiv: 1, // 1 req/sec (arXiv API is strict about rate limiting)
 } as const;
 
 /**
@@ -126,6 +127,8 @@ function getRequestsPerSecond(api: ApiType, config: RateLimiterConfig): number {
       return RATE_LIMITS.crossref;
     case "isbn":
       return RATE_LIMITS.isbn;
+    case "arxiv":
+      return RATE_LIMITS.arxiv;
   }
 }
 
