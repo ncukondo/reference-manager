@@ -92,22 +92,13 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 39**: Check Command — Metadata Comparison (title/author similarity, metadata drift detection, fix actions)
 - **Phase 39**: Fulltext Get Multi-ID Support (variadic identifiers, JSON output format)
 - **Phase 40**: Fulltext Fetch Failure Diagnostics (checkedSources, skipped, attempts, actionable hints)
+- **Phase 41**: CslCustomSchema Type Refinement (typed `attachments`, `check`, `arxiv_id` fields, z.infer unification, cast removal)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ---
 
 ## Active Tasks
-
-### Phase 41: CslCustomSchema Type Refinement
-
-Add typed optional fields (`attachments`, `check`, `arxiv_id`) to `CslCustomSchema`. Currently these fields rely on `.passthrough()` and require `as Record<string, unknown>` casts. This improves type safety and IDE completion.
-
-- **Task**: `spec/tasks/20260221-01-custom-schema-type-refinement.md`
-- **Scope**:
-  - Add `arxiv_id`, `attachments`, `check` as typed optional fields in `CslCustomSchema`
-  - Remove `as Record<string, unknown>` casts in `check.ts` and attachment code
-  - Update `spec/features/metadata.md`
 
 ### Phase 42: arXiv ID Import Support
 
