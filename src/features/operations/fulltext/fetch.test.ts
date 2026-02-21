@@ -179,6 +179,95 @@ describe("fulltextFetch", () => {
     expect(result.error).toBe("No OA sources found for test-id");
   });
 
+  it("should include discoveryErrors when discoverOA returns errors", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "closed",
+      locations: [],
+      errors: [
+        { source: "unpaywall", error: "API rate limit exceeded" },
+        { source: "core", error: "Invalid API key" },
+      ],
+      discoveredIds: {},
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.discoveryErrors).toEqual([
+      { source: "unpaywall", error: "API rate limit exceeded" },
+      { source: "core", error: "Invalid API key" },
+    ]);
+  });
+
+  it("should include checkedSources from locations and errors", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [
+        {
+          source: "pmc",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1234567/",
+          urlType: "xml",
+          version: "published",
+        },
+      ],
+      errors: [{ source: "unpaywall", error: "API error" }],
+      discoveredIds: {},
+    });
+    mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
+    mockedDownloadPmcXml.mockResolvedValue({ success: false, error: "404 Not Found" });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.checkedSources).toContain("pmc");
+    expect(result.checkedSources).toContain("unpaywall");
+  });
+
+  it("should include hint when no OA sources found and reference has DOI", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "closed",
+      locations: [],
+      errors: [],
+      discoveredIds: {},
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.hint).toBe("try 'ref url test-id' to open the publisher page");
+  });
+
+  it("should not include hint when reference has no DOI", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { PMID: "12345678" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "closed",
+      locations: [],
+      errors: [],
+      discoveredIds: {},
+    });
+
+    const result = await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(result.hint).toBeUndefined();
+  });
+
   it("should download PDF and attach when source available", async () => {
     vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
     mockedDiscoverOA.mockResolvedValue({

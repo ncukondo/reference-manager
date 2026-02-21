@@ -70,16 +70,16 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Extend the result type with `discoveryErrors`, `attempts`, and `checkedSources` fields.
 
-- [ ] Update `FulltextFetchResult` interface in `src/features/operations/fulltext/fetch.ts`
-- [ ] Add `FetchAttempt` interface
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Update `FulltextFetchResult` interface in `src/features/operations/fulltext/fetch.ts`
+- [x] Add `FetchAttempt` interface
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Collect discovery diagnostics in fulltextFetch
 
 Pass through `discovery.errors` and extract `checkedSources` from the discovery result.
 
 - [ ] Write test: `src/features/operations/fulltext/fetch.test.ts` — assert `discoveryErrors` and `checkedSources` are populated on failure
-- [ ] Implement: propagate `discovery.errors` and compute `checkedSources` from `discovery.locations` sources
+- [ ] Implement: propagate `discovery.errors` and compute `checkedSources` from `discovery.locations` sources + `discovery.errors` sources
 - [ ] Verify Green: `npm run test:unit -- fetch.test.ts`
 - [ ] Lint/Type check: `npm run lint && npm run typecheck`
 

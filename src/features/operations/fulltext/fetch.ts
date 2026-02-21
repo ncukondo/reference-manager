@@ -50,21 +50,21 @@ export interface FetchAttempt {
 
 export interface FulltextFetchResult {
   success: boolean;
-  error?: string;
+  error?: string | undefined;
   /** The reference ID used for display */
-  referenceId?: string;
+  referenceId?: string | undefined;
   /** Which source was used */
-  source?: string;
+  source?: string | undefined;
   /** Which file types were attached */
-  attachedFiles?: string[];
+  attachedFiles?: string[] | undefined;
   /** Discovery-phase errors from discoverOA */
-  discoveryErrors?: Array<{ source: string; error: string }>;
+  discoveryErrors?: Array<{ source: string; error: string }> | undefined;
   /** Per-download-attempt details */
-  attempts?: FetchAttempt[];
+  attempts?: FetchAttempt[] | undefined;
   /** Which OA sources were checked */
-  checkedSources?: string[];
+  checkedSources?: string[] | undefined;
   /** User-facing hint (e.g., suggesting manual download) */
-  hint?: string;
+  hint?: string | undefined;
 }
 
 interface AttachContext {
@@ -245,13 +245,29 @@ export async function fulltextFetch(
     buildDiscoveryConfig(fulltextConfig)
   );
 
+  const discoveryErrors = discovery.errors.length > 0 ? discovery.errors : undefined;
+
+  const checkedSources = [
+    ...new Set([
+      ...discovery.locations.map((loc) => loc.source),
+      ...discovery.errors.map((err) => err.source),
+    ]),
+  ];
+
   let locations = discovery.locations;
   if (source) {
     locations = locations.filter((loc) => loc.source === source);
   }
 
   if (locations.length === 0) {
-    return { success: false, error: `No OA sources found for ${identifier}` };
+    const hint = item.DOI ? `try 'ref url ${identifier}' to open the publisher page` : undefined;
+    return {
+      success: false,
+      error: `No OA sources found for ${identifier}`,
+      discoveryErrors,
+      checkedSources,
+      hint,
+    };
   }
 
   const effectivePmcid =
@@ -267,7 +283,15 @@ export async function fulltextFetch(
   };
 
   try {
-    return await downloadAndAttach(locations, effectivePmcid, tempDir, ctx, item.id, identifier);
+    const result = await downloadAndAttach(
+      locations,
+      effectivePmcid,
+      tempDir,
+      ctx,
+      item.id,
+      identifier
+    );
+    return { ...result, discoveryErrors, checkedSources };
   } finally {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
