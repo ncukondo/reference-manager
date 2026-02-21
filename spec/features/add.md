@@ -12,13 +12,13 @@ reference-manager add [input...]
 
 Where `input` can be:
 - File path(s) - format detected by extension or content
-- Identifier(s) - PMID or DOI
+- Identifier(s) - PMID, DOI, ISBN, or arXiv ID
 - stdin - when no arguments provided
 
 ## Options
 
 ```
--i, --input <format>  Input format: json|bibtex|ris|pmid|doi|isbn|auto (default: auto)
+-i, --input <format>  Input format: json|bibtex|ris|pmid|doi|isbn|arxiv|auto (default: auto)
 -f, --force           Skip duplicate detection
 -o, --output <format> Output format: json|text (default: text)
 --full                Include full CSL-JSON data in JSON output
@@ -40,6 +40,7 @@ See `spec/features/json-output.md` for JSON output schema and examples.
 | PMID | - | Numeric only, or `PMID:` prefix |
 | DOI | - | Starts with `10.` or DOI URL |
 | ISBN | - | `ISBN:` prefix required (see below) |
+| arXiv | - | `NNNN.NNNNN` pattern, `arXiv:` prefix, or arXiv URL (see below) |
 
 ### NBIB (PubMed MEDLINE) Format
 
@@ -71,6 +72,22 @@ Supported formats:
 - ISBN-13: 13 digits (starting with 978 or 979)
 - ISBN-10: 10 digits (last may be X for check digit)
 
+### arXiv ID Input Patterns
+
+All recognized as arXiv ID:
+- `2301.13867` (bare ID)
+- `2301.13867v2` (with version)
+- `arXiv:2301.13867` (with prefix, case-insensitive)
+- `https://arxiv.org/abs/2301.13867`
+- `https://arxiv.org/pdf/2301.13867`
+- `https://arxiv.org/html/2301.13867v2`
+
+Normalized form: `2301.13867` or `2301.13867v2` (version preserved).
+
+Pattern: `\d{4}\.\d{4,5}(v\d+)?` — does not conflict with PMID (no decimal point), DOI (starts with `10.`), or ISBN (requires prefix).
+
+arXiv ID is stored in `custom.arxiv_id`. The `DOI` field receives the journal DOI if available from arXiv API, otherwise the arXiv DOI (`10.48550/arXiv.<id>`). See `spec/features/metadata.md` for details.
+
 ## Behavior
 
 ### Input Detection
@@ -81,7 +98,7 @@ Supported formats:
 ### Format Detection (auto mode)
 
 - **Files**: Extension priority, then content-based
-- **Identifiers**: `10.` prefix or DOI URL → DOI; numeric only → PMID
+- **Identifiers**: `10.` prefix or DOI URL → DOI; `NNNN.NNNNN` pattern or arXiv URL → arXiv; `ISBN:` prefix → ISBN; numeric only → PMID
 
 ### Duplicate Detection
 
@@ -112,6 +129,10 @@ reference-manager add 12345678
 # Add by DOI
 reference-manager add 10.1000/xyz
 
+# Add by arXiv ID
+reference-manager add 2301.13867
+reference-manager add arXiv:2301.13867v2
+
 # Multiple inputs
 reference-manager add paper.json 12345678 10.1000/abc
 
@@ -140,6 +161,7 @@ reference-manager add 12345678 -o json --full
 - `@citation-js/plugin-isbn`: ISBN fetching (Google Books API, Open Library)
 
 PMID fetching uses PMC Citation Exporter API directly (see ADR-007).
+arXiv fetching uses arXiv Atom API directly (`http://export.arxiv.org/api/query`).
 
 ## Rate Limiting
 
@@ -149,3 +171,4 @@ PMID fetching uses PMC Citation Exporter API directly (see ADR-007).
 | PubMed (with API key) | 10 req/sec |
 | Crossref (DOI) | 50 req/sec |
 | Google Books (ISBN) | 1,000 req/day |
+| arXiv | 1 req/3sec (see arXiv API ToS) |

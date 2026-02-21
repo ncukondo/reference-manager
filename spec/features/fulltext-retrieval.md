@@ -41,7 +41,7 @@ No OA sources found for Smith-2024
 ```
 
 **Requirements:**
-- Reference must have a DOI (primary lookup key for Unpaywall) or PMID (for PMC lookup)
+- Reference must have a DOI (primary lookup key for Unpaywall), PMID (for PMC lookup), or arXiv ID (`custom.arxiv_id` for arXiv lookup)
 - Reports all available sources with URLs and OA status/type
 
 ### `fulltext fetch`
@@ -73,7 +73,7 @@ ref fulltext fetch <ref-id-1> <ref-id-2> <ref-id-3>
 
 **Behavior:**
 
-1. Resolve reference and extract DOI/PMID
+1. Resolve reference and extract DOI/PMID/arXiv ID
 2. Discover available OA sources (or use `--source` directly)
 3. Download from best available source (per `prefer_sources` config)
 4. Auto-attach using existing `fulltext attach` mechanism
@@ -213,7 +213,7 @@ See: `spec/architecture/http-server.md`
 | Situation | Message | Exit Code |
 |-----------|---------|-----------|
 | Reference not found | `Reference not found: <id>` | 1 |
-| No DOI or PMID on reference | `No DOI or PMID found for <id>. Cannot discover OA sources.` | 1 |
+| No DOI, PMID, or arXiv ID on reference | `No DOI, PMID, or arXiv ID found for <id>. Cannot discover OA sources.` | 1 |
 | No OA source available | `No OA sources found for <id>` (with checked sources list) | 1 |
 | Unpaywall email not configured | `Warning: unpaywall_email not set. Unpaywall source skipped.` (stderr, non-fatal) | 0 |
 | CORE API key not configured (when --source core) | `CORE API key not configured. Set fulltext.sources.core_api_key in config.` | 1 |

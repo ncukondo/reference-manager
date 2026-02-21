@@ -99,7 +99,30 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-(none)
+### Phase 41: CslCustomSchema Type Refinement
+
+Add typed optional fields (`attachments`, `check`, `arxiv_id`) to `CslCustomSchema`. Currently these fields rely on `.passthrough()` and require `as Record<string, unknown>` casts. This improves type safety and IDE completion.
+
+- **Task**: `spec/tasks/20260221-01-custom-schema-type-refinement.md`
+- **Scope**:
+  - Add `arxiv_id`, `attachments`, `check` as typed optional fields in `CslCustomSchema`
+  - Remove `as Record<string, unknown>` casts in `check.ts` and attachment code
+  - Update `spec/features/metadata.md`
+
+### Phase 42: arXiv ID Import Support
+
+Add arXiv ID as a supported identifier type for `ref add`. Fetches metadata from arXiv Atom API, stores arXiv ID in `custom.arxiv_id`, and enhances fulltext discovery.
+
+- **Task**: `spec/tasks/20260221-02-arxiv-id-import.md`
+- **Depends on**: Phase 41
+- **Scope**:
+  - Detection and normalization of arXiv IDs (prefix-less: `2301.13867`)
+  - arXiv Atom API metadata fetching → CSL-JSON
+  - Journal DOI preferred over arXiv DOI
+  - Cache, rate limiter, importer integration
+  - Fulltext discovery enhancement (`buildDiscoveryArticle` uses `custom.arxiv_id`)
+  - Duplicate detection on `custom.arxiv_id`
+  - Update `spec/features/add.md`, `spec/features/fulltext-retrieval.md`
 
 ---
 

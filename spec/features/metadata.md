@@ -56,6 +56,21 @@
   - **Serialization (memory → file)**: Join array elements with `"; "` (semicolon + space)
 - Empty keyword arrays serialize to undefined (field omitted from CSL-JSON)
 
+## arXiv ID
+
+- Stored in `custom.arxiv_id` field
+- Format: string containing arXiv identifier (e.g. `"2301.13867"`, `"2301.13867v2"`)
+- Version suffixes are preserved as-is
+- Example:
+  ```json
+  "custom": {
+    "arxiv_id": "2301.13867v2"
+  }
+  ```
+- When a journal DOI is available, `DOI` field holds the journal DOI; arXiv ID is stored separately in `custom.arxiv_id`
+- When no journal DOI exists, `DOI` field holds the arXiv DOI (`10.48550/arXiv.<id>`)
+- `URL` field is set to `https://arxiv.org/abs/<id>` for quick access
+
 ## Custom Metadata
 
 - Stored in `custom` field as an object
@@ -70,9 +85,18 @@
       "https://example.com/resource2"
     ],
     "tags": ["review", "important", "to-read"],
-    "fulltext": {
-      "pdf": "Smith-2024-PMID12345678-123e4567-e89b-12d3-a456-426614174000.pdf",
-      "markdown": "Smith-2024-PMID12345678-123e4567-e89b-12d3-a456-426614174000.md"
+    "arxiv_id": "2301.13867",
+    "attachments": {
+      "directory": "Smith-2024-PMID12345678-123e4567",
+      "files": [
+        { "filename": "fulltext.pdf", "role": "fulltext" },
+        { "filename": "fulltext.md", "role": "fulltext" }
+      ]
+    },
+    "check": {
+      "checked_at": "2024-06-01T00:00:00.000Z",
+      "status": "ok",
+      "findings": []
     }
   }
   ```
@@ -81,9 +105,15 @@
   - `timestamp`: ISO 8601 timestamp when reference was added (required, auto-generated)
   - `additional_urls`: Optional array of additional URLs (optional)
   - `tags`: User-defined tags for categorization and search (optional, array of strings)
-  - `fulltext`: Attached full-text files (optional, see `fulltext.md`)
-    - `pdf`: PDF filename in fulltext directory
-    - `markdown`: Markdown filename in fulltext directory
+  - `arxiv_id`: arXiv identifier (optional, e.g. `"2301.13867"`)
+  - `attachments`: Attachment metadata (optional, see `attachments.md`)
+    - `directory`: Directory name relative to attachments base
+    - `files`: Array of `{ filename, role, label? }` objects
+  - `check`: Check result data (optional, see `check.md`)
+    - `checked_at`: ISO 8601 timestamp of last check
+    - `status`: Check status (`"ok"`, `"retracted"`, `"warning"`, etc.)
+    - `findings`: Array of finding objects
+- All typed fields are optional and validated by zod schema
 - Unknown fields are preserved (passthrough) for external tool compatibility
 
 ## Tags
