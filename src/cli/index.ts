@@ -478,9 +478,13 @@ function registerAddCommand(program: Command): void {
   program
     .command("add")
     .description("Add new reference(s) to the library")
-    .argument("[input...]", "File paths or identifiers (PMID/DOI/ISBN), or use stdin")
+    .argument("[input...]", "File paths or identifiers (PMID/DOI/ISBN/arXiv), or use stdin")
     .option("-f, --force", "Skip duplicate detection")
-    .option("-i, --input <format>", "Input format: json|bibtex|ris|pmid|doi|isbn|auto", "auto")
+    .option(
+      "-i, --input <format>",
+      "Input format: json|bibtex|ris|pmid|doi|isbn|arxiv|auto",
+      "auto"
+    )
     .option("--verbose", "Show detailed error information")
     .option("-o, --output <format>", "Output format: json|text", "text")
     .option("--full", "Include full CSL-JSON data in JSON output")

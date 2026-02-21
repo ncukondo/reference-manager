@@ -568,8 +568,9 @@ async function processIdentifiers(
     const isValidPmid = isPmid(input);
     const isValidDoi = isDoi(input);
     const isValidIsbn = isIsbn(input);
+    const isValidArxiv = isArxiv(input);
 
-    if (isValidPmid || isValidDoi || isValidIsbn) {
+    if (isValidPmid || isValidDoi || isValidIsbn || isValidArxiv) {
       validIdentifiers.push(input);
     } else {
       // Not a valid identifier
@@ -578,7 +579,7 @@ async function processIdentifiers(
         : "";
       results.push({
         success: false,
-        error: `Cannot interpret '${input}' as identifier (not a valid PMID, DOI, or ISBN).${hint}`,
+        error: `Cannot interpret '${input}' as identifier (not a valid PMID, DOI, ISBN, or arXiv ID).${hint}`,
         source: input,
         reason: "validation_error",
       });
@@ -653,7 +654,7 @@ async function processStdinContent(
   }
 
   // If explicit identifier format, split and process
-  if (format === "pmid" || format === "doi" || format === "isbn") {
+  if (format === "pmid" || format === "doi" || format === "isbn" || format === "arxiv") {
     const identifiers = content.split(/\s+/).filter((s) => s.length > 0);
     return processIdentifiers(identifiers, options);
   }
