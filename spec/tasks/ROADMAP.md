@@ -98,7 +98,15 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-(No active tasks)
+### Phase 40: Fulltext Fetch Failure Diagnostics
+
+Add structured diagnostic information to `fulltext fetch` failure output so users can understand which OA sources were checked, what was attempted, and why each attempt failed.
+
+- **Task**: `spec/tasks/20260221-01-fulltext-fetch-diagnostics.md`
+- **Scope**:
+  - Extend `FulltextFetchResult` with `checkedSources`, `discoveryErrors`, `attempts` fields
+  - Collect per-source discovery errors and per-download-attempt failure reasons
+  - Update CLI and MCP output formatting for diagnostic details
 
 ---
 

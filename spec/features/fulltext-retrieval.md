@@ -214,15 +214,47 @@ See: `spec/architecture/http-server.md`
 |-----------|---------|-----------|
 | Reference not found | `Reference not found: <id>` | 1 |
 | No DOI or PMID on reference | `No DOI or PMID found for <id>. Cannot discover OA sources.` | 1 |
-| No OA source available | `No OA sources found for <id>` | 1 |
+| No OA source available | `No OA sources found for <id>` (with checked sources list) | 1 |
 | Unpaywall email not configured | `Warning: unpaywall_email not set. Unpaywall source skipped.` (stderr, non-fatal) | 0 |
 | CORE API key not configured (when --source core) | `CORE API key not configured. Set fulltext.sources.core_api_key in config.` | 1 |
-| Download failed | `Failed to download from <source>: <reason>` | 1 |
+| Download failed | `Failed to download from <source>: <reason>` (with per-attempt details) | 1 |
 | Network error | `Network error: <details>` | 1 |
 | Conversion failed | `Failed to convert PMC XML to Markdown: <reason>` | 1 |
 | Fulltext already attached (no --force) | `Fulltext already attached to <id>. Use --force to overwrite.` | 1 |
 
 See: `spec/patterns/error-handling.md`
+
+### Failure Diagnostics
+
+When `fulltext fetch` fails, the result includes structured diagnostic information:
+
+- **`checkedSources`**: Which OA sources were checked (e.g., `["pmc", "unpaywall", "arxiv"]`)
+- **`discoveryErrors`**: Per-source errors from the discovery phase (e.g., API failures)
+- **`attempts`**: Per-download-attempt details including source, URL, file type, and error reason
+
+**CLI output format on failure (download failed):**
+
+```
+Error: Failed to download fulltext for Smith-2024
+  Checked: pmc, unpaywall, arxiv
+  unpaywall: PDF https://example.com/paper.pdf → HTTP 403 Forbidden
+  pmc: XML download failed → HTTP 404 Not Found
+  arxiv: not available
+```
+
+**CLI output format on failure (no OA sources):**
+
+```
+Error: No OA sources found for Smith-2024
+  Checked: pmc, unpaywall
+  Hint: try 'ref url Smith-2024' to open the publisher page
+```
+
+When no OA sources are found, users with subscriptions can use `ref url <id>` to open the publisher page for manual download, then attach via `ref fulltext attach`.
+
+**MCP tool response on failure** includes the same diagnostic fields in the error text.
+
+See: `src/features/operations/fulltext/fetch.ts` for `FulltextFetchResult` and `FetchAttempt` types.
 
 ### Retry Behavior
 
