@@ -37,10 +37,10 @@ The `AttachmentsSchema` and `CheckDataSchema` should be zod schemas that match t
 
 **Important**: `.passthrough()` must be retained on `CslCustomSchema` for external tool compatibility.
 
-- [ ] Write test: `src/core/csl-json/types.test.ts` — validate that CslCustomSchema accepts and correctly parses `attachments`, `check`, and `arxiv_id` fields; verify passthrough still works for unknown fields
-- [ ] Implement: Add zod schemas and update `CslCustomSchema`
-- [ ] Verify Green: `npm run test:unit -- types.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/core/csl-json/types.test.ts` — validate that CslCustomSchema accepts and correctly parses `attachments`, `check`, and `arxiv_id` fields; verify passthrough still works for unknown fields
+- [x] Implement: Add zod schemas and update `CslCustomSchema`
+- [x] Verify Green: `npm run test:unit -- types.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Remove `as Record<string, unknown>` casts for `check`
 
