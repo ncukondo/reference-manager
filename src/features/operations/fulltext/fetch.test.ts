@@ -47,7 +47,7 @@ describe("fulltextFetch", () => {
 
   const createItem = (
     id: string,
-    overrides?: { DOI?: string; PMID?: string; PMCID?: string }
+    overrides?: { DOI?: string; PMID?: string; PMCID?: string; custom?: Record<string, string> }
   ): CslItem => ({
     id,
     type: "article",
@@ -59,6 +59,7 @@ describe("fulltextFetch", () => {
       uuid: `${id}-uuid`,
       created_at: "2024-01-01T00:00:00.000Z",
       timestamp: "2024-01-01T00:00:00.000Z",
+      ...overrides?.custom,
     },
   });
 
@@ -104,6 +105,30 @@ describe("fulltextFetch", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("No DOI or PMID found for test-id. Cannot discover OA sources.");
+  });
+
+  it("should pass arxiv_id from custom to discovery", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(
+      createItem("test-id", { DOI: "10.1234/test", custom: { arxiv_id: "2301.13867" } })
+    );
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "closed",
+      locations: [],
+      checkedSources: ["unpaywall"],
+      errors: [],
+      skipped: [],
+    });
+
+    await fulltextFetch(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+      fulltextDirectory: "/fulltext",
+    });
+
+    expect(mockedDiscoverOA).toHaveBeenCalledWith(
+      expect.objectContaining({ doi: "10.1234/test", arxivId: "2301.13867" }),
+      expect.any(Object)
+    );
   });
 
   it("should return error when fulltext already attached without force", async () => {
