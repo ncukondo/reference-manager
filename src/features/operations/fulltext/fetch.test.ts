@@ -142,6 +142,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -169,6 +170,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -192,6 +194,7 @@ describe("fulltextFetch", () => {
       ],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -222,6 +225,7 @@ describe("fulltextFetch", () => {
       errors: [{ source: "unpaywall", error: "API error" }],
       discoveredIds: {},
       skipped: [],
+      checkedSources: ["pmc", "unpaywall"],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: false, error: "404 Not Found" });
@@ -247,6 +251,7 @@ describe("fulltextFetch", () => {
         { source: "pmc", reason: "no PMCID or PMID available" },
         { source: "core", reason: "coreApiKey not configured" },
       ],
+      checkedSources: ["unpaywall"],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -270,6 +275,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -289,6 +295,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -308,6 +315,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -331,6 +339,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
 
     const result = await fulltextFetch(mockLibrary, {
@@ -359,6 +368,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -399,6 +409,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
@@ -445,6 +456,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -483,6 +495,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "403 Forbidden" });
 
@@ -511,6 +524,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "HTTP 403 Forbidden" });
 
@@ -548,6 +562,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "HTTP 403 Forbidden" });
 
@@ -580,6 +595,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: false, error: "HTTP 404 Not Found" });
@@ -618,6 +634,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
@@ -655,6 +672,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadArxivHtml.mockResolvedValue({ success: false, error: "HTTP 404 Not Found" });
@@ -691,6 +709,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -724,6 +743,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: { pmcid: "PMC9999999" },
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
@@ -765,6 +785,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: { pmcid: "PMC9999999" },
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
@@ -802,6 +823,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedFulltextAttach.mockResolvedValue({
@@ -835,6 +857,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadArxivHtml.mockResolvedValue({ success: true, size: 10000 });
@@ -884,6 +907,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: false, error: "No PDF URL" });
     mockedDownloadPmcXml.mockResolvedValue({ success: true, size: 5000 });
@@ -926,6 +950,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedDownloadArxivHtml.mockResolvedValue({ success: true, size: 10000 });
@@ -969,6 +994,7 @@ describe("fulltextFetch", () => {
       errors: [],
       discoveredIds: {},
       skipped: [],
+      checkedSources: [],
     });
     mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
     mockedDownloadArxivHtml.mockResolvedValue({ success: false, error: "404 Not Found" });

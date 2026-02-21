@@ -337,12 +337,7 @@ export async function fulltextFetch(
   const discoveryErrors = discovery.errors.length > 0 ? discovery.errors : undefined;
   const skipped = discovery.skipped.length > 0 ? discovery.skipped : undefined;
 
-  const checkedSources = [
-    ...new Set([
-      ...discovery.locations.map((loc) => loc.source),
-      ...discovery.errors.map((err) => err.source),
-    ]),
-  ];
+  const checkedSources = discovery.checkedSources.length > 0 ? discovery.checkedSources : undefined;
 
   let locations = discovery.locations;
   if (source) {

@@ -54,7 +54,7 @@
     "@citation-js/plugin-ris": "^0.7.21",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "@ncukondo/academic-fulltext": "^0.2.5",
+    "@ncukondo/academic-fulltext": "^0.2.6",
     "chokidar": "^5.0.0",
     "commander": "^12.1.0",
     "env-paths": "^3.0.0",
