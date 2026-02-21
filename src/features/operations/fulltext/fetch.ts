@@ -113,7 +113,8 @@ function buildDiscoveryConfig(fulltextConfig: FulltextConfig): DiscoveryConfig {
 async function tryDownloadPdf(
   locations: OALocation[],
   tempDir: string,
-  ctx: AttachContext
+  ctx: AttachContext,
+  attempts: FetchAttempt[]
 ): Promise<{ attached: boolean; source: string }> {
   const pdfLocations = locations.filter((loc) => loc.urlType === "pdf");
   if (pdfLocations.length === 0) return { attached: false, source: "" };
@@ -121,7 +122,16 @@ async function tryDownloadPdf(
   const pdfPath = join(tempDir, "fulltext.pdf");
   for (const pdfLocation of pdfLocations) {
     const pdfResult = await downloadPdf(pdfLocation.url, pdfPath);
-    if (!pdfResult.success) continue;
+    if (!pdfResult.success) {
+      attempts.push({
+        source: pdfLocation.source,
+        phase: "download",
+        url: pdfLocation.url,
+        fileType: "pdf",
+        error: pdfResult.error ?? "Download failed",
+      });
+      continue;
+    }
 
     const attachResult = await fulltextAttach(ctx.library, {
       identifier: ctx.identifier,
@@ -136,6 +146,13 @@ async function tryDownloadPdf(
     if (attachResult.success) {
       return { attached: true, source: pdfLocation.source };
     }
+    attempts.push({
+      source: pdfLocation.source,
+      phase: "attach",
+      url: pdfLocation.url,
+      fileType: "pdf",
+      error: "Failed to attach file",
+    });
   }
 
   return { attached: false, source: pdfLocations[0]?.source ?? "" };
@@ -144,15 +161,32 @@ async function tryDownloadPdf(
 async function tryDownloadPmcXmlAndConvert(
   pmcid: string,
   tempDir: string,
-  ctx: AttachContext
+  ctx: AttachContext,
+  attempts: FetchAttempt[]
 ): Promise<boolean> {
   const xmlPath = join(tempDir, "fulltext.xml");
   const xmlResult = await downloadPmcXml(pmcid, xmlPath);
-  if (!xmlResult.success) return false;
+  if (!xmlResult.success) {
+    attempts.push({
+      source: "pmc",
+      phase: "download",
+      fileType: "xml",
+      error: xmlResult.error ?? "Download failed",
+    });
+    return false;
+  }
 
   const mdPath = join(tempDir, "fulltext.md");
   const convertResult = await convertPmcXmlToMarkdown(xmlPath, mdPath);
-  if (!convertResult.success) return false;
+  if (!convertResult.success) {
+    attempts.push({
+      source: "pmc",
+      phase: "convert",
+      fileType: "xml",
+      error: convertResult.error ?? "Conversion failed",
+    });
+    return false;
+  }
 
   const attachResult = await fulltextAttach(ctx.library, {
     identifier: ctx.identifier,
@@ -163,6 +197,15 @@ async function tryDownloadPmcXmlAndConvert(
     move: true,
     fulltextDirectory: ctx.fulltextDirectory,
   });
+
+  if (!attachResult.success) {
+    attempts.push({
+      source: "pmc",
+      phase: "attach",
+      fileType: "markdown",
+      error: "Failed to attach file",
+    });
+  }
 
   return attachResult.success;
 }
@@ -182,15 +225,32 @@ function extractArxivId(url: string): string | undefined {
 async function tryDownloadArxivHtmlAndConvert(
   arxivId: string,
   tempDir: string,
-  ctx: AttachContext
+  ctx: AttachContext,
+  attempts: FetchAttempt[]
 ): Promise<boolean> {
   const htmlPath = join(tempDir, "fulltext.html");
   const htmlResult = await downloadArxivHtml(arxivId, htmlPath);
-  if (!htmlResult.success) return false;
+  if (!htmlResult.success) {
+    attempts.push({
+      source: "arxiv",
+      phase: "download",
+      fileType: "html",
+      error: htmlResult.error ?? "Download failed",
+    });
+    return false;
+  }
 
   const mdPath = join(tempDir, "fulltext.md");
   const convertResult = await convertArxivHtmlToMarkdown(htmlPath, mdPath);
-  if (!convertResult.success) return false;
+  if (!convertResult.success) {
+    attempts.push({
+      source: "arxiv",
+      phase: "convert",
+      fileType: "html",
+      error: convertResult.error ?? "Conversion failed",
+    });
+    return false;
+  }
 
   const attachResult = await fulltextAttach(ctx.library, {
     identifier: ctx.identifier,
@@ -201,6 +261,15 @@ async function tryDownloadArxivHtmlAndConvert(
     move: true,
     fulltextDirectory: ctx.fulltextDirectory,
   });
+
+  if (!attachResult.success) {
+    attempts.push({
+      source: "arxiv",
+      phase: "attach",
+      fileType: "markdown",
+      error: "Failed to attach file",
+    });
+  }
 
   return attachResult.success;
 }
@@ -300,7 +369,8 @@ export async function fulltextFetch(
 async function tryArxivHtmlFromLocations(
   locations: OALocation[],
   tempDir: string,
-  ctx: AttachContext
+  ctx: AttachContext,
+  attempts: FetchAttempt[]
 ): Promise<{ attached: boolean; source: string }> {
   const arxivHtmlLocation = locations.find(
     (loc) => loc.source === "arxiv" && loc.urlType === "html"
@@ -310,7 +380,7 @@ async function tryArxivHtmlFromLocations(
   const arxivId = extractArxivId(arxivHtmlLocation.url);
   if (!arxivId) return { attached: false, source: "arxiv" };
 
-  const mdAttached = await tryDownloadArxivHtmlAndConvert(arxivId, tempDir, ctx);
+  const mdAttached = await tryDownloadArxivHtmlAndConvert(arxivId, tempDir, ctx, attempts);
   return { attached: mdAttached, source: "arxiv" };
 }
 
@@ -335,8 +405,9 @@ async function downloadAndAttach(
 ): Promise<FulltextFetchResult> {
   const attachedFiles: string[] = [];
   let usedSource = "";
+  const attempts: FetchAttempt[] = [];
 
-  const pdfResult = await tryDownloadPdf(locations, tempDir, ctx);
+  const pdfResult = await tryDownloadPdf(locations, tempDir, ctx, attempts);
   if (pdfResult.attached) {
     attachedFiles.push("pdf");
     usedSource = pdfResult.source;
@@ -344,7 +415,7 @@ async function downloadAndAttach(
 
   // Try PMC XML -> Markdown
   if (pmcid) {
-    const mdAttached = await tryDownloadPmcXmlAndConvert(pmcid, tempDir, ctx);
+    const mdAttached = await tryDownloadPmcXmlAndConvert(pmcid, tempDir, ctx, attempts);
     if (mdAttached) {
       attachedFiles.push("markdown");
       if (!usedSource) usedSource = "pmc";
@@ -353,7 +424,7 @@ async function downloadAndAttach(
 
   // Try arXiv HTML -> Markdown if no markdown yet
   if (!attachedFiles.includes("markdown")) {
-    const arxivResult = await tryArxivHtmlFromLocations(locations, tempDir, ctx);
+    const arxivResult = await tryArxivHtmlFromLocations(locations, tempDir, ctx, attempts);
     if (arxivResult.attached) {
       attachedFiles.push("markdown");
       if (!usedSource) usedSource = arxivResult.source;
@@ -364,5 +435,8 @@ async function downloadAndAttach(
     return { success: true, referenceId, source: usedSource, attachedFiles };
   }
 
-  return buildDownloadError(locations, identifier);
+  return {
+    ...buildDownloadError(locations, identifier),
+    attempts: attempts.length > 0 ? attempts : undefined,
+  };
 }
