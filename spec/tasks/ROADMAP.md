@@ -93,6 +93,7 @@ This document defines the workflow including TDD process, quality checks, and co
 - **Phase 39**: Fulltext Get Multi-ID Support (variadic identifiers, JSON output format)
 - **Phase 40**: Fulltext Fetch Failure Diagnostics (checkedSources, skipped, attempts, actionable hints)
 - **Phase 41**: CslCustomSchema Type Refinement (typed `attachments`, `check`, `arxiv_id` fields, z.infer unification, cast removal)
+- **Phase 42**: arXiv ID Import Support (detection, normalization, Atom API fetch, cache, rate limiter, importer, fulltext discovery, duplicate detection)
 
 See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
@@ -100,20 +101,7 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-### Phase 42: arXiv ID Import Support
-
-Add arXiv ID as a supported identifier type for `ref add`. Fetches metadata from arXiv Atom API, stores arXiv ID in `custom.arxiv_id`, and enhances fulltext discovery.
-
-- **Task**: `spec/tasks/20260221-02-arxiv-id-import.md`
-- **Depends on**: Phase 41
-- **Scope**:
-  - Detection and normalization of arXiv IDs (prefix-less: `2301.13867`)
-  - arXiv Atom API metadata fetching → CSL-JSON
-  - Journal DOI preferred over arXiv DOI
-  - Cache, rate limiter, importer integration
-  - Fulltext discovery enhancement (`buildDiscoveryArticle` uses `custom.arxiv_id`)
-  - Duplicate detection on `custom.arxiv_id`
-  - Update `spec/features/add.md`, `spec/features/fulltext-retrieval.md`
+(No active tasks)
 
 ---
 
