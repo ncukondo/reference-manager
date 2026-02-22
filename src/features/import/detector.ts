@@ -8,7 +8,7 @@
  * - Multiple whitespace-separated identifiers
  */
 
-import { normalizeIsbn, normalizePmid } from "./normalizer.js";
+import { normalizeArxiv, normalizeIsbn, normalizePmid } from "./normalizer.js";
 
 /**
  * Supported input formats
@@ -21,6 +21,7 @@ export type InputFormat =
   | "pmid"
   | "doi"
   | "isbn"
+  | "arxiv"
   | "identifiers"
   | "unknown";
 
@@ -136,7 +137,7 @@ function detectIdentifier(input: string): InputFormat {
   }
 
   // Check each part
-  const formats: ("pmid" | "doi" | "isbn")[] = [];
+  const formats: ("pmid" | "doi" | "isbn" | "arxiv")[] = [];
   for (const part of parts) {
     const format = detectSingleIdentifier(part);
     if (format === "unknown") {
@@ -149,7 +150,7 @@ function detectIdentifier(input: string): InputFormat {
   // Single identifier returns its specific format
   if (formats.length === 1) {
     // formats[0] is guaranteed to exist when length === 1
-    return formats[0] as "pmid" | "doi" | "isbn";
+    return formats[0] as "pmid" | "doi" | "isbn" | "arxiv";
   }
 
   // Multiple valid identifiers
@@ -159,10 +160,17 @@ function detectIdentifier(input: string): InputFormat {
 /**
  * Detect if a single string is a PMID, DOI, or ISBN
  */
-export function detectSingleIdentifier(input: string): "pmid" | "doi" | "isbn" | "unknown" {
+export function detectSingleIdentifier(
+  input: string
+): "pmid" | "doi" | "isbn" | "arxiv" | "unknown" {
   // DOI: starts with 10. or is a DOI URL
   if (isDoi(input)) {
     return "doi";
+  }
+
+  // arXiv: matches YYMM.NNNNN pattern, arXiv: prefix, or arXiv URL
+  if (isArxiv(input)) {
+    return "arxiv";
   }
 
   // ISBN: requires ISBN: prefix
@@ -276,4 +284,31 @@ export function isIsbn(input: string): boolean {
   }
 
   return true;
+}
+
+/**
+ * arXiv ID pattern: YYMM.NNNNN or YYMM.NNNN with optional version suffix
+ */
+export const ARXIV_ID_PATTERN = /^\d{4}\.\d{4,5}(v\d+)?$/;
+
+/**
+ * Check if input is an arXiv identifier.
+ *
+ * Matches:
+ * - Bare IDs: 2301.13867, 2301.13867v2
+ * - Prefixed: arXiv:2301.13867
+ * - URLs: https://arxiv.org/abs/2301.13867
+ */
+export function isArxiv(input: string): boolean {
+  if (!input || input.length === 0) {
+    return false;
+  }
+
+  const normalized = normalizeArxiv(input);
+
+  if (!normalized) {
+    return false;
+  }
+
+  return ARXIV_ID_PATTERN.test(normalized);
 }

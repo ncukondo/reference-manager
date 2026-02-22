@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
+import { normalizeArxiv, normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 
 describe("normalizeDoi", () => {
   describe("standard DOI passthrough", () => {
@@ -262,6 +262,78 @@ describe("normalizeIsbn", () => {
 
     it("should return empty string for ISBN: without number", () => {
       expect(normalizeIsbn("ISBN:")).toBe("");
+    });
+  });
+});
+
+describe("normalizeArxiv", () => {
+  describe("bare arXiv ID passthrough", () => {
+    it("should return bare arXiv ID as-is", () => {
+      expect(normalizeArxiv("2301.13867")).toBe("2301.13867");
+    });
+
+    it("should preserve version suffix", () => {
+      expect(normalizeArxiv("2301.13867v2")).toBe("2301.13867v2");
+    });
+
+    it("should preserve 4-digit ID", () => {
+      expect(normalizeArxiv("2301.1234")).toBe("2301.1234");
+    });
+  });
+
+  describe("arXiv: prefix removal", () => {
+    it("should remove arXiv: prefix", () => {
+      expect(normalizeArxiv("arXiv:2301.13867")).toBe("2301.13867");
+    });
+
+    it("should remove arxiv: prefix (lowercase)", () => {
+      expect(normalizeArxiv("arxiv:2301.13867v2")).toBe("2301.13867v2");
+    });
+
+    it("should remove ARXIV: prefix (uppercase)", () => {
+      expect(normalizeArxiv("ARXIV:2301.13867")).toBe("2301.13867");
+    });
+  });
+
+  describe("URL prefix removal", () => {
+    it("should remove https://arxiv.org/abs/ prefix", () => {
+      expect(normalizeArxiv("https://arxiv.org/abs/2301.13867")).toBe("2301.13867");
+    });
+
+    it("should remove https://arxiv.org/pdf/ prefix", () => {
+      expect(normalizeArxiv("https://arxiv.org/pdf/2301.13867")).toBe("2301.13867");
+    });
+
+    it("should remove https://arxiv.org/html/ prefix", () => {
+      expect(normalizeArxiv("https://arxiv.org/html/2301.13867v2")).toBe("2301.13867v2");
+    });
+
+    it("should remove http://arxiv.org/abs/ prefix", () => {
+      expect(normalizeArxiv("http://arxiv.org/abs/2301.13867")).toBe("2301.13867");
+    });
+  });
+
+  describe("whitespace handling", () => {
+    it("should trim leading whitespace", () => {
+      expect(normalizeArxiv("  2301.13867")).toBe("2301.13867");
+    });
+
+    it("should trim trailing whitespace", () => {
+      expect(normalizeArxiv("2301.13867  ")).toBe("2301.13867");
+    });
+
+    it("should trim whitespace around prefixed ID", () => {
+      expect(normalizeArxiv("  arXiv:2301.13867  ")).toBe("2301.13867");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty string", () => {
+      expect(normalizeArxiv("")).toBe("");
+    });
+
+    it("should handle whitespace-only string", () => {
+      expect(normalizeArxiv("   ")).toBe("");
     });
   });
 });

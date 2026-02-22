@@ -149,6 +149,18 @@ describe("isAuthorSimilar", () => {
     expect(isAuthorSimilar([{ family: "Smith" }], undefined)).toBe(true);
   });
 
+  it("should handle literal authors for similarity comparison", () => {
+    const local = [{ literal: "World Health Organization" }];
+    const remote = [{ literal: "World Health Organization" }];
+    expect(isAuthorSimilar(local, remote)).toBe(true);
+  });
+
+  it("should detect mismatch for different literal authors", () => {
+    const local = [{ literal: "World Health Organization" }];
+    const remote = [{ literal: "United Nations" }];
+    expect(isAuthorSimilar(local, remote)).toBe(false);
+  });
+
   it("should handle authors without family names", () => {
     const local = [{ given: "John" }, { family: "Smith" }];
     const remote = [{ family: "Smith" }, { family: "Jones" }];

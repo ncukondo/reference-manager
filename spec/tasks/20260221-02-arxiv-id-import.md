@@ -110,67 +110,67 @@ Detection order in `detectSingleIdentifier` (updated):
 3. ISBN (requires `ISBN:` prefix)
 4. PMID (numeric only) — last, as fallback
 
-- [ ] Write test: `src/features/import/detector.test.ts` — add arXiv detection cases
-- [ ] Write test: `src/features/import/normalizer.test.ts` — add arXiv normalization cases
-- [ ] Implement: `isArxiv()` in `detector.ts`, `normalizeArxiv()` in `normalizer.ts`
-- [ ] Update `detectSingleIdentifier` to include arXiv
-- [ ] Verify Green: `npm run test:unit -- detector.test.ts normalizer.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/detector.test.ts` — add arXiv detection cases
+- [x] Write test: `src/features/import/normalizer.test.ts` — add arXiv normalization cases
+- [x] Implement: `isArxiv()` in `detector.ts`, `normalizeArxiv()` in `normalizer.ts`
+- [x] Update `detectSingleIdentifier` to include arXiv
+- [x] Verify Green: `npm run test:unit -- detector.test.ts normalizer.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: arXiv metadata fetching
 
 Add `fetchArxiv()` function that calls the arXiv Atom API and converts the response to CSL-JSON.
 
-- [ ] Write test: `src/features/import/fetcher.test.ts` — add arXiv fetch cases (mock HTTP)
-- [ ] Implement: `fetchArxiv()` in `fetcher.ts` (Atom XML parsing, CSL-JSON mapping, journal DOI priority)
-- [ ] Verify Green: `npm run test:unit -- fetcher.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/fetcher.test.ts` — add arXiv fetch cases (mock HTTP)
+- [x] Implement: `fetchArxiv()` in `fetcher.ts` (Atom XML parsing, CSL-JSON mapping, journal DOI priority)
+- [x] Verify Green: `npm run test:unit -- fetcher.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Rate limiter and cache
 
 Add `"arxiv"` to rate limiter types and arXiv cache functions.
 
-- [ ] Write test: `src/features/import/rate-limiter.test.ts` — add arXiv rate limiter case
-- [ ] Write test: `src/features/import/cache.test.ts` — add arXiv cache cases
-- [ ] Implement: Add `"arxiv"` type to rate limiter, add cache functions
-- [ ] Verify Green: `npm run test:unit -- rate-limiter.test.ts cache.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/rate-limiter.test.ts` — add arXiv rate limiter case
+- [x] Write test: `src/features/import/cache.test.ts` — add arXiv cache cases
+- [x] Implement: Add `"arxiv"` type to rate limiter, add cache functions
+- [x] Verify Green: `npm run test:unit -- rate-limiter.test.ts cache.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Importer integration
 
 Update `classifyIdentifiers` and add `fetchArxivWithCache`. Wire into `importIdentifiers`.
 
-- [ ] Write test: `src/features/import/importer.test.ts` — add arXiv classification and import cases
-- [ ] Implement: Update `classifyIdentifiers`, add `fetchArxivWithCache`, update `importIdentifiers`
-- [ ] Verify Green: `npm run test:unit -- importer.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/importer.test.ts` — add arXiv classification and import cases
+- [x] Implement: Update `classifyIdentifiers`, add `fetchArxivWithCache`, update `importIdentifiers`
+- [x] Verify Green: `npm run test:unit -- importer.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: CLI integration
 
 Update CLI to accept `arxiv` as `--input` format option.
 
-- [ ] Write test: `src/cli/commands/add.test.ts` — add arXiv CLI cases
-- [ ] Implement: Update `registerAddCommand` in `src/cli/index.ts`
-- [ ] Verify Green: `npm run test:unit -- add.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/cli/commands/add.test.ts` — add arXiv CLI cases
+- [x] Implement: Update `registerAddCommand` in `src/cli/index.ts`
+- [x] Verify Green: `npm run test:unit -- add.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Fulltext discovery enhancement
 
 Extend `buildDiscoveryArticle` to include arXiv ID from `custom.arxiv_id`.
 
-- [ ] Write test: `src/features/operations/fulltext/fetch.test.ts` — test discovery with arxiv_id
-- [ ] Implement: Update `buildDiscoveryArticle` in `fetch.ts`
-- [ ] Verify Green: `npm run test:unit -- fulltext/fetch.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/operations/fulltext/fetch.test.ts` — test discovery with arxiv_id
+- [x] Implement: Update `buildDiscoveryArticle` in `fetch.ts`
+- [x] Verify Green: `npm run test:unit -- fulltext/fetch.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 7: Duplicate detection
 
 Add arXiv ID to duplicate detection (match on `custom.arxiv_id`).
 
-- [ ] Write test: add arXiv duplicate detection cases
-- [ ] Implement: update duplicate detection logic
-- [ ] Verify Green: `npm run test:unit -- duplicate`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: add arXiv duplicate detection cases
+- [x] Implement: update duplicate detection logic
+- [x] Verify Green: `npm run test:unit -- duplicate`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 
@@ -186,10 +186,10 @@ Non-TTY tests (automated):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
 - [ ] Manual verification: `./test-fixtures/test-arxiv-import.sh` (if applicable)
-- [ ] CHANGELOG.md updated
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

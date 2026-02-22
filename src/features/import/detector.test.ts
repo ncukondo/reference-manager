@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type InputFormat, detectFormat, isIsbn, isPmid } from "./detector.js";
+import { type InputFormat, detectFormat, isArxiv, isIsbn, isPmid } from "./detector.js";
 
 describe("detectFormat", () => {
   describe("file extension detection", () => {
@@ -176,6 +176,44 @@ describe("detectFormat", () => {
         expect(detectFormat("10.99999/paper")).toBe("doi");
       });
     });
+
+    describe("arXiv detection", () => {
+      it("should detect bare arXiv ID", () => {
+        expect(detectFormat("2301.13867")).toBe("arxiv");
+      });
+
+      it("should detect arXiv ID with version", () => {
+        expect(detectFormat("2301.13867v2")).toBe("arxiv");
+      });
+
+      it("should detect arXiv ID with arXiv: prefix", () => {
+        expect(detectFormat("arXiv:2301.13867")).toBe("arxiv");
+      });
+
+      it("should detect arXiv ID with lowercase arxiv: prefix", () => {
+        expect(detectFormat("arxiv:2301.13867v2")).toBe("arxiv");
+      });
+
+      it("should detect arXiv abs URL", () => {
+        expect(detectFormat("https://arxiv.org/abs/2301.13867")).toBe("arxiv");
+      });
+
+      it("should detect arXiv pdf URL", () => {
+        expect(detectFormat("https://arxiv.org/pdf/2301.13867")).toBe("arxiv");
+      });
+
+      it("should detect arXiv html URL", () => {
+        expect(detectFormat("https://arxiv.org/html/2301.13867v2")).toBe("arxiv");
+      });
+
+      it("should detect 5-digit arXiv ID", () => {
+        expect(detectFormat("2301.12345")).toBe("arxiv");
+      });
+
+      it("should not detect arXiv DOI as arxiv (it's a DOI)", () => {
+        expect(detectFormat("10.48550/arXiv.2301.13867")).toBe("doi");
+      });
+    });
   });
 
   describe("multiple identifiers detection", () => {
@@ -222,6 +260,18 @@ describe("detectFormat", () => {
 
     it("should return single doi format for single DOI", () => {
       expect(detectFormat("10.1000/xyz")).toBe("doi");
+    });
+
+    it("should detect mixed arXiv with PMID as identifiers", () => {
+      expect(detectFormat("2301.13867 12345678")).toBe("identifiers");
+    });
+
+    it("should detect mixed arXiv with DOI as identifiers", () => {
+      expect(detectFormat("2301.13867 10.1000/xyz")).toBe("identifiers");
+    });
+
+    it("should return single arxiv format for single arXiv ID", () => {
+      expect(detectFormat("2301.13867")).toBe("arxiv");
     });
 
     it("should detect identifiers in stdin-like content", () => {
@@ -317,6 +367,7 @@ describe("detectFormat", () => {
         "pmid",
         "doi",
         "isbn",
+        "arxiv",
         "identifiers",
         "unknown",
       ];
@@ -329,6 +380,7 @@ describe("detectFormat", () => {
         "12345678",
         "10.1000/xyz",
         "ISBN:9784000000000",
+        "2301.13867",
         "12345678 10.1000/xyz",
         "random",
       ];
@@ -508,6 +560,100 @@ describe("isIsbn", () => {
 
     it("should return false for X not at end of ISBN-10", () => {
       expect(isIsbn("ISBN:12345X7890")).toBe(false);
+    });
+  });
+});
+
+describe("isArxiv", () => {
+  describe("bare arXiv ID", () => {
+    it("should return true for YYMM.NNNNN format", () => {
+      expect(isArxiv("2301.13867")).toBe(true);
+    });
+
+    it("should return true for YYMM.NNNN format (4-digit)", () => {
+      expect(isArxiv("2301.1234")).toBe(true);
+    });
+
+    it("should return true for arXiv ID with version", () => {
+      expect(isArxiv("2301.13867v2")).toBe(true);
+    });
+
+    it("should return true for arXiv ID with v1", () => {
+      expect(isArxiv("2301.13867v1")).toBe(true);
+    });
+
+    it("should return true for arXiv ID with high version", () => {
+      expect(isArxiv("2301.13867v15")).toBe(true);
+    });
+  });
+
+  describe("arXiv: prefix", () => {
+    it("should return true for arXiv: prefix", () => {
+      expect(isArxiv("arXiv:2301.13867")).toBe(true);
+    });
+
+    it("should return true for arxiv: prefix (lowercase)", () => {
+      expect(isArxiv("arxiv:2301.13867")).toBe(true);
+    });
+
+    it("should return true for ARXIV: prefix (uppercase)", () => {
+      expect(isArxiv("ARXIV:2301.13867")).toBe(true);
+    });
+
+    it("should return true for arXiv: prefix with version", () => {
+      expect(isArxiv("arXiv:2301.13867v2")).toBe(true);
+    });
+  });
+
+  describe("arXiv URL", () => {
+    it("should return true for arxiv.org/abs/ URL", () => {
+      expect(isArxiv("https://arxiv.org/abs/2301.13867")).toBe(true);
+    });
+
+    it("should return true for arxiv.org/pdf/ URL", () => {
+      expect(isArxiv("https://arxiv.org/pdf/2301.13867")).toBe(true);
+    });
+
+    it("should return true for arxiv.org/html/ URL", () => {
+      expect(isArxiv("https://arxiv.org/html/2301.13867v2")).toBe(true);
+    });
+
+    it("should return true for http URL", () => {
+      expect(isArxiv("http://arxiv.org/abs/2301.13867")).toBe(true);
+    });
+  });
+
+  describe("invalid inputs", () => {
+    it("should return false for empty string", () => {
+      expect(isArxiv("")).toBe(false);
+    });
+
+    it("should return false for pure numeric string", () => {
+      expect(isArxiv("12345678")).toBe(false);
+    });
+
+    it("should return false for DOI", () => {
+      expect(isArxiv("10.1000/xyz")).toBe(false);
+    });
+
+    it("should return false for ISBN", () => {
+      expect(isArxiv("ISBN:9784000000000")).toBe(false);
+    });
+
+    it("should return false for invalid arXiv-like format", () => {
+      expect(isArxiv("230.13867")).toBe(false);
+    });
+
+    it("should return false for too few digits after dot", () => {
+      expect(isArxiv("2301.123")).toBe(false);
+    });
+
+    it("should return false for too many digits after dot", () => {
+      expect(isArxiv("2301.123456")).toBe(false);
+    });
+
+    it("should return false for arXiv: prefix with invalid ID", () => {
+      expect(isArxiv("arXiv:invalid")).toBe(false);
     });
   });
 });

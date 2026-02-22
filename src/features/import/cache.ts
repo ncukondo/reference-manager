@@ -120,11 +120,27 @@ export function cacheIsbnResult(isbn: string, item: CslItem, config?: CacheConfi
   storeInCache(isbnCache, isbn, item, config);
 }
 
+/** arXiv cache: Map<arxivId, CacheEntry> */
+const arxivCache = new Map<string, CacheEntry>();
+
 /**
- * Reset all caches (for test isolation)
+ * Get cached arXiv result
  */
+export function getArxivFromCache(arxivId: string): CslItem | undefined {
+  return getFromCache(arxivCache, arxivId);
+}
+
+/**
+ * Cache arXiv result
+ */
+export function cacheArxivResult(arxivId: string, item: CslItem, config?: CacheConfig): void {
+  storeInCache(arxivCache, arxivId, item, config);
+}
+
+/** Reset all caches (for test isolation) */
 export function resetCache(): void {
   pmidCache.clear();
   doiCache.clear();
   isbnCache.clear();
+  arxivCache.clear();
 }

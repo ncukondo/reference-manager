@@ -118,6 +118,15 @@ describe("RateLimiter", () => {
       expect(limiter.intervalMs).toBe(20);
     });
 
+    it("should use 1 req/sec for arXiv", () => {
+      const config: RateLimiterConfig = {};
+
+      const limiter = getRateLimiter("arxiv", config);
+
+      expect(limiter.requestsPerSecond).toBe(1);
+      expect(limiter.intervalMs).toBe(1000);
+    });
+
     it("should preserve existing singleton even with different config", () => {
       // First call without API key
       const limiter1 = getRateLimiter("pubmed", {});

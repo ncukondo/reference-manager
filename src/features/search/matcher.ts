@@ -29,6 +29,7 @@ function extractAuthors(reference: CslItem): string {
 
   return reference.author
     .map((author) => {
+      if (author.literal) return author.literal;
       const family = author.family || "";
       const given = author.given || "";
       return given ? `${family} ${given}` : family;

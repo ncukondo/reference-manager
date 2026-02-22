@@ -4,7 +4,7 @@
 
 import { normalize } from "../search/normalizer.js";
 
-type AuthorName = { family?: string; given?: string };
+type AuthorName = { family?: string; given?: string; literal?: string };
 
 /**
  * Tokenize a title into a set of normalized words.
@@ -51,7 +51,9 @@ export function isTitleSimilar(local: string | undefined, remote: string | undef
 function extractFamilyNames(authors: AuthorName[]): Set<string> {
   const families = new Set<string>();
   for (const author of authors) {
-    if (author.family) {
+    if (author.literal) {
+      families.add(normalize(author.literal));
+    } else if (author.family) {
       families.add(normalize(author.family));
     }
   }

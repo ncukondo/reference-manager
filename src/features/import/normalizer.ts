@@ -106,3 +106,52 @@ export function normalizeIsbn(isbn: string): string {
 
   return normalized;
 }
+
+/**
+ * URL prefixes to remove from arXiv identifiers
+ */
+const ARXIV_URL_PREFIXES = [
+  "https://arxiv.org/abs/",
+  "http://arxiv.org/abs/",
+  "https://arxiv.org/pdf/",
+  "http://arxiv.org/pdf/",
+  "https://arxiv.org/html/",
+  "http://arxiv.org/html/",
+];
+
+/**
+ * Normalizes an arXiv identifier by removing URL prefixes and arXiv: prefix.
+ *
+ * Supported formats:
+ * - "2301.13867" -> "2301.13867"
+ * - "2301.13867v2" -> "2301.13867v2"
+ * - "arXiv:2301.13867" -> "2301.13867"
+ * - "arxiv:2301.13867v2" -> "2301.13867v2"
+ * - "https://arxiv.org/abs/2301.13867" -> "2301.13867"
+ * - "https://arxiv.org/pdf/2301.13867" -> "2301.13867"
+ * - "https://arxiv.org/html/2301.13867v2" -> "2301.13867v2"
+ *
+ * @param arxiv - The arXiv string to normalize
+ * @returns The normalized arXiv ID or empty string if invalid input
+ */
+export function normalizeArxiv(arxiv: string): string {
+  const trimmed = arxiv.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  // Check for URL prefixes (case-insensitive)
+  const lowerInput = trimmed.toLowerCase();
+
+  for (const prefix of ARXIV_URL_PREFIXES) {
+    if (lowerInput.startsWith(prefix.toLowerCase())) {
+      return trimmed.slice(prefix.length);
+    }
+  }
+
+  // Remove "arXiv:" prefix (case-insensitive)
+  const withoutPrefix = trimmed.replace(/^arxiv:\s*/i, "");
+
+  return withoutPrefix;
+}

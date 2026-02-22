@@ -9,18 +9,20 @@ import { existsSync, readFileSync } from "node:fs";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { CslItemSchema } from "../../core/csl-json/types.js";
 import {
+  cacheArxivResult,
   cacheDoiResult,
   cacheIsbnResult,
   cachePmidResult,
+  getArxivFromCache,
   getDoiFromCache,
   getIsbnFromCache,
   getPmidFromCache,
 } from "./cache.js";
-import { detectByContent, detectByExtension, isDoi, isIsbn, isPmid } from "./detector.js";
+import { detectByContent, detectByExtension, isArxiv, isDoi, isIsbn, isPmid } from "./detector.js";
 import type { InputFormat } from "./detector.js";
-import { fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
+import { fetchArxiv, fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import type { FailureReason, PubmedConfig } from "./fetcher.js";
-import { normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
+import { normalizeArxiv, normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 import { parseBibtex, parseNbib, parseRis } from "./parser.js";
 
 // Re-export FailureReason for external use
@@ -54,6 +56,7 @@ interface ClassifiedIdentifiers {
   pmids: string[];
   dois: string[];
   isbns: string[];
+  arxivs: string[];
   unknowns: string[];
 }
 
@@ -64,21 +67,24 @@ function classifyIdentifiers(identifiers: string[]): ClassifiedIdentifiers {
   const pmids: string[] = [];
   const dois: string[] = [];
   const isbns: string[] = [];
+  const arxivs: string[] = [];
   const unknowns: string[] = [];
 
   for (const id of identifiers) {
-    if (isPmid(id)) {
-      pmids.push(normalizePmid(id));
-    } else if (isDoi(id)) {
+    if (isDoi(id)) {
       dois.push(normalizeDoi(id));
+    } else if (isArxiv(id)) {
+      arxivs.push(normalizeArxiv(id));
     } else if (isIsbn(id)) {
       isbns.push(normalizeIsbn(id));
+    } else if (isPmid(id)) {
+      pmids.push(normalizePmid(id));
     } else {
       unknowns.push(id);
     }
   }
 
-  return { pmids, dois, isbns, unknowns };
+  return { pmids, dois, isbns, arxivs, unknowns };
 }
 
 /**
@@ -199,6 +205,36 @@ async function fetchIsbnsWithCache(isbns: string[]): Promise<ImportItemResult[]>
         success: false,
         error: fetchResult.error,
         source: isbn,
+        reason: fetchResult.reason,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Fetch arXiv IDs with cache support
+ */
+async function fetchArxivsWithCache(arxivIds: string[]): Promise<ImportItemResult[]> {
+  const results: ImportItemResult[] = [];
+
+  for (const arxivId of arxivIds) {
+    const cached = getArxivFromCache(arxivId);
+    if (cached) {
+      results.push({ success: true, item: clearItemId(cached), source: arxivId });
+      continue;
+    }
+
+    const fetchResult = await fetchArxiv(arxivId);
+    if (fetchResult.success) {
+      cacheArxivResult(arxivId, fetchResult.item);
+      results.push({ success: true, item: clearItemId(fetchResult.item), source: arxivId });
+    } else {
+      results.push({
+        success: false,
+        error: fetchResult.error,
+        source: arxivId,
         reason: fetchResult.reason,
       });
     }
@@ -418,7 +454,7 @@ export async function importFromIdentifiers(
   }
 
   // Classify identifiers
-  const { pmids, dois, isbns, unknowns } = classifyIdentifiers(identifiers);
+  const { pmids, dois, isbns, arxivs, unknowns } = classifyIdentifiers(identifiers);
 
   // Collect results
   const results: ImportItemResult[] = [];
@@ -437,6 +473,10 @@ export async function importFromIdentifiers(
   // Fetch ISBNs with cache
   const isbnResults = await fetchIsbnsWithCache(isbns);
   results.push(...isbnResults);
+
+  // Fetch arXiv IDs with cache
+  const arxivResults = await fetchArxivsWithCache(arxivs);
+  results.push(...arxivResults);
 
   return { results };
 }
@@ -528,8 +568,9 @@ async function processIdentifiers(
     const isValidPmid = isPmid(input);
     const isValidDoi = isDoi(input);
     const isValidIsbn = isIsbn(input);
+    const isValidArxiv = isArxiv(input);
 
-    if (isValidPmid || isValidDoi || isValidIsbn) {
+    if (isValidPmid || isValidDoi || isValidIsbn || isValidArxiv) {
       validIdentifiers.push(input);
     } else {
       // Not a valid identifier
@@ -538,7 +579,7 @@ async function processIdentifiers(
         : "";
       results.push({
         success: false,
-        error: `Cannot interpret '${input}' as identifier (not a valid PMID, DOI, or ISBN).${hint}`,
+        error: `Cannot interpret '${input}' as identifier (not a valid PMID, DOI, ISBN, or arXiv ID).${hint}`,
         source: input,
         reason: "validation_error",
       });
@@ -613,7 +654,7 @@ async function processStdinContent(
   }
 
   // If explicit identifier format, split and process
-  if (format === "pmid" || format === "doi" || format === "isbn") {
+  if (format === "pmid" || format === "doi" || format === "isbn" || format === "arxiv") {
     const identifiers = content.split(/\s+/).filter((s) => s.length > 0);
     return processIdentifiers(identifiers, options);
   }

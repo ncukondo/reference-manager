@@ -7,7 +7,9 @@ import { buildResourceIndicators } from "./resource-indicators.js";
 function formatAuthor(author: {
   family?: string | undefined;
   given?: string | undefined;
+  literal?: string | undefined;
 }): string {
+  if (author.literal) return author.literal;
   const family = author.family || "";
   const givenInitial = author.given ? `${author.given.charAt(0)}.` : "";
   return givenInitial ? `${family}, ${givenInitial}` : family;

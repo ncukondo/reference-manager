@@ -98,6 +98,7 @@ function buildDiscoveryArticle(item: CslItem): DiscoveryArticle {
   if (item.DOI) article.doi = item.DOI;
   if (item.PMID) article.pmid = item.PMID;
   if (item.PMCID) article.pmcid = item.PMCID;
+  if (item.custom?.arxiv_id) article.arxivId = item.custom.arxiv_id;
   return article;
 }
 

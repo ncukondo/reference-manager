@@ -33,7 +33,16 @@ const CONFIG_OUTPUT_FORMATS = ["text", "json"] as const;
 const LOG_LEVELS = ["silent", "info", "debug"] as const;
 
 // Input format options for add command
-const ADD_INPUT_FORMATS = ["json", "bibtex", "ris", "pmid", "doi", "isbn", "auto"] as const;
+const ADD_INPUT_FORMATS = [
+  "json",
+  "bibtex",
+  "ris",
+  "pmid",
+  "doi",
+  "isbn",
+  "arxiv",
+  "auto",
+] as const;
 
 // Config section names for --section option
 const CONFIG_SECTIONS = [

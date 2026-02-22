@@ -353,6 +353,91 @@ describe("detectDuplicate", () => {
     });
   });
 
+  describe("arXiv ID-based detection (fourth priority)", () => {
+    const arxivOriginal: CslItem = {
+      id: "arxiv2023",
+      type: "article",
+      title: "arXiv Paper on LLMs",
+      author: [{ family: "Smith", given: "Alice" }],
+      custom: {
+        uuid: "660e8400-e29b-41d4-a716-446655440099",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        arxiv_id: "2301.13867",
+      },
+    };
+
+    it("should detect duplicate by arXiv ID", () => {
+      const newItem: CslItem = {
+        id: "new-arxiv",
+        type: "article",
+        title: "Same arXiv Paper",
+        custom: { arxiv_id: "2301.13867" },
+      };
+      const result = detectDuplicate(newItem, [arxivOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches).toHaveLength(1);
+      expect(result.matches[0].type).toBe("arxiv");
+      expect(result.matches[0].details?.arxiv_id).toBe("2301.13867");
+    });
+
+    it("should detect duplicate by arXiv ID ignoring version suffix", () => {
+      const newItem: CslItem = {
+        id: "new-arxiv-v2",
+        type: "article",
+        title: "Same arXiv Paper v2",
+        custom: { arxiv_id: "2301.13867v2" },
+      };
+      const result = detectDuplicate(newItem, [arxivOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("arxiv");
+    });
+
+    it("should NOT detect duplicate when arXiv IDs differ", () => {
+      const newItem: CslItem = {
+        id: "different-arxiv",
+        type: "article",
+        title: "Different arXiv Paper",
+        custom: { arxiv_id: "2301.99999" },
+      };
+      const result = detectDuplicate(newItem, [arxivOriginal]);
+
+      expect(result.isDuplicate).toBe(false);
+    });
+
+    it("should NOT match when item has no arxiv_id", () => {
+      const newItem: CslItem = {
+        id: "no-arxiv",
+        type: "article",
+        title: "No arXiv ID",
+      };
+      const result = detectDuplicate(newItem, [arxivOriginal]);
+
+      // Should not match on arXiv (may match on title-author-year)
+      const arxivMatch = result.matches.find((m) => m.type === "arxiv");
+      expect(arxivMatch).toBeUndefined();
+    });
+
+    it("should prioritize DOI over arXiv ID", () => {
+      const arxivWithDoi: CslItem = {
+        ...arxivOriginal,
+        DOI: "10.1234/paper.2023",
+      };
+      const newItem: CslItem = {
+        id: "doi-and-arxiv",
+        type: "article",
+        title: "Paper with both",
+        DOI: "10.1234/paper.2023",
+        custom: { arxiv_id: "2301.13867" },
+      };
+      const result = detectDuplicate(newItem, [arxivWithDoi]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("doi");
+    });
+  });
+
   describe("Title + Author + Year detection (lowest priority)", () => {
     it("should detect duplicate by title + author + year", () => {
       const result = detectDuplicate(duplicateTitleAuthorYear, [original]);
@@ -419,6 +504,67 @@ describe("detectDuplicate", () => {
       };
       const result = detectDuplicate(itemWithDifferentAuthor, [original]);
 
+      expect(result.isDuplicate).toBe(false);
+    });
+  });
+
+  describe("Literal author format", () => {
+    it("should detect duplicate by title-author-year with literal authors", () => {
+      const literalAuthorItem: CslItem = {
+        id: "who2023",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440020",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const duplicateItem: CslItem = {
+        id: "who2023-dup",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440021",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = detectDuplicate(duplicateItem, [literalAuthorItem]);
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("title-author-year");
+    });
+
+    it("should not match literal author against different literal author", () => {
+      const item1: CslItem = {
+        id: "who2023",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440020",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const item2: CslItem = {
+        id: "un2023",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "United Nations" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440021",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = detectDuplicate(item2, [item1]);
       expect(result.isDuplicate).toBe(false);
     });
   });

@@ -9,6 +9,7 @@ import { Cite } from "@citation-js/core";
 import "@citation-js/plugin-doi";
 import "@citation-js/plugin-isbn";
 import { type CslItem, CslItemSchema } from "../../core/csl-json/types.js";
+import { ARXIV_ID_PATTERN } from "./detector.js";
 import { getRateLimiter } from "./rate-limiter.js";
 
 /** PMC Citation Exporter API base URL */
@@ -303,6 +304,149 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
       return {
         success: false,
         error: `Invalid CSL-JSON data for ISBN ${isbn}: ${parseResult.error.message}`,
+        reason: "validation_error",
+      };
+    }
+
+    return { success: true, item: parseResult.data };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      error: errorMsg,
+      reason: "fetch_error",
+    };
+  }
+}
+
+/** arXiv Atom API base URL */
+const ARXIV_API_BASE = "https://export.arxiv.org/api/query";
+
+/**
+ * Extract text content from an XML element using regex.
+ * Returns empty string if not found.
+ */
+function extractXmlText(xml: string, tagName: string): string {
+  const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)</${tagName}>`);
+  const match = regex.exec(xml);
+  return match?.[1]?.trim() ?? "";
+}
+
+/**
+ * Extract all author names from arXiv Atom XML entry.
+ */
+function extractAuthors(entryXml: string): { literal: string }[] {
+  const authors: { literal: string }[] = [];
+  const matches = entryXml.matchAll(/<author>[\s\S]*?<name>([^<]+)<\/name>[\s\S]*?<\/author>/g);
+  for (const match of matches) {
+    const name = match[1]?.trim();
+    if (name) {
+      authors.push({ literal: name });
+    }
+  }
+  return authors;
+}
+
+/**
+ * Extract journal DOI from arxiv:doi element.
+ */
+function extractJournalDoi(entryXml: string): string | undefined {
+  const match = /<arxiv:doi[^>]*>([^<]+)<\/arxiv:doi>/.exec(entryXml);
+  return match?.[1]?.trim();
+}
+
+/**
+ * Parse ISO date string to CSL date-parts.
+ */
+function parseIssuedDate(dateStr: string): { "date-parts": number[][] } | undefined {
+  if (!dateStr) return undefined;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return {
+    "date-parts": [[date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()]],
+  };
+}
+
+/**
+ * Fetch arXiv metadata by arXiv ID using the Atom API.
+ *
+ * @param arxivId - Normalized arXiv ID (e.g., "2301.13867" or "2301.13867v2")
+ * @returns FetchResult with CSL-JSON item on success
+ */
+export async function fetchArxiv(arxivId: string): Promise<FetchResult> {
+  // Validate arXiv ID format
+  if (!ARXIV_ID_PATTERN.test(arxivId)) {
+    return {
+      success: false,
+      error: `Invalid arXiv ID format: ${arxivId}`,
+      reason: "validation_error",
+    };
+  }
+
+  // Apply rate limiting
+  const rateLimiter = getRateLimiter("arxiv", {});
+  await rateLimiter.acquire();
+
+  try {
+    const url = `${ARXIV_API_BASE}?id_list=${encodeURIComponent(arxivId)}`;
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `arXiv API returned status ${response.status}`,
+        reason: "fetch_error",
+      };
+    }
+
+    const xml = await response.text();
+
+    // Check if entry exists
+    const entryMatch = /<entry>([\s\S]*?)<\/entry>/.exec(xml);
+    if (!entryMatch) {
+      return {
+        success: false,
+        error: `No results found for arXiv ID ${arxivId}`,
+        reason: "not_found",
+      };
+    }
+
+    const entryXml = entryMatch[1] ?? "";
+
+    // Extract metadata
+    const title = extractXmlText(entryXml, "title");
+    const summary = extractXmlText(entryXml, "summary");
+    const published = extractXmlText(entryXml, "published");
+    const authors = extractAuthors(entryXml);
+    const journalDoi = extractJournalDoi(entryXml);
+
+    // Build DOI: prefer journal DOI, fall back to arXiv DOI
+    const baseId = arxivId.replace(/v\d+$/, "");
+    const doi = journalDoi ?? `10.48550/arXiv.${baseId}`;
+
+    // Build CSL-JSON item
+    const item: CslItem = {
+      id: "",
+      type: "article",
+      title,
+      author: authors,
+      abstract: summary || undefined,
+      issued: parseIssuedDate(published),
+      DOI: doi,
+      URL: `https://arxiv.org/abs/${arxivId}`,
+      custom: {
+        arxiv_id: arxivId,
+      },
+    };
+
+    // Validate using zod schema
+    const parseResult = CslItemSchema.safeParse(item);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: `Invalid CSL-JSON data for arXiv ${arxivId}: ${parseResult.error.message}`,
         reason: "validation_error",
       };
     }
