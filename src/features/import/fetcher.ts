@@ -320,7 +320,7 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
 }
 
 /** arXiv Atom API base URL */
-const ARXIV_API_BASE = "http://export.arxiv.org/api/query";
+const ARXIV_API_BASE = "https://export.arxiv.org/api/query";
 
 /**
  * Extract text content from an XML element using regex.
@@ -337,7 +337,7 @@ function extractXmlText(xml: string, tagName: string): string {
  */
 function extractAuthors(entryXml: string): { literal: string }[] {
   const authors: { literal: string }[] = [];
-  const matches = entryXml.matchAll(/<author>\s*<name>([^<]+)<\/name>\s*<\/author>/g);
+  const matches = entryXml.matchAll(/<author>[\s\S]*?<name>([^<]+)<\/name>[\s\S]*?<\/author>/g);
   for (const match of matches) {
     const name = match[1]?.trim();
     if (name) {

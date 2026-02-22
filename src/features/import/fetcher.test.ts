@@ -589,6 +589,42 @@ describe("fetchArxiv", () => {
       }
     });
 
+    it("should extract authors with arxiv:affiliation elements", async () => {
+      const xmlWithAffiliations = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/2301.13867</id>
+    <title>Affiliated Paper</title>
+    <author>
+      <name>Kazuyuki Fujii</name>
+      <arxiv:affiliation xmlns:arxiv="http://arxiv.org/schemas/atom">Yokohama City University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Kyoko Higashida</name>
+      <arxiv:affiliation xmlns:arxiv="http://arxiv.org/schemas/atom">Yokohama City University</arxiv:affiliation>
+    </author>
+    <summary>Test abstract</summary>
+    <published>2023-01-30T18:00:00Z</published>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.AI"/>
+  </entry>
+</feed>`;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(xmlWithAffiliations),
+      });
+
+      const result = await fetchArxiv("2301.13867");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.item.author).toEqual([
+          { literal: "Kazuyuki Fujii" },
+          { literal: "Kyoko Higashida" },
+        ]);
+      }
+    });
+
     it("should set type to article", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
