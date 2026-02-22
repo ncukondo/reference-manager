@@ -120,9 +120,6 @@ export function cacheIsbnResult(isbn: string, item: CslItem, config?: CacheConfi
   storeInCache(isbnCache, isbn, item, config);
 }
 
-/**
- * Reset all caches (for test isolation)
- */
 /** arXiv cache: Map<arxivId, CacheEntry> */
 const arxivCache = new Map<string, CacheEntry>();
 
@@ -140,6 +137,7 @@ export function cacheArxivResult(arxivId: string, item: CslItem, config?: CacheC
   storeInCache(arxivCache, arxivId, item, config);
 }
 
+/** Reset all caches (for test isolation) */
 export function resetCache(): void {
   pmidCache.clear();
   doiCache.clear();

@@ -289,7 +289,7 @@ export function isIsbn(input: string): boolean {
 /**
  * arXiv ID pattern: YYMM.NNNNN or YYMM.NNNN with optional version suffix
  */
-const ARXIV_ID_PATTERN = /^\d{4}\.\d{4,5}(v\d+)?$/;
+export const ARXIV_ID_PATTERN = /^\d{4}\.\d{4,5}(v\d+)?$/;
 
 /**
  * Check if input is an arXiv identifier.

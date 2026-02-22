@@ -69,6 +69,7 @@ export async function fulltextDiscover(
   if (doi) article.doi = doi;
   if (pmid) article.pmid = pmid;
   if (pmcid) article.pmcid = pmcid;
+  if (item.custom?.arxiv_id) article.arxivId = item.custom.arxiv_id;
 
   // Build discovery config
   const config: DiscoveryConfig = {

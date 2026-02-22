@@ -93,6 +93,24 @@ describe("Pretty Output Formatter", () => {
       expect(result).toContain("Authors: Jones, B.");
     });
 
+    it("should format literal author correctly", () => {
+      const itemWithLiteral: CslItem = {
+        id: "who-2023",
+        type: "article-journal",
+        title: "Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440099",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = formatPretty([itemWithLiteral]);
+      expect(result).toContain("Authors: World Health Organization");
+    });
+
     it("should display year from issued.date-parts", () => {
       const result = formatPretty([sampleItem1]);
 

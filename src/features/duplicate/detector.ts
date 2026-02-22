@@ -41,6 +41,7 @@ function normalizeAuthors(item: CslItem): string | null {
 
   // Combine all authors: "family given-initial"
   const authorStrings = item.author.map((author) => {
+    if (author.literal) return author.literal;
     const family = author.family || "";
     const givenInitial = author.given ? author.given.charAt(0) : "";
     return `${family} ${givenInitial}`.trim();

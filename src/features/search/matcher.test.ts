@@ -323,6 +323,30 @@ describe("matchToken", () => {
       expect(matches[0].field).toBe("author");
     });
 
+    it("should match literal author name", () => {
+      const refWithLiteral: CslItem = {
+        id: "who2023",
+        type: "article-journal",
+        title: "Health Report",
+        author: [{ literal: "World Health Organization" }],
+        custom: {
+          uuid: "test-uuid",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const token: SearchToken = {
+        raw: "author:World Health",
+        value: "World Health",
+        field: "author",
+        isPhrase: false,
+      };
+
+      const matches = matchToken(token, refWithLiteral);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].field).toBe("author");
+    });
+
     it("should NOT match author whose given name starts differently", () => {
       const refWithTakuma: CslItem = {
         id: "test",

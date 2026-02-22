@@ -14,6 +14,8 @@ function formatFirstAuthor(item: CslItem): string {
     return "Unknown";
   }
 
+  if (firstAuthor.literal) return firstAuthor.literal;
+
   const family = firstAuthor.family || "Unknown";
   const givenInitial = firstAuthor.given ? firstAuthor.given[0] : "";
 
@@ -151,6 +153,7 @@ function getFirstAuthorFamilyName(item: CslItem): string {
     return "Unknown";
   }
 
+  if (firstAuthor.literal) return firstAuthor.literal;
   return firstAuthor.family || "Unknown";
 }
 

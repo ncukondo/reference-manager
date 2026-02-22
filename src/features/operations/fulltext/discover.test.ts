@@ -246,6 +246,52 @@ describe("fulltextDiscover", () => {
     expect(result.discoveredIds).toEqual({ pmcid: "PMC9999999" });
   });
 
+  it("should pass arxivId when custom.arxiv_id is present", async () => {
+    const itemWithArxiv = {
+      ...createItem("test-id", { DOI: "10.1234/test" }),
+      custom: {
+        uuid: "test-uuid",
+        created_at: "2024-01-01T00:00:00.000Z",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        arxiv_id: "2301.13867",
+      },
+    };
+    vi.mocked(mockLibrary.find).mockResolvedValue(itemWithArxiv);
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [],
+      errors: [],
+      discoveredIds: {},
+    });
+
+    await fulltextDiscover(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+    });
+
+    expect(mockedDiscoverOA).toHaveBeenCalledWith(
+      { doi: "10.1234/test", arxivId: "2301.13867" },
+      expect.any(Object)
+    );
+  });
+
+  it("should not pass arxivId when custom.arxiv_id is absent", async () => {
+    vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+    mockedDiscoverOA.mockResolvedValue({
+      oaStatus: "open",
+      locations: [],
+      errors: [],
+      discoveredIds: {},
+    });
+
+    await fulltextDiscover(mockLibrary, {
+      identifier: "test-id",
+      fulltextConfig: defaultConfig,
+    });
+
+    expect(mockedDiscoverOA).toHaveBeenCalledWith({ doi: "10.1234/test" }, expect.any(Object));
+  });
+
   it("should propagate discovery errors in result", async () => {
     vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
     mockedDiscoverOA.mockResolvedValue({

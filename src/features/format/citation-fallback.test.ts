@@ -204,6 +204,25 @@ describe("Citation Fallback Formatter", () => {
       expect(result).toBe("Smith J. Journal. 2023. Test Article.");
     });
 
+    it("should format literal author in bibliography", () => {
+      const item: CslItem = {
+        id: "who-2023",
+        type: "article-journal",
+        title: "Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        "container-title": "Journal",
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = formatBibliography([item]);
+      expect(result).toContain("World Health Organization.");
+    });
+
     it("should handle missing author", () => {
       const item: CslItem = {
         id: "unknown-2023",
@@ -413,6 +432,24 @@ describe("Citation Fallback Formatter", () => {
     it("should format multiple items with semicolon separation", () => {
       const result = formatInText([sampleItem1, sampleItem2]);
       expect(result).toBe("(Smith, 2023; Jones et al, 2024)");
+    });
+
+    it("should format literal author in in-text citation", () => {
+      const item: CslItem = {
+        id: "who-2023",
+        type: "article-journal",
+        title: "Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440001",
+          created_at: "2024-01-01T00:00:00.000Z",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = formatInText([item]);
+      expect(result).toBe("(World Health Organization, 2023)");
     });
 
     it("should handle missing author", () => {

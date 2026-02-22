@@ -508,6 +508,67 @@ describe("detectDuplicate", () => {
     });
   });
 
+  describe("Literal author format", () => {
+    it("should detect duplicate by title-author-year with literal authors", () => {
+      const literalAuthorItem: CslItem = {
+        id: "who2023",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440020",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const duplicateItem: CslItem = {
+        id: "who2023-dup",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440021",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = detectDuplicate(duplicateItem, [literalAuthorItem]);
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("title-author-year");
+    });
+
+    it("should not match literal author against different literal author", () => {
+      const item1: CslItem = {
+        id: "who2023",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "World Health Organization" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440020",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const item2: CslItem = {
+        id: "un2023",
+        type: "article-journal",
+        title: "Global Health Report",
+        author: [{ literal: "United Nations" }],
+        issued: { "date-parts": [[2023]] },
+        custom: {
+          uuid: "660e8400-e29b-41d4-a716-446655440021",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = detectDuplicate(item2, [item1]);
+      expect(result.isDuplicate).toBe(false);
+    });
+  });
+
   describe("Edge cases", () => {
     it("should not detect duplicate when item has no DOI, PMID, or title", () => {
       const itemWithoutIdentifiers: CslItem = {

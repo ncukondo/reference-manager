@@ -9,6 +9,7 @@ import { Cite } from "@citation-js/core";
 import "@citation-js/plugin-doi";
 import "@citation-js/plugin-isbn";
 import { type CslItem, CslItemSchema } from "../../core/csl-json/types.js";
+import { ARXIV_ID_PATTERN } from "./detector.js";
 import { getRateLimiter } from "./rate-limiter.js";
 
 /** PMC Citation Exporter API base URL */
@@ -320,9 +321,6 @@ export async function fetchIsbn(isbn: string): Promise<FetchResult> {
 
 /** arXiv Atom API base URL */
 const ARXIV_API_BASE = "http://export.arxiv.org/api/query";
-
-/** arXiv ID pattern for validation */
-const ARXIV_ID_PATTERN = /^\d{4}\.\d{4,5}(v\d+)?$/;
 
 /**
  * Extract text content from an XML element using regex.
