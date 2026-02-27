@@ -84,15 +84,36 @@ async function startServerForeground(options: ServerStartOptions): Promise<void>
   // Start server with file watcher
   const { app, dispose } = await startServerWithFileWatcher(options.library, options.config);
 
-  // Start HTTP server
-  const server = serve({
-    fetch: app.fetch,
-    port,
-    hostname: "127.0.0.1",
-  });
+  // Start HTTP server and wait for it to be ready
+  const actualPort = await new Promise<number>((resolve, reject) => {
+    const server = serve({
+      fetch: app.fetch,
+      port,
+      hostname: "127.0.0.1",
+    });
 
-  // Get actual port (in case of dynamic allocation)
-  const actualPort = (server.address() as { port: number }).port;
+    server.on("listening", () => {
+      const addr = server.address() as { port: number };
+      resolve(addr.port);
+
+      // Cleanup handler
+      const cleanup = async () => {
+        process.stdout.write("\nShutting down...\n");
+        server.close();
+        await dispose();
+        await removePortfile(options.portfilePath);
+        setExitCode(ExitCode.SUCCESS);
+      };
+
+      // Handle termination signals
+      process.on("SIGINT", cleanup);
+      process.on("SIGTERM", cleanup);
+    });
+
+    server.on("error", (err) => {
+      reject(err);
+    });
+  });
 
   // Write portfile
   const pid = process.pid;
@@ -103,19 +124,6 @@ async function startServerForeground(options: ServerStartOptions): Promise<void>
   process.stdout.write(`Library: ${options.library}\n`);
   process.stdout.write(`PID: ${pid}\n`);
   process.stdout.write("Press Ctrl+C to stop\n");
-
-  // Cleanup handler
-  const cleanup = async () => {
-    process.stdout.write("\nShutting down...\n");
-    server.close();
-    await dispose();
-    await removePortfile(options.portfilePath);
-    setExitCode(ExitCode.SUCCESS);
-  };
-
-  // Handle termination signals
-  process.on("SIGINT", cleanup);
-  process.on("SIGTERM", cleanup);
 
   // Keep process running
   await new Promise(() => {});
