@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Build single-binary distribution using bun compile
 # Usage: ./scripts/build-binary.sh [target...]
-# Targets: linux-x64 (default), linux-arm64, windows-x64
+# Targets: linux-x64 (default), linux-arm64, darwin-x64, darwin-arm64, windows-x64
 # If no target is specified, builds for the current platform.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,6 +15,8 @@ OUT_DIR="$PROJECT_DIR/dist"
 declare -A BUN_TARGETS=(
   [linux-x64]="bun-linux-x64"
   [linux-arm64]="bun-linux-arm64"
+  [darwin-x64]="bun-darwin-x64"
+  [darwin-arm64]="bun-darwin-arm64"
   [windows-x64]="bun-windows-x64"
 )
 

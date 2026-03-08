@@ -83,7 +83,7 @@ No runtime dependencies required. Download and install with one command:
 curl -fsSL https://raw.githubusercontent.com/ncukondo/reference-manager/main/install.sh | bash
 ```
 
-This installs a standalone `ref` binary to `~/.local/bin/`. Supports Linux (x64, arm64).
+This installs a standalone `ref` binary to `~/.local/bin/`. Supports Linux (x64, arm64) and macOS (x64, arm64).
 
 On Windows (PowerShell):
 

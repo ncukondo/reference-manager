@@ -30,7 +30,7 @@ detect_platform() {
 
   case "$os" in
     Linux)  os="linux" ;;
-    Darwin) error "macOS is not yet supported. Use npm install -g @ncukondo/reference-manager instead." ;;
+    Darwin) os="darwin" ;;
     MINGW*|MSYS*|CYGWIN*) os="windows" ;;
     *) error "Unsupported OS: $os" ;;
   esac
