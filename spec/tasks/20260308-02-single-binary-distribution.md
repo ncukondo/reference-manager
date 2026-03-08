@@ -26,38 +26,38 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 ### Step 1: Devcontainer Setup
 
 - [x] Add bun installation to `.devcontainer/Dockerfile`
-- [ ] Rebuild devcontainer and verify `bun --version` works
+- [x] Rebuild devcontainer and verify `bun --version` works
 
 ### Step 2: Bun Compile Entry Point
 
 Create a dedicated entry point for bun compile that imports directly from source.
 
-- [ ] Create `src/cli/entry-bun.ts` (thin wrapper calling `main(process.argv)`)
-- [ ] Verify `bun run src/cli/entry-bun.ts --help` works
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Create `src/cli/entry-bun.ts` (thin wrapper calling `main(process.argv)`)
+- [x] Verify `bun run src/cli/entry-bun.ts --help` works
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Bun Compile Build
 
-- [ ] Create `scripts/build-binary.sh` that runs `bun build --compile`
-- [ ] Test: built binary runs `ref --help` without Node.js on PATH
-- [ ] Test: built binary can perform basic operations (list, search, add)
-- [ ] Verify ink/React TUI works in the compiled binary
-- [ ] Add cross-compilation targets (linux-x64, linux-arm64, windows-x64)
+- [x] Create `scripts/build-binary.sh` that runs `bun build --compile`
+- [x] Test: built binary runs `ref --help` without Node.js on PATH
+- [x] Test: built binary can perform basic operations (list, search, add)
+- [ ] Verify ink/React TUI works in the compiled binary (requires manual TTY test)
+- [x] Add cross-compilation targets (linux-x64, linux-arm64, windows-x64)
 
 ### Step 4: Installer Script
 
-- [ ] Create `install.sh` with:
+- [x] Create `install.sh` with:
   - Platform/architecture detection
   - Download from GitHub Releases
   - Install to `~/.local/bin/ref`
   - PATH configuration for bash/zsh/fish
   - Verification of installed binary
-- [ ] Test on Linux (native)
-- [ ] Test on WSL
+- [x] Test on Linux (native)
+- [x] Test on WSL
 
 ### Step 5: GitHub Actions Release Workflow
 
-- [ ] Create `.github/workflows/release-binary.yml`
+- [x] Create `.github/workflows/release-binary.yml`
   - Trigger on version tags (`v*`)
   - Build binaries for linux-x64, linux-arm64, windows-x64
   - Upload to GitHub Releases
@@ -65,21 +65,21 @@ Create a dedicated entry point for bun compile that imports directly from source
 
 ### Step 6: Documentation Update
 
-- [ ] Update README.md with new installation instructions
+- [x] Update README.md with new installation instructions
   - Add `curl | bash` one-liner as primary method
   - Keep npm as alternative method
   - Document manual binary download
-- [ ] Update CHANGELOG.md
+- [x] Update CHANGELOG.md
 
 ## Manual Verification
 
 **Script**: `test-fixtures/test-binary-distribution.sh`
 
 Non-TTY tests (automated):
-- [ ] `./ref --version` outputs version number
-- [ ] `./ref list` works with a test library
-- [ ] `./ref search test` works with a test library
-- [ ] `./ref add --help` shows help text
+- [x] `./ref --version` outputs version number
+- [x] `./ref list` works with a test library
+- [x] `./ref search test` works with a test library
+- [x] `./ref add --help` shows help text
 
 TTY-required tests (run manually in a terminal):
 - [ ] `./ref` launches TUI search mode
@@ -87,13 +87,13 @@ TTY-required tests (run manually in a terminal):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Binary build succeeds (`scripts/build-binary.sh`)
-- [ ] Manual verification: `./test-fixtures/test-binary-distribution.sh` (if applicable)
-- [ ] CHANGELOG.md updated
-- [ ] README.md updated with new installation instructions
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Binary build succeeds (`scripts/build-binary.sh`)
+- [x] Manual verification: `./test-fixtures/test-binary-distribution.sh` (if applicable)
+- [x] CHANGELOG.md updated
+- [x] README.md updated with new installation instructions
 - [ ] Close issue #79 (or include `Closes #79` in PR description)
 - [ ] Move this file to `spec/tasks/completed/`
