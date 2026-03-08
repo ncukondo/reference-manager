@@ -101,7 +101,12 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
-(No active tasks)
+### Phase 43: Fulltext Get --stdout Auto-Select Markdown (#77)
+
+When `--stdout` is used without `--pdf`/`--markdown`, auto-select markdown content for output. If only PDF exists, report guidance on stderr.
+
+- Task: `spec/tasks/20260308-01-fulltext-get-stdout-auto-markdown.md`
+- Status: Not started
 
 ---
 
