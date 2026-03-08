@@ -147,6 +147,34 @@ function getAllFulltextPaths(
 }
 
 /**
+ * Handle stdout mode without explicit type - auto-select markdown
+ */
+async function handleStdoutAutoMarkdown(
+  attachments: Attachments | undefined,
+  identifier: string,
+  fulltextDirectory: string
+): Promise<FulltextGetResult> {
+  const markdownFile = findFulltextFile(attachments, "markdown");
+  if (markdownFile && attachments?.directory) {
+    const filePath = buildFilePath(fulltextDirectory, attachments.directory, markdownFile.filename);
+    try {
+      return await getFileContent(filePath);
+    } catch {
+      return { success: false, error: `No markdown fulltext attached to '${identifier}'` };
+    }
+  }
+  // Check if PDF exists to provide guidance
+  const pdfFile = findFulltextFile(attachments, "pdf");
+  if (pdfFile) {
+    return {
+      success: false,
+      error: `No markdown fulltext attached to '${identifier}'. PDF is available; use --pdf flag to output.`,
+    };
+  }
+  return { success: false, error: `No fulltext attached to '${identifier}'` };
+}
+
+/**
  * Get fulltext file paths or content for a reference.
  *
  * @param library - The library containing the reference
@@ -171,6 +199,11 @@ export async function fulltextGet(
   // Stdout mode with specific type
   if (stdout && type) {
     return handleStdoutMode(attachments, type, identifier, fulltextDirectory);
+  }
+
+  // Stdout mode without type: auto-select markdown
+  if (stdout && !type) {
+    return handleStdoutAutoMarkdown(attachments, identifier, fulltextDirectory);
   }
 
   // Path mode - find all fulltext files

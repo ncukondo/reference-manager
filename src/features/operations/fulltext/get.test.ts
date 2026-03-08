@@ -333,6 +333,80 @@ describe("fulltextGet", () => {
     });
   });
 
+  describe("stdout mode without type (auto-markdown)", () => {
+    it("should return markdown content when markdown exists", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.md", role: "fulltext" }],
+      });
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+      mockedReadFile.mockResolvedValue(Buffer.from("# Markdown content"));
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        stdout: true,
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.content?.toString()).toBe("# Markdown content");
+    });
+
+    it("should return markdown content when both markdown and PDF exist", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [
+          { filename: "fulltext.pdf", role: "fulltext" },
+          { filename: "fulltext.md", role: "fulltext" },
+        ],
+      });
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+      mockedReadFile.mockResolvedValue(Buffer.from("# Both exist"));
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        stdout: true,
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.content?.toString()).toBe("# Both exist");
+    });
+
+    it("should return error with guidance when only PDF exists", async () => {
+      const item = createItem("test-id", {
+        directory: "test-id-12345678",
+        files: [{ filename: "fulltext.pdf", role: "fulltext" }],
+      });
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        stdout: true,
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe(
+        "No markdown fulltext attached to 'test-id'. PDF is available; use --pdf flag to output."
+      );
+    });
+
+    it("should return error when no attachments exist", async () => {
+      const item = createItem("test-id");
+      vi.mocked(mockLibrary.find).mockResolvedValue(item);
+
+      const result = await fulltextGet(mockLibrary, {
+        identifier: "test-id",
+        stdout: true,
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("No fulltext attached to 'test-id'");
+    });
+  });
+
   describe("attachments system integration", () => {
     it("should only return files with fulltext role", async () => {
       const item = createItem("test-id", {

@@ -174,6 +174,7 @@ cat paper.pdf | ref fulltext attach <ref-id> --pdf
 ref fulltext get <ref-id>                    # Both paths
 ref fulltext get <ref-id> --pdf              # PDF path only
 ref fulltext get <ref-id> --markdown         # Markdown path only
+ref fulltext get <ref-id> --stdout            # Output markdown (auto-select)
 ref fulltext get <ref-id> --pdf --stdout     # Output content
 ref fulltext get <ref-id> --prefer markdown  # Preferred type path first
 ref fulltext get id1 id2 id3                 # Multiple IDs
@@ -184,7 +185,7 @@ ref fulltext get id1 id2 -o json             # JSON output
 ```
 --pdf              PDF path only
 --markdown         Markdown path only
---stdout           Output content to stdout (single ID only)
+--stdout           Output content to stdout (single ID only); auto-selects markdown if no type specified
 --prefer <type>    Preferred fulltext type (pdf or markdown); overrides config
 -o, --output <format>  Output format: json|text (default: text)
 ```
@@ -202,6 +203,8 @@ Accepts variadic arguments, multiple lines from stdin, or multi-select in intera
 | Interactive (TTY) | Single select | Multi select |
 
 `--stdout` cannot be used with multiple identifiers.
+
+**`--stdout` without `--pdf`/`--markdown`:** Automatically outputs markdown content if available. If only PDF exists, reports on stderr with guidance (`use --pdf flag to output`). If no fulltext exists, reports error.
 
 **Text output (multiple IDs):**
 

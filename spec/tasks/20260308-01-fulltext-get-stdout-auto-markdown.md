@@ -51,34 +51,34 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Add the `stdout && !type` branch in `fulltextGet()`.
 
-- [ ] Write test: `src/features/operations/fulltext/get.test.ts` — add tests for:
+- [x] Write test: `src/features/operations/fulltext/get.test.ts` — add tests for:
   - `stdout=true, type=undefined`, markdown exists → returns content (Buffer)
   - `stdout=true, type=undefined`, only PDF exists → returns error with guidance message
   - `stdout=true, type=undefined`, no attachments → returns error "No fulltext attached"
   - `stdout=true, type=undefined`, markdown + PDF exist → returns markdown content
-- [ ] Verify Red: `npm run test:unit -- get.test.ts` (tests fail)
-- [ ] Implement: Add branch in `fulltextGet()` after line 172
-- [ ] Verify Green: `npm run test:unit -- get.test.ts` (all tests pass)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify Red: `npm run test:unit -- get.test.ts` (tests fail)
+- [x] Implement: Add branch in `fulltextGet()` after line 172
+- [x] Verify Green: `npm run test:unit -- get.test.ts` (all tests pass)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: E2E test
 
-- [ ] Write test: `src/cli/fulltext.e2e.test.ts` — add tests for:
+- [x] Write test: `src/cli/fulltext.e2e.test.ts` — add tests for:
   - `ref fulltext get <id> --stdout` with markdown attached → outputs markdown content
   - `ref fulltext get <id> --stdout` with only PDF → stderr guidance, exit 1
-- [ ] Verify Green: `npm run test:e2e -- fulltext.e2e.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify Green: `npm run test:e2e -- fulltext.e2e.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Documentation updates
 
-- [ ] Update `spec/features/attachments.md` — document `--stdout` without type behavior
-- [ ] Update CHANGELOG.md
+- [x] Update `spec/features/attachments.md` — document `--stdout` without type behavior
+- [x] Update CHANGELOG.md
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`
