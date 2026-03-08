@@ -76,10 +76,10 @@ Create a dedicated entry point for bun compile that imports directly from source
 **Script**: `test-fixtures/test-binary-distribution.sh`
 
 Non-TTY tests (automated):
-- [ ] `./ref --version` outputs version number
-- [ ] `./ref list` works with a test library
-- [ ] `./ref search test` works with a test library
-- [ ] `./ref add --help` shows help text
+- [x] `./ref --version` outputs version number
+- [x] `./ref list` works with a test library
+- [x] `./ref search test` works with a test library
+- [x] `./ref add --help` shows help text
 
 TTY-required tests (run manually in a terminal):
 - [ ] `./ref` launches TUI search mode
@@ -87,13 +87,13 @@ TTY-required tests (run manually in a terminal):
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Binary build succeeds (`scripts/build-binary.sh`)
-- [ ] Manual verification: `./test-fixtures/test-binary-distribution.sh` (if applicable)
-- [ ] CHANGELOG.md updated
-- [ ] README.md updated with new installation instructions
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] Binary build succeeds (`scripts/build-binary.sh`)
+- [x] Manual verification: `./test-fixtures/test-binary-distribution.sh` (if applicable)
+- [x] CHANGELOG.md updated
+- [x] README.md updated with new installation instructions
 - [ ] Close issue #79 (or include `Closes #79` in PR description)
 - [ ] Move this file to `spec/tasks/completed/`
