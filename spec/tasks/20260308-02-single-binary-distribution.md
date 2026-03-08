@@ -65,11 +65,11 @@ Create a dedicated entry point for bun compile that imports directly from source
 
 ### Step 6: Documentation Update
 
-- [ ] Update README.md with new installation instructions
+- [x] Update README.md with new installation instructions
   - Add `curl | bash` one-liner as primary method
   - Keep npm as alternative method
   - Document manual binary download
-- [ ] Update CHANGELOG.md
+- [x] Update CHANGELOG.md
 
 ## Manual Verification
 

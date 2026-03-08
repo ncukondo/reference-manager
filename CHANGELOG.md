@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Single-Binary Distribution**: Standalone binary via `bun build --compile` — no Node.js required
+  - One-line installer: `curl -fsSL .../install.sh | bash`
+  - Supports Linux x64, Linux arm64, and Windows x64
+  - GitHub Actions workflow for automated binary releases on version tags
+  - Installs to `~/.local/bin/ref` with automatic PATH configuration
+
 ### Changed
 
 - **Fulltext Get `--stdout` Auto-Markdown**: `ref fulltext get <id> --stdout` without `--pdf`/`--markdown` now auto-selects markdown content. If only PDF exists, provides guidance on stderr to use `--pdf` flag. Fixes #77.

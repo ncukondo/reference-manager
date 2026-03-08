@@ -75,11 +75,21 @@ Claude: [uses add tool] Added reference: example2024
 
 ## Installation
 
-### Requirements
+### Single Binary (Recommended)
 
-- Node.js 22 or later
+No runtime dependencies required. Download and install with one command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ncukondo/reference-manager/main/install.sh | bash
+```
+
+This installs a standalone `ref` binary to `~/.local/bin/`. Supports Linux (x64, arm64).
+
+You can also download binaries directly from [GitHub Releases](https://github.com/ncukondo/reference-manager/releases/latest).
 
 ### From npm
+
+Requires Node.js 22 or later:
 
 ```bash
 npm install -g @ncukondo/reference-manager
