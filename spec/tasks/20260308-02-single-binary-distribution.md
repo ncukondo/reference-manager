@@ -26,15 +26,15 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 ### Step 1: Devcontainer Setup
 
 - [x] Add bun installation to `.devcontainer/Dockerfile`
-- [ ] Rebuild devcontainer and verify `bun --version` works
+- [x] Rebuild devcontainer and verify `bun --version` works
 
 ### Step 2: Bun Compile Entry Point
 
 Create a dedicated entry point for bun compile that imports directly from source.
 
-- [ ] Create `src/cli/entry-bun.ts` (thin wrapper calling `main(process.argv)`)
-- [ ] Verify `bun run src/cli/entry-bun.ts --help` works
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Create `src/cli/entry-bun.ts` (thin wrapper calling `main(process.argv)`)
+- [x] Verify `bun run src/cli/entry-bun.ts --help` works
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Bun Compile Build
 
