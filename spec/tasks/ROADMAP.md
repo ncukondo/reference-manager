@@ -112,8 +112,8 @@ When `--stdout` is used without `--pdf`/`--markdown`, auto-select markdown conte
 
 Provide single-binary distribution via `bun build --compile` and an installer script. Removes Node.js dependency, simplifies installation to `curl | bash`, and improves accessibility in PATH-restricted environments.
 
-- Task: `spec/tasks/20260308-02-single-binary-distribution.md`
-- Status: In Progress
+- Task: `spec/tasks/completed/20260308-02-single-binary-distribution.md`
+- Status: Done (PR #80)
 
 ---
 
