@@ -34,7 +34,7 @@ build_target() {
   fi
 
   echo "Building for $target..."
-  bun build --compile --target="$bun_target" "$ENTRY" --outfile "$outfile"
+  bun build --compile --target="$bun_target" --external react-devtools-core "$ENTRY" --outfile "$outfile"
   echo "  -> $outfile ($(du -h "$outfile" | cut -f1))"
 }
 
