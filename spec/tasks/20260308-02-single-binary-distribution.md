@@ -46,14 +46,14 @@ Create a dedicated entry point for bun compile that imports directly from source
 
 ### Step 4: Installer Script
 
-- [ ] Create `install.sh` with:
+- [x] Create `install.sh` with:
   - Platform/architecture detection
   - Download from GitHub Releases
   - Install to `~/.local/bin/ref`
   - PATH configuration for bash/zsh/fish
   - Verification of installed binary
-- [ ] Test on Linux (native)
-- [ ] Test on WSL
+- [x] Test on Linux (native)
+- [x] Test on WSL
 
 ### Step 5: GitHub Actions Release Workflow
 
