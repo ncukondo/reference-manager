@@ -38,11 +38,11 @@ Create a dedicated entry point for bun compile that imports directly from source
 
 ### Step 3: Bun Compile Build
 
-- [ ] Create `scripts/build-binary.sh` that runs `bun build --compile`
-- [ ] Test: built binary runs `ref --help` without Node.js on PATH
-- [ ] Test: built binary can perform basic operations (list, search, add)
-- [ ] Verify ink/React TUI works in the compiled binary
-- [ ] Add cross-compilation targets (linux-x64, linux-arm64, windows-x64)
+- [x] Create `scripts/build-binary.sh` that runs `bun build --compile`
+- [x] Test: built binary runs `ref --help` without Node.js on PATH
+- [x] Test: built binary can perform basic operations (list, search, add)
+- [ ] Verify ink/React TUI works in the compiled binary (requires manual TTY test)
+- [x] Add cross-compilation targets (linux-x64, linux-arm64, windows-x64)
 
 ### Step 4: Installer Script
 
