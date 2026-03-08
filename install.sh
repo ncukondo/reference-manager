@@ -69,6 +69,8 @@ download_binary() {
     curl -fsSL -o "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
   elif command -v wget &>/dev/null; then
     wget -qO "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+  else
+    error "curl or wget is required for downloading."
   fi
 
   chmod +x "$dest"
