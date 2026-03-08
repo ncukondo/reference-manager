@@ -108,6 +108,13 @@ When `--stdout` is used without `--pdf`/`--markdown`, auto-select markdown conte
 - Task: `spec/tasks/completed/20260308-01-fulltext-get-stdout-auto-markdown.md`
 - Status: Done (PR #78)
 
+### Phase 44: Single-Binary Distribution (#79)
+
+Provide single-binary distribution via `bun build --compile` and an installer script. Removes Node.js dependency, simplifies installation to `curl | bash`, and improves accessibility in PATH-restricted environments.
+
+- Task: `spec/tasks/20260308-02-single-binary-distribution.md`
+- Status: In Progress
+
 ---
 
 ## Next Steps

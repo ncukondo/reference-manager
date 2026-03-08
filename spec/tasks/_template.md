@@ -63,4 +63,5 @@ TTY-required tests (run manually in a terminal):
 - [ ] Build succeeds (`npm run build`)
 - [ ] Manual verification: `./test-fixtures/test-<feature>.sh` (if applicable)
 - [ ] CHANGELOG.md updated
+- [ ] Close linked issue (include `Closes #XX` in PR description)
 - [ ] Move this file to `spec/tasks/completed/`

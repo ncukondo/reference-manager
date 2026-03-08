@@ -228,6 +228,20 @@ After each task:
 3. Commit with descriptive message
 4. Push to remote
 
+### Pull Request and Issue Linking
+
+When a task has an associated GitHub issue, include `Closes #XX` in the PR description so the issue is automatically closed on merge.
+
+```markdown
+## Summary
+
+- Implemented feature X
+
+Closes #42
+```
+
+If a PR addresses multiple issues, list each one (`Closes #42, Closes #43`).
+
 ## Quality Gates
 
 Every implementation must pass:
