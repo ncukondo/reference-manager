@@ -57,7 +57,7 @@ Create a dedicated entry point for bun compile that imports directly from source
 
 ### Step 5: GitHub Actions Release Workflow
 
-- [ ] Create `.github/workflows/release-binary.yml`
+- [x] Create `.github/workflows/release-binary.yml`
   - Trigger on version tags (`v*`)
   - Build binaries for linux-x64, linux-arm64, windows-x64
   - Upload to GitHub Releases
