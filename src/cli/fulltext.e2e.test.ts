@@ -364,6 +364,51 @@ describe("Fulltext Command E2E", () => {
       expect(result.stderr).toContain("No markdown fulltext attached");
     });
 
+    describe("stdout auto-markdown", () => {
+      it("should output markdown content when --stdout used without type flag", async () => {
+        // Attach markdown to Smith-2024
+        const mdPath = path.join(testDir, "paper.md");
+        await fs.writeFile(mdPath, "# Auto-selected markdown content", "utf-8");
+        await runWithFulltext([
+          "fulltext",
+          "attach",
+          "Smith-2024",
+          mdPath,
+          "--library",
+          libraryPath,
+        ]);
+
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "--stdout",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toBe("# Auto-selected markdown content");
+      });
+
+      it("should show guidance on stderr when only PDF exists with --stdout", async () => {
+        // Smith-2024 already has PDF attached from beforeEach
+        const result = await runWithFulltext([
+          "fulltext",
+          "get",
+          "Smith-2024",
+          "--stdout",
+          "--library",
+          libraryPath,
+        ]);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain("No markdown fulltext attached to 'Smith-2024'");
+        expect(result.stderr).toContain("PDF is available");
+        expect(result.stderr).toContain("--pdf");
+      });
+    });
+
     describe("multi-ID support", () => {
       it("should get paths for multiple identifiers", async () => {
         // Also attach PDF to Jones-2023
