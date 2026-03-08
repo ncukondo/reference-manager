@@ -85,6 +85,12 @@ curl -fsSL https://raw.githubusercontent.com/ncukondo/reference-manager/main/ins
 
 This installs a standalone `ref` binary to `~/.local/bin/`. Supports Linux (x64, arm64).
 
+On Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/ncukondo/reference-manager/main/install.ps1 | iex
+```
+
 You can also download binaries directly from [GitHub Releases](https://github.com/ncukondo/reference-manager/releases/latest).
 
 ### From npm
