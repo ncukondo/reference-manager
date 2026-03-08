@@ -105,8 +105,8 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 When `--stdout` is used without `--pdf`/`--markdown`, auto-select markdown content for output. If only PDF exists, report guidance on stderr.
 
-- Task: `spec/tasks/20260308-01-fulltext-get-stdout-auto-markdown.md`
-- Status: Not started
+- Task: `spec/tasks/completed/20260308-01-fulltext-get-stdout-auto-markdown.md`
+- Status: Done (PR #78)
 
 ---
 
