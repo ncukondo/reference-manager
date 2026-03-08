@@ -66,9 +66,18 @@ download_binary() {
   info "Downloading ${filename} (${version})..."
 
   if command -v curl &>/dev/null; then
-    curl -fsSL -o "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    if [[ -t 1 ]]; then
+      # TTY: show progress bar
+      curl -fSL --progress-bar -o "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    else
+      curl -fsSL -o "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    fi
   elif command -v wget &>/dev/null; then
-    wget -qO "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    if [[ -t 1 ]]; then
+      wget --show-progress -qO "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    else
+      wget -qO "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    fi
   else
     error "curl or wget is required for downloading."
   fi
