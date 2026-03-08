@@ -71,14 +71,14 @@ Add the `stdout && !type` branch in `fulltextGet()`.
 
 ### Step 3: Documentation updates
 
-- [ ] Update `spec/features/attachments.md` — document `--stdout` without type behavior
-- [ ] Update CHANGELOG.md
+- [x] Update `spec/features/attachments.md` — document `--stdout` without type behavior
+- [x] Update CHANGELOG.md
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
 - [ ] Move this file to `spec/tasks/completed/`

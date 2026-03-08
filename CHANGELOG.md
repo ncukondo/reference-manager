@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Fulltext Get `--stdout` Auto-Markdown**: `ref fulltext get <id> --stdout` without `--pdf`/`--markdown` now auto-selects markdown content. If only PDF exists, provides guidance on stderr to use `--pdf` flag. Fixes #77.
+
 ### Added
 
 - **arXiv ID Import Support**: `ref add` now accepts arXiv IDs as a fourth identifier type
