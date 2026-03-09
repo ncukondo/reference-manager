@@ -9,6 +9,7 @@ import {
   writePortfile,
 } from "../../server/portfile.js";
 import { ExitCode, setExitCode } from "../helpers.js";
+import { getCliSpawnArgs } from "../spawn-args.js";
 
 export interface ServerStartOptions {
   port?: number;
@@ -52,16 +53,16 @@ export async function serverStart(options: ServerStartOptions): Promise<void> {
  * Spawns a new process with --daemon removed.
  */
 async function startServerDaemon(options: ServerStartOptions): Promise<void> {
-  const binaryPath = process.argv[1] || process.execPath;
-
-  // Build arguments without --daemon
-  const args = [binaryPath, "server", "start", "--library", options.library];
+  // Build CLI arguments without --daemon
+  const cliArgs = ["server", "start", "--library", options.library];
   if (options.port !== undefined) {
-    args.push("--port", String(options.port));
+    cliArgs.push("--port", String(options.port));
   }
 
+  const { command, args } = getCliSpawnArgs(cliArgs);
+
   // Spawn detached process
-  const child = spawn(process.execPath, args, {
+  const child = spawn(command, args, {
     detached: true,
     stdio: "ignore",
   });
