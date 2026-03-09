@@ -101,6 +101,13 @@ See [CHANGELOG.md](../../CHANGELOG.md) for details on implemented features.
 
 ## Active Tasks
 
+### Fix: Server auto-start fails with bun-compiled binary (#81)
+
+`startServerDaemon` constructs incorrect spawn arguments for bun-compiled binaries because `process.argv[1]` is the executable path (not a script path). Extract a shared `buildCliSpawnArgs` utility that detects the runtime and builds correct arguments.
+
+- Task: `spec/tasks/completed/20260309-01-fix-server-autostart-bun-binary.md`
+- Status: Done (PR #82)
+
 ### Phase 43: Fulltext Get --stdout Auto-Select Markdown (#77)
 
 When `--stdout` is used without `--pdf`/`--markdown`, auto-select markdown content for output. If only PDF exists, report guidance on stderr.
