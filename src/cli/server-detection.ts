@@ -7,6 +7,7 @@ import {
   readPortfile,
   removePortfile,
 } from "../server/portfile.js";
+import { getCliSpawnArgs } from "./spawn-args.js";
 
 /**
  * Server connection information.
@@ -69,11 +70,10 @@ export async function getServerConnection(
  * @param _config - Configuration (reserved for future use)
  */
 export async function startServerDaemon(libraryPath: string, _config: Config): Promise<void> {
-  // Get the binary path (argv[1] is the script being executed)
-  const binaryPath = process.argv[1] || process.execPath;
+  const { command, args } = getCliSpawnArgs(["server", "start", "--library", libraryPath]);
 
   // Spawn server in detached mode (without --daemon to run foreground in child)
-  const child = spawn(process.execPath, [binaryPath, "server", "start", "--library", libraryPath], {
+  const child = spawn(command, args, {
     detached: true,
     stdio: "ignore",
   });
