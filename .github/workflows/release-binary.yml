@@ -52,17 +52,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Wait for release to be created
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          echo "Waiting for release $TAG to be created..."
+          for i in $(seq 1 30); do
+            if gh release view "$TAG" &>/dev/null; then
+              echo "✓ Release $TAG found"
+              exit 0
+            fi
+            echo "  Attempt $i/30 - release not found yet, waiting 10s..."
+            sleep 10
+          done
+          echo "::error::Release $TAG was not created within 5 minutes"
+          exit 1
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: binaries
           merge-multiple: true
 
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          files: |
-            binaries/ref-*
-            install.sh
-            install.ps1
+      - name: Upload binaries to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          gh release upload "$TAG" binaries/ref-* install.sh install.ps1 --clobber
