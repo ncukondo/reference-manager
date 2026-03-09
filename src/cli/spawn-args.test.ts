@@ -74,4 +74,16 @@ describe("getCliSpawnArgs", () => {
       args: ["/usr/bin/node", "server", "start"],
     });
   });
+
+  test("compiled binary mode: detects bun virtual FS path (/$bunfs/)", () => {
+    process.execPath = "/usr/local/bin/ref";
+    process.argv = ["/usr/local/bin/ref", "/$bunfs/root/ref-linux-x64", "list"];
+
+    const result = getCliSpawnArgs(["server", "start", "--library", "/lib.json"]);
+
+    expect(result).toEqual({
+      command: "/usr/local/bin/ref",
+      args: ["server", "start", "--library", "/lib.json"],
+    });
+  });
 });

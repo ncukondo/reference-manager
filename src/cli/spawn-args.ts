@@ -8,11 +8,13 @@
 export function getCliSpawnArgs(cliArgs: string[]): { command: string; args: string[] } {
   const scriptPath = process.argv[1];
 
-  // In bun-compiled binaries, process.argv[1] === process.execPath
-  // because there is no separate script file — the binary IS the CLI.
-  // In runtime mode (node/bun), process.argv[1] is the script path,
-  // which differs from process.execPath (the runtime binary).
-  const isCompiledBinary = scriptPath !== undefined && scriptPath === process.execPath;
+  // Detect compiled binary mode:
+  // 1. In some bun versions, process.argv[1] === process.execPath
+  // 2. In other bun versions, process.argv[1] is a virtual FS path like "/$bunfs/root/..."
+  // In runtime mode (node/bun), process.argv[1] is a real script path on disk.
+  const isCompiledBinary =
+    scriptPath !== undefined &&
+    (scriptPath === process.execPath || scriptPath.startsWith("/$bunfs/"));
 
   if (isCompiledBinary) {
     return { command: process.execPath, args: cliArgs };
