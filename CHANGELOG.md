@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Server Autostart in Bun Binary**: Fix server autostart and `--daemon` mode when running as a bun-compiled single binary. The spawn logic now correctly detects compiled binary mode and avoids passing a redundant script path argument.
+
 ### Added
 
 - **Single-Binary Distribution**: Standalone binary via `bun build --compile` — no Node.js required
