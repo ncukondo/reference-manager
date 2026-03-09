@@ -65,14 +65,21 @@ download_binary() {
   local url="https://github.com/${REPO}/releases/download/${version}/${filename}"
   info "Downloading ${filename} (${version})..."
 
+  # Download to a temporary file first to avoid "Text file busy" errors
+  # when the existing binary is currently running (e.g., as a server)
+  local tmpfile="${dest}.tmp.$$"
+
   if command -v curl &>/dev/null; then
-    curl -fL --progress-bar -o "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    curl -fL --progress-bar -o "$tmpfile" "$url" || { rm -f "$tmpfile"; error "Download failed. Check that release ${version} exists with binary ${filename}."; }
   elif command -v wget &>/dev/null; then
-    wget --show-progress -qO "$dest" "$url" || error "Download failed. Check that release ${version} exists with binary ${filename}."
+    wget --show-progress -qO "$tmpfile" "$url" || { rm -f "$tmpfile"; error "Download failed. Check that release ${version} exists with binary ${filename}."; }
   else
     error "curl or wget is required for downloading."
   fi
 
+  # Replace the existing binary atomically: remove first, then move
+  rm -f "$dest"
+  mv "$tmpfile" "$dest"
   chmod +x "$dest"
 }
 
