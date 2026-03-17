@@ -22,6 +22,10 @@ vi.mock("./get.js", () => ({
   fulltextGet: vi.fn(),
 }));
 
+vi.mock("./convert.js", () => ({
+  fulltextConvert: vi.fn(),
+}));
+
 import {
   convertArxivHtmlToMarkdown,
   convertPmcXmlToMarkdown,
@@ -31,8 +35,10 @@ import {
   downloadPmcXml,
 } from "@ncukondo/academic-fulltext";
 import { fulltextAttach } from "./attach.js";
+import { fulltextConvert } from "./convert.js";
 import { fulltextGet } from "./get.js";
 
+const mockedFulltextConvert = vi.mocked(fulltextConvert);
 const mockedDiscoverOA = vi.mocked(discoverOA);
 const mockedDownloadPdf = vi.mocked(downloadPdf);
 const mockedDownloadPmcXml = vi.mocked(downloadPmcXml);
@@ -65,6 +71,11 @@ describe("fulltextFetch", () => {
 
   const defaultConfig: FulltextConfig = {
     preferSources: ["pmc", "arxiv", "unpaywall", "core"],
+    pdfConverter: "auto",
+    pdfConverterPriority: ["marker", "docling", "mineru", "pymupdf"],
+    pdfConverterTimeout: 300,
+    converters: {},
+    autoFetchOnAdd: false, // Explicitly set to prevent test flakiness if default changes
     sources: {
       unpaywallEmail: "test@example.com",
       coreApiKey: "test-key",
@@ -1038,5 +1049,124 @@ describe("fulltextFetch", () => {
     expect(result.success).toBe(true);
     expect(result.attachedFiles).toContain("pdf");
     expect(result.attachedFiles).not.toContain("markdown");
+  });
+
+  describe("PDF-to-Markdown auto-conversion on fetch", () => {
+    it("should auto-convert PDF to Markdown when preferredType is markdown and converter available", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+      mockedDiscoverOA.mockResolvedValue({
+        oaStatus: "open",
+        locations: [
+          {
+            source: "unpaywall",
+            url: "https://example.com/paper.pdf",
+            urlType: "pdf",
+            version: "published",
+          },
+        ],
+        errors: [],
+        discoveredIds: {},
+        skipped: [],
+        checkedSources: ["unpaywall"],
+      });
+      mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
+      mockedFulltextAttach.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        type: "pdf",
+      });
+      mockedFulltextConvert.mockResolvedValue({
+        success: true,
+        filename: "fulltext.md",
+      });
+
+      const result = await fulltextFetch(mockLibrary, {
+        identifier: "test-id",
+        fulltextConfig: { ...defaultConfig, preferredType: "markdown" },
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.attachedFiles).toContain("pdf");
+      expect(result.attachedFiles).toContain("markdown");
+      expect(mockedFulltextConvert).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({ from: "pdf" })
+      );
+    });
+
+    it("should succeed with PDF only when preferredType is markdown but converter fails", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+      mockedDiscoverOA.mockResolvedValue({
+        oaStatus: "open",
+        locations: [
+          {
+            source: "unpaywall",
+            url: "https://example.com/paper.pdf",
+            urlType: "pdf",
+            version: "published",
+          },
+        ],
+        errors: [],
+        discoveredIds: {},
+        skipped: [],
+        checkedSources: ["unpaywall"],
+      });
+      mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
+      mockedFulltextAttach.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        type: "pdf",
+      });
+      mockedFulltextConvert.mockResolvedValue({
+        success: false,
+        error: "No PDF converter found",
+      });
+
+      const result = await fulltextFetch(mockLibrary, {
+        identifier: "test-id",
+        fulltextConfig: { ...defaultConfig, preferredType: "markdown" },
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.attachedFiles).toContain("pdf");
+      expect(result.attachedFiles).not.toContain("markdown");
+    });
+
+    it("should not attempt PDF conversion when preferredType is not markdown", async () => {
+      vi.mocked(mockLibrary.find).mockResolvedValue(createItem("test-id", { DOI: "10.1234/test" }));
+      mockedDiscoverOA.mockResolvedValue({
+        oaStatus: "open",
+        locations: [
+          {
+            source: "unpaywall",
+            url: "https://example.com/paper.pdf",
+            urlType: "pdf",
+            version: "published",
+          },
+        ],
+        errors: [],
+        discoveredIds: {},
+        skipped: [],
+        checkedSources: ["unpaywall"],
+      });
+      mockedDownloadPdf.mockResolvedValue({ success: true, size: 1024 });
+      mockedFulltextAttach.mockResolvedValue({
+        success: true,
+        filename: "fulltext.pdf",
+        type: "pdf",
+      });
+
+      const result = await fulltextFetch(mockLibrary, {
+        identifier: "test-id",
+        fulltextConfig: defaultConfig,
+        fulltextDirectory: "/fulltext",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.attachedFiles).toContain("pdf");
+      expect(mockedFulltextConvert).not.toHaveBeenCalled();
+    });
   });
 });

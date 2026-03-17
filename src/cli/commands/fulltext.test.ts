@@ -19,6 +19,7 @@ import {
   executeFulltextGet,
   executeFulltextOpen,
   formatFulltextAttachOutput,
+  formatFulltextConvertOutput,
   formatFulltextDetachOutput,
   formatFulltextFetchOutput,
   formatFulltextGetJsonOutput,
@@ -1286,6 +1287,45 @@ describe("fulltext command", () => {
       });
 
       expect(output).toContain("pmc: XML convert → Invalid XML structure");
+    });
+  });
+
+  describe("formatFulltextConvertOutput", () => {
+    it("should format successful conversion", () => {
+      const output = formatFulltextConvertOutput({
+        success: true,
+        filename: "fulltext.md",
+      });
+      expect(output).toBe("Converted to Markdown: fulltext.md");
+    });
+
+    it("should format error with hints", () => {
+      const output = formatFulltextConvertOutput({
+        success: false,
+        error: "No PDF converter found",
+        hints: "Install marker: pip install marker-pdf",
+      });
+      expect(output).toContain("Error: No PDF converter found");
+      expect(output).toContain("Install marker: pip install marker-pdf");
+    });
+
+    it("should format error with stderr", () => {
+      const output = formatFulltextConvertOutput({
+        success: false,
+        error: "Failed to convert PDF to Markdown using marker",
+        stderr: "RuntimeError: CUDA out of memory",
+      });
+      expect(output).toContain("Error: Failed to convert PDF");
+      expect(output).toContain("CUDA out of memory");
+      expect(output).toContain("stderr");
+    });
+
+    it("should format simple error", () => {
+      const output = formatFulltextConvertOutput({
+        success: false,
+        error: "Reference 'Smith-2024' not found",
+      });
+      expect(output).toBe("Error: Reference 'Smith-2024' not found");
     });
   });
 });

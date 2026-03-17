@@ -116,10 +116,27 @@ const fulltextPreferredTypeSchema = z.enum(["pdf", "markdown"]);
 /**
  * Fulltext retrieval configuration schema
  */
+/**
+ * Custom converter configuration schema
+ */
+export const customConverterSchema = z.object({
+  command: z.string(),
+  outputMode: z.enum(["file", "stdout"]).optional(),
+  checkCommand: z.string().optional(),
+  timeout: z.number().int().positive().optional(),
+  progress: z.enum(["inherit", "quiet"]).optional(),
+  commandWindows: z.string().optional(),
+  checkCommandWindows: z.string().optional(),
+});
+
 export const fulltextConfigSchema = z.object({
   preferSources: z.array(fulltextSourceSchema),
   preferredType: fulltextPreferredTypeSchema.optional(),
   autoFetchOnAdd: z.boolean(),
+  pdfConverter: z.string(),
+  pdfConverterPriority: z.array(z.string()),
+  pdfConverterTimeout: z.number().int().positive(),
+  converters: z.record(z.string(), customConverterSchema),
   sources: z.object({
     unpaywallEmail: z.string().optional(),
     coreApiKey: z.string().optional(),
@@ -221,6 +238,13 @@ export const partialConfigSchema = z
         preferred_type: fulltextPreferredTypeSchema.optional(),
         autoFetchOnAdd: z.boolean().optional(),
         auto_fetch_on_add: z.boolean().optional(),
+        pdfConverter: z.string().optional(),
+        pdf_converter: z.string().optional(),
+        pdfConverterPriority: z.array(z.string()).optional(),
+        pdf_converter_priority: z.array(z.string()).optional(),
+        pdfConverterTimeout: z.number().int().positive().optional(),
+        pdf_converter_timeout: z.number().int().positive().optional(),
+        converters: z.record(z.string(), customConverterSchema).optional(),
         sources: z
           .object({
             unpaywallEmail: z.string().optional(),
@@ -309,8 +333,9 @@ export type DeepPartialConfig = {
   server?: Partial<ServerConfig>;
   citation?: Partial<CitationConfig>;
   pubmed?: Partial<PubmedConfig>;
-  fulltext?: Partial<Omit<FulltextConfig, "sources">> & {
+  fulltext?: Partial<Omit<FulltextConfig, "sources" | "converters">> & {
     sources?: Partial<FulltextConfig["sources"]>;
+    converters?: FulltextConfig["converters"];
   };
   attachments?: Partial<AttachmentsConfig>;
   cli?: Partial<Omit<CliConfig, "tui" | "edit">> & {
@@ -502,6 +527,13 @@ function normalizeFulltextConfig(
     preferred_type?: FulltextPreferredType;
     autoFetchOnAdd?: boolean;
     auto_fetch_on_add?: boolean;
+    pdfConverter?: string;
+    pdf_converter?: string;
+    pdfConverterPriority?: string[];
+    pdf_converter_priority?: string[];
+    pdfConverterTimeout?: number;
+    pdf_converter_timeout?: number;
+    converters?: FulltextConfig["converters"];
     sources?: Partial<{
       unpaywallEmail?: string;
       unpaywall_email?: string;
@@ -525,6 +557,25 @@ function normalizeFulltextConfig(
   const autoFetchOnAdd = fulltext.autoFetchOnAdd ?? fulltext.auto_fetch_on_add;
   if (autoFetchOnAdd !== undefined) {
     normalized.autoFetchOnAdd = autoFetchOnAdd;
+  }
+
+  const pdfConverter = fulltext.pdfConverter ?? fulltext.pdf_converter;
+  if (pdfConverter !== undefined) {
+    normalized.pdfConverter = pdfConverter;
+  }
+
+  const pdfConverterPriority = fulltext.pdfConverterPriority ?? fulltext.pdf_converter_priority;
+  if (pdfConverterPriority !== undefined) {
+    normalized.pdfConverterPriority = pdfConverterPriority;
+  }
+
+  const pdfConverterTimeout = fulltext.pdfConverterTimeout ?? fulltext.pdf_converter_timeout;
+  if (pdfConverterTimeout !== undefined) {
+    normalized.pdfConverterTimeout = pdfConverterTimeout;
+  }
+
+  if (fulltext.converters !== undefined) {
+    normalized.converters = fulltext.converters;
   }
 
   const sources = normalizeFulltextSources(fulltext.sources);

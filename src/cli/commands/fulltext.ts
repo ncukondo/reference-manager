@@ -4,7 +4,7 @@
  * Uses ILibrary interface for unified operations across local and server modes.
  */
 
-import type { Config } from "../../config/schema.js";
+import type { Config, FulltextConfig } from "../../config/schema.js";
 import type { FulltextSource } from "../../config/schema.js";
 import type { IdentifierType } from "../../core/library-interface.js";
 import { Library } from "../../core/library.js";
@@ -118,6 +118,10 @@ export interface FulltextConvertOptions {
   identifier: string;
   idType?: IdentifierType;
   fulltextDirectory: string;
+  from?: "xml" | "pdf";
+  converter?: string;
+  force?: boolean;
+  fulltextConfig?: FulltextConfig;
 }
 
 // Re-export result types
@@ -255,6 +259,10 @@ export async function executeFulltextConvert(
     identifier: options.identifier,
     idType: options.idType,
     fulltextDirectory: options.fulltextDirectory,
+    from: options.from,
+    converter: options.converter,
+    force: options.force,
+    fulltextConfig: options.fulltextConfig,
   };
 
   return fulltextConvert(context.library, operationOptions);
@@ -416,10 +424,21 @@ function formatFetchErrorOutput(result: FulltextFetchResult): string {
  */
 export function formatFulltextConvertOutput(result: FulltextConvertResult): string {
   if (!result.success) {
-    return `Error: ${result.error}`;
+    const lines: string[] = [`Error: ${result.error}`];
+    if (result.stderr) {
+      const stderrLines = result.stderr.trim().split("\n").slice(-5);
+      lines.push("", "  stderr (last lines):");
+      for (const line of stderrLines) {
+        lines.push(`    ${line}`);
+      }
+    }
+    if (result.hints) {
+      lines.push("", result.hints);
+    }
+    return lines.join("\n");
   }
 
-  return `Converted PMC XML to Markdown: ${result.filename}`;
+  return `Converted to Markdown: ${result.filename}`;
 }
 
 /**
@@ -996,6 +1015,9 @@ export async function handleFulltextFetchAction(
  */
 export interface FulltextConvertActionOptions {
   uuid?: boolean;
+  from?: "xml" | "pdf";
+  converter?: string;
+  force?: boolean;
 }
 
 /**
@@ -1032,6 +1054,10 @@ export async function handleFulltextConvertAction(
       identifier,
       fulltextDirectory: config.attachments.directory,
       ...(options.uuid && { idType: "uuid" as const }),
+      ...(options.from && { from: options.from }),
+      ...(options.converter && { converter: options.converter }),
+      ...(options.force && { force: options.force }),
+      fulltextConfig: config.fulltext,
     };
 
     const result = await executeFulltextConvert(convertOptions, context);
