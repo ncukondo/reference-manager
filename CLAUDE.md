@@ -54,3 +54,5 @@ Use `scripts/send-to-agent.sh` when possible, as it handles this correctly.
 - All specs written in English to minimize token usage
 - Refer to relevant spec files when in doubt
 - Read `package.json` as needed to check test commands, build scripts, CLI entry points, etc.
+
+<!-- role: implement -->
