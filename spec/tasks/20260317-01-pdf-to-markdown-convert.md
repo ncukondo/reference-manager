@@ -82,7 +82,7 @@ Implement tool availability detection (which/where and custom check_command).
 
 Implement the `CustomPdfConverter` class that wraps user-defined commands.
 
-- [ ] Write test: `src/features/operations/fulltext/custom-converter.test.ts`
+- [x] Write test: `src/features/operations/fulltext/custom-converter.test.ts`
   - `isAvailable()` delegates to converter-check
   - `convert()` with file output mode (executes command, verifies output file)
   - `convert()` with stdout output mode (captures stdout, writes to file)
@@ -90,12 +90,12 @@ Implement the `CustomPdfConverter` class that wraps user-defined commands.
   - Non-zero exit code error with stderr capture
   - Output file not created error
   - `command_windows` override on win32 platform
-- [ ] Create stub: `src/features/operations/fulltext/custom-converter.ts`
+- [x] Create stub: `src/features/operations/fulltext/custom-converter.ts`
   - `CustomPdfConverter` class implementing `PdfConverter`
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 5: Built-in Converter Definitions
 
