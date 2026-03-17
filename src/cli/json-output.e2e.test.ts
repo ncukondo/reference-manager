@@ -10,6 +10,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const CLI_PATH = path.resolve("bin/cli.js");
 
+/** Strip Node.js DeprecationWarning lines from stderr (e.g. punycode DEP0040) */
+function stripNodeDeprecationWarnings(stderr: string): string {
+  return stderr
+    .split("\n")
+    .filter((line) => !line.match(/^\(node:\d+\) \[DEP\d+\] DeprecationWarning:/))
+    .join("\n");
+}
+
 describe("JSON Output E2E", () => {
   let testDir: string;
   let libraryPath: string;
@@ -34,7 +42,7 @@ describe("JSON Output E2E", () => {
       });
 
       proc.on("close", (code) => {
-        resolve({ exitCode: code ?? 0, stdout, stderr });
+        resolve({ exitCode: code ?? 0, stdout, stderr: stripNodeDeprecationWarnings(stderr) });
       });
 
       if (stdinData) {
