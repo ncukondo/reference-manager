@@ -99,6 +99,7 @@ spec/
 | `cite` | `features/citation.md` |
 | `config` | `features/config-command.md` |
 | `fulltext` | `features/fulltext.md` |
+| `show` | `features/show.md` |
 | `search` / `list` | `features/search.md`, `features/pagination.md` |
 | `search -t` | `features/interactive-search.md` |
 | ID-less invocation (cite, edit, etc.) | `features/interactive-id-selection.md` |

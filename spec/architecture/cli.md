@@ -46,6 +46,7 @@ Specifies output format. Available values depend on command.
 |---------|--------|---------|
 | `add`, `remove`, `update` | `json`, `text` | `text` |
 | `list`, `search` | `pretty`, `json`, `bibtex`, `ids`, `uuid`, `pandoc-key`, `latex-key` | `pretty` |
+| `show` | `pretty`, `json`, `yaml`, `bibtex` | `pretty` |
 | `export` | `json`, `yaml`, `bibtex` | `json` |
 | `cite` | `text`, `html`, `rtf` | `text` |
 | `config show` | `text`, `json` | `text` |
@@ -66,7 +67,7 @@ These are aliases for `--output`:
 
 When specified, interprets identifier arguments as UUIDs instead of citation keys.
 
-**Applies to:** `remove`, `update`, `edit`, `cite`, `export`, `fulltext`
+**Applies to:** `remove`, `update`, `edit`, `cite`, `show`, `export`, `fulltext`
 
 **Note:** For `list`/`search`, use `--output uuid` or `--uuid-only` to output UUIDs.
 
@@ -85,6 +86,7 @@ This follows the same pattern as `ref attach` → `ref attach open`.
 | `ref` (no subcommand) | TUI search (TTY) / help (non-TTY) |
 | `add [input...]` | Add references (CSL-JSON, BibTeX, RIS, PMID, DOI, ISBN) |
 | `list` | List all references |
+| `show <identifier>` | Show single-reference detail view |
 | `search [query]` | Search references |
 | `search -t [query]` | TUI search mode |
 | `export [ids...]` | Export raw CSL-JSON for external tools |
@@ -154,6 +156,20 @@ ref search [query] [options]
 | `--offset <n>` | | Skip count |
 
 Query is required unless using `--tui`.
+
+### show
+
+```
+ref show [identifier] [options]
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--uuid` | | Interpret identifier as UUID |
+| `--output <format>` | `-o` | Output format: pretty (default), json, yaml, bibtex |
+| `--json` | | Alias for `--output json` |
+
+Single reference only. Interactive selection if identifier omitted (TTY only).
 
 ### export
 

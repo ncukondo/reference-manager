@@ -126,10 +126,18 @@ Provide single-binary distribution via `bun build --compile` and an installer sc
 
 Extend `fulltext convert` to support PDF input using external CLI tools (marker, docling, mineru, pymupdf). Includes a pluggable custom converter system where users can register any CLI tool or script via configuration.
 
-- Task: `spec/tasks/20260317-01-pdf-to-markdown-convert.md`
+- Task: `spec/tasks/completed/20260317-01-pdf-to-markdown-convert.md`
 - ADR: `spec/decisions/ADR-016-pdf-to-markdown-external-converters.md`
 - Spec: `spec/features/fulltext-retrieval.md` (PDF Converter section)
 - Status: Done (PR #83)
+
+### Phase 46: Show Command (#84)
+
+Add `ref show <id>` command for comprehensive single-reference detail view. Provides normalized, agent-friendly output with fulltext paths and attachment info — analogous to `git show` or `docker inspect`.
+
+- Task: `spec/tasks/20260317-02-show-command.md`
+- Spec: `spec/features/show.md`
+- Status: Active
 
 ---
 
