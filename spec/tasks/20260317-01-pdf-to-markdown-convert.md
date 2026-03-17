@@ -101,18 +101,18 @@ Implement the `CustomPdfConverter` class that wraps user-defined commands.
 
 Implement built-in converter configurations for marker, docling, mineru, pymupdf.
 
-- [ ] Write test: `src/features/operations/fulltext/builtin-converters.test.ts`
+- [x] Write test: `src/features/operations/fulltext/builtin-converters.test.ts`
   - Each built-in produces correct CLI command
   - Each built-in has correct availability check
   - Built-in converter list and names
-- [ ] Create stub: `src/features/operations/fulltext/builtin-converters.ts`
+- [x] Create stub: `src/features/operations/fulltext/builtin-converters.ts`
   - `getBuiltinConverter(name)` function
   - `BUILTIN_CONVERTER_NAMES` constant
   - Individual converter factory functions
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 6: Converter Resolution (auto mode)
 
