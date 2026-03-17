@@ -122,6 +122,15 @@ Provide single-binary distribution via `bun build --compile` and an installer sc
 - Task: `spec/tasks/completed/20260308-02-single-binary-distribution.md`
 - Status: Done (PR #80)
 
+### Phase 45: PDF-to-Markdown Conversion
+
+Extend `fulltext convert` to support PDF input using external CLI tools (marker, docling, mineru, pymupdf). Includes a pluggable custom converter system where users can register any CLI tool or script via configuration.
+
+- Task: `spec/tasks/20260317-01-pdf-to-markdown-convert.md`
+- ADR: `spec/decisions/ADR-016-pdf-to-markdown-external-converters.md`
+- Spec: `spec/features/fulltext-retrieval.md` (PDF Converter section)
+- Status: Not started
+
 ---
 
 ## Next Steps
