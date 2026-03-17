@@ -65,18 +65,18 @@ Implement placeholder expansion for custom converter command templates.
 
 Implement tool availability detection (which/where and custom check_command).
 
-- [ ] Write test: `src/features/operations/fulltext/converter-check.test.ts`
+- [x] Write test: `src/features/operations/fulltext/converter-check.test.ts`
   - `isCommandAvailable()` with existing command
   - `isCommandAvailable()` with non-existing command
   - Custom `check_command` execution
   - Platform-aware which/where selection
-- [ ] Create stub: `src/features/operations/fulltext/converter-check.ts`
+- [x] Create stub: `src/features/operations/fulltext/converter-check.ts`
   - `isCommandAvailable(command)` function
   - `runCheckCommand(checkCommand)` function
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Custom Converter Implementation
 
