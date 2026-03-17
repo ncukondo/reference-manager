@@ -48,18 +48,18 @@ Define the core interface and types for the converter system.
 
 Implement placeholder expansion for custom converter command templates.
 
-- [ ] Write test: `src/features/operations/fulltext/command-template.test.ts`
+- [x] Write test: `src/features/operations/fulltext/command-template.test.ts`
   - `{input}`, `{output}` basic substitution
   - `{input_dir}`, `{input_name}`, `{output_name}` substitution
   - All placeholders in single command
   - Paths with spaces (quoted correctly)
   - Windows-style paths
-- [ ] Create stub: `src/features/operations/fulltext/command-template.ts`
+- [x] Create stub: `src/features/operations/fulltext/command-template.ts`
   - `expandTemplate(template, vars)` function
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Converter Availability Check
 
