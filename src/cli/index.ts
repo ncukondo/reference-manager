@@ -904,9 +904,15 @@ function registerFulltextCommand(program: Command): void {
 
   fulltextCmd
     .command("convert")
-    .description("Convert attached PMC XML to Markdown")
+    .description("Convert attached fulltext (XML or PDF) to Markdown")
     .argument("[identifier]", "Citation key or UUID (interactive selection if omitted)")
     .option("--uuid", "Interpret identifier as UUID")
+    .option("--from <format>", "Input format: xml, pdf (default: auto-detect)")
+    .option(
+      "--converter <name>",
+      "PDF converter: auto, marker, docling, mineru, pymupdf, or custom name"
+    )
+    .option("--force", "Overwrite existing markdown attachment")
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextConvertAction(identifier, options, program.opts());
     });

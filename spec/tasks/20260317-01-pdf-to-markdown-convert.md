@@ -182,21 +182,21 @@ Update `fulltextConvert()` to support PDF input with auto-detection.
 
 Update CLI `fulltext convert` command with new options.
 
-- [ ] Write test: update `src/cli/commands/fulltext.test.ts`
+- [x] Write test: update `src/cli/commands/fulltext.test.ts`
   - `--from pdf` option parsing
   - `--from xml` option parsing
   - `--converter marker` option parsing
   - `--force` option
   - Error output formatting (no converter, not installed, conversion failed)
   - Progress display mode (inherit vs quiet)
-- [ ] Implement: update `src/cli/commands/fulltext.ts`
+- [x] Implement: update `src/cli/commands/fulltext.ts`
   - Add `--from`, `--converter`, `--force` options
   - Update output formatting for PDF conversion results
   - Format error messages with hints
-- [ ] Implement: update `src/cli/index.ts`
+- [x] Implement: update `src/cli/index.ts`
   - Register new options on convert command
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 10: Extend MCP and HTTP Server
 
