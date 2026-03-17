@@ -202,17 +202,17 @@ Update CLI `fulltext convert` command with new options.
 
 Update MCP tool and HTTP endpoint for PDF conversion support.
 
-- [ ] Write test: update `src/mcp/tools/fulltext.test.ts`
+- [x] Write test: update `src/mcp/tools/fulltext.test.ts`
   - `fulltext_convert` with `from` parameter
   - `fulltext_convert` with `converter` parameter
   - Error formatting for MCP context
-- [ ] Implement: update `src/mcp/tools/fulltext.ts`
+- [x] Implement: update `src/mcp/tools/fulltext.ts`
   - Add `from` and `converter` parameters to `fulltext_convert` tool
   - Ensure stderr is captured (not inherited) in MCP context
-- [ ] Implement: update HTTP server route (if `fulltext/convert` route exists)
+- [x] Implement: update HTTP server route (if `fulltext/convert` route exists)
   - Add `from` and `converter` to request body
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 11: Integration with fulltext fetch
 

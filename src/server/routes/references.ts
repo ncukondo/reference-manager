@@ -233,14 +233,18 @@ export function createReferencesRoute(library: Library, config?: Config) {
     // POST /uuid/:uuid/fulltext/convert
     route.post("/uuid/:uuid/fulltext/convert", async (c) => {
       const uuid = c.req.param("uuid");
+      const body = await c.req.json().catch(() => ({}));
       const result = await fulltextConvert(library, {
         identifier: uuid,
         idType: "uuid",
         fulltextDirectory: config.attachments.directory,
+        from: body.from,
+        converter: body.converter,
+        fulltextConfig: config.fulltext,
       });
 
       if (!result.success) {
-        return c.json({ error: result.error }, 400);
+        return c.json({ error: result.error, code: result.code, hints: result.hints }, 400);
       }
 
       return c.json(result);

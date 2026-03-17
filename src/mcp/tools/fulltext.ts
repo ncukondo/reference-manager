@@ -373,6 +373,10 @@ function formatFetchError(result: FulltextFetchResult): string {
 export interface FulltextConvertToolParams {
   /** Reference ID */
   id: string;
+  /** Input format: "xml" or "pdf" (default: auto-detect) */
+  from?: "xml" | "pdf" | undefined;
+  /** PDF converter name (default: auto) */
+  converter?: string | undefined;
 }
 
 /**
@@ -386,9 +390,18 @@ export function registerFulltextConvertTool(
   server.registerTool(
     "fulltext_convert",
     {
-      description: "Convert an attached PMC JATS XML file to Markdown for a reference.",
+      description:
+        "Convert an attached fulltext file (PMC JATS XML or PDF) to Markdown for a reference. Auto-detects format (XML preferred over PDF). Use 'from' to force a specific format.",
       inputSchema: {
         id: z.string().describe("Reference ID"),
+        from: z
+          .enum(["xml", "pdf"])
+          .optional()
+          .describe("Input format: xml, pdf (default: auto-detect)"),
+        converter: z
+          .string()
+          .optional()
+          .describe("PDF converter: auto, marker, docling, mineru, pymupdf, or custom name"),
       },
     },
     async (args: FulltextConvertToolParams) => {
@@ -398,11 +411,18 @@ export function registerFulltextConvertTool(
       const result = await fulltextConvert(libraryOps, {
         identifier: args.id,
         fulltextDirectory: config.attachments.directory,
+        from: args.from,
+        converter: args.converter,
+        fulltextConfig: config.fulltext,
       });
 
       if (!result.success) {
+        const errorParts = [result.error ?? "Unknown error"];
+        if (result.hints) {
+          errorParts.push(result.hints);
+        }
         return {
-          content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
+          content: [{ type: "text" as const, text: errorParts.join("\n\n") }],
           isError: true,
         };
       }
@@ -411,7 +431,7 @@ export function registerFulltextConvertTool(
         content: [
           {
             type: "text" as const,
-            text: `Converted PMC XML to Markdown for '${args.id}': ${result.filename}`,
+            text: `Converted to Markdown for '${args.id}': ${result.filename}`,
           },
         ],
       };
