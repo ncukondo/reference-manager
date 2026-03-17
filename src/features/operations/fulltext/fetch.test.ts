@@ -75,7 +75,7 @@ describe("fulltextFetch", () => {
     pdfConverterPriority: ["marker", "docling", "mineru", "pymupdf"],
     pdfConverterTimeout: 300,
     converters: {},
-    autoFetchOnAdd: false,
+    autoFetchOnAdd: false, // Explicitly set to prevent test flakiness if default changes
     sources: {
       unpaywallEmail: "test@example.com",
       coreApiKey: "test-key",

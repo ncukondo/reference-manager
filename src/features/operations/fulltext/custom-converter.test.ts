@@ -90,7 +90,7 @@ describe("CustomPdfConverter", () => {
         expect(result.outputPath).toBe("/output.md");
       }
       expect(mockedExec).toHaveBeenCalledWith(
-        "my-tool /input.pdf /output.md",
+        "my-tool '/input.pdf' '/output.md'",
         expect.objectContaining({ timeout: 300000 }),
         expect.any(Function)
       );
@@ -212,7 +212,7 @@ describe("CustomPdfConverter", () => {
       await converter.convert("/input.pdf", "/output.md");
 
       expect(mockedExec).toHaveBeenCalledWith(
-        "python -m my_tool /input.pdf /output.md",
+        "python -m my_tool '/input.pdf' '/output.md'",
         expect.any(Object),
         expect.any(Function)
       );

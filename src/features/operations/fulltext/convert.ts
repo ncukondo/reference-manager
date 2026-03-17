@@ -269,6 +269,3 @@ async function convertPdf(
     filename: attachResult.filename ?? "fulltext.md",
   };
 }
-
-// Re-export for backward compatibility used in tests
-export { findXmlFile as _findXmlFile, findPdfFile as _findPdfFile };

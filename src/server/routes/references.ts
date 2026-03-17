@@ -234,12 +234,22 @@ export function createReferencesRoute(library: Library, config?: Config) {
     route.post("/uuid/:uuid/fulltext/convert", async (c) => {
       const uuid = c.req.param("uuid");
       const body = await c.req.json().catch(() => ({}));
+
+      // Validate body.from and body.converter
+      const validFrom = ["xml", "pdf", undefined] as const;
+      if (body.from !== undefined && !validFrom.includes(body.from)) {
+        return c.json({ error: `Invalid 'from' value: must be 'xml', 'pdf', or omitted` }, 400);
+      }
+      if (body.converter !== undefined && typeof body.converter !== "string") {
+        return c.json({ error: `Invalid 'converter' value: must be a string or omitted` }, 400);
+      }
+
       const result = await fulltextConvert(library, {
         identifier: uuid,
         idType: "uuid",
         fulltextDirectory: config.attachments.directory,
-        from: body.from,
-        converter: body.converter,
+        from: body.from as "xml" | "pdf" | undefined,
+        converter: body.converter as string | undefined,
         fulltextConfig: config.fulltext,
       });
 

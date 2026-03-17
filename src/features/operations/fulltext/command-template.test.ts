@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { expandTemplate } from "./command-template.js";
 
 describe("expandTemplate", () => {
-  it("should substitute {input} and {output}", () => {
+  it("should substitute {input} and {output} with shell quoting", () => {
     const result = expandTemplate("convert {input} {output}", {
       input: "/path/to/input.pdf",
       output: "/path/to/output.md",
     });
-    expect(result).toBe("convert /path/to/input.pdf /path/to/output.md");
+    expect(result).toBe("convert '/path/to/input.pdf' '/path/to/output.md'");
   });
 
   it("should substitute {input_dir}", () => {
@@ -16,7 +16,7 @@ describe("expandTemplate", () => {
       output: "/home/user/refs/Smith-2024/fulltext.md",
     });
     expect(result).toBe(
-      "convert --dir /home/user/refs/Smith-2024 /home/user/refs/Smith-2024/fulltext.pdf"
+      "convert --dir '/home/user/refs/Smith-2024' '/home/user/refs/Smith-2024/fulltext.pdf'"
     );
   });
 
@@ -25,7 +25,7 @@ describe("expandTemplate", () => {
       input: "/home/user/refs/Smith-2024/fulltext.pdf",
       output: "/home/user/refs/Smith-2024/fulltext.md",
     });
-    expect(result).toBe("convert --in fulltext.pdf --out fulltext.md");
+    expect(result).toBe("convert --in 'fulltext.pdf' --out 'fulltext.md'");
   });
 
   it("should substitute all placeholders in a single command", () => {
@@ -37,17 +37,17 @@ describe("expandTemplate", () => {
       }
     );
     expect(result).toBe(
-      "tool --input /data/paper.pdf --output /data/paper.md --dir /data --iname paper.pdf --oname paper.md"
+      "tool --input '/data/paper.pdf' --output '/data/paper.md' --dir '/data' --iname 'paper.pdf' --oname 'paper.md'"
     );
   });
 
-  it("should handle paths with spaces", () => {
+  it("should safely handle paths with spaces", () => {
     const result = expandTemplate("convert {input} {output}", {
       input: "/path/to/my papers/input file.pdf",
       output: "/path/to/my papers/output file.md",
     });
     expect(result).toBe(
-      "convert /path/to/my papers/input file.pdf /path/to/my papers/output file.md"
+      "convert '/path/to/my papers/input file.pdf' '/path/to/my papers/output file.md'"
     );
   });
 
@@ -57,17 +57,16 @@ describe("expandTemplate", () => {
       output: "C:\\Users\\user\\refs\\Smith-2024\\fulltext.md",
     });
     expect(result).toBe(
-      "convert C:\\Users\\user\\refs\\Smith-2024\\fulltext.pdf C:\\Users\\user\\refs\\Smith-2024\\fulltext.md"
+      "convert 'C:\\Users\\user\\refs\\Smith-2024\\fulltext.pdf' 'C:\\Users\\user\\refs\\Smith-2024\\fulltext.md'"
     );
   });
 
   it("should derive {input_dir} using platform dirname", () => {
-    // On Unix, dirname("/home/user/paper.pdf") = "/home/user"
     const result = expandTemplate("{input_dir}", {
       input: "/home/user/refs/paper.pdf",
       output: "/home/user/refs/paper.md",
     });
-    expect(result).toBe("/home/user/refs");
+    expect(result).toBe("'/home/user/refs'");
   });
 
   it("should handle command with no placeholders", () => {
@@ -83,6 +82,17 @@ describe("expandTemplate", () => {
       input: "/a.pdf",
       output: "/a.md",
     });
-    expect(result).toBe("/a.pdf /a.pdf");
+    expect(result).toBe("'/a.pdf' '/a.pdf'");
+  });
+
+  it("should escape single quotes in paths to prevent command injection", () => {
+    const result = expandTemplate("convert {input} {output}", {
+      input: "/path/to/file'; rm -rf /; echo '.pdf",
+      output: "/path/to/output.md",
+    });
+    // Each embedded ' becomes '\'' — the dangerous part stays inside single quotes
+    expect(result).toBe(
+      "convert '/path/to/file'\\''; rm -rf /; echo '\\''.pdf' '/path/to/output.md'"
+    );
   });
 });
