@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **PDF-to-Markdown Conversion**: `fulltext convert` now supports PDF input with pluggable external converters
+  - Built-in support for marker, docling, mineru, and pymupdf CLI tools
+  - Custom converter system via config with command templates and placeholders
+  - Auto-detection: XML preferred over PDF, `--from pdf` to force PDF conversion
+  - `--converter <name>` to select a specific converter
+  - Auto mode: iterates priority list, uses first available converter
+  - Actionable error messages with install hints when no converter is available
+  - Auto-convert PDF to Markdown on `fulltext fetch` when `preferred_type = "markdown"`
+  - New config fields: `fulltext.pdf_converter`, `fulltext.pdf_converter_priority`, `fulltext.pdf_converter_timeout`, `fulltext.converters.<name>`
+
 ### Fixed
 
 - **Server Autostart in Bun Binary**: Fix server autostart and `--daemon` mode when running as a bun-compiled single binary. The spawn logic now correctly detects compiled binary mode and avoids passing a redundant script path argument.
