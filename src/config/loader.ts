@@ -263,6 +263,11 @@ function fillFulltextDefaults(
     preferSources: partial?.preferSources ?? defaultConfig.fulltext.preferSources,
     preferredType,
     autoFetchOnAdd: partial?.autoFetchOnAdd ?? defaultConfig.fulltext.autoFetchOnAdd,
+    pdfConverter: partial?.pdfConverter ?? defaultConfig.fulltext.pdfConverter,
+    pdfConverterPriority:
+      partial?.pdfConverterPriority ?? defaultConfig.fulltext.pdfConverterPriority,
+    pdfConverterTimeout: partial?.pdfConverterTimeout ?? defaultConfig.fulltext.pdfConverterTimeout,
+    converters: partial?.converters ?? defaultConfig.fulltext.converters,
     sources: {
       unpaywallEmail,
       coreApiKey,

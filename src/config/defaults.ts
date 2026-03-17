@@ -91,6 +91,10 @@ export const defaultConfig: Config = {
     preferSources: ["pmc", "arxiv", "unpaywall", "core"],
     preferredType: undefined,
     autoFetchOnAdd: false,
+    pdfConverter: "auto",
+    pdfConverterPriority: ["marker", "docling", "mineru", "pymupdf"],
+    pdfConverterTimeout: 300,
+    converters: {},
     sources: {
       unpaywallEmail: undefined,
       coreApiKey: undefined,

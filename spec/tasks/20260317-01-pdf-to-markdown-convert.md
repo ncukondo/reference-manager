@@ -137,22 +137,22 @@ Implement the resolver that finds the best available converter.
 
 Add PDF converter settings to the configuration schema.
 
-- [ ] Write test: update `src/config/schema.test.ts` (or existing config tests)
+- [x] Write test: update `src/config/schema.test.ts` (or existing config tests)
   - `pdfConverter` field validation
   - `pdfConverterPriority` field validation
   - `pdfConverterTimeout` field validation
   - `converters` map validation (custom converter config)
   - snake_case normalization for new fields
-- [ ] Implement: update `src/config/schema.ts`
+- [x] Implement: update `src/config/schema.ts`
   - Add `pdfConverter`, `pdfConverterPriority`, `pdfConverterTimeout` to `fulltextConfigSchema`
   - Add `converters` record schema with `customConverterSchema`
   - Add snake_case variants to `partialConfigSchema`
   - Update `normalizeFulltextConfig()`
   - Update `DeepPartialConfig` type
-- [ ] Implement: update `src/config/defaults.ts` (if exists)
+- [x] Implement: update `src/config/defaults.ts` (if exists)
   - Default values: `pdfConverter: "auto"`, `pdfConverterPriority: [...]`, `pdfConverterTimeout: 300`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 8: Extend fulltext convert Operation
 
