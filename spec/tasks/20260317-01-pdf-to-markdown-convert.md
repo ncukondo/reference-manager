@@ -118,20 +118,20 @@ Implement built-in converter configurations for marker, docling, mineru, pymupdf
 
 Implement the resolver that finds the best available converter.
 
-- [ ] Write test: `src/features/operations/fulltext/converter-resolver.test.ts`
+- [x] Write test: `src/features/operations/fulltext/converter-resolver.test.ts`
   - Auto mode: returns first available from priority list
   - Auto mode: skips unavailable converters
   - Auto mode: custom converter takes precedence over built-in with same name
   - Auto mode: no converter available → structured error with hints
   - Explicit name: returns specific converter or not-installed error
   - Priority list from config
-- [ ] Create stub: `src/features/operations/fulltext/converter-resolver.ts`
+- [x] Create stub: `src/features/operations/fulltext/converter-resolver.ts`
   - `resolveConverter(name, config)` function
   - `buildNoConverterHints()` function
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 7: Extend Config Schema
 
