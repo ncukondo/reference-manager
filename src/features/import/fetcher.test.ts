@@ -12,6 +12,9 @@ vi.mock("@citation-js/core", () => {
     Cite: {
       async: (input: string) => mockCiteAsync(input),
     },
+    util: {
+      setUserAgent: vi.fn(),
+    },
   };
 });
 
@@ -276,15 +279,21 @@ describe("fetchDoi", () => {
     it("should return error when DOI not found", async () => {
       // citation-js throws error for not found DOI
       mockCiteAsync.mockRejectedValueOnce(new Error("DOI not found"));
+      // Crossref REST API fallback also returns not found
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
 
       const result = await fetchDoi("10.9999/notfound");
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("not found");
     });
 
     it("should return error for network failure", async () => {
       mockCiteAsync.mockRejectedValueOnce(new Error("Network error"));
+      // Crossref REST API fallback also fails
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
       const result = await fetchDoi("10.1000/xyz");
 

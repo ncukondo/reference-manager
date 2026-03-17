@@ -5,10 +5,16 @@
  * - DOI: Uses citation-js plugin-doi (Cite.async)
  */
 
-import { Cite } from "@citation-js/core";
+import { util, Cite } from "@citation-js/core";
 import "@citation-js/plugin-doi";
 import "@citation-js/plugin-isbn";
+import packageJson from "../../../package.json" with { type: "json" };
 import { type CslItem, CslItemSchema } from "../../core/csl-json/types.js";
+
+// Set User-Agent for polite access to Crossref API (higher rate limits, no throttling)
+util.setUserAgent(
+  `reference-manager/${packageJson.version} (https://github.com/ncukondo/reference-manager; mailto:ncukondo@gmail.com)`
+);
 import { ARXIV_ID_PATTERN } from "./detector.js";
 import { getRateLimiter } from "./rate-limiter.js";
 
@@ -206,10 +212,92 @@ export async function fetchPmids(pmids: string[], config: PubmedConfig): Promise
   }
 }
 
+/** Crossref REST API base URL */
+const CROSSREF_API_BASE = "https://api.crossref.org/works/";
+
+/**
+ * Normalize Crossref REST API response to CSL-JSON format.
+ *
+ * Crossref returns arrays for title, container-title, ISSN etc.
+ * where CSL-JSON expects strings. Also adds an `id` field from DOI.
+ */
+function normalizeCrossrefToCsl(message: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...message };
+
+  // Crossref uses arrays for these fields; CSL-JSON expects strings
+  for (const key of ["title", "container-title", "container-title-short", "ISSN"]) {
+    if (Array.isArray(result[key])) {
+      result[key] = (result[key] as unknown[])[0] ?? undefined;
+    }
+  }
+
+  // Ensure id field exists (Crossref REST API doesn't include it)
+  if (!result.id && result.DOI) {
+    result.id = result.DOI;
+  }
+
+  return result;
+}
+
+/**
+ * Fetch DOI metadata via Crossref REST API (fallback)
+ *
+ * Used when citation-js content negotiation fails (e.g. doi.org returns 500).
+ * The REST API returns Crossref JSON which is close to CSL-JSON.
+ */
+async function fetchDoiViaCrossrefApi(doi: string): Promise<FetchResult> {
+  try {
+    const url = `${CROSSREF_API_BASE}${encodeURIComponent(doi)}`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": `reference-manager/${packageJson.version} (https://github.com/ncukondo/reference-manager; mailto:ncukondo@gmail.com)`,
+      },
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Crossref API responded with status ${response.status} for DOI ${doi}`,
+        reason: response.status === 404 ? "not_found" : "fetch_error",
+      };
+    }
+
+    const data = (await response.json()) as { message?: Record<string, unknown> };
+    if (!data.message) {
+      return {
+        success: false,
+        error: `No data returned from Crossref API for DOI ${doi}`,
+        reason: "not_found",
+      };
+    }
+
+    const normalized = normalizeCrossrefToCsl(data.message);
+    const parseResult = CslItemSchema.safeParse(normalized);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: `Invalid CSL-JSON data for DOI ${doi}: ${parseResult.error.message}`,
+        reason: "validation_error",
+      };
+    }
+
+    return { success: true, item: parseResult.data };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      error: errorMsg,
+      reason: "fetch_error",
+    };
+  }
+}
+
 /**
  * Fetch metadata for a DOI using citation-js
  *
- * Uses @citation-js/plugin-doi for content negotiation
+ * Uses @citation-js/plugin-doi for content negotiation,
+ * with Crossref REST API as fallback.
  */
 export async function fetchDoi(doi: string): Promise<FetchResult> {
   // Validate DOI format
@@ -249,13 +337,9 @@ export async function fetchDoi(doi: string): Promise<FetchResult> {
     }
 
     return { success: true, item: parseResult.data };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      error: errorMsg,
-      reason: "fetch_error",
-    };
+  } catch {
+    // Fallback to Crossref REST API (e.g. when doi.org content negotiation is down)
+    return fetchDoiViaCrossrefApi(doi);
   }
 }
 

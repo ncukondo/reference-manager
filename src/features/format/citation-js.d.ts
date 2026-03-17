@@ -45,6 +45,12 @@ declare module "@citation-js/core" {
   }
 
   export const plugins: Plugins;
+
+  interface Util {
+    setUserAgent(userAgent: string): void;
+  }
+
+  export const util: Util;
 }
 
 declare module "@citation-js/plugin-csl" {
