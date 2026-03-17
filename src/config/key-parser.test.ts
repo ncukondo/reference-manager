@@ -60,6 +60,22 @@ describe("key-parser", () => {
     it("returns false for empty string", () => {
       expect(isValidConfigKey("")).toBe(false);
     });
+
+    it("returns true for dynamic converter keys", () => {
+      expect(isValidConfigKey("fulltext.converters.my-tool.command")).toBe(true);
+      expect(isValidConfigKey("fulltext.converters.my-tool.check_command")).toBe(true);
+      expect(isValidConfigKey("fulltext.converters.my-tool.output_mode")).toBe(true);
+      expect(isValidConfigKey("fulltext.converters.my-tool.timeout")).toBe(true);
+      expect(isValidConfigKey("fulltext.converters.my-tool.progress")).toBe(true);
+      expect(isValidConfigKey("fulltext.converters.my-tool.command_windows")).toBe(true);
+      expect(isValidConfigKey("fulltext.converters.my-tool.check_command_windows")).toBe(true);
+    });
+
+    it("returns false for invalid dynamic converter keys", () => {
+      expect(isValidConfigKey("fulltext.converters.my-tool.invalid")).toBe(false);
+      expect(isValidConfigKey("fulltext.converters.my-tool")).toBe(false);
+      expect(isValidConfigKey("fulltext.converters")).toBe(false);
+    });
   });
 
   describe("getConfigKeyInfo", () => {
@@ -106,6 +122,26 @@ describe("key-parser", () => {
     it("returns null for invalid keys", () => {
       expect(getConfigKeyInfo("invalid")).toBeNull();
       expect(getConfigKeyInfo("citation.invalid")).toBeNull();
+    });
+
+    it("returns info for dynamic converter keys", () => {
+      const commandInfo = getConfigKeyInfo("fulltext.converters.my-tool.command");
+      expect(commandInfo).not.toBeNull();
+      expect(commandInfo?.type).toBe("string");
+
+      const outputModeInfo = getConfigKeyInfo("fulltext.converters.my-tool.output_mode");
+      expect(outputModeInfo).not.toBeNull();
+      expect(outputModeInfo?.type).toBe("enum");
+      expect(outputModeInfo?.enumValues).toContain("file");
+      expect(outputModeInfo?.enumValues).toContain("stdout");
+
+      const timeoutInfo = getConfigKeyInfo("fulltext.converters.my-tool.timeout");
+      expect(timeoutInfo).not.toBeNull();
+      expect(timeoutInfo?.type).toBe("integer");
+    });
+
+    it("returns null for invalid dynamic converter keys", () => {
+      expect(getConfigKeyInfo("fulltext.converters.my-tool.invalid")).toBeNull();
     });
   });
 

@@ -393,6 +393,132 @@ describe("Config Command E2E", () => {
     });
   });
 
+  describe("PDF converter config set/get round-trip", () => {
+    it("should set and get fulltext.pdf_converter", async () => {
+      await runCli(["config", "set", "--local", "fulltext.pdf_converter", "marker"]);
+
+      const result = await runCli(["config", "get", "fulltext.pdf_converter"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("marker");
+    });
+
+    it("should set and get fulltext.pdf_converter_timeout", async () => {
+      await runCli(["config", "set", "--local", "fulltext.pdf_converter_timeout", "600"]);
+
+      const result = await runCli(["config", "get", "fulltext.pdf_converter_timeout"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("600");
+    });
+
+    it("should set and get fulltext.pdf_converter_priority", async () => {
+      await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.pdf_converter_priority",
+        "docling,marker",
+      ]);
+
+      const result = await runCli(["config", "get", "fulltext.pdf_converter_priority"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("docling,marker");
+    });
+  });
+
+  describe("Custom converter dynamic key set/get round-trip", () => {
+    it("should set and get fulltext.converters.*.command", async () => {
+      await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.converters.mytool.command",
+        "echo {input} {output}",
+      ]);
+
+      const result = await runCli(["config", "get", "fulltext.converters.mytool.command"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("echo {input} {output}");
+    });
+
+    it("should set and get fulltext.converters.*.check_command", async () => {
+      // Set command first (required field)
+      await runCli(["config", "set", "--local", "fulltext.converters.mytool.command", "echo test"]);
+      await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.converters.mytool.check_command",
+        "echo --version",
+      ]);
+
+      const result = await runCli(["config", "get", "fulltext.converters.mytool.check_command"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("echo --version");
+    });
+
+    it("should set and get fulltext.converters.*.timeout", async () => {
+      await runCli(["config", "set", "--local", "fulltext.converters.mytool.command", "echo test"]);
+      await runCli(["config", "set", "--local", "fulltext.converters.mytool.timeout", "120"]);
+
+      const result = await runCli(["config", "get", "fulltext.converters.mytool.timeout"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("120");
+    });
+
+    it("should set and get fulltext.converters.*.output_mode", async () => {
+      await runCli(["config", "set", "--local", "fulltext.converters.mytool.command", "echo test"]);
+      await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.converters.mytool.output_mode",
+        "stdout",
+      ]);
+
+      const result = await runCli(["config", "get", "fulltext.converters.mytool.output_mode"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("stdout");
+    });
+
+    it("should reject invalid dynamic key field", async () => {
+      const result = await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.converters.mytool.invalid_field",
+        "value",
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Error");
+    });
+
+    it("should support multiple converters independently", async () => {
+      await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.converters.tool-a.command",
+        "tool-a {input}",
+      ]);
+      await runCli([
+        "config",
+        "set",
+        "--local",
+        "fulltext.converters.tool-b.command",
+        "tool-b {input}",
+      ]);
+
+      const resultA = await runCli(["config", "get", "fulltext.converters.tool-a.command"]);
+      expect(resultA.exitCode).toBe(0);
+      expect(resultA.stdout.trim()).toBe("tool-a {input}");
+
+      const resultB = await runCli(["config", "get", "fulltext.converters.tool-b.command"]);
+      expect(resultB.exitCode).toBe(0);
+      expect(resultB.stdout.trim()).toBe("tool-b {input}");
+    });
+  });
+
   describe("Full workflow integration", () => {
     it("should complete workflow: set -> get -> show -> unset -> get (default)", async () => {
       // Set value

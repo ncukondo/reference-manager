@@ -129,6 +129,21 @@ export const customConverterSchema = z.object({
   checkCommandWindows: z.string().optional(),
 });
 
+/** Accepts both camelCase and snake_case keys for TOML compatibility */
+const partialCustomConverterSchema = z.object({
+  command: z.string().optional(),
+  outputMode: z.enum(["file", "stdout"]).optional(),
+  output_mode: z.enum(["file", "stdout"]).optional(),
+  checkCommand: z.string().optional(),
+  check_command: z.string().optional(),
+  timeout: z.number().int().positive().optional(),
+  progress: z.enum(["inherit", "quiet"]).optional(),
+  commandWindows: z.string().optional(),
+  command_windows: z.string().optional(),
+  checkCommandWindows: z.string().optional(),
+  check_command_windows: z.string().optional(),
+});
+
 export const fulltextConfigSchema = z.object({
   preferSources: z.array(fulltextSourceSchema),
   preferredType: fulltextPreferredTypeSchema.optional(),
@@ -244,7 +259,22 @@ export const partialConfigSchema = z
         pdf_converter_priority: z.array(z.string()).optional(),
         pdfConverterTimeout: z.number().int().positive().optional(),
         pdf_converter_timeout: z.number().int().positive().optional(),
-        converters: z.record(z.string(), customConverterSchema).optional(),
+        converters: z
+          .preprocess(
+            (val) => {
+              // @iarna/toml attaches Symbol metadata to tables; strip them for Zod
+              if (val && typeof val === "object" && !Array.isArray(val)) {
+                const clean: Record<string, unknown> = {};
+                for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+                  clean[k] = v;
+                }
+                return clean;
+              }
+              return val;
+            },
+            z.record(z.string(), partialCustomConverterSchema)
+          )
+          .optional(),
         sources: z
           .object({
             unpaywallEmail: z.string().optional(),
@@ -575,7 +605,7 @@ function normalizeFulltextConfig(
   }
 
   if (fulltext.converters !== undefined) {
-    normalized.converters = fulltext.converters;
+    normalized.converters = normalizeConverters(fulltext.converters);
   }
 
   const sources = normalizeFulltextSources(fulltext.sources);
@@ -584,6 +614,40 @@ function normalizeFulltextConfig(
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/** camelCase key -> snake_case alias for converter config fields */
+const CONVERTER_KEY_ALIASES: [string, string][] = [
+  ["outputMode", "output_mode"],
+  ["checkCommand", "check_command"],
+  ["commandWindows", "command_windows"],
+  ["checkCommandWindows", "check_command_windows"],
+];
+
+function normalizeConverterEntry(
+  conv: Record<string, unknown>
+): FulltextConfig["converters"][string] {
+  const entry: Record<string, unknown> = {};
+  // Copy fields that have no alias
+  for (const key of ["command", "timeout", "progress"]) {
+    if (conv[key] !== undefined) entry[key] = conv[key];
+  }
+  // Normalize aliased fields (camelCase preferred, snake_case fallback)
+  for (const [camel, snake] of CONVERTER_KEY_ALIASES) {
+    const val = conv[camel] ?? conv[snake];
+    if (val !== undefined) entry[camel] = val;
+  }
+  return entry as FulltextConfig["converters"][string];
+}
+
+function normalizeConverters(
+  converters: Record<string, Record<string, unknown>>
+): FulltextConfig["converters"] {
+  const result: FulltextConfig["converters"] = {};
+  for (const [name, conv] of Object.entries(converters)) {
+    result[name] = normalizeConverterEntry(conv);
+  }
+  return result;
 }
 
 function normalizeFulltextSources(

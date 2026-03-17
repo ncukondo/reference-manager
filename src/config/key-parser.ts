@@ -100,6 +100,21 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "Auto-fetch fulltext when adding references",
   },
   {
+    key: "fulltext.pdf_converter",
+    type: "string",
+    description: "PDF converter: auto, marker, docling, mineru, pymupdf, or custom name",
+  },
+  {
+    key: "fulltext.pdf_converter_priority",
+    type: "string[]",
+    description: "PDF converter auto-detection priority order",
+  },
+  {
+    key: "fulltext.pdf_converter_timeout",
+    type: "integer",
+    description: "PDF converter timeout in seconds",
+  },
+  {
     key: "fulltext.sources.unpaywall_email",
     type: "string",
     description: "Email for Unpaywall API",
@@ -175,6 +190,60 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
   { key: "mcp.default_limit", type: "integer", description: "Default result limit for MCP" },
 ];
 
+/**
+ * Dynamic key patterns for record-type config entries (e.g. custom converters).
+ * The `*` segment matches any converter name.
+ */
+const DYNAMIC_KEY_PATTERNS: ConfigKeyInfo[] = [
+  {
+    key: "fulltext.converters.*.command",
+    type: "string",
+    description: "Shell command template for the converter",
+  },
+  {
+    key: "fulltext.converters.*.output_mode",
+    type: "enum",
+    description: "Output mode",
+    enumValues: ["file", "stdout"],
+    optional: true,
+  },
+  {
+    key: "fulltext.converters.*.check_command",
+    type: "string",
+    description: "Command to check converter availability",
+    optional: true,
+  },
+  {
+    key: "fulltext.converters.*.timeout",
+    type: "integer",
+    description: "Converter timeout in seconds",
+    optional: true,
+  },
+  {
+    key: "fulltext.converters.*.progress",
+    type: "enum",
+    description: "Progress display mode",
+    enumValues: ["inherit", "quiet"],
+    optional: true,
+  },
+  {
+    key: "fulltext.converters.*.command_windows",
+    type: "string",
+    description: "Windows-specific command template",
+    optional: true,
+  },
+  {
+    key: "fulltext.converters.*.check_command_windows",
+    type: "string",
+    description: "Windows-specific availability check command",
+    optional: true,
+  },
+];
+
+const DYNAMIC_PATTERN_MAP = new Map<string, ConfigKeyInfo>(
+  DYNAMIC_KEY_PATTERNS.map((info) => [info.key, info])
+);
+
 // Create lookup map for fast access
 const KEY_MAP = new Map<string, ConfigKeyInfo>(CONFIG_KEY_REGISTRY.map((info) => [info.key, info]));
 
@@ -189,22 +258,48 @@ export function parseConfigKey(key: string): string[] {
 }
 
 /**
+ * Convert a concrete key to its dynamic pattern form.
+ * e.g. "fulltext.converters.my-tool.command" -> "fulltext.converters.*.command"
+ */
+function toDynamicPattern(key: string): string | null {
+  const segments = key.split(".");
+  if (segments.length >= 4 && segments[0] === "fulltext" && segments[1] === "converters") {
+    return `${segments[0]}.${segments[1]}.*.${segments.slice(3).join(".")}`;
+  }
+  return null;
+}
+
+/**
  * Check if a key is a valid configuration key.
  * Only leaf keys (not sections) are valid.
+ * Supports both static keys and dynamic patterns (e.g. fulltext.converters.*.command).
  */
 export function isValidConfigKey(key: string): boolean {
   if (!key) {
     return false;
   }
-  return KEY_MAP.has(key);
+  if (KEY_MAP.has(key)) {
+    return true;
+  }
+  const pattern = toDynamicPattern(key);
+  return pattern !== null && DYNAMIC_PATTERN_MAP.has(pattern);
 }
 
 /**
  * Get information about a configuration key.
  * Returns null if the key is not valid.
+ * Supports both static keys and dynamic patterns (e.g. fulltext.converters.*.command).
  */
 export function getConfigKeyInfo(key: string): ConfigKeyInfo | null {
-  return KEY_MAP.get(key) ?? null;
+  const info = KEY_MAP.get(key);
+  if (info) {
+    return info;
+  }
+  const pattern = toDynamicPattern(key);
+  if (pattern) {
+    return DYNAMIC_PATTERN_MAP.get(pattern) ?? null;
+  }
+  return null;
 }
 
 /**

@@ -55,6 +55,7 @@ import { collectSetOption, handleUpdateAction } from "./commands/update.js";
 import { handleUrlAction } from "./commands/url.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
+import { buildConvertHelpText } from "./help/convert-help.js";
 import { buildNoResultsHintText, buildSearchHelpText } from "./help/search-help.js";
 import type { CliOptions } from "./helpers.js";
 import {
@@ -913,6 +914,7 @@ function registerFulltextCommand(program: Command): void {
       "PDF converter: auto, marker, docling, mineru, pymupdf, or custom name"
     )
     .option("--force", "Overwrite existing markdown attachment")
+    .addHelpText("after", buildConvertHelpText())
     .action(async (identifier: string | undefined, options) => {
       await handleFulltextConvertAction(identifier, options, program.opts());
     });
