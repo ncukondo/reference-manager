@@ -15,6 +15,12 @@ function stripNodeDeprecationWarnings(stderr: string): string {
   return stderr
     .split("\n")
     .filter((line) => !line.match(/^\(node:\d+\) \[DEP\d+\] DeprecationWarning:/))
+    .filter(
+      (line) =>
+        !line.match(
+          /^\(Use `node --trace-deprecation \.\.\.` to show where the warning was created\)/
+        )
+    )
     .join("\n");
 }
 
