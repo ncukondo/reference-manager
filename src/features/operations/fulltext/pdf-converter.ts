@@ -28,15 +28,15 @@ export interface CustomConverterConfig {
   /** Shell command template with placeholders: {input}, {output}, {input_dir}, {input_name}, {output_name} */
   command: string;
   /** Output mode: "file" (tool writes to {output}) or "stdout" (stdout captured as markdown) */
-  outputMode?: "file" | "stdout";
+  outputMode?: "file" | "stdout" | undefined;
   /** Command to check if the converter is available (exit 0 = available) */
-  checkCommand?: string;
+  checkCommand?: string | undefined;
   /** Conversion timeout in seconds (overrides global) */
-  timeout?: number;
+  timeout?: number | undefined;
   /** Progress display: "inherit" (stderr to terminal) or "quiet" (capture stderr) */
-  progress?: "inherit" | "quiet";
+  progress?: "inherit" | "quiet" | undefined;
   /** Windows-specific command override */
-  commandWindows?: string;
+  commandWindows?: string | undefined;
   /** Windows-specific check command override */
-  checkCommandWindows?: string;
+  checkCommandWindows?: string | undefined;
 }

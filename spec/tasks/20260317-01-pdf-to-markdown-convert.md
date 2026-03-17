@@ -158,7 +158,7 @@ Add PDF converter settings to the configuration schema.
 
 Update `fulltextConvert()` to support PDF input with auto-detection.
 
-- [ ] Write test: update `src/features/operations/fulltext/convert.test.ts`
+- [x] Write test: update `src/features/operations/fulltext/convert.test.ts`
   - Auto-detect: XML exists → uses XML conversion (existing behavior unchanged)
   - Auto-detect: PDF only → uses PDF converter
   - Auto-detect: both XML and PDF → prefers XML
@@ -169,14 +169,14 @@ Update `fulltextConvert()` to support PDF input with auto-detection.
   - No converter available → error with install hints
   - Converter fails → error with stderr and alternative hint
   - Timeout → error message
-- [ ] Implement: update `src/features/operations/fulltext/convert.ts`
+- [x] Implement: update `src/features/operations/fulltext/convert.ts`
   - Add `from` and `converter` options to `FulltextConvertOptions`
   - Add `findPdfFile()` helper (parallel to existing `findXmlFile()`)
   - Add auto-detection logic
   - Integrate converter resolution
   - Add structured error results
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 9: Extend CLI Command
 
