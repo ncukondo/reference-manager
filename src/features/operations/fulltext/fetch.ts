@@ -23,6 +23,7 @@ import type { FulltextConfig, FulltextSource } from "../../../config/schema.js";
 import type { CslItem } from "../../../core/csl-json/types.js";
 import type { ILibrary, IdentifierType } from "../../../core/library-interface.js";
 import { fulltextAttach } from "./attach.js";
+import { fulltextConvert } from "./convert.js";
 import { fulltextGet } from "./get.js";
 
 export interface FulltextFetchOptions {
@@ -75,6 +76,7 @@ interface AttachContext {
   idType: IdentifierType;
   fulltextDirectory: string;
   force: boolean;
+  fulltextConfig: FulltextConfig;
 }
 
 /**
@@ -366,6 +368,7 @@ export async function fulltextFetch(
     idType,
     fulltextDirectory,
     force: force ?? false,
+    fulltextConfig,
   };
 
   try {
@@ -422,6 +425,33 @@ function buildDownloadError(
   return { success: false, error: `Failed to download fulltext for ${identifier}`, hint };
 }
 
+async function tryMarkdownConversion(
+  locations: OALocation[],
+  pmcid: string | undefined,
+  tempDir: string,
+  ctx: AttachContext,
+  attachedFiles: string[],
+  attempts: FetchAttempt[]
+): Promise<string | undefined> {
+  // Try PMC XML -> Markdown
+  if (pmcid) {
+    const mdAttached = await tryDownloadPmcXmlAndConvert(pmcid, tempDir, ctx, attempts);
+    if (mdAttached) return "pmc";
+  }
+
+  // Try arXiv HTML -> Markdown
+  const arxivResult = await tryArxivHtmlFromLocations(locations, tempDir, ctx, attempts);
+  if (arxivResult.attached) return arxivResult.source;
+
+  // Try PDF -> Markdown if PDF attached and preferred type is markdown
+  if (attachedFiles.includes("pdf") && ctx.fulltextConfig.preferredType === "markdown") {
+    const converted = await tryPdfToMarkdownConvert(ctx);
+    if (converted) return "pdf-convert";
+  }
+
+  return undefined;
+}
+
 async function downloadAndAttach(
   locations: OALocation[],
   pmcid: string | undefined,
@@ -440,22 +470,17 @@ async function downloadAndAttach(
     usedSource = pdfResult.source;
   }
 
-  // Try PMC XML -> Markdown
-  if (pmcid) {
-    const mdAttached = await tryDownloadPmcXmlAndConvert(pmcid, tempDir, ctx, attempts);
-    if (mdAttached) {
-      attachedFiles.push("markdown");
-      if (!usedSource) usedSource = "pmc";
-    }
-  }
-
-  // Try arXiv HTML -> Markdown if no markdown yet
-  if (!attachedFiles.includes("markdown")) {
-    const arxivResult = await tryArxivHtmlFromLocations(locations, tempDir, ctx, attempts);
-    if (arxivResult.attached) {
-      attachedFiles.push("markdown");
-      if (!usedSource) usedSource = arxivResult.source;
-    }
+  const mdSource = await tryMarkdownConversion(
+    locations,
+    pmcid,
+    tempDir,
+    ctx,
+    attachedFiles,
+    attempts
+  );
+  if (mdSource) {
+    attachedFiles.push("markdown");
+    if (!usedSource) usedSource = mdSource;
   }
 
   if (attachedFiles.length > 0) {
@@ -466,4 +491,20 @@ async function downloadAndAttach(
     ...buildDownloadError(locations, identifier, attempts),
     attempts: attempts.length > 0 ? attempts : undefined,
   };
+}
+
+async function tryPdfToMarkdownConvert(ctx: AttachContext): Promise<boolean> {
+  try {
+    const result = await fulltextConvert(ctx.library, {
+      identifier: ctx.identifier,
+      idType: ctx.idType,
+      fulltextDirectory: ctx.fulltextDirectory,
+      from: "pdf",
+      fulltextConfig: ctx.fulltextConfig,
+    });
+    return result.success;
+  } catch {
+    // Non-fatal: PDF conversion failure should not fail the fetch
+    return false;
+  }
 }

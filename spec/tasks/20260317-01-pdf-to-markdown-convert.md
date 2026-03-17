@@ -218,16 +218,16 @@ Update MCP tool and HTTP endpoint for PDF conversion support.
 
 Auto-convert PDF to Markdown when `preferred_type = "markdown"` after fetch.
 
-- [ ] Write test: update `src/features/operations/fulltext/fetch.test.ts`
+- [x] Write test: update `src/features/operations/fulltext/fetch.test.ts`
   - PDF fetched + `preferredType: "markdown"` + converter available → auto-convert
   - PDF fetched + `preferredType: "markdown"` + no converter → fetch succeeds, warning logged
   - PDF fetched + no preferred type → no auto-convert
-- [ ] Implement: update `src/features/operations/fulltext/fetch.ts`
+- [x] Implement: update `src/features/operations/fulltext/fetch.ts`
   - After PDF download and attach, check preferred type
   - If markdown preferred and converter available, run conversion
   - Log warning if converter not available (non-fatal)
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Green
+- [x] Lint/Type check
 
 ## Completion Checklist
 
