@@ -129,7 +129,7 @@ Extend `fulltext convert` to support PDF input using external CLI tools (marker,
 - Task: `spec/tasks/20260317-01-pdf-to-markdown-convert.md`
 - ADR: `spec/decisions/ADR-016-pdf-to-markdown-external-converters.md`
 - Spec: `spec/features/fulltext-retrieval.md` (PDF Converter section)
-- Status: Not started
+- Status: Done (PR #83)
 
 ---
 
