@@ -30,19 +30,19 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Define the core interface and types for the converter system.
 
-- [ ] Write test: `src/features/operations/fulltext/pdf-converter.test.ts`
+- [x] Write test: `src/features/operations/fulltext/pdf-converter.test.ts`
   - Test `PdfConverter` interface structure
   - Test `PdfConvertResult` type
   - Test `CustomConverterConfig` type validation
-- [ ] Create stub: `src/features/operations/fulltext/pdf-converter.ts`
+- [x] Create stub: `src/features/operations/fulltext/pdf-converter.ts`
   - Export `PdfConverter` interface
   - Export `PdfConvertResult` interface
   - Export `CustomConverterConfig` interface
   - Export `PdfConvertError` type with error codes
-- [ ] Verify Red
-- [ ] Implement
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Verify Red
+- [x] Implement
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 2: Command Template Expansion
 
