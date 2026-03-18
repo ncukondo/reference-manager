@@ -51,6 +51,7 @@ import {
   formatSearchOutput,
 } from "./commands/search.js";
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
+import { handleShowAction } from "./commands/show.js";
 import { collectSetOption, handleUpdateAction } from "./commands/update.js";
 import { handleUrlAction } from "./commands/url.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
@@ -103,6 +104,7 @@ export function createProgram(): Command {
 
   // Register commands
   registerListCommand(program);
+  registerShowCommand(program);
   registerSearchCommand(program);
   registerExportCommand(program);
   registerAddCommand(program);
@@ -169,6 +171,22 @@ function registerListCommand(program: Command): void {
     .option("--offset <n>", "Number of results to skip", Number.parseInt)
     .action(async (options) => {
       await handleListAction(options, program);
+    });
+}
+
+/**
+ * Register 'show' command
+ */
+function registerShowCommand(program: Command): void {
+  program
+    .command("show [identifier]")
+    .description("Show detailed information about a single reference")
+    .option("--uuid", "Interpret identifier as UUID")
+    .option("-o, --output <format>", "Output format: pretty (default), json, yaml, bibtex")
+    .option("--json", "Alias for --output json")
+    .action(async (identifier, options) => {
+      const globalOpts = program.opts();
+      await handleShowAction(identifier, options, globalOpts);
     });
 }
 
