@@ -62,7 +62,8 @@ describe("MCP tools registration", () => {
       expect(registeredTools).toContain("fulltext_fetch");
       expect(registeredTools).toContain("fulltext_convert");
       expect(registeredTools).toContain("check");
-      expect(registeredTools).toHaveLength(12);
+      expect(registeredTools).toContain("show");
+      expect(registeredTools).toHaveLength(13);
     });
   });
 });
