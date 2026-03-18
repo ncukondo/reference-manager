@@ -135,9 +135,9 @@ Extend `fulltext convert` to support PDF input using external CLI tools (marker,
 
 Add `ref show <id>` command for comprehensive single-reference detail view. Provides normalized, agent-friendly output with fulltext paths and attachment info — analogous to `git show` or `docker inspect`.
 
-- Task: `spec/tasks/20260317-02-show-command.md`
+- Task: `spec/tasks/completed/20260317-02-show-command.md`
 - Spec: `spec/features/show.md`
-- Status: Active
+- Status: Done (PR #85)
 
 ---
 
