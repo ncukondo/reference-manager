@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Show Command**: `ref show <id>` for comprehensive single-reference inspection
+  - Pretty output with aligned labels, fulltext paths, attachments, and abstract
+  - JSON output (`--json` / `--output json`) with normalized agent-friendly structure
+  - YAML and BibTeX output formats
+  - UUID lookup with `--uuid` flag
+  - Interactive selection when no identifier provided in TTY mode
+  - MCP `show` tool for AI agent integration
 - **PDF-to-Markdown Conversion**: `fulltext convert` now supports PDF input with pluggable external converters
   - Built-in support for marker, docling, mineru, and pymupdf CLI tools
   - Custom converter system via config with command templates and placeholders
