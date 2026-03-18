@@ -15,6 +15,7 @@ import {
 import { registerListTool } from "./list.js";
 import { registerRemoveTool } from "./remove.js";
 import { registerSearchTool } from "./search.js";
+import { registerShowTool } from "./show.js";
 
 /**
  * Register all tools with the MCP server.
@@ -34,6 +35,7 @@ export function registerAllTools(
   registerCheckTool(server, getLibraryOperations);
   registerAddTool(server, getLibraryOperations);
   registerRemoveTool(server, getLibraryOperations);
+  registerShowTool(server, getLibraryOperations, getConfig);
   registerFulltextAttachTool(server, getLibraryOperations, getConfig);
   registerFulltextGetTool(server, getLibraryOperations, getConfig);
   registerFulltextDetachTool(server, getLibraryOperations, getConfig);
