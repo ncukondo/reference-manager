@@ -51,7 +51,8 @@ export function formatShowOutput(
   }
 
   if (format === "yaml") {
-    return yamlStringify(item);
+    const normalized = normalizeReference(item, normalizeOpts);
+    return yamlStringify(normalized);
   }
 
   if (format === "bibtex") {

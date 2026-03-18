@@ -8,6 +8,11 @@
 import path from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
 
+/** Convert OS path separators to POSIX forward slashes for consistent output. */
+function toPosixPath(p: string): string {
+  return p.split(path.sep).join("/");
+}
+
 export interface NormalizedFulltext {
   pdf: string | null;
   markdown: string | null;
@@ -79,9 +84,9 @@ function resolveFulltextAndAttachments(
   for (const file of files) {
     if (file.role === "fulltext") {
       if (file.filename.endsWith(".pdf")) {
-        pdfPath = path.join(dir, file.filename);
+        pdfPath = toPosixPath(path.join(dir, file.filename));
       } else if (file.filename.endsWith(".md")) {
-        markdownPath = path.join(dir, file.filename);
+        markdownPath = toPosixPath(path.join(dir, file.filename));
       }
     } else {
       nonFulltext.push({ filename: file.filename, role: file.role });

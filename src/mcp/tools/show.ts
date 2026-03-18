@@ -17,6 +17,7 @@ interface ShowToolParams {
 
 type ShowToolResult = {
   content: Array<{ type: "text"; text: string }>;
+  isError?: boolean;
 };
 
 export function createShowToolHandler(
@@ -33,6 +34,7 @@ export function createShowToolHandler(
     if (!id) {
       return {
         content: [{ type: "text" as const, text: "Error: identifier or uuid is required" }],
+        isError: true,
       };
     }
 
@@ -41,6 +43,7 @@ export function createShowToolHandler(
     if (!item) {
       return {
         content: [{ type: "text" as const, text: `Reference not found: ${id}` }],
+        isError: true,
       };
     }
 
