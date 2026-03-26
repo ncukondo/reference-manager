@@ -970,9 +970,13 @@ function registerInstallCommand(program: Command): void {
     .command("skills")
     .description("Install Agent Skills (SKILL.md) for AI coding agents")
     .option("-f, --force", "Overwrite existing files")
-    .action(async (options: { force?: boolean }) => {
+    .option("-u, --user", "Install to user-level directory (~/.agents/skills/)")
+    .action(async (options: { force?: boolean; user?: boolean }) => {
       try {
-        const result = await executeInstallSkills({ force: options.force ?? false });
+        const result = await executeInstallSkills({
+          force: options.force ?? false,
+          ...(options.user != null && { user: options.user }),
+        });
         const output = formatInstallSkillsOutput(result);
         process.stdout.write(`${output}\n`);
         setExitCode(ExitCode.SUCCESS);

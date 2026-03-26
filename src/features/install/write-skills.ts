@@ -2,7 +2,16 @@
  * Write Agent Skills files to a target directory
  */
 
-import { existsSync, lstatSync, mkdirSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { homedir } from "node:os";
 import { join, relative } from "node:path";
 
 // Import skill templates as raw strings
@@ -16,6 +25,8 @@ export interface WriteSkillsOptions {
   targetDir: string;
   /** Overwrite existing files */
   force?: boolean;
+  /** Install to user-level directory (~/.agents/skills/) */
+  user?: boolean;
 }
 
 export interface WriteSkillsResult {
@@ -36,9 +47,10 @@ const SKILL_FILES: [string, string][] = [
 ];
 
 export async function writeSkills(options: WriteSkillsOptions): Promise<WriteSkillsResult> {
-  const { targetDir, force = false } = options;
-  const agentsDir = join(targetDir, ".agents", "skills", "ref");
-  const claudeDir = join(targetDir, ".claude", "skills");
+  const { targetDir, force = false, user = false } = options;
+  const baseDir = user ? homedir() : targetDir;
+  const agentsDir = join(baseDir, ".agents", "skills", "ref");
+  const claudeDir = join(baseDir, ".claude", "skills");
   const claudeLink = join(claudeDir, "ref");
 
   const written: string[] = [];
@@ -66,10 +78,12 @@ export async function writeSkills(options: WriteSkillsOptions): Promise<WriteSki
   mkdirSync(claudeDir, { recursive: true });
 
   if (force && existsSync(claudeLink)) {
-    // Remove existing link to recreate
+    // Remove existing link or directory to recreate
     const stat = lstatSync(claudeLink);
     if (stat.isSymbolicLink()) {
       unlinkSync(claudeLink);
+    } else if (stat.isDirectory()) {
+      rmSync(claudeLink, { recursive: true, force: true });
     }
   }
 

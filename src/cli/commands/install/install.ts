@@ -6,6 +6,7 @@ import { type WriteSkillsResult, writeSkills } from "../../../features/install/w
 
 export interface InstallSkillsOptions {
   force: boolean;
+  user?: boolean;
 }
 
 export async function executeInstallSkills(
@@ -14,6 +15,7 @@ export async function executeInstallSkills(
   return writeSkills({
     targetDir: process.cwd(),
     force: options.force,
+    ...(options.user != null && { user: options.user }),
   });
 }
 

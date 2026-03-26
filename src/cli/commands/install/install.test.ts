@@ -44,6 +44,22 @@ describe("install command", () => {
         force: true,
       });
     });
+
+    it("should pass user option for user-level install", async () => {
+      mockWriteSkills.mockResolvedValue({
+        written: ["SKILL.md"],
+        skipped: [],
+        linkCreated: true,
+      });
+
+      await executeInstallSkills({ force: false, user: true });
+
+      expect(mockWriteSkills).toHaveBeenCalledWith({
+        targetDir: process.cwd(),
+        force: false,
+        user: true,
+      });
+    });
   });
 
   describe("formatInstallSkillsOutput", () => {

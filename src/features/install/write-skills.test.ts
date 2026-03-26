@@ -3,7 +3,14 @@
  */
 import { existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("node:os", async () => {
+  const actual = await vi.importActual<typeof import("node:os")>("node:os");
+  return { ...actual, homedir: vi.fn(actual.homedir) };
+});
+
+import { homedir } from "node:os";
 import { writeSkills } from "./write-skills.js";
 
 describe("writeSkills", () => {
@@ -103,5 +110,43 @@ describe("writeSkills", () => {
     expect(content).toMatch(/^---\n/);
     expect(content).toMatch(/name:\s+ref/);
     expect(content).toMatch(/description:\s+.+/);
+  });
+
+  it("should install to user home directory when user option is set", async () => {
+    vi.mocked(homedir).mockReturnValue(tmpDir);
+
+    try {
+      const result = await writeSkills({ targetDir: "/ignored", user: true });
+
+      const agentsDir = join(tmpDir, ".agents", "skills", "ref");
+      expect(existsSync(agentsDir)).toBe(true);
+      expect(existsSync(join(agentsDir, "SKILL.md"))).toBe(true);
+      expect(result.written.length).toBeGreaterThanOrEqual(4);
+      expect(result.linkCreated).toBe(true);
+
+      const claudeLink = join(tmpDir, ".claude", "skills", "ref");
+      expect(existsSync(claudeLink)).toBe(true);
+    } finally {
+      vi.mocked(homedir).mockRestore();
+    }
+  });
+
+  it("should remove regular directory at .claude/skills/ref in force mode", async () => {
+    // First install normally
+    await writeSkills({ targetDir: tmpDir });
+
+    // Replace symlink with a regular directory
+    const claudeLink = join(tmpDir, ".claude", "skills", "ref");
+    rmSync(claudeLink, { recursive: true, force: true });
+    mkdirSync(claudeLink, { recursive: true });
+    writeFileSync(join(claudeLink, "dummy.txt"), "dummy");
+
+    // Force install should replace the regular directory with a symlink
+    const result = await writeSkills({ targetDir: tmpDir, force: true });
+
+    const stat = lstatSync(claudeLink);
+    expect(stat.isSymbolicLink()).toBe(true);
+    expect(result.linkCreated).toBe(true);
+    expect(existsSync(join(claudeLink, "SKILL.md"))).toBe(true);
   });
 });
