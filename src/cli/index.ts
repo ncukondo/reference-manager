@@ -41,6 +41,7 @@ import {
   handleFulltextGetAction,
   handleFulltextOpenAction,
 } from "./commands/fulltext.js";
+import { executeInstallSkills, formatInstallSkillsOutput } from "./commands/install/install.js";
 import { type ListCommandOptions, executeList, formatListOutput } from "./commands/list.js";
 import { mcpStart } from "./commands/mcp.js";
 import { handleRemoveAction } from "./commands/remove.js";
@@ -118,6 +119,7 @@ export function createProgram(): Command {
   registerAttachCommand(program);
   registerMcpCommand(program);
   registerUrlCommand(program);
+  registerInstallCommand(program);
   registerConfigCommand(program);
   registerCompletionCommand(program);
 
@@ -955,6 +957,33 @@ function registerUrlCommand(program: Command): void {
     .action(async (identifiers: string[], options) => {
       const globalOpts = program.opts();
       await handleUrlAction(identifiers.length > 0 ? identifiers : undefined, options, globalOpts);
+    });
+}
+
+/**
+ * Register 'install' command
+ */
+function registerInstallCommand(program: Command): void {
+  const installCmd = program.command("install").description("Install tools and integrations");
+
+  installCmd
+    .command("skills")
+    .description("Install Agent Skills (SKILL.md) for AI coding agents")
+    .option("-f, --force", "Overwrite existing files")
+    .option("-u, --user", "Install to user-level directory (~/.agents/skills/)")
+    .action(async (options: { force?: boolean; user?: boolean }) => {
+      try {
+        const result = await executeInstallSkills({
+          force: options.force ?? false,
+          ...(options.user != null && { user: options.user }),
+        });
+        const output = formatInstallSkillsOutput(result);
+        process.stdout.write(`${output}\n`);
+        setExitCode(ExitCode.SUCCESS);
+      } catch (error) {
+        process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+        setExitCode(ExitCode.INTERNAL_ERROR);
+      }
     });
 }
 

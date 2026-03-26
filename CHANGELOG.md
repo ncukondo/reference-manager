@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Install Skills Command**: `ref install skills` installs Agent Skills (SKILL.md) for AI coding agents
+  - Creates `.agents/skills/ref/` directory with skill templates (cross-client standard)
+  - Creates `.claude/skills/ref` symlink for Claude Code compatibility
+  - Includes reference skills: systematic-review, manuscript-writing, fulltext
+  - `--force` flag to overwrite existing files
+  - `llms-install.md` for AI agent-guided onboarding via raw GitHub URL
 - **Show Command**: `ref show <id>` for comprehensive single-reference inspection
   - Pretty output with aligned labels, fulltext paths, attachments, and abstract
   - JSON output (`--json` / `--output json`) with normalized agent-friendly structure
