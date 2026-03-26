@@ -111,6 +111,26 @@ npm run build
 npm link
 ```
 
+### AI Agent Setup
+
+Let your AI coding agent handle the entire setup. Just give it this URL:
+
+```
+https://raw.githubusercontent.com/ncukondo/reference-manager/main/llms-install.md
+```
+
+The agent will install reference-manager, configure skills, and guide you through initial setup.
+
+You can also install Agent Skills manually into your project:
+
+```bash
+ref install --skills          # Install to current project
+ref install --skills --user   # Install to user-level (~/.agents/skills/)
+ref install --skills --force  # Overwrite existing files
+```
+
+Skills provide context-aware workflows for systematic reviews, manuscript writing, and fulltext management. Compatible with Claude Code, Codex CLI, Gemini CLI, Cursor, and other agents supporting the [Agent Skills](https://agentskills.io) standard.
+
 ## Quick Start
 
 ```bash
