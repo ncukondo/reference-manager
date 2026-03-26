@@ -143,8 +143,8 @@ Add `ref show <id>` command for comprehensive single-reference detail view. Prov
 
 Add `ref install --skills` command that installs Agent Skills (SKILL.md) for AI coding agents (Claude Code, Codex CLI, Gemini CLI, Cursor, etc.). Skills are placed in `$PWD/.agents/skills/ref/` (standard path) with a symlink/junction at `$PWD/.claude/skills/ref` for Claude Code. Also creates `llms-install.md` for agent-guided onboarding via raw GitHub URL.
 
-- Task: `spec/tasks/20260325-01-install-skills-command.md`
-- Status: Not Started
+- Task: `spec/tasks/completed/20260325-01-install-skills-command.md`
+- Status: Done (PR #86)
 
 ---
 
