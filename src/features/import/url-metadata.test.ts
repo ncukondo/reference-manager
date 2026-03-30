@@ -1,5 +1,6 @@
+import { JSDOM } from "jsdom";
 import { describe, expect, it, vi } from "vitest";
-import { extractMetadata } from "./url-metadata.js";
+import { extractMetadata, extractRawMetadataFromDocument } from "./url-metadata.js";
 
 /**
  * Helper to create a mock Playwright Page that simulates page.evaluate()
@@ -211,6 +212,40 @@ describe("extractMetadata", () => {
       expect(result.title).toBe("Article Title");
     });
 
+    it("should not treat array as JSON-LD object in @graph", async () => {
+      const page = createMockPage({
+        jsonLd: [
+          {
+            "@graph": [["not", "an", "object"], { "@type": "Article", name: "Real Article" }],
+          },
+        ],
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.title).toBe("Real Article");
+    });
+
+    it("should not treat top-level array entry as JSON-LD object", async () => {
+      const page = createMockPage({
+        jsonLd: [["not", "an", "object"], { "@type": "Article", name: "Real" }],
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.title).toBe("Real");
+    });
+
+    it("should skip arrays in JSON-LD author field", async () => {
+      const page = createMockPage({
+        jsonLd: [
+          {
+            "@type": "Article",
+            author: [["array", "not", "person"], { "@type": "Person", name: "John Smith" }],
+          },
+        ],
+      });
+      const result = await extractMetadata(page as never);
+      // Should only have the real author, not a bogus {literal: ""} from the array
+      expect(result.author).toEqual([{ family: "Smith", given: "John" }]);
+    });
+
     it("should handle organization author in JSON-LD", async () => {
       const page = createMockPage({
         jsonLd: [
@@ -310,12 +345,12 @@ describe("extractMetadata", () => {
       expect(result.DOI).toBe("10.1000/test");
     });
 
-    it("should extract citation_journal_title as publisher", async () => {
+    it("should extract citation_journal_title as container-title", async () => {
       const page = createMockPage({
         citationMeta: { citation_journal_title: "Nature" },
       });
       const result = await extractMetadata(page as never);
-      expect(result.publisher).toBe("Nature");
+      expect(result["container-title"]).toBe("Nature");
     });
 
     it("should handle single citation_author as string", async () => {
@@ -344,6 +379,17 @@ describe("extractMetadata", () => {
       });
       const result = await extractMetadata(page as never);
       expect(result.author).toEqual([{ family: "Smith", given: "John" }]);
+    });
+
+    it("should extract multiple DC.creator as authors", async () => {
+      const page = createMockPage({
+        dcMeta: { "DC.creator": ["John Smith", "Jane Doe"] },
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.author).toEqual([
+        { family: "Smith", given: "John" },
+        { family: "Doe", given: "Jane" },
+      ]);
     });
 
     it("should extract DC.date as issued", async () => {
@@ -490,5 +536,116 @@ describe("extractMetadata", () => {
       expect(result.abstract).toBe("JSON-LD Abstract");
       expect(result.publisher).toBe("JSON-LD Publisher");
     });
+  });
+});
+
+// --- JSDOM-based tests for extractRawMetadataFromDocument ---
+
+function parseHtml(html: string) {
+  return new JSDOM(html).window.document;
+}
+
+describe("extractRawMetadataFromDocument", () => {
+  it("should extract JSON-LD from script tags", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <script type="application/ld+json">{"@type":"Article","name":"Test"}</script>
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.jsonLd).toEqual([{ "@type": "Article", name: "Test" }]);
+  });
+
+  it("should skip invalid JSON-LD gracefully", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <script type="application/ld+json">not valid json</script>
+        <script type="application/ld+json">{"@type":"Article","name":"Valid"}</script>
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.jsonLd).toEqual([{ "@type": "Article", name: "Valid" }]);
+  });
+
+  it("should extract citation_* meta tags with multiple values", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <meta name="citation_title" content="My Paper">
+        <meta name="citation_author" content="Smith, John">
+        <meta name="citation_author" content="Doe, Jane">
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.citation.citation_title).toBe("My Paper");
+    expect(raw.citation.citation_author).toEqual(["Smith, John", "Doe, Jane"]);
+  });
+
+  it("should extract multiple DC.creator meta tags", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <meta name="DC.creator" content="John Smith">
+        <meta name="DC.creator" content="Jane Doe">
+        <meta name="DC.title" content="A DC Document">
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.dc["DC.creator"]).toEqual(["John Smith", "Jane Doe"]);
+    expect(raw.dc["DC.title"]).toBe("A DC Document");
+  });
+
+  it("should extract Open Graph meta tags", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <meta property="og:title" content="OG Title">
+        <meta property="og:description" content="OG Desc">
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.og["og:title"]).toBe("OG Title");
+    expect(raw.og["og:description"]).toBe("OG Desc");
+  });
+
+  it("should extract document title", () => {
+    const doc = parseHtml("<html><head><title>Page Title</title></head><body></body></html>");
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.title).toBe("Page Title");
+  });
+
+  it("should handle empty document", () => {
+    const doc = parseHtml("<html><head></head><body></body></html>");
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.jsonLd).toEqual([]);
+    expect(raw.citation).toEqual({});
+    expect(raw.dc).toEqual({});
+    expect(raw.og).toEqual({});
+    expect(raw.title).toBe("");
+  });
+
+  it("should handle a realistic scholarly page", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <title>Article - Journal</title>
+        <script type="application/ld+json">{
+          "@type": "ScholarlyArticle",
+          "name": "Deep Learning for NLP",
+          "author": [{"@type": "Person", "name": "Alice Researcher"}],
+          "datePublished": "2024-01-15"
+        }</script>
+        <meta name="citation_title" content="Deep Learning for NLP">
+        <meta name="citation_author" content="Researcher, Alice">
+        <meta name="citation_doi" content="10.1234/example">
+        <meta name="citation_journal_title" content="Nature ML">
+        <meta name="DC.creator" content="Alice Researcher">
+        <meta name="DC.publisher" content="Nature Publishing">
+        <meta property="og:title" content="Deep Learning for NLP">
+        <meta property="og:description" content="A study on deep learning.">
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.jsonLd[0]).toMatchObject({ "@type": "ScholarlyArticle" });
+    expect(raw.citation.citation_doi).toBe("10.1234/example");
+    expect(raw.citation.citation_journal_title).toBe("Nature ML");
+    expect(raw.dc["DC.publisher"]).toBe("Nature Publishing");
+    expect(raw.og["og:description"]).toBe("A study on deep learning.");
   });
 });

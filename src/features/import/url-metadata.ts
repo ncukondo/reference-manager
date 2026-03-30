@@ -5,7 +5,7 @@ import type { CslItem } from "../../core/csl-json/types.js";
 interface RawMetadata {
   jsonLd: unknown[];
   citation: Record<string, string | string[]>;
-  dc: Record<string, string>;
+  dc: Record<string, string | string[]>;
   og: Record<string, string>;
   title: string;
 }
@@ -17,6 +17,7 @@ interface ExtractedFields {
   issued?: { "date-parts": number[][] };
   type?: string;
   DOI?: string;
+  "container-title"?: string;
   publisher?: string;
   abstract?: string;
 }
@@ -91,7 +92,7 @@ const PRIORITY_SCHEMA_TYPES = new Set([
 ]);
 
 function isObj(v: unknown): v is JsonLdObj {
-  return v != null && typeof v === "object";
+  return v != null && typeof v === "object" && !Array.isArray(v);
 }
 
 function findInGraph(graph: unknown[]): JsonLdObj | undefined {
@@ -211,9 +212,9 @@ function extractFromCitation(citation: Record<string, string | string[]>): Extra
     fields.DOI = citation.citation_doi;
   }
 
-  // Publisher / journal
+  // Journal title → container-title
   if (typeof citation.citation_journal_title === "string" && citation.citation_journal_title) {
-    fields.publisher = citation.citation_journal_title;
+    fields["container-title"] = citation.citation_journal_title;
   }
 
   return fields;
@@ -221,21 +222,32 @@ function extractFromCitation(citation: Record<string, string | string[]>): Extra
 
 // --- Dublin Core extraction ---
 
-function extractFromDublinCore(dc: Record<string, string>): ExtractedFields {
+function dcString(val: string | string[] | undefined): string | undefined {
+  if (typeof val === "string") return val;
+  if (Array.isArray(val) && val.length > 0) return val[0];
+  return undefined;
+}
+
+function extractFromDublinCore(dc: Record<string, string | string[]>): ExtractedFields {
   const fields: ExtractedFields = {};
 
-  if (dc["DC.title"]) fields.title = dc["DC.title"];
+  const title = dcString(dc["DC.title"]);
+  if (title) fields.title = title;
 
-  if (dc["DC.creator"]) {
-    fields.author = [parseName(dc["DC.creator"])];
+  const rawCreator = dc["DC.creator"];
+  if (rawCreator) {
+    const creators = Array.isArray(rawCreator) ? rawCreator : [rawCreator];
+    fields.author = creators.map((c) => parseName(c));
   }
 
-  setDateField(fields, dc["DC.date"]);
+  setDateField(fields, dcString(dc["DC.date"]));
 
-  if (dc["DC.publisher"]) fields.publisher = dc["DC.publisher"];
-  if (dc["DC.description"]) fields.abstract = dc["DC.description"];
+  const publisher = dcString(dc["DC.publisher"]);
+  if (publisher) fields.publisher = publisher;
+  const description = dcString(dc["DC.description"]);
+  if (description) fields.abstract = description;
 
-  const doi = extractDoi(dc["DC.identifier"]);
+  const doi = extractDoi(dcString(dc["DC.identifier"]));
   if (doi) fields.DOI = doi;
 
   return fields;
@@ -254,7 +266,7 @@ function extractFromOpenGraph(og: Record<string, string>): ExtractedFields {
 
 // --- Merge ---
 
-const SIMPLE_KEYS = ["title", "type", "DOI", "publisher", "abstract"] as const;
+const SIMPLE_KEYS = ["title", "type", "DOI", "container-title", "publisher", "abstract"] as const;
 
 function mergeFields(...sources: ExtractedFields[]): ExtractedFields {
   const merged: ExtractedFields = {};
@@ -272,6 +284,59 @@ function mergeFields(...sources: ExtractedFields[]): ExtractedFields {
   return merged;
 }
 
+// --- DOM scraping (shared between page.evaluate and tests) ---
+
+/** Collect multi-value meta tags into Record<string, string | string[]> */
+function collectMultiMeta(
+  doc: { querySelectorAll(sel: string): Iterable<{ getAttribute(n: string): string | null }> },
+  selector: string,
+  attrName: string
+): Record<string, string | string[]> {
+  const multi: Record<string, string[]> = {};
+  for (const el of doc.querySelectorAll(selector)) {
+    const name = el.getAttribute(attrName) || "";
+    const content = el.getAttribute("content") || "";
+    if (!multi[name]) multi[name] = [];
+    multi[name].push(content);
+  }
+  const result: Record<string, string | string[]> = {};
+  for (const [key, values] of Object.entries(multi)) {
+    result[key] = values.length === 1 ? (values[0] ?? "") : values;
+  }
+  return result;
+}
+
+/**
+ * Extract raw metadata from a Document-like object.
+ * Usable both from page.evaluate (browser) and JSDOM (tests).
+ */
+export function extractRawMetadataFromDocument(doc: {
+  querySelectorAll(sel: string): Iterable<{
+    getAttribute(n: string): string | null;
+    textContent: string | null;
+  }>;
+  title: string;
+}): RawMetadata {
+  const jsonLd: unknown[] = [];
+  for (const el of doc.querySelectorAll('script[type="application/ld+json"]')) {
+    try {
+      jsonLd.push(JSON.parse(el.textContent || ""));
+    } catch {
+      // skip invalid JSON
+    }
+  }
+
+  const citation = collectMultiMeta(doc, 'meta[name^="citation_"]', "name");
+  const dc = collectMultiMeta(doc, 'meta[name^="DC."]', "name");
+
+  const og: Record<string, string> = {};
+  for (const el of doc.querySelectorAll('meta[property^="og:"]')) {
+    og[el.getAttribute("property") || ""] = el.getAttribute("content") || "";
+  }
+
+  return { jsonLd, citation, dc, og, title: doc.title };
+}
+
 // --- Main ---
 
 /**
@@ -280,8 +345,8 @@ function mergeFields(...sources: ExtractedFields[]): ExtractedFields {
  * Priority: JSON-LD → citation_* → Dublin Core → Open Graph → HTML
  */
 export async function extractMetadata(page: Page): Promise<CslItem> {
-  // page.evaluate runs in the browser context where document is available.
-  // Use string template to avoid TypeScript DOM reference errors.
+  // page.evaluate runs in the browser context — pass the function as string
+  // because extractRawMetadataFromDocument is not available in browser scope.
   const rawMeta: RawMetadata = await page.evaluate(`
     (() => {
       const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')]
@@ -300,9 +365,17 @@ export async function extractMetadata(page: Page): Promise<CslItem> {
         citation[key] = values.length === 1 ? values[0] : values;
       }
 
-      const dc = Object.fromEntries(
-        [...document.querySelectorAll('meta[name^="DC."]')]
-          .map(el => [el.getAttribute("name"), el.getAttribute("content")]));
+      const dcMulti = {};
+      for (const el of document.querySelectorAll('meta[name^="DC."]')) {
+        const name = el.getAttribute("name") || "";
+        const content = el.getAttribute("content") || "";
+        if (!dcMulti[name]) dcMulti[name] = [];
+        dcMulti[name].push(content);
+      }
+      const dc = {};
+      for (const [key, values] of Object.entries(dcMulti)) {
+        dc[key] = values.length === 1 ? values[0] : values;
+      }
       const og = Object.fromEntries(
         [...document.querySelectorAll('meta[property^="og:"]')]
           .map(el => [el.getAttribute("property"), el.getAttribute("content")]));
@@ -339,6 +412,7 @@ export async function extractMetadata(page: Page): Promise<CslItem> {
   if (merged.author?.length) item.author = merged.author;
   if (merged.issued) item.issued = merged.issued;
   if (merged.DOI) item.DOI = merged.DOI;
+  if (merged["container-title"]) item["container-title"] = merged["container-title"];
   if (merged.publisher) item.publisher = merged.publisher;
   if (merged.abstract) item.abstract = merged.abstract;
 
