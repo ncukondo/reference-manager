@@ -150,9 +150,9 @@ Add `ref install --skills` command that installs Agent Skills (SKILL.md) for AI 
 
 Import web pages as references via `ref add <URL>`. Core pipeline: URL/PubMed URL detection, Playwright + system Chrome page fetching, basic metadata (title, URL, accessed, type: webpage), Readability + Turndown Markdown fulltext, MHTML/HTML archiving, `archive` attachment role, `--archive-format`/`--no-archive` options, config.
 
-- Task: `spec/tasks/20260330-01-url-import-phase1.md`
+- Task: `spec/tasks/completed/20260330-01-url-import-phase1.md`
 - Spec: `spec/features/url-import.md`
-- Status: Not started
+- Status: Done (PR #87)
 
 ### Phase 49: URL Import — Phase 2 (Metadata Extraction)
 
