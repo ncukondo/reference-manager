@@ -714,6 +714,23 @@ describe("extractRawMetadataFromDocument", () => {
     expect("" in raw.og).toBe(false);
   });
 
+  it("should skip meta tags with missing name attribute in citation/dc", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <meta name="citation_title" content="Valid">
+        <meta content="No Name Attr">
+        <meta name="" content="Empty Name">
+        <meta name="DC.title" content="DC Valid">
+        <meta name="" content="DC Empty Name">
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.citation.citation_title).toBe("Valid");
+    expect("" in raw.citation).toBe(false);
+    expect(raw.dc["DC.title"]).toBe("DC Valid");
+    expect("" in raw.dc).toBe(false);
+  });
+
   it("should handle a realistic scholarly page", () => {
     const doc = parseHtml(`
       <html><head>

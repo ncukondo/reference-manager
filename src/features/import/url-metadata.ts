@@ -303,7 +303,8 @@ function collectMultiMeta(
 ): Record<string, string | string[]> {
   const multi: Record<string, string[]> = {};
   for (const el of doc.querySelectorAll(selector)) {
-    const name = el.getAttribute(attrName) || "";
+    const name = el.getAttribute(attrName);
+    if (!name) continue;
     const content = el.getAttribute("content") || "";
     if (!multi[name]) multi[name] = [];
     multi[name].push(content);
@@ -318,6 +319,11 @@ function collectMultiMeta(
 /**
  * Extract raw metadata from a Document-like object.
  * Usable both from page.evaluate (browser) and JSDOM (tests).
+ *
+ * SYNC NOTE: The DOM scraping logic here must stay in sync with the
+ * inline page.evaluate string in extractMetadata() below.
+ * If you change selectors or extraction logic here, update the
+ * page.evaluate block as well.
  */
 export function extractRawMetadataFromDocument(doc: {
   querySelectorAll(sel: string): Iterable<{
@@ -357,6 +363,9 @@ export function extractRawMetadataFromDocument(doc: {
 export async function extractMetadata(page: Page): Promise<CslItem> {
   // page.evaluate runs in the browser context — pass the function as string
   // because extractRawMetadataFromDocument is not available in browser scope.
+  // SYNC NOTE: The DOM scraping logic here must stay in sync with
+  // extractRawMetadataFromDocument() above. If you change selectors or
+  // extraction logic here, update that function as well.
   const rawMeta: RawMetadata = await page.evaluate(`
     (() => {
       const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')]
