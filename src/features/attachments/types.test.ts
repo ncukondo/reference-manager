@@ -4,6 +4,7 @@ import {
   type Attachments,
   RESERVED_ROLES,
   isReservedRole,
+  isValidArchiveFiles,
   isValidFulltextFiles,
 } from "./types.js";
 
@@ -56,10 +57,11 @@ describe("RESERVED_ROLES", () => {
     expect(RESERVED_ROLES).toContain("supplement");
     expect(RESERVED_ROLES).toContain("notes");
     expect(RESERVED_ROLES).toContain("draft");
+    expect(RESERVED_ROLES).toContain("archive");
   });
 
-  it("should have exactly 4 reserved roles", () => {
-    expect(RESERVED_ROLES).toHaveLength(4);
+  it("should have exactly 5 reserved roles", () => {
+    expect(RESERVED_ROLES).toHaveLength(5);
   });
 });
 
@@ -69,6 +71,7 @@ describe("isReservedRole", () => {
     expect(isReservedRole("supplement")).toBe(true);
     expect(isReservedRole("notes")).toBe(true);
     expect(isReservedRole("draft")).toBe(true);
+    expect(isReservedRole("archive")).toBe(true);
   });
 
   it("should return false for custom roles", () => {
@@ -139,5 +142,38 @@ describe("isValidFulltextFiles", () => {
       { filename: "notes.md", role: "notes" },
     ];
     expect(isValidFulltextFiles(files)).toBe(true);
+  });
+});
+
+describe("isValidArchiveFiles", () => {
+  it("should return true for empty files array", () => {
+    expect(isValidArchiveFiles([])).toBe(true);
+  });
+
+  it("should return true for single archive file", () => {
+    const files: AttachmentFile[] = [{ filename: "archive.mhtml", role: "archive" }];
+    expect(isValidArchiveFiles(files)).toBe(true);
+  });
+
+  it("should return true for single HTML archive file", () => {
+    const files: AttachmentFile[] = [{ filename: "archive.html", role: "archive" }];
+    expect(isValidArchiveFiles(files)).toBe(true);
+  });
+
+  it("should return false for two archive files", () => {
+    const files: AttachmentFile[] = [
+      { filename: "archive.mhtml", role: "archive" },
+      { filename: "archive.html", role: "archive" },
+    ];
+    expect(isValidArchiveFiles(files)).toBe(false);
+  });
+
+  it("should ignore non-archive files", () => {
+    const files: AttachmentFile[] = [
+      { filename: "archive.mhtml", role: "archive" },
+      { filename: "fulltext.pdf", role: "fulltext" },
+      { filename: "notes.md", role: "notes" },
+    ];
+    expect(isValidArchiveFiles(files)).toBe(true);
   });
 });
