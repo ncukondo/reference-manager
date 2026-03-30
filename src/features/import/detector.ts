@@ -179,6 +179,11 @@ export function detectSingleIdentifier(
     return "isbn";
   }
 
+  // PubMed/PMC URLs → pmid (before generic PMID and URL checks)
+  if (extractPubmedId(input) !== null) {
+    return "pmid";
+  }
+
   // PMID: numeric only (must be after ISBN check to avoid conflicts)
   if (isPmid(input)) {
     return "pmid";
@@ -193,7 +198,42 @@ export function detectSingleIdentifier(
 }
 
 /**
- * Check if input is an http/https URL that is not already matched as a known identifier (DOI, arXiv).
+ * PubMed URL patterns that should be detected as PMID
+ */
+const PUBMED_URL_PATTERNS: { pattern: RegExp; extract: (match: RegExpMatchArray) => string }[] = [
+  // https://pubmed.ncbi.nlm.nih.gov/{PMID}/
+  {
+    pattern: /^https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?$/,
+    extract: (m) => m[1] as string,
+  },
+  // https://www.ncbi.nlm.nih.gov/pubmed/{PMID}
+  {
+    pattern: /^https?:\/\/(?:www\.)?ncbi\.nlm\.nih\.gov\/pubmed\/(\d+)\/?$/,
+    extract: (m) => m[1] as string,
+  },
+  // https://pmc.ncbi.nlm.nih.gov/articles/PMC{ID}/
+  {
+    pattern: /^https?:\/\/(?:www\.)?pmc\.ncbi\.nlm\.nih\.gov\/articles\/PMC(\d+)\/?$/,
+    extract: (m) => `PMC${m[1]}`,
+  },
+];
+
+/**
+ * Try to extract a PMID or PMCID from a PubMed/PMC URL.
+ * Returns the extracted identifier string or null if not a PubMed URL.
+ */
+export function extractPubmedId(input: string): string | null {
+  for (const { pattern, extract } of PUBMED_URL_PATTERNS) {
+    const match = pattern.exec(input);
+    if (match) {
+      return extract(match);
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if input is an http/https URL that is not already matched as a known identifier (DOI, arXiv, PubMed).
  */
 export function isUrl(input: string): boolean {
   if (!input) return false;
@@ -204,6 +244,7 @@ export function isUrl(input: string): boolean {
   // Exclude URLs already detected as other identifier types
   if (isDoi(input)) return false;
   if (isArxiv(input)) return false;
+  if (extractPubmedId(input) !== null) return false;
   return true;
 }
 

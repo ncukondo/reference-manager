@@ -177,6 +177,32 @@ describe("detectFormat", () => {
       });
     });
 
+    describe("PubMed URL detection", () => {
+      it("should detect PubMed URL as pmid", () => {
+        expect(detectFormat("https://pubmed.ncbi.nlm.nih.gov/12345678/")).toBe("pmid");
+      });
+
+      it("should detect PubMed URL without trailing slash", () => {
+        expect(detectFormat("https://pubmed.ncbi.nlm.nih.gov/12345678")).toBe("pmid");
+      });
+
+      it("should detect old-style PubMed URL as pmid", () => {
+        expect(detectFormat("https://www.ncbi.nlm.nih.gov/pubmed/12345678")).toBe("pmid");
+      });
+
+      it("should detect PMC URL as pmid", () => {
+        expect(detectFormat("https://pmc.ncbi.nlm.nih.gov/articles/PMC1234567/")).toBe("pmid");
+      });
+
+      it("should detect PMC URL without trailing slash", () => {
+        expect(detectFormat("https://pmc.ncbi.nlm.nih.gov/articles/PMC1234567")).toBe("pmid");
+      });
+
+      it("should not detect PubMed URL with non-numeric ID as pmid", () => {
+        expect(detectFormat("https://pubmed.ncbi.nlm.nih.gov/about/")).toBe("url");
+      });
+    });
+
     describe("URL detection", () => {
       it("should detect http URL as url format", () => {
         expect(detectFormat("http://example.com")).toBe("url");
