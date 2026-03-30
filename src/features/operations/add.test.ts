@@ -461,7 +461,7 @@ describe("addReferences", () => {
       expect(mockedAddAttachment).not.toHaveBeenCalled();
     });
 
-    it("should continue add operation when saveUrlData throws", async () => {
+    it("should continue add operation when saveUrlData throws and log warning to stderr", async () => {
       const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
 
       mockedImportFromInputs.mockResolvedValue({
@@ -481,6 +481,8 @@ describe("addReferences", () => {
       // Make addAttachment throw
       mockedAddAttachment.mockRejectedValue(new Error("disk full"));
 
+      const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
       const result = await addReferences(["https://example.com"], mockLibrary, {
         attachmentsDirectory: "/tmp/attachments",
       });
@@ -489,6 +491,11 @@ describe("addReferences", () => {
       expect(result.added).toHaveLength(1);
       expect(result.added[0].id).toBe("Smith-2024");
       expect(result.failed).toHaveLength(0);
+
+      // Error should be logged to stderr
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("disk full"));
+
+      stderrSpy.mockRestore();
     });
 
     it("should save fulltext with force: true to overwrite existing", async () => {
@@ -520,6 +527,97 @@ describe("addReferences", () => {
           force: true,
         })
       );
+    });
+
+    it("should include urlData.warnings in added item", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [
+                "JavaScript disabled: dynamic content may be missing",
+                "Some images failed to load",
+              ],
+            },
+          },
+        ],
+      });
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].warnings).toEqual([
+        "JavaScript disabled: dynamic content may be missing",
+        "Some images failed to load",
+      ]);
+    });
+
+    it("should not include warnings field when urlData.warnings is empty", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].warnings).toBeUndefined();
+    });
+
+    it("should include saveUrlData error as warning when save fails", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: ["Some images failed to load"],
+            },
+          },
+        ],
+      });
+
+      // Make addAttachment throw
+      mockedAddAttachment.mockRejectedValue(new Error("disk full"));
+
+      const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(result.added).toHaveLength(1);
+      // Should contain both the original urlData warning and the saveUrlData error
+      expect(result.added[0].warnings).toEqual(
+        expect.arrayContaining(["Some images failed to load", expect.stringContaining("disk full")])
+      );
+
+      stderrSpy.mockRestore();
     });
 
     it("should not save urlData for non-URL imports", async () => {

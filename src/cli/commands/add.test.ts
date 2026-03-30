@@ -264,6 +264,47 @@ describe("add command", () => {
 
       expect(output).toContain("Added 0 reference(s).");
     });
+
+    it("should format warnings for added items", () => {
+      const result: AddCommandResult = {
+        added: [
+          {
+            id: "Smith-2024",
+            title: "Test Paper",
+            warnings: ["JavaScript disabled: dynamic content may be missing"],
+          },
+        ],
+        failed: [],
+        skipped: [],
+      };
+
+      const output = formatAddOutput(result, false);
+
+      expect(output).toContain("Added 1 reference(s):");
+      expect(output).toContain("Smith-2024");
+      expect(output).toContain("Warning");
+      expect(output).toContain("JavaScript disabled: dynamic content may be missing");
+    });
+
+    it("should format multiple warnings for added items", () => {
+      const result: AddCommandResult = {
+        added: [
+          {
+            id: "Smith-2024",
+            title: "Test Paper",
+            warnings: ["Warning 1", "Warning 2"],
+          },
+        ],
+        failed: [],
+        skipped: [],
+      };
+
+      const output = formatAddOutput(result, false);
+
+      expect(output).toContain("Warning");
+      expect(output).toContain("Warning 1");
+      expect(output).toContain("Warning 2");
+    });
   });
 
   describe("getExitCode", () => {

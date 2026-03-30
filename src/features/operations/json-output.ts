@@ -24,6 +24,7 @@ export interface AddJsonOutputItem {
   title: string;
   idChanged?: boolean;
   originalId?: string;
+  warnings?: string[];
   item?: CslItem;
 }
 
@@ -114,6 +115,10 @@ export function formatAddJsonOutput(
     if (item.idChanged && item.originalId) {
       output.idChanged = true;
       output.originalId = item.originalId;
+    }
+
+    if (item.warnings && item.warnings.length > 0) {
+      output.warnings = item.warnings;
     }
 
     if (full) {

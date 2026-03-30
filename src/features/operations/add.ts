@@ -54,6 +54,8 @@ export interface AddedItem {
   idChanged?: boolean;
   /** Original ID from source file before collision resolution */
   originalId?: string;
+  /** Warnings from URL import (e.g., content extraction issues, save failures) */
+  warnings?: string[];
 }
 
 /**
@@ -135,16 +137,12 @@ export async function addReferences(
       continue;
     }
 
-    added.push(processed.item);
-
-    // Save URL import data (fulltext + archive) if available (best-effort)
-    if (result.success && result.urlData && options.attachmentsDirectory) {
-      try {
-        await saveUrlData(processed.item.id, result.urlData, library, options.attachmentsDirectory);
-      } catch {
-        // Best-effort: saveUrlData failure should not block the add operation
-      }
+    // Handle URL import data: collect warnings and save attachments (best-effort)
+    if (result.success && result.urlData) {
+      await handleUrlData(processed.item, result.urlData, library, options.attachmentsDirectory);
     }
+
+    added.push(processed.item);
   }
 
   // 3. Save library if any items were added
@@ -153,6 +151,34 @@ export async function addReferences(
   }
 
   return { added, failed, skipped };
+}
+
+/**
+ * Handle URL import data: collect warnings and save attachments (best-effort).
+ * Failures are logged to stderr and added as warnings, never thrown.
+ */
+async function handleUrlData(
+  addedItem: AddedItem,
+  urlData: UrlImportData,
+  library: ILibrary,
+  attachmentsDirectory: string | undefined
+): Promise<void> {
+  if (urlData.warnings.length > 0) {
+    addedItem.warnings = [...urlData.warnings];
+  }
+
+  if (attachmentsDirectory) {
+    try {
+      await saveUrlData(addedItem.id, urlData, library, attachmentsDirectory);
+    } catch (error) {
+      const message = `Failed to save URL data for ${addedItem.id}: ${error instanceof Error ? error.message : String(error)}`;
+      process.stderr.write(`${message}\n`);
+      if (!addedItem.warnings) {
+        addedItem.warnings = [];
+      }
+      addedItem.warnings.push(message);
+    }
+  }
 }
 
 /**
@@ -256,7 +282,7 @@ async function processImportResult(
 
 /**
  * Save URL import data (fulltext markdown + archive) as attachments.
- * Best-effort: failures are silently ignored to not block the add operation.
+ * Best-effort: failures are logged and surfaced as warnings, not thrown.
  */
 async function saveUrlData(
   id: string,

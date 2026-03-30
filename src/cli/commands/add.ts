@@ -103,7 +103,13 @@ export async function executeAdd(
 function formatAddedItem(item: AddedItem): string {
   const idPart = item.idChanged ? `${item.id} (was: ${item.originalId})` : item.id;
   const title = item.title ?? "(no title)";
-  return `  - ${idPart}: "${title}"`;
+  const lines = [`  - ${idPart}: "${title}"`];
+  if (item.warnings && item.warnings.length > 0) {
+    for (const warning of item.warnings) {
+      lines.push(`    Warning: ${warning}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 /**
