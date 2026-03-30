@@ -35,6 +35,19 @@ function getReadabilityPath(): string {
   return require.resolve("@mozilla/readability/Readability.js");
 }
 
+/** Cached Readability script content (loaded once on first use). */
+let readabilityScriptCache: string | undefined;
+
+/**
+ * Get the Readability script content, reading from disk only on first call.
+ */
+function getReadabilityScript(): string {
+  if (readabilityScriptCache === undefined) {
+    readabilityScriptCache = readFileSync(getReadabilityPath(), "utf-8");
+  }
+  return readabilityScriptCache;
+}
+
 /**
  * Process a single URL in an already-open browser page.
  */
@@ -53,8 +66,8 @@ async function processPage(
 
   // Inject Readability for fulltext extraction
   try {
-    const readabilityPath = getReadabilityPath();
-    await page.addScriptTag({ content: readFileSync(readabilityPath, "utf-8") });
+    const readabilityScript = getReadabilityScript();
+    await page.addScriptTag({ content: readabilityScript });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     warnings.push(`Readability injection failed: ${msg}`);
@@ -106,7 +119,11 @@ export async function fetchUrl(url: string, options: UrlFetchOptions): Promise<U
 
   try {
     const page = await browser.newPage();
-    return await processPage(page, url, resolvePageOptions(options));
+    try {
+      return await processPage(page, url, resolvePageOptions(options));
+    } finally {
+      await page.close();
+    }
   } finally {
     await browser.close();
   }

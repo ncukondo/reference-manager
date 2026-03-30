@@ -461,6 +461,67 @@ describe("addReferences", () => {
       expect(mockedAddAttachment).not.toHaveBeenCalled();
     });
 
+    it("should continue add operation when saveUrlData throws", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      // Make addAttachment throw
+      mockedAddAttachment.mockRejectedValue(new Error("disk full"));
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      // The add operation should still succeed despite saveUrlData failure
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].id).toBe("Smith-2024");
+      expect(result.failed).toHaveLength(0);
+    });
+
+    it("should save fulltext with force: true to overwrite existing", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Updated content",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      // fulltext attachment should be saved with force: true
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          role: "fulltext",
+          force: true,
+        })
+      );
+    });
+
     it("should not save urlData for non-URL imports", async () => {
       const newItem = createItem("Smith-2024", { doi: "10.1234/normal" });
 

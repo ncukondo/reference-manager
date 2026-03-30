@@ -1,5 +1,17 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UrlConfig } from "../../config/schema.js";
+
+// Mock node:fs to track readFileSync calls for Readability caching test
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return {
+    ...actual,
+    readFileSync: vi.fn(actual.readFileSync),
+  };
+});
+
+const mockReadFileSync = vi.mocked(readFileSync);
 
 // Mock dependencies
 vi.mock("./browser.js", () => ({
@@ -96,22 +108,24 @@ describe("fetchUrl", () => {
     });
   });
 
-  it("should close browser after completion", async () => {
-    const { mockBrowser } = setupMocks();
+  it("should close page and browser after completion", async () => {
+    const { mockPage, mockBrowser } = setupMocks();
 
     await fetchUrl("https://example.com", { urlConfig: defaultUrlConfig });
 
+    expect(mockPage.close).toHaveBeenCalled();
     expect(mockBrowser.close).toHaveBeenCalled();
   });
 
-  it("should close browser even on error", async () => {
-    const { mockBrowser } = setupMocks();
+  it("should close page and browser even on error", async () => {
+    const { mockPage, mockBrowser } = setupMocks();
     mockExtractMetadata.mockRejectedValue(new Error("extract failed"));
 
     await expect(fetchUrl("https://example.com", { urlConfig: defaultUrlConfig })).rejects.toThrow(
       "extract failed"
     );
 
+    expect(mockPage.close).toHaveBeenCalled();
     expect(mockBrowser.close).toHaveBeenCalled();
   });
 
@@ -238,6 +252,22 @@ describe("fetchUrls", () => {
     if (!(resultB instanceof Error)) {
       expect(resultB?.item.title).toBe("Second Page");
     }
+  });
+
+  it("should read Readability file only once for multiple URLs", async () => {
+    setupMocks();
+    // Reset call count before this test
+    mockReadFileSync.mockClear();
+
+    await fetchUrls(["https://a.com", "https://b.com", "https://c.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    // readFileSync for Readability should be called at most once (cached)
+    const readabilityCalls = mockReadFileSync.mock.calls.filter(
+      (call) => typeof call[0] === "string" && call[0].includes("Readability")
+    );
+    expect(readabilityCalls.length).toBeLessThanOrEqual(1);
   });
 
   it("should close browser even when all URLs fail", async () => {

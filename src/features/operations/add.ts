@@ -128,14 +128,21 @@ export async function addReferences(
 
     if (processed.type === "failed") {
       failed.push(processed.item);
-    } else if (processed.type === "skipped") {
+      continue;
+    }
+    if (processed.type === "skipped") {
       skipped.push(processed.item);
-    } else {
-      added.push(processed.item);
+      continue;
+    }
 
-      // Save URL import data (fulltext + archive) if available
-      if (result.success && result.urlData && options.attachmentsDirectory) {
+    added.push(processed.item);
+
+    // Save URL import data (fulltext + archive) if available (best-effort)
+    if (result.success && result.urlData && options.attachmentsDirectory) {
+      try {
         await saveUrlData(processed.item.id, result.urlData, library, options.attachmentsDirectory);
+      } catch {
+        // Best-effort: saveUrlData failure should not block the add operation
       }
     }
   }
@@ -269,7 +276,7 @@ async function saveUrlData(
         filePath: fulltextPath,
         role: "fulltext",
         move: true,
-        force: false,
+        force: true,
         idType: "id",
         attachmentsDirectory,
       });
