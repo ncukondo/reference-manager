@@ -160,7 +160,7 @@ Enhance URL import with full metadata extraction: JSON-LD (Schema.org), citation
 
 - Task: `spec/tasks/20260330-02-url-import-phase2.md`
 - Spec: `spec/features/url-import.md`
-- Status: Not started
+- Status: Done (PR #88)
 
 ---
 
