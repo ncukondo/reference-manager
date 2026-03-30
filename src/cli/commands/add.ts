@@ -1,4 +1,4 @@
-import type { FulltextConfig } from "../../config/schema.js";
+import type { FulltextConfig, UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { ILibrary } from "../../core/library-interface.js";
 import type { InputFormat } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
@@ -35,6 +35,12 @@ export interface AddCommandOptions {
   output?: "json" | "text";
   /** Include full CSL-JSON data in JSON output */
   full?: boolean;
+  /** URL import configuration */
+  urlConfig?: UrlConfig | undefined;
+  /** Archive format override for URL imports */
+  archiveFormat?: UrlArchiveFormat | undefined;
+  /** Skip archive creation for URL imports */
+  noArchive?: boolean | undefined;
 }
 
 /**
@@ -72,6 +78,15 @@ export async function executeAdd(
   }
   if (stdinContent !== undefined) {
     importOptions.stdinContent = stdinContent;
+  }
+  if (options.urlConfig !== undefined) {
+    importOptions.urlConfig = options.urlConfig;
+  }
+  if (options.archiveFormat !== undefined) {
+    importOptions.archiveFormat = options.archiveFormat;
+  }
+  if (options.noArchive !== undefined) {
+    importOptions.noArchive = options.noArchive;
   }
 
   return context.library.import(inputs, importOptions);

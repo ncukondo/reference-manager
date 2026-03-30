@@ -345,6 +345,8 @@ interface AddCommandOptions extends CliOptions {
   output?: "json" | "text";
   full?: boolean;
   fetchFulltext?: boolean;
+  archiveFormat?: string;
+  archive?: boolean;
 }
 
 function buildAddOptions(
@@ -377,6 +379,16 @@ function buildAddOptions(
   if (Object.keys(pubmedConfig).length > 0) {
     addOptions.pubmedConfig = pubmedConfig;
   }
+
+  // URL import options
+  addOptions.urlConfig = config.url;
+  if (options.archiveFormat !== undefined) {
+    addOptions.archiveFormat = options.archiveFormat as "mhtml" | "html";
+  }
+  if (options.archive === false) {
+    addOptions.noArchive = true;
+  }
+
   return addOptions;
 }
 
@@ -511,6 +523,8 @@ function registerAddCommand(program: Command): void {
     .option("--full", "Include full CSL-JSON data in JSON output")
     .option("--fetch-fulltext", "Auto-fetch OA fulltext after adding")
     .option("--no-fetch-fulltext", "Disable auto-fetch fulltext (overrides config)")
+    .option("--archive-format <format>", "Archive format for URL import: mhtml|html")
+    .option("--no-archive", "Skip archive creation for URL import")
     .action(async (inputs: string[], options: AddCommandOptions) => {
       await handleAddAction(inputs, options, program);
     });

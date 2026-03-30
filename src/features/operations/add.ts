@@ -1,3 +1,4 @@
+import type { UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { generateId } from "../../core/identifier/generator.js";
 import type { ILibrary } from "../../core/library-interface.js";
@@ -25,6 +26,12 @@ export interface AddReferencesOptions {
   pubmedConfig?: PubmedConfig;
   /** Content from stdin (if provided, processed before file/identifier inputs) */
   stdinContent?: string;
+  /** URL import configuration */
+  urlConfig?: UrlConfig | undefined;
+  /** Archive format override for URL imports */
+  archiveFormat?: UrlArchiveFormat | undefined;
+  /** Skip archive creation for URL imports */
+  noArchive?: boolean | undefined;
 }
 
 /**
@@ -141,6 +148,15 @@ function buildImportOptions(options: AddReferencesOptions): ImportInputsOptions 
   }
   if (options.stdinContent !== undefined) {
     importOptions.stdinContent = options.stdinContent;
+  }
+  if (options.urlConfig !== undefined) {
+    importOptions.urlConfig = options.urlConfig;
+  }
+  if (options.archiveFormat !== undefined) {
+    importOptions.archiveFormat = options.archiveFormat;
+  }
+  if (options.noArchive !== undefined) {
+    importOptions.noArchive = options.noArchive;
   }
   return importOptions;
 }
