@@ -17,7 +17,7 @@ export type Attachments = z.infer<typeof AttachmentsSchema>;
 /**
  * Reserved role identifiers with special constraints
  */
-export const RESERVED_ROLES = ["fulltext", "supplement", "notes", "draft"] as const;
+export const RESERVED_ROLES = ["fulltext", "supplement", "notes", "draft", "archive"] as const;
 
 export type ReservedRole = (typeof RESERVED_ROLES)[number];
 
@@ -56,4 +56,12 @@ export function isValidFulltextFiles(files: AttachmentFile[]): boolean {
   const mdCount = extensions.filter((ext) => ext === "md").length;
 
   return pdfCount === 1 && mdCount === 1;
+}
+
+/**
+ * Check if archive files satisfy the constraint: max 1 file
+ */
+export function isValidArchiveFiles(files: AttachmentFile[]): boolean {
+  const archiveFiles = files.filter((f) => f.role === "archive");
+  return archiveFiles.length <= 1;
 }

@@ -22,6 +22,7 @@ export type InputFormat =
   | "doi"
   | "isbn"
   | "arxiv"
+  | "url"
   | "identifiers"
   | "unknown";
 
@@ -137,7 +138,7 @@ function detectIdentifier(input: string): InputFormat {
   }
 
   // Check each part
-  const formats: ("pmid" | "doi" | "isbn" | "arxiv")[] = [];
+  const formats: ("pmid" | "doi" | "isbn" | "arxiv" | "url")[] = [];
   for (const part of parts) {
     const format = detectSingleIdentifier(part);
     if (format === "unknown") {
@@ -150,7 +151,7 @@ function detectIdentifier(input: string): InputFormat {
   // Single identifier returns its specific format
   if (formats.length === 1) {
     // formats[0] is guaranteed to exist when length === 1
-    return formats[0] as "pmid" | "doi" | "isbn" | "arxiv";
+    return formats[0] as "pmid" | "doi" | "isbn" | "arxiv" | "url";
   }
 
   // Multiple valid identifiers
@@ -162,7 +163,7 @@ function detectIdentifier(input: string): InputFormat {
  */
 export function detectSingleIdentifier(
   input: string
-): "pmid" | "doi" | "isbn" | "arxiv" | "unknown" {
+): "pmid" | "doi" | "isbn" | "arxiv" | "url" | "unknown" {
   // DOI: starts with 10. or is a DOI URL
   if (isDoi(input)) {
     return "doi";
@@ -178,12 +179,73 @@ export function detectSingleIdentifier(
     return "isbn";
   }
 
+  // PubMed/PMC URLs → pmid (before generic PMID and URL checks)
+  if (extractPubmedId(input) !== null) {
+    return "pmid";
+  }
+
   // PMID: numeric only (must be after ISBN check to avoid conflicts)
   if (isPmid(input)) {
     return "pmid";
   }
 
+  // URL: http/https URLs not matched above
+  if (isUrl(input)) {
+    return "url";
+  }
+
   return "unknown";
+}
+
+/**
+ * PubMed URL patterns that should be detected as PMID
+ */
+const PUBMED_URL_PATTERNS: { pattern: RegExp; extract: (match: RegExpMatchArray) => string }[] = [
+  // https://pubmed.ncbi.nlm.nih.gov/{PMID}/
+  {
+    pattern: /^https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?$/,
+    extract: (m) => m[1] as string,
+  },
+  // https://www.ncbi.nlm.nih.gov/pubmed/{PMID}
+  {
+    pattern: /^https?:\/\/(?:www\.)?ncbi\.nlm\.nih\.gov\/pubmed\/(\d+)\/?$/,
+    extract: (m) => m[1] as string,
+  },
+  // https://pmc.ncbi.nlm.nih.gov/articles/PMC{ID}/
+  {
+    pattern: /^https?:\/\/(?:www\.)?pmc\.ncbi\.nlm\.nih\.gov\/articles\/PMC(\d+)\/?$/,
+    extract: (m) => `PMC${m[1]}`,
+  },
+];
+
+/**
+ * Try to extract a PMID or PMCID from a PubMed/PMC URL.
+ * Returns the extracted identifier string or null if not a PubMed URL.
+ */
+export function extractPubmedId(input: string): string | null {
+  for (const { pattern, extract } of PUBMED_URL_PATTERNS) {
+    const match = pattern.exec(input);
+    if (match) {
+      return extract(match);
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if input is an http/https URL that is not already matched as a known identifier (DOI, arXiv, PubMed).
+ */
+export function isUrl(input: string): boolean {
+  if (!input) return false;
+  const lower = input.toLowerCase();
+  if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+    return false;
+  }
+  // Exclude URLs already detected as other identifier types
+  if (isDoi(input)) return false;
+  if (isArxiv(input)) return false;
+  if (extractPubmedId(input) !== null) return false;
+  return true;
 }
 
 /**

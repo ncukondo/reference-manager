@@ -105,6 +105,11 @@ export const defaultConfig: Config = {
   attachments: {
     directory: getDefaultAttachmentsDirectory(),
   },
+  url: {
+    archiveFormat: "mhtml",
+    browserPath: "",
+    timeout: 30,
+  },
   cli: {
     defaultLimit: 0,
     defaultSort: "updated",

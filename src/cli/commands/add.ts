@@ -1,4 +1,4 @@
-import type { FulltextConfig } from "../../config/schema.js";
+import type { FulltextConfig, UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { ILibrary } from "../../core/library-interface.js";
 import type { InputFormat } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
@@ -35,6 +35,14 @@ export interface AddCommandOptions {
   output?: "json" | "text";
   /** Include full CSL-JSON data in JSON output */
   full?: boolean;
+  /** URL import configuration */
+  urlConfig?: UrlConfig | undefined;
+  /** Archive format override for URL imports */
+  archiveFormat?: UrlArchiveFormat | undefined;
+  /** Skip archive creation for URL imports */
+  noArchive?: boolean | undefined;
+  /** Attachments directory for saving URL import data */
+  attachmentsDirectory?: string | undefined;
 }
 
 /**
@@ -73,6 +81,18 @@ export async function executeAdd(
   if (stdinContent !== undefined) {
     importOptions.stdinContent = stdinContent;
   }
+  if (options.urlConfig !== undefined) {
+    importOptions.urlConfig = options.urlConfig;
+  }
+  if (options.archiveFormat !== undefined) {
+    importOptions.archiveFormat = options.archiveFormat;
+  }
+  if (options.noArchive !== undefined) {
+    importOptions.noArchive = options.noArchive;
+  }
+  if (options.attachmentsDirectory !== undefined) {
+    importOptions.attachmentsDirectory = options.attachmentsDirectory;
+  }
 
   return context.library.import(inputs, importOptions);
 }
@@ -83,7 +103,13 @@ export async function executeAdd(
 function formatAddedItem(item: AddedItem): string {
   const idPart = item.idChanged ? `${item.id} (was: ${item.originalId})` : item.id;
   const title = item.title ?? "(no title)";
-  return `  - ${idPart}: "${title}"`;
+  const lines = [`  - ${idPart}: "${title}"`];
+  if (item.warnings && item.warnings.length > 0) {
+    for (const warning of item.warnings) {
+      lines.push(`    Warning: ${warning}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 /**

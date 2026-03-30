@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **URL Import (Phase 1)**: `ref add <URL>` imports web pages as references
+  - Detects http/https URLs as new `url` input format
+  - PubMed/PMC URLs auto-detected and processed via existing PMID pipeline
+  - Browser-based page fetching via Playwright (system Chrome/Chromium)
+  - Basic metadata extraction: title, URL, accessed date (type: webpage)
+  - Markdown fulltext generation via Readability + Turndown (GFM support)
+  - MHTML archive creation via CDP (or single HTML with `--archive-format html`)
+  - New `archive` reserved role for attachment files (max 1 file)
+  - `[url]` config section: `archive_format`, `browser_path`, `timeout`
+  - CLI options: `--archive-format <mhtml|html>`, `--no-archive`
 - **Install Skills Command**: `ref install skills` installs Agent Skills (SKILL.md) for AI coding agents
   - Creates `.agents/skills/ref/` directory with skill templates (cross-client standard)
   - Creates `.claude/skills/ref` symlink for Claude Code compatibility

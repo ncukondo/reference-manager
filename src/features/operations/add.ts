@@ -1,3 +1,8 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { generateId } from "../../core/identifier/generator.js";
 import type { ILibrary } from "../../core/library-interface.js";
@@ -7,8 +12,10 @@ import type { PubmedConfig } from "../import/fetcher.js";
 import {
   type ImportInputsOptions,
   type ImportItemResult,
+  type UrlImportData,
   importFromInputs,
 } from "../import/importer.js";
+import { addAttachment } from "./attachments/add.js";
 
 // Re-export FailureReason for external use
 export type { FailureReason } from "../import/importer.js";
@@ -25,6 +32,14 @@ export interface AddReferencesOptions {
   pubmedConfig?: PubmedConfig;
   /** Content from stdin (if provided, processed before file/identifier inputs) */
   stdinContent?: string;
+  /** URL import configuration */
+  urlConfig?: UrlConfig | undefined;
+  /** Archive format override for URL imports */
+  archiveFormat?: UrlArchiveFormat | undefined;
+  /** Skip archive creation for URL imports */
+  noArchive?: boolean | undefined;
+  /** Attachments directory for saving URL import data (fulltext/archive) */
+  attachmentsDirectory?: string | undefined;
 }
 
 /**
@@ -39,6 +54,8 @@ export interface AddedItem {
   idChanged?: boolean;
   /** Original ID from source file before collision resolution */
   originalId?: string;
+  /** Warnings from URL import (e.g., content extraction issues, save failures) */
+  warnings?: string[];
 }
 
 /**
@@ -113,11 +130,19 @@ export async function addReferences(
 
     if (processed.type === "failed") {
       failed.push(processed.item);
-    } else if (processed.type === "skipped") {
-      skipped.push(processed.item);
-    } else {
-      added.push(processed.item);
+      continue;
     }
+    if (processed.type === "skipped") {
+      skipped.push(processed.item);
+      continue;
+    }
+
+    // Handle URL import data: collect warnings and save attachments (best-effort)
+    if (result.success && result.urlData) {
+      await handleUrlData(processed.item, result.urlData, library, options.attachmentsDirectory);
+    }
+
+    added.push(processed.item);
   }
 
   // 3. Save library if any items were added
@@ -126,6 +151,34 @@ export async function addReferences(
   }
 
   return { added, failed, skipped };
+}
+
+/**
+ * Handle URL import data: collect warnings and save attachments (best-effort).
+ * Failures are logged to stderr and added as warnings, never thrown.
+ */
+async function handleUrlData(
+  addedItem: AddedItem,
+  urlData: UrlImportData,
+  library: ILibrary,
+  attachmentsDirectory: string | undefined
+): Promise<void> {
+  if (urlData.warnings.length > 0) {
+    addedItem.warnings = [...urlData.warnings];
+  }
+
+  if (attachmentsDirectory) {
+    try {
+      await saveUrlData(addedItem.id, urlData, library, attachmentsDirectory);
+    } catch (error) {
+      const message = `Failed to save URL data for ${addedItem.id}: ${error instanceof Error ? error.message : String(error)}`;
+      process.stderr.write(`${message}\n`);
+      if (!addedItem.warnings) {
+        addedItem.warnings = [];
+      }
+      addedItem.warnings.push(message);
+    }
+  }
 }
 
 /**
@@ -141,6 +194,15 @@ function buildImportOptions(options: AddReferencesOptions): ImportInputsOptions 
   }
   if (options.stdinContent !== undefined) {
     importOptions.stdinContent = options.stdinContent;
+  }
+  if (options.urlConfig !== undefined) {
+    importOptions.urlConfig = options.urlConfig;
+  }
+  if (options.archiveFormat !== undefined) {
+    importOptions.archiveFormat = options.archiveFormat;
+  }
+  if (options.noArchive !== undefined) {
+    importOptions.noArchive = options.noArchive;
   }
   return importOptions;
 }
@@ -216,6 +278,63 @@ async function processImportResult(
   }
 
   return { type: "added", item: addedItem };
+}
+
+/**
+ * Save URL import data (fulltext markdown + archive) as attachments.
+ * Best-effort: failures are logged and surfaced as warnings, not thrown.
+ */
+async function saveUrlData(
+  id: string,
+  urlData: UrlImportData,
+  library: ILibrary,
+  attachmentsDirectory: string
+): Promise<void> {
+  // Save fulltext markdown
+  if (urlData.fulltext) {
+    let tempDir: string | undefined;
+    try {
+      tempDir = mkdtempSync(join(tmpdir(), "refmgr-url-ft-"));
+      const fulltextPath = join(tempDir, "fulltext.md");
+      writeFileSync(fulltextPath, urlData.fulltext, "utf-8");
+      await addAttachment(library, {
+        identifier: id,
+        filePath: fulltextPath,
+        role: "fulltext",
+        move: true,
+        force: true,
+        idType: "id",
+        attachmentsDirectory,
+      });
+    } finally {
+      if (tempDir) {
+        await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }
+
+  // Save archive
+  if (urlData.archive) {
+    let tempDir: string | undefined;
+    try {
+      tempDir = mkdtempSync(join(tmpdir(), "refmgr-url-ar-"));
+      const archivePath = join(tempDir, `archive.${urlData.archive.extension}`);
+      writeFileSync(archivePath, urlData.archive.data, "utf-8");
+      await addAttachment(library, {
+        identifier: id,
+        filePath: archivePath,
+        role: "archive",
+        move: true,
+        force: false,
+        idType: "id",
+        attachmentsDirectory,
+      });
+    } finally {
+      if (tempDir) {
+        await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }
 }
 
 /**

@@ -8,9 +8,16 @@ vi.mock("../import/importer.js", () => ({
   importFromInputs: vi.fn(),
 }));
 
+// Mock the attachments add module
+vi.mock("./attachments/add.js", () => ({
+  addAttachment: vi.fn(),
+}));
+
 import { importFromInputs } from "../import/importer.js";
+import { addAttachment } from "./attachments/add.js";
 
 const mockedImportFromInputs = vi.mocked(importFromInputs);
+const mockedAddAttachment = vi.mocked(addAttachment);
 
 describe("addReferences", () => {
   let mockLibrary: Library;
@@ -43,6 +50,7 @@ describe("addReferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     existingItems = [];
+    mockedAddAttachment.mockResolvedValue({ success: true, filename: "test.md" });
 
     // Create a mock library
     mockLibrary = {
@@ -357,6 +365,280 @@ describe("addReferences", () => {
         ["12345678"],
         expect.objectContaining({ pubmedConfig })
       );
+    });
+  });
+
+  describe("urlData persistence", () => {
+    it("should save fulltext as attachment when urlData is present", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example\n\nContent here",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      // Should have called addAttachment for fulltext
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          identifier: "Smith-2024",
+          role: "fulltext",
+          attachmentsDirectory: "/tmp/attachments",
+        })
+      );
+    });
+
+    it("should save archive as attachment when urlData has archive", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              archive: { data: "MHTML content", extension: "mhtml" },
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      // Should have called addAttachment for both fulltext and archive
+      expect(mockedAddAttachment).toHaveBeenCalledTimes(2);
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          role: "fulltext",
+        })
+      );
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          role: "archive",
+        })
+      );
+    });
+
+    it("should not save urlData when attachmentsDirectory is not provided", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      await addReferences(["https://example.com"], mockLibrary, {});
+
+      expect(mockedAddAttachment).not.toHaveBeenCalled();
+    });
+
+    it("should continue add operation when saveUrlData throws and log warning to stderr", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      // Make addAttachment throw
+      mockedAddAttachment.mockRejectedValue(new Error("disk full"));
+
+      const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      // The add operation should still succeed despite saveUrlData failure
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].id).toBe("Smith-2024");
+      expect(result.failed).toHaveLength(0);
+
+      // Error should be logged to stderr
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("disk full"));
+
+      stderrSpy.mockRestore();
+    });
+
+    it("should save fulltext with force: true to overwrite existing", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Updated content",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      // fulltext attachment should be saved with force: true
+      expect(mockedAddAttachment).toHaveBeenCalledWith(
+        mockLibrary,
+        expect.objectContaining({
+          role: "fulltext",
+          force: true,
+        })
+      );
+    });
+
+    it("should include urlData.warnings in added item", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [
+                "JavaScript disabled: dynamic content may be missing",
+                "Some images failed to load",
+              ],
+            },
+          },
+        ],
+      });
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].warnings).toEqual([
+        "JavaScript disabled: dynamic content may be missing",
+        "Some images failed to load",
+      ]);
+    });
+
+    it("should not include warnings field when urlData.warnings is empty", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: [],
+            },
+          },
+        ],
+      });
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].warnings).toBeUndefined();
+    });
+
+    it("should include saveUrlData error as warning when save fails", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/url" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "https://example.com",
+            urlData: {
+              fulltext: "# Example",
+              warnings: ["Some images failed to load"],
+            },
+          },
+        ],
+      });
+
+      // Make addAttachment throw
+      mockedAddAttachment.mockRejectedValue(new Error("disk full"));
+
+      const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+      const result = await addReferences(["https://example.com"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(result.added).toHaveLength(1);
+      // Should contain both the original urlData warning and the saveUrlData error
+      expect(result.added[0].warnings).toEqual(
+        expect.arrayContaining(["Some images failed to load", expect.stringContaining("disk full")])
+      );
+
+      stderrSpy.mockRestore();
+    });
+
+    it("should not save urlData for non-URL imports", async () => {
+      const newItem = createItem("Smith-2024", { doi: "10.1234/normal" });
+
+      mockedImportFromInputs.mockResolvedValue({
+        results: [
+          {
+            success: true,
+            item: newItem,
+            source: "10.1234/normal",
+            // no urlData
+          },
+        ],
+      });
+
+      await addReferences(["10.1234/normal"], mockLibrary, {
+        attachmentsDirectory: "/tmp/attachments",
+      });
+
+      expect(mockedAddAttachment).not.toHaveBeenCalled();
     });
   });
 });

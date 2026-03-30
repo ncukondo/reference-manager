@@ -161,6 +161,20 @@ export const fulltextConfigSchema = z.object({
 });
 
 /**
+ * URL import archive format schema
+ */
+export const urlArchiveFormatSchema = z.enum(["mhtml", "html"]);
+
+/**
+ * URL import configuration schema
+ */
+export const urlConfigSchema = z.object({
+  archiveFormat: urlArchiveFormatSchema,
+  browserPath: z.string(),
+  timeout: z.number().int().positive(),
+});
+
+/**
  * Attachments storage configuration schema
  */
 export const attachmentsConfigSchema = z.object({
@@ -181,6 +195,7 @@ export const configSchema = z.object({
   pubmed: pubmedConfigSchema,
   fulltext: fulltextConfigSchema,
   attachments: attachmentsConfigSchema,
+  url: urlConfigSchema,
   cli: cliConfigSchema,
   mcp: mcpConfigSchema,
 });
@@ -294,6 +309,15 @@ export const partialConfigSchema = z
         directory: z.string().min(1).optional(),
       })
       .optional(),
+    url: z
+      .object({
+        archiveFormat: urlArchiveFormatSchema.optional(),
+        archive_format: urlArchiveFormatSchema.optional(),
+        browserPath: z.string().optional(),
+        browser_path: z.string().optional(),
+        timeout: z.number().int().positive().optional(),
+      })
+      .optional(),
     cli: z
       .object({
         defaultLimit: z.number().int().nonnegative().optional(),
@@ -343,6 +367,8 @@ export type FulltextSource = z.infer<typeof fulltextSourceSchema>;
 export type FulltextPreferredType = z.infer<typeof fulltextPreferredTypeSchema>;
 export type FulltextConfig = z.infer<typeof fulltextConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
+export type UrlArchiveFormat = z.infer<typeof urlArchiveFormatSchema>;
+export type UrlConfig = z.infer<typeof urlConfigSchema>;
 export type TuiConfig = z.infer<typeof tuiConfigSchema>;
 export type EditConfigFormat = z.infer<typeof editFormatSchema>;
 export type EditConfig = z.infer<typeof editConfigSchema>;
@@ -368,6 +394,7 @@ export type DeepPartialConfig = {
     converters?: FulltextConfig["converters"];
   };
   attachments?: Partial<AttachmentsConfig>;
+  url?: Partial<UrlConfig>;
   cli?: Partial<Omit<CliConfig, "tui" | "edit">> & {
     tui?: Partial<TuiConfig>;
     edit?: Partial<EditConfig>;
@@ -692,6 +719,37 @@ function normalizeFulltextSources(
 }
 
 /**
+ * Normalize URL configuration from snake_case to camelCase
+ */
+function normalizeUrlConfig(
+  url: Partial<{
+    archiveFormat?: UrlArchiveFormat;
+    archive_format?: UrlArchiveFormat;
+    browserPath?: string;
+    browser_path?: string;
+    timeout?: number;
+  }>
+): Partial<UrlConfig> | undefined {
+  const normalized: Partial<UrlConfig> = {};
+
+  const archiveFormat = url.archiveFormat ?? url.archive_format;
+  if (archiveFormat !== undefined) {
+    normalized.archiveFormat = archiveFormat;
+  }
+
+  const browserPath = url.browserPath ?? url.browser_path;
+  if (browserPath !== undefined) {
+    normalized.browserPath = browserPath;
+  }
+
+  if (url.timeout !== undefined) {
+    normalized.timeout = url.timeout;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+/**
  * Section normalizers mapping
  */
 const sectionNormalizers = {
@@ -702,6 +760,7 @@ const sectionNormalizers = {
   pubmed: normalizePubmedConfig,
   fulltext: normalizeFulltextConfig,
   attachments: normalizeAttachmentsConfig,
+  url: normalizeUrlConfig,
   cli: normalizeCliConfig,
   mcp: normalizeMcpConfig,
 } as const;
