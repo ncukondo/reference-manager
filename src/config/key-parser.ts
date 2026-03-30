@@ -142,6 +142,16 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
   // attachments section
   { key: "attachments.directory", type: "string", description: "Attachments storage directory" },
 
+  // url section
+  {
+    key: "url.archive_format",
+    type: "enum",
+    description: "Default archive format for URL import",
+    enumValues: ["mhtml", "html"],
+  },
+  { key: "url.browser_path", type: "string", description: "Browser executable path" },
+  { key: "url.timeout", type: "integer", description: "Navigation timeout (seconds)" },
+
   // cli section
   {
     key: "cli.default_limit",

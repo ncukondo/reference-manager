@@ -1332,4 +1332,78 @@ ncbi_tool = "config-tool"
       expect(config.fulltext.sources.ncbiTool).toBe("env-tool");
     });
   });
+
+  describe("URL configuration", () => {
+    it("should have default URL config values", () => {
+      const config = loadConfig({ cwd: testDir });
+      expect(config.url.archiveFormat).toBe("mhtml");
+      expect(config.url.browserPath).toBe("");
+      expect(config.url.timeout).toBe(30);
+    });
+
+    it("should load URL config from TOML with snake_case", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[url]
+archive_format = "html"
+browser_path = "/usr/bin/chromium"
+timeout = 60
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.url.archiveFormat).toBe("html");
+      expect(config.url.browserPath).toBe("/usr/bin/chromium");
+      expect(config.url.timeout).toBe(60);
+    });
+
+    it("should load URL config from TOML with camelCase", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[url]
+archiveFormat = "html"
+browserPath = "/usr/bin/chromium"
+timeout = 45
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.url.archiveFormat).toBe("html");
+      expect(config.url.browserPath).toBe("/usr/bin/chromium");
+      expect(config.url.timeout).toBe(45);
+    });
+
+    it("should merge partial URL config with defaults", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[url]
+timeout = 120
+`
+      );
+
+      const config = loadConfig({ cwd: testDir });
+      expect(config.url.archiveFormat).toBe("mhtml"); // default
+      expect(config.url.browserPath).toBe(""); // default
+      expect(config.url.timeout).toBe(120);
+    });
+
+    it("should reject invalid archive_format", () => {
+      const configPath = join(testDir, ".reference-manager.config.toml");
+      writeFileSync(
+        configPath,
+        `
+[url]
+archive_format = "pdf"
+`
+      );
+
+      expect(() => loadConfig({ cwd: testDir })).toThrow();
+    });
+  });
 });

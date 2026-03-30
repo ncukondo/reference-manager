@@ -98,6 +98,7 @@ const flatSectionKeys = [
   "citation",
   "pubmed",
   "attachments",
+  "url",
   "mcp",
 ] as const;
 
@@ -183,6 +184,11 @@ function fillDefaults(partial: DeepPartialConfig): Config {
     pubmed: fillPubmedDefaults(partial.pubmed, email),
     fulltext: fillFulltextDefaults(partial.fulltext, email),
     attachments: fillAttachmentsDefaults(partial.attachments),
+    url: {
+      archiveFormat: partial.url?.archiveFormat ?? defaultConfig.url.archiveFormat,
+      browserPath: partial.url?.browserPath ?? defaultConfig.url.browserPath,
+      timeout: partial.url?.timeout ?? defaultConfig.url.timeout,
+    },
     cli: fillCliDefaults(partial.cli),
     mcp: fillMcpDefaults(partial.mcp),
   };
