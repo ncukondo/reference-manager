@@ -58,11 +58,15 @@ async function processPage(
 ): Promise<UrlFetchResult> {
   const warnings: string[] = [];
 
-  // Navigate with configured timeout
+  // Navigate with configured timeout — use domcontentloaded to avoid hanging on
+  // sites with persistent network activity (ads, trackers, Cloudflare challenges).
   await page.goto(url, {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
     timeout: options.timeout * 1000,
   });
+
+  // Best-effort: wait briefly for network to settle (helps with lazy-loaded resources)
+  await page.waitForLoadState("networkidle", { timeout: 2000 }).catch(() => {});
 
   // Inject Readability for fulltext extraction
   try {
