@@ -14,11 +14,11 @@ import {
 import { homedir } from "node:os";
 import { join, relative } from "node:path";
 
-// Import skill templates as raw strings
-import skillMd from "../../cli/commands/install/skill-templates/SKILL.md?raw";
-import fulltextMd from "../../cli/commands/install/skill-templates/references/fulltext.md?raw";
-import manuscriptWritingMd from "../../cli/commands/install/skill-templates/references/manuscript-writing.md?raw";
-import systematicReviewMd from "../../cli/commands/install/skill-templates/references/systematic-review.md?raw";
+// Import skill templates as raw strings (Vite: handled by raw-md plugin, Bun: --loader .md:text)
+import skillMd from "../../cli/commands/install/skill-templates/SKILL.md";
+import fulltextMd from "../../cli/commands/install/skill-templates/references/fulltext.md";
+import manuscriptWritingMd from "../../cli/commands/install/skill-templates/references/manuscript-writing.md";
+import systematicReviewMd from "../../cli/commands/install/skill-templates/references/systematic-review.md";
 
 export interface WriteSkillsOptions {
   /** Target directory (defaults to $PWD) */
