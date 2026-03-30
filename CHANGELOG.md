@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **URL Import (Phase 2)**: Enhanced metadata extraction for URL imports
+  - JSON-LD (Schema.org) parsing with `@graph` support and nested objects
+  - Automatic CSL type inference from JSON-LD `@type` (Legislation, Report, Article, etc.)
+  - Highwire Press / Google Scholar `citation_*` meta tag extraction
+  - Dublin Core (`DC.*`) metadata extraction
+  - Open Graph (`og:*`) fallback extraction
+  - Multi-source metadata merge with priority: JSON-LD → citation_* → DC → OG → HTML
 - **URL Import (Phase 1)**: `ref add <URL>` imports web pages as references
   - Detects http/https URLs as new `url` input format
   - PubMed/PMC URLs auto-detected and processed via existing PMID pipeline

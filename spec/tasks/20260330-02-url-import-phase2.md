@@ -19,70 +19,70 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 Parse `<script type="application/ld+json">` blocks and extract structured metadata. Handle nested objects, arrays, `@graph` patterns.
 
-- [ ] Write test: `src/features/import/url-metadata.test.ts` (JSON-LD test cases)
-- [ ] Implement: JSON-LD parsing and CSL-JSON field mapping
-- [ ] Verify Green: `npm run test:unit -- url-metadata.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/url-metadata.test.ts` (JSON-LD test cases)
+- [x] Implement: JSON-LD parsing and CSL-JSON field mapping
+- [x] Verify Green: `npm run test:unit -- url-metadata.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: JSON-LD @type → CSL type Mapping
 
 Map Schema.org types (`Legislation`, `Report`, `Article`, etc.) to CSL types.
 
-- [ ] Write test: `src/features/import/url-metadata.test.ts` (type mapping cases)
-- [ ] Implement: Type mapping function with fallback to `"webpage"`
-- [ ] Verify Green: `npm run test:unit -- url-metadata.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/url-metadata.test.ts` (type mapping cases)
+- [x] Implement: Type mapping function with fallback to `"webpage"`
+- [x] Verify Green: `npm run test:unit -- url-metadata.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: citation_* Meta Tag Extraction
 
 Extract Highwire Press / Google Scholar meta tags: `citation_title`, `citation_author` (multiple), `citation_date`, `citation_publication_date`, `citation_doi`, `citation_journal_title`, `citation_pdf_url`.
 
-- [ ] Write test: `src/features/import/url-metadata.test.ts` (citation_* cases)
-- [ ] Implement: citation_* parsing with multi-value author support
-- [ ] Verify Green: `npm run test:unit -- url-metadata.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/url-metadata.test.ts` (citation_* cases)
+- [x] Implement: citation_* parsing with multi-value author support
+- [x] Verify Green: `npm run test:unit -- url-metadata.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 4: Dublin Core Extraction
 
 Extract `DC.title`, `DC.creator`, `DC.date`, `DC.publisher`, `DC.description`, `DC.identifier`.
 
-- [ ] Write test: `src/features/import/url-metadata.test.ts` (Dublin Core cases)
-- [ ] Implement: Dublin Core parsing and CSL-JSON mapping
-- [ ] Verify Green: `npm run test:unit -- url-metadata.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/url-metadata.test.ts` (Dublin Core cases)
+- [x] Implement: Dublin Core parsing and CSL-JSON mapping
+- [x] Verify Green: `npm run test:unit -- url-metadata.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 5: Open Graph Extraction
 
 Extract `og:title`, `og:description` as lower-priority fallbacks.
 
-- [ ] Write test: `src/features/import/url-metadata.test.ts` (OG cases)
-- [ ] Implement: Open Graph parsing
-- [ ] Verify Green: `npm run test:unit -- url-metadata.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/url-metadata.test.ts` (OG cases)
+- [x] Implement: Open Graph parsing
+- [x] Verify Green: `npm run test:unit -- url-metadata.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 6: Metadata Merge with Fallback Priority
 
 Combine all metadata sources with the specified priority: JSON-LD → citation_* → Dublin Core → Open Graph → HTML. Each field uses the highest-priority source that provides a non-empty value.
 
-- [ ] Write test: `src/features/import/url-metadata.test.ts` (merge/fallback cases)
-- [ ] Implement: Unified merge function
-- [ ] Verify Green: `npm run test:unit -- url-metadata.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/features/import/url-metadata.test.ts` (merge/fallback cases)
+- [x] Implement: Unified merge function
+- [x] Verify Green: `npm run test:unit -- url-metadata.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Manual Verification
 
 TTY-required tests (run manually in a terminal):
-- [ ] Import a government legislation page with JSON-LD → type is `legislation`
-- [ ] Import a page with citation_* tags → author and DOI are extracted
-- [ ] Import a page with Dublin Core only → title and date are extracted
-- [ ] Import a plain page with only `<title>` → falls back to webpage type
+- [x] Import a government legislation page with JSON-LD → type is `legislation`
+- [x] Import a page with citation_* tags → author and DOI are extracted
+- [x] Import a page with Dublin Core only → title and date are extracted
+- [x] Import a plain page with only `<title>` → falls back to webpage type
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Close linked issue (include `Closes #XX` in PR description)
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Close linked issue (include `Closes #XX` in PR description)
+- [x] Move this file to `spec/tasks/completed/`
