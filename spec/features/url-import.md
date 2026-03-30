@@ -107,7 +107,8 @@ const meta = await page.evaluate(() => {
 | `issued` | `datePublished` / `legislationDate` | `citation_date` / `citation_publication_date` | `DC.date` | — |
 | `type` | `@type` mapping (see below) | — | — | `"webpage"` (default) |
 | `DOI` | `identifier` (if DOI) | `citation_doi` | `DC.identifier` (if DOI) | — |
-| `publisher` | `publisher.name` | `citation_journal_title` | `DC.publisher` | — |
+| `container-title` | — | `citation_journal_title` | — | — |
+| `publisher` | `publisher.name` | — | `DC.publisher` | — |
 | `abstract` | `description` | — | `DC.description` | `og:description` |
 | `URL` | — | — | — | `page.url()` (always set) |
 | `accessed` | — | — | — | current date (always set) |
