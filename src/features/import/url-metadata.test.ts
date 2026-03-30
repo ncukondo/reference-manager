@@ -164,6 +164,45 @@ describe("extractMetadata", () => {
       expect(result.DOI).toBe("10.1234/example.2024");
     });
 
+    it("should extract DOI from URL-format identifier (https://doi.org/...)", async () => {
+      const page = createMockPage({
+        jsonLd: [
+          {
+            "@type": "ScholarlyArticle",
+            identifier: "https://doi.org/10.1234/example.2024",
+          },
+        ],
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.DOI).toBe("10.1234/example.2024");
+    });
+
+    it("should extract DOI from http://doi.org/ URL format", async () => {
+      const page = createMockPage({
+        jsonLd: [
+          {
+            "@type": "ScholarlyArticle",
+            identifier: "http://doi.org/10.5678/test",
+          },
+        ],
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.DOI).toBe("10.5678/test");
+    });
+
+    it("should extract DOI from https://dx.doi.org/ URL format", async () => {
+      const page = createMockPage({
+        jsonLd: [
+          {
+            "@type": "ScholarlyArticle",
+            identifier: "https://dx.doi.org/10.9999/dx.test",
+          },
+        ],
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.DOI).toBe("10.9999/dx.test");
+    });
+
     it("should extract publisher name from JSON-LD", async () => {
       const page = createMockPage({
         jsonLd: [
@@ -360,6 +399,22 @@ describe("extractMetadata", () => {
       const result = await extractMetadata(page as never);
       expect(result.author).toEqual([{ family: "Smith", given: "John" }]);
     });
+
+    it("should filter out empty citation_author values", async () => {
+      const page = createMockPage({
+        citationMeta: { citation_author: ["Smith, John", "", "  "] },
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.author).toEqual([{ family: "Smith", given: "John" }]);
+    });
+
+    it("should not produce author array when all citation_author values are empty", async () => {
+      const page = createMockPage({
+        citationMeta: { citation_author: ["", "  "] },
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.author).toBeUndefined();
+    });
   });
 
   // --- Step 4: Dublin Core Extraction ---
@@ -422,6 +477,30 @@ describe("extractMetadata", () => {
       });
       const result = await extractMetadata(page as never);
       expect(result.DOI).toBe("10.1234/dc.example");
+    });
+
+    it("should extract DOI from URL-format DC.identifier", async () => {
+      const page = createMockPage({
+        dcMeta: { "DC.identifier": "https://doi.org/10.1234/dc.url" },
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.DOI).toBe("10.1234/dc.url");
+    });
+
+    it("should filter out empty DC.creator values", async () => {
+      const page = createMockPage({
+        dcMeta: { "DC.creator": ["John Smith", "", "  "] },
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.author).toEqual([{ family: "Smith", given: "John" }]);
+    });
+
+    it("should not produce author array when all DC.creator values are empty", async () => {
+      const page = createMockPage({
+        dcMeta: { "DC.creator": ["", "  "] },
+      });
+      const result = await extractMetadata(page as never);
+      expect(result.author).toBeUndefined();
     });
 
     it("should not extract non-DOI DC.identifier as DOI", async () => {
@@ -619,6 +698,20 @@ describe("extractRawMetadataFromDocument", () => {
     expect(raw.dc).toEqual({});
     expect(raw.og).toEqual({});
     expect(raw.title).toBe("");
+  });
+
+  it("should not include null/empty keys in og metadata", () => {
+    const doc = parseHtml(`
+      <html><head>
+        <meta property="og:title" content="Valid Title">
+        <meta property="" content="Empty Key Value">
+        <meta property="og:description" content="Desc">
+      </head><body></body></html>
+    `);
+    const raw = extractRawMetadataFromDocument(doc);
+    expect(raw.og["og:title"]).toBe("Valid Title");
+    expect(raw.og["og:description"]).toBe("Desc");
+    expect("" in raw.og).toBe(false);
   });
 
   it("should handle a realistic scholarly page", () => {

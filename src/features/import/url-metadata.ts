@@ -48,6 +48,10 @@ function parseDate(raw: string): { "date-parts": number[][] } | undefined {
 
 // --- Author name parsing ---
 
+function isEmptyAuthor(a: { family?: string; given?: string; literal?: string }): boolean {
+  return !a.family && !a.given && !a.literal;
+}
+
 function parseName(name: string): {
   family?: string;
   given?: string;
@@ -145,7 +149,10 @@ function extractJsonLdDate(item: JsonLdObj): string | undefined {
 }
 
 function extractDoi(value: unknown): string | undefined {
-  if (typeof value === "string" && value.startsWith("10.")) return value;
+  if (typeof value !== "string") return undefined;
+  // Strip DOI URL prefixes: https://doi.org/, http://doi.org/, https://dx.doi.org/, etc.
+  const normalized = value.replace(/^https?:\/\/(dx\.)?doi\.org\//, "");
+  if (normalized.startsWith("10.")) return normalized;
   return undefined;
 }
 
@@ -196,7 +203,8 @@ function extractFromCitation(citation: Record<string, string | string[]>): Extra
   const rawAuthors = citation.citation_author;
   if (rawAuthors) {
     const authorList = Array.isArray(rawAuthors) ? rawAuthors : [rawAuthors];
-    fields.author = authorList.map((a) => parseName(a));
+    const parsed = authorList.map((a) => parseName(a)).filter((a) => !isEmptyAuthor(a));
+    if (parsed.length) fields.author = parsed;
   }
 
   // Date
@@ -237,7 +245,8 @@ function extractFromDublinCore(dc: Record<string, string | string[]>): Extracted
   const rawCreator = dc["DC.creator"];
   if (rawCreator) {
     const creators = Array.isArray(rawCreator) ? rawCreator : [rawCreator];
-    fields.author = creators.map((c) => parseName(c));
+    const parsed = creators.map((c) => parseName(c)).filter((a) => !isEmptyAuthor(a));
+    if (parsed.length) fields.author = parsed;
   }
 
   setDateField(fields, dcString(dc["DC.date"]));
@@ -331,7 +340,8 @@ export function extractRawMetadataFromDocument(doc: {
 
   const og: Record<string, string> = {};
   for (const el of doc.querySelectorAll('meta[property^="og:"]')) {
-    og[el.getAttribute("property") || ""] = el.getAttribute("content") || "";
+    const prop = el.getAttribute("property");
+    if (prop) og[prop] = el.getAttribute("content") || "";
   }
 
   return { jsonLd, citation, dc, og, title: doc.title };
@@ -378,7 +388,8 @@ export async function extractMetadata(page: Page): Promise<CslItem> {
       }
       const og = Object.fromEntries(
         [...document.querySelectorAll('meta[property^="og:"]')]
-          .map(el => [el.getAttribute("property"), el.getAttribute("content")]));
+          .map(el => [el.getAttribute("property"), el.getAttribute("content") || ""])
+          .filter(([k]) => k));
       return { jsonLd, citation, dc, og, title: document.title };
     })()
   `);
