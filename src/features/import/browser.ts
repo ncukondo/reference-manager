@@ -1,4 +1,4 @@
-import { type Browser, chromium } from "playwright-core";
+import type { Browser } from "playwright-core";
 import type { UrlConfig } from "../../config/schema.js";
 
 /**
@@ -32,6 +32,15 @@ export class BrowserNotFoundError extends Error {
  * Falls back to config.browserPath if provided.
  */
 export async function launchBrowser(config: UrlConfig): Promise<Browser> {
+  let chromium: typeof import("playwright-core")["chromium"];
+  try {
+    ({ chromium } = await import("playwright-core"));
+  } catch {
+    throw new BrowserNotFoundError(
+      new Error("playwright-core is not installed. Run: npm install playwright-core")
+    );
+  }
+
   try {
     const launchOptions: Parameters<typeof chromium.launch>[0] = {
       headless: true,
