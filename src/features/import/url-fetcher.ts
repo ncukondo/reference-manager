@@ -12,8 +12,8 @@ import { extractMetadata } from "./url-metadata.js";
  */
 export interface UrlFetchOptions {
   urlConfig: UrlConfig;
-  archiveFormat?: UrlArchiveFormat;
-  noArchive?: boolean;
+  archiveFormat?: UrlArchiveFormat | undefined;
+  noArchive?: boolean | undefined;
 }
 
 /**

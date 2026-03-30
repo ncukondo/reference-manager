@@ -12,6 +12,11 @@ vi.mock("./fetcher.js", () => ({
   fetchArxiv: vi.fn(),
 }));
 
+// Mock the URL fetcher module
+vi.mock("./url-fetcher.js", () => ({
+  fetchUrl: vi.fn(),
+}));
+
 // Mock the cache module
 vi.mock("./cache.js", () => ({
   getPmidFromCache: vi.fn(),
@@ -27,7 +32,8 @@ vi.mock("./cache.js", () => ({
 
 import { getArxivFromCache, getDoiFromCache, getIsbnFromCache, getPmidFromCache } from "./cache.js";
 import { fetchArxiv, fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
-import { importFromContent, importFromIdentifiers } from "./importer.js";
+import { importFromContent, importFromIdentifiers, importFromInputs } from "./importer.js";
+import { fetchUrl } from "./url-fetcher.js";
 
 const mockFetchPmids = vi.mocked(fetchPmids);
 const mockFetchDoi = vi.mocked(fetchDoi);
@@ -826,5 +832,145 @@ DP  - 2024`;
         expect(mockFetchPmids).toHaveBeenCalledWith(["111", "222"], {});
       });
     });
+  });
+});
+
+describe("URL import", () => {
+  const mockFetchUrl = vi.mocked(fetchUrl);
+  const defaultUrlConfig = {
+    archiveFormat: "mhtml" as const,
+    browserPath: "",
+    timeout: 30,
+  };
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should import URL via fetchUrl", async () => {
+    mockFetchUrl.mockResolvedValue({
+      item: {
+        id: "",
+        type: "webpage",
+        title: "Example Page",
+        URL: "https://example.com",
+        accessed: { "date-parts": [[2026, 3, 30]] },
+      },
+      fulltext: "# Example\n\nContent",
+      archive: { data: "MHTML", extension: "mhtml" },
+    });
+
+    const result = await importFromInputs(["https://example.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.success).toBe(true);
+    if (result.results[0]?.success) {
+      expect(result.results[0].item.title).toBe("Example Page");
+      expect(result.results[0].urlData).toBeDefined();
+      expect(result.results[0].urlData?.fulltext).toBe("# Example\n\nContent");
+      expect(result.results[0].urlData?.archive?.extension).toBe("mhtml");
+    }
+  });
+
+  it("should handle URL fetch errors", async () => {
+    mockFetchUrl.mockRejectedValue(new Error("Navigation failed"));
+
+    const result = await importFromInputs(["https://example.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.success).toBe(false);
+    if (!result.results[0]?.success) {
+      expect(result.results[0].error).toContain("Navigation failed");
+    }
+  });
+
+  it("should pass noArchive option to fetchUrl", async () => {
+    mockFetchUrl.mockResolvedValue({
+      item: { id: "", type: "webpage", title: "Test", URL: "https://example.com" },
+      fulltext: "content",
+    });
+
+    await importFromInputs(["https://example.com"], {
+      urlConfig: defaultUrlConfig,
+      noArchive: true,
+    });
+
+    expect(mockFetchUrl).toHaveBeenCalledWith(
+      "https://example.com",
+      expect.objectContaining({ noArchive: true })
+    );
+  });
+
+  it("should pass archiveFormat option to fetchUrl", async () => {
+    mockFetchUrl.mockResolvedValue({
+      item: { id: "", type: "webpage", title: "Test", URL: "https://example.com" },
+      fulltext: "content",
+      archive: { data: "HTML", extension: "html" },
+    });
+
+    await importFromInputs(["https://example.com"], {
+      urlConfig: defaultUrlConfig,
+      archiveFormat: "html",
+    });
+
+    expect(mockFetchUrl).toHaveBeenCalledWith(
+      "https://example.com",
+      expect.objectContaining({ archiveFormat: "html" })
+    );
+  });
+
+  it("should detect PubMed URL as PMID (not URL)", async () => {
+    const mockFetchPmids = vi.mocked(fetchPmids);
+    mockFetchPmids.mockResolvedValue([
+      {
+        pmid: "12345678",
+        success: true,
+        item: { id: "", type: "article-journal", title: "PubMed Article" },
+      },
+    ]);
+
+    const result = await importFromInputs(["https://pubmed.ncbi.nlm.nih.gov/12345678/"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(mockFetchUrl).not.toHaveBeenCalled();
+    expect(mockFetchPmids).toHaveBeenCalled();
+  });
+
+  it("should handle mix of URL and identifier inputs", async () => {
+    const mockFetchPmids = vi.mocked(fetchPmids);
+    mockFetchPmids.mockResolvedValue([
+      {
+        pmid: "12345678",
+        success: true,
+        item: { id: "", type: "article-journal", title: "PMID Article" },
+      },
+    ]);
+    mockFetchUrl.mockResolvedValue({
+      item: { id: "", type: "webpage", title: "URL Page", URL: "https://example.com" },
+      fulltext: "content",
+    });
+
+    const result = await importFromInputs(["12345678", "https://example.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    expect(result.results).toHaveLength(2);
+  });
+
+  it("should skip URL import when urlConfig not provided", async () => {
+    const result = await importFromInputs(["https://example.com"], {});
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.success).toBe(false);
+    if (!result.results[0]?.success) {
+      expect(result.results[0].error).toContain("URL import requires browser configuration");
+    }
+    expect(mockFetchUrl).not.toHaveBeenCalled();
   });
 });

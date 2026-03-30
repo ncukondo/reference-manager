@@ -6,6 +6,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import type { UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { CslItemSchema } from "../../core/csl-json/types.js";
 import {
@@ -18,21 +19,40 @@ import {
   getIsbnFromCache,
   getPmidFromCache,
 } from "./cache.js";
-import { detectByContent, detectByExtension, isArxiv, isDoi, isIsbn, isPmid } from "./detector.js";
+import {
+  detectByContent,
+  detectByExtension,
+  extractPubmedId,
+  isArxiv,
+  isDoi,
+  isIsbn,
+  isPmid,
+  isUrl,
+} from "./detector.js";
 import type { InputFormat } from "./detector.js";
 import { fetchArxiv, fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import type { FailureReason, PubmedConfig } from "./fetcher.js";
 import { normalizeArxiv, normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 import { parseBibtex, parseNbib, parseRis } from "./parser.js";
+import type { ArchiveResult } from "./url-archive.js";
+import { fetchUrl } from "./url-fetcher.js";
 
 // Re-export FailureReason for external use
 export type { FailureReason } from "./fetcher.js";
 
 /**
+ * URL-specific data returned alongside the CslItem for URL imports.
+ */
+export interface UrlImportData {
+  fulltext: string;
+  archive?: ArchiveResult | undefined;
+}
+
+/**
  * Result of importing a single item
  */
 export type ImportItemResult =
-  | { success: true; item: CslItem; source: string }
+  | { success: true; item: CslItem; source: string; urlData?: UrlImportData | undefined }
   | { success: false; error: string; source: string; reason: FailureReason };
 
 /**
@@ -489,6 +509,12 @@ export interface ImportInputsOptions extends ImportOptions {
   format?: InputFormat | "auto";
   /** Content from stdin (if provided, processed before file/identifier inputs) */
   stdinContent?: string;
+  /** URL import configuration (required for URL inputs) */
+  urlConfig?: UrlConfig | undefined;
+  /** Archive format override for URL imports */
+  archiveFormat?: UrlArchiveFormat | undefined;
+  /** Skip archive creation for URL imports */
+  noArchive?: boolean | undefined;
 }
 
 /**
@@ -553,7 +579,50 @@ async function processFile(
 }
 
 /**
- * Process identifier inputs (PMID/DOI)
+ * Process a single URL input
+ */
+async function processUrlInput(
+  url: string,
+  options: ImportInputsOptions
+): Promise<ImportItemResult> {
+  if (!options.urlConfig) {
+    return {
+      success: false,
+      error: "URL import requires browser configuration. Set [url] section in config.",
+      source: url,
+      reason: "validation_error",
+    };
+  }
+
+  try {
+    const result = await fetchUrl(url, {
+      urlConfig: options.urlConfig,
+      archiveFormat: options.archiveFormat,
+      noArchive: options.noArchive,
+    });
+
+    return {
+      success: true,
+      item: result.item,
+      source: url,
+      urlData: {
+        fulltext: result.fulltext,
+        archive: result.archive,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      error: message,
+      source: url,
+      reason: "fetch_error",
+    };
+  }
+}
+
+/**
+ * Process identifier inputs (PMID/DOI/ISBN/arXiv/URL)
  */
 async function processIdentifiers(
   inputs: string[],
@@ -561,9 +630,24 @@ async function processIdentifiers(
 ): Promise<ImportItemResult[]> {
   const results: ImportItemResult[] = [];
   const validIdentifiers: string[] = [];
+  const urlInputs: string[] = [];
 
-  // Separate valid identifiers from invalid inputs
+  // Separate valid identifiers, URLs, and invalid inputs
   for (const input of inputs) {
+    // Check for PubMed URL → treat as PMID
+    const pubmedId = extractPubmedId(input);
+    if (pubmedId !== null) {
+      // PubMed URLs are treated as PMIDs via the standard pipeline
+      validIdentifiers.push(pubmedId);
+      continue;
+    }
+
+    // Check if it's a URL
+    if (isUrl(input)) {
+      urlInputs.push(input);
+      continue;
+    }
+
     // Check if it's a valid identifier
     const isValidPmid = isPmid(input);
     const isValidDoi = isDoi(input);
@@ -590,6 +674,12 @@ async function processIdentifiers(
   if (validIdentifiers.length > 0) {
     const fetchResult = await importFromIdentifiers(validIdentifiers, options);
     results.push(...fetchResult.results);
+  }
+
+  // Process URL inputs
+  for (const url of urlInputs) {
+    const urlResult = await processUrlInput(url, options);
+    results.push(urlResult);
   }
 
   return results;
