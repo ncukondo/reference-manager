@@ -345,7 +345,7 @@ interface AddCommandOptions extends CliOptions {
   output?: "json" | "text";
   full?: boolean;
   fetchFulltext?: boolean;
-  archiveFormat?: string;
+  archiveFormat?: "mhtml" | "html";
   archive?: boolean;
 }
 
@@ -383,11 +383,14 @@ function buildAddOptions(
   // URL import options
   addOptions.urlConfig = config.url;
   if (options.archiveFormat !== undefined) {
-    addOptions.archiveFormat = options.archiveFormat as "mhtml" | "html";
+    addOptions.archiveFormat = options.archiveFormat;
   }
   if (options.archive === false) {
     addOptions.noArchive = true;
   }
+
+  // Attachments directory for URL import data persistence
+  addOptions.attachmentsDirectory = config.attachments.directory;
 
   return addOptions;
 }
@@ -523,7 +526,12 @@ function registerAddCommand(program: Command): void {
     .option("--full", "Include full CSL-JSON data in JSON output")
     .option("--fetch-fulltext", "Auto-fetch OA fulltext after adding")
     .option("--no-fetch-fulltext", "Disable auto-fetch fulltext (overrides config)")
-    .option("--archive-format <format>", "Archive format for URL import: mhtml|html")
+    .addOption(
+      new Option("--archive-format <format>", "Archive format for URL import").choices([
+        "mhtml",
+        "html",
+      ])
+    )
     .option("--no-archive", "Skip archive creation for URL import")
     .action(async (inputs: string[], options: AddCommandOptions) => {
       await handleAddAction(inputs, options, program);

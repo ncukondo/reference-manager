@@ -35,7 +35,7 @@ import type { FailureReason, PubmedConfig } from "./fetcher.js";
 import { normalizeArxiv, normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
 import { parseBibtex, parseNbib, parseRis } from "./parser.js";
 import type { ArchiveResult } from "./url-archive.js";
-import { fetchUrl } from "./url-fetcher.js";
+import { fetchUrl, fetchUrls } from "./url-fetcher.js";
 
 // Re-export FailureReason for external use
 export type { FailureReason } from "./fetcher.js";
@@ -46,6 +46,7 @@ export type { FailureReason } from "./fetcher.js";
 export interface UrlImportData {
   fulltext: string;
   archive?: ArchiveResult | undefined;
+  warnings: string[];
 }
 
 /**
@@ -608,6 +609,7 @@ async function processUrlInput(
       urlData: {
         fulltext: result.fulltext,
         archive: result.archive,
+        warnings: result.warnings,
       },
     };
   } catch (error) {
@@ -619,6 +621,67 @@ async function processUrlInput(
       reason: "fetch_error",
     };
   }
+}
+
+/**
+ * Process multiple URL inputs, reusing a single browser instance.
+ */
+async function processUrlInputs(
+  urls: string[],
+  options: ImportInputsOptions
+): Promise<ImportItemResult[]> {
+  if (!options.urlConfig) {
+    return urls.map((url) => ({
+      success: false as const,
+      error: "URL import requires browser configuration. Set [url] section in config.",
+      source: url,
+      reason: "validation_error" as const,
+    }));
+  }
+
+  // Single URL: use the simple path (no batch overhead)
+  if (urls.length === 1) {
+    const url = urls[0];
+    if (url) return [await processUrlInput(url, options)];
+    return [];
+  }
+
+  // Multiple URLs: share a browser instance
+  const fetchResults = await fetchUrls(urls, {
+    urlConfig: options.urlConfig,
+    archiveFormat: options.archiveFormat,
+    noArchive: options.noArchive,
+  });
+
+  return urls.map((url) => {
+    const result = fetchResults.get(url);
+    if (!result) {
+      return {
+        success: false as const,
+        error: "URL was not processed",
+        source: url,
+        reason: "fetch_error" as const,
+      };
+    }
+    if (result instanceof Error) {
+      return {
+        success: false as const,
+        error: result.message,
+        source: url,
+        reason: "fetch_error" as const,
+      };
+    }
+    return {
+      success: true as const,
+      item: result.item,
+      source: url,
+      urlData: {
+        fulltext: result.fulltext,
+        archive: result.archive,
+        warnings: result.warnings,
+      },
+    };
+  });
 }
 
 /**
@@ -676,10 +739,10 @@ async function processIdentifiers(
     results.push(...fetchResult.results);
   }
 
-  // Process URL inputs
-  for (const url of urlInputs) {
-    const urlResult = await processUrlInput(url, options);
-    results.push(urlResult);
+  // Process URL inputs (reuse single browser for multiple URLs)
+  if (urlInputs.length > 0) {
+    const urlResults = await processUrlInputs(urlInputs, options);
+    results.push(...urlResults);
   }
 
   return results;

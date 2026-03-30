@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { generateId } from "../../core/identifier/generator.js";
@@ -8,8 +12,10 @@ import type { PubmedConfig } from "../import/fetcher.js";
 import {
   type ImportInputsOptions,
   type ImportItemResult,
+  type UrlImportData,
   importFromInputs,
 } from "../import/importer.js";
+import { addAttachment } from "./attachments/add.js";
 
 // Re-export FailureReason for external use
 export type { FailureReason } from "../import/importer.js";
@@ -32,6 +38,8 @@ export interface AddReferencesOptions {
   archiveFormat?: UrlArchiveFormat | undefined;
   /** Skip archive creation for URL imports */
   noArchive?: boolean | undefined;
+  /** Attachments directory for saving URL import data (fulltext/archive) */
+  attachmentsDirectory?: string | undefined;
 }
 
 /**
@@ -124,6 +132,11 @@ export async function addReferences(
       skipped.push(processed.item);
     } else {
       added.push(processed.item);
+
+      // Save URL import data (fulltext + archive) if available
+      if (result.success && result.urlData && options.attachmentsDirectory) {
+        await saveUrlData(processed.item.id, result.urlData, library, options.attachmentsDirectory);
+      }
     }
   }
 
@@ -232,6 +245,63 @@ async function processImportResult(
   }
 
   return { type: "added", item: addedItem };
+}
+
+/**
+ * Save URL import data (fulltext markdown + archive) as attachments.
+ * Best-effort: failures are silently ignored to not block the add operation.
+ */
+async function saveUrlData(
+  id: string,
+  urlData: UrlImportData,
+  library: ILibrary,
+  attachmentsDirectory: string
+): Promise<void> {
+  // Save fulltext markdown
+  if (urlData.fulltext) {
+    let tempDir: string | undefined;
+    try {
+      tempDir = mkdtempSync(join(tmpdir(), "refmgr-url-ft-"));
+      const fulltextPath = join(tempDir, "fulltext.md");
+      writeFileSync(fulltextPath, urlData.fulltext, "utf-8");
+      await addAttachment(library, {
+        identifier: id,
+        filePath: fulltextPath,
+        role: "fulltext",
+        move: true,
+        force: false,
+        idType: "id",
+        attachmentsDirectory,
+      });
+    } finally {
+      if (tempDir) {
+        await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }
+
+  // Save archive
+  if (urlData.archive) {
+    let tempDir: string | undefined;
+    try {
+      tempDir = mkdtempSync(join(tmpdir(), "refmgr-url-ar-"));
+      const archivePath = join(tempDir, `archive.${urlData.archive.extension}`);
+      writeFileSync(archivePath, urlData.archive.data, "utf-8");
+      await addAttachment(library, {
+        identifier: id,
+        filePath: archivePath,
+        role: "archive",
+        move: true,
+        force: false,
+        idType: "id",
+        attachmentsDirectory,
+      });
+    } finally {
+      if (tempDir) {
+        await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }
 }
 
 /**

@@ -41,6 +41,8 @@ export interface AddCommandOptions {
   archiveFormat?: UrlArchiveFormat | undefined;
   /** Skip archive creation for URL imports */
   noArchive?: boolean | undefined;
+  /** Attachments directory for saving URL import data */
+  attachmentsDirectory?: string | undefined;
 }
 
 /**
@@ -87,6 +89,9 @@ export async function executeAdd(
   }
   if (options.noArchive !== undefined) {
     importOptions.noArchive = options.noArchive;
+  }
+  if (options.attachmentsDirectory !== undefined) {
+    importOptions.attachmentsDirectory = options.attachmentsDirectory;
   }
 
   return context.library.import(inputs, importOptions);

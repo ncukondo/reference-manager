@@ -26,7 +26,7 @@ vi.mock("./url-archive.js", () => ({
 
 import { launchBrowser } from "./browser.js";
 import { createArchive } from "./url-archive.js";
-import { fetchUrl } from "./url-fetcher.js";
+import { fetchUrl, fetchUrls } from "./url-fetcher.js";
 import { generateFulltext } from "./url-fulltext.js";
 import { extractMetadata } from "./url-metadata.js";
 
@@ -70,7 +70,7 @@ describe("fetchUrl", () => {
     vi.clearAllMocks();
   });
 
-  it("should return item, fulltext, and archive", async () => {
+  it("should return item, fulltext, archive, and empty warnings", async () => {
     setupMocks();
 
     const result = await fetchUrl("https://example.com", { urlConfig: defaultUrlConfig });
@@ -82,6 +82,7 @@ describe("fetchUrl", () => {
     expect(result.archive).toBeDefined();
     expect(result.archive?.data).toBe("MHTML data");
     expect(result.archive?.extension).toBe("mhtml");
+    expect(result.warnings).toEqual([]);
   });
 
   it("should navigate to URL with networkidle", async () => {
@@ -139,7 +140,7 @@ describe("fetchUrl", () => {
     expect(result.archive?.extension).toBe("html");
   });
 
-  it("should warn but continue when archive creation fails", async () => {
+  it("should warn and continue when archive creation fails", async () => {
     setupMocks();
     mockCreateArchive.mockRejectedValue(new Error("CDP error"));
 
@@ -148,6 +149,20 @@ describe("fetchUrl", () => {
     expect(result.item.title).toBe("Example Page");
     expect(result.fulltext).toBe("# Example\n\nContent here");
     expect(result.archive).toBeUndefined();
+    expect(result.warnings).toContainEqual(expect.stringContaining("Archive creation failed"));
+    expect(result.warnings).toContainEqual(expect.stringContaining("CDP error"));
+  });
+
+  it("should warn and continue when Readability injection fails", async () => {
+    const { mockPage } = setupMocks();
+    mockPage.addScriptTag.mockRejectedValue(new Error("injection error"));
+
+    const result = await fetchUrl("https://example.com", { urlConfig: defaultUrlConfig });
+
+    expect(result.item.title).toBe("Example Page");
+    expect(result.fulltext).toBe("# Example\n\nContent here");
+    expect(result.warnings).toContainEqual(expect.stringContaining("Readability injection failed"));
+    expect(result.warnings).toContainEqual(expect.stringContaining("injection error"));
   });
 
   it("should use timeout from config", async () => {
@@ -160,5 +175,81 @@ describe("fetchUrl", () => {
       "https://example.com",
       expect.objectContaining({ timeout: 60000 })
     );
+  });
+});
+
+describe("fetchUrls", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should return empty map for empty input", async () => {
+    const results = await fetchUrls([], { urlConfig: defaultUrlConfig });
+    expect(results.size).toBe(0);
+  });
+
+  it("should reuse one browser for multiple URLs", async () => {
+    const { mockBrowser } = setupMocks();
+
+    const results = await fetchUrls(["https://a.com", "https://b.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    // Browser launched only once
+    expect(mockLaunchBrowser).toHaveBeenCalledTimes(1);
+    // Two pages created
+    expect(mockBrowser.newPage).toHaveBeenCalledTimes(2);
+    // Browser closed once
+    expect(mockBrowser.close).toHaveBeenCalledTimes(1);
+    // Both results present
+    expect(results.size).toBe(2);
+    const resultA = results.get("https://a.com");
+    expect(resultA).not.toBeInstanceOf(Error);
+    if (!(resultA instanceof Error)) {
+      expect(resultA?.item.title).toBe("Example Page");
+    }
+  });
+
+  it("should return Error for individual URL failures", async () => {
+    setupMocks();
+    let callCount = 0;
+    mockExtractMetadata.mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        throw new Error("page error");
+      }
+      return {
+        id: "",
+        type: "webpage",
+        title: "Second Page",
+        URL: "https://b.com",
+        accessed: { "date-parts": [[2026, 3, 30]] },
+      };
+    });
+
+    const results = await fetchUrls(["https://a.com", "https://b.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    expect(results.size).toBe(2);
+    expect(results.get("https://a.com")).toBeInstanceOf(Error);
+    const resultB = results.get("https://b.com");
+    expect(resultB).not.toBeInstanceOf(Error);
+    if (!(resultB instanceof Error)) {
+      expect(resultB?.item.title).toBe("Second Page");
+    }
+  });
+
+  it("should close browser even when all URLs fail", async () => {
+    const { mockBrowser } = setupMocks();
+    mockExtractMetadata.mockRejectedValue(new Error("fail"));
+
+    const results = await fetchUrls(["https://a.com", "https://b.com"], {
+      urlConfig: defaultUrlConfig,
+    });
+
+    expect(mockBrowser.close).toHaveBeenCalledTimes(1);
+    expect(results.get("https://a.com")).toBeInstanceOf(Error);
+    expect(results.get("https://b.com")).toBeInstanceOf(Error);
   });
 });

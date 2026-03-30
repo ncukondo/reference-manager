@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import type { Browser, Page } from "playwright-core";
 import type { UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { launchBrowser } from "./browser.js";
@@ -23,6 +24,7 @@ export interface UrlFetchResult {
   item: CslItem;
   fulltext: string;
   archive?: ArchiveResult | undefined;
+  warnings: string[];
 }
 
 /**
@@ -34,58 +36,128 @@ function getReadabilityPath(): string {
 }
 
 /**
- * Fetch a URL and extract metadata, fulltext, and archive.
+ * Process a single URL in an already-open browser page.
+ */
+async function processPage(
+  page: Page,
+  url: string,
+  options: { archiveFormat: UrlArchiveFormat; noArchive: boolean; timeout: number }
+): Promise<UrlFetchResult> {
+  const warnings: string[] = [];
+
+  // Navigate with configured timeout
+  await page.goto(url, {
+    waitUntil: "networkidle",
+    timeout: options.timeout * 1000,
+  });
+
+  // Inject Readability for fulltext extraction
+  try {
+    const readabilityPath = getReadabilityPath();
+    await page.addScriptTag({ content: readFileSync(readabilityPath, "utf-8") });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    warnings.push(`Readability injection failed: ${msg}`);
+  }
+
+  // Extract metadata
+  const item = await extractMetadata(page);
+
+  // Generate fulltext
+  const fulltext = await generateFulltext(page);
+
+  // Create archive (optional, best-effort)
+  let archive: ArchiveResult | undefined;
+  if (!options.noArchive) {
+    try {
+      archive = await createArchive(page, options.archiveFormat);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      warnings.push(`Archive creation failed: ${msg}`);
+    }
+  }
+
+  return { item, fulltext, archive, warnings };
+}
+
+/**
+ * Resolve effective options for page processing.
+ */
+function resolvePageOptions(options: UrlFetchOptions): {
+  archiveFormat: UrlArchiveFormat;
+  noArchive: boolean;
+  timeout: number;
+} {
+  return {
+    archiveFormat: options.archiveFormat ?? options.urlConfig.archiveFormat,
+    noArchive: options.noArchive ?? false,
+    timeout: options.urlConfig.timeout,
+  };
+}
+
+/**
+ * Fetch a single URL and extract metadata, fulltext, and archive.
  *
- * Pipeline:
- * 1. Launch browser
- * 2. Navigate to URL
- * 3. Inject Readability
- * 4. Extract metadata
- * 5. Generate fulltext (Markdown)
- * 6. Create archive (MHTML/HTML)
- * 7. Close browser
+ * Launches and closes a browser for this single URL.
+ * For multiple URLs, use fetchUrls() to share a browser instance.
  */
 export async function fetchUrl(url: string, options: UrlFetchOptions): Promise<UrlFetchResult> {
-  const { urlConfig, noArchive } = options;
-  const archiveFormat = options.archiveFormat ?? urlConfig.archiveFormat;
-
-  const browser = await launchBrowser(urlConfig);
+  const browser = await launchBrowser(options.urlConfig);
 
   try {
     const page = await browser.newPage();
-
-    // Navigate with configured timeout
-    await page.goto(url, {
-      waitUntil: "networkidle",
-      timeout: urlConfig.timeout * 1000,
-    });
-
-    // Inject Readability for fulltext extraction
-    try {
-      const readabilityPath = getReadabilityPath();
-      await page.addScriptTag({ content: readFileSync(readabilityPath, "utf-8") });
-    } catch {
-      // Readability injection failed; generateFulltext will fall back to full HTML
-    }
-
-    // Extract metadata
-    const item = await extractMetadata(page);
-
-    // Generate fulltext
-    const fulltext = await generateFulltext(page);
-
-    // Create archive (optional, best-effort)
-    let archive: ArchiveResult | undefined;
-    if (!noArchive) {
-      try {
-        archive = await createArchive(page, archiveFormat);
-      } catch {
-        // Archive creation failed — continue without it
-      }
-    }
-
-    return { item, fulltext, archive };
+    return await processPage(page, url, resolvePageOptions(options));
   } finally {
     await browser.close();
   }
+}
+
+/**
+ * Fetch multiple URLs reusing a single browser instance.
+ *
+ * Each URL is processed sequentially in a new page within the same browser.
+ * Returns one result per URL (success or error).
+ */
+export async function fetchUrls(
+  urls: string[],
+  options: UrlFetchOptions
+): Promise<Map<string, UrlFetchResult | Error>> {
+  const results = new Map<string, UrlFetchResult | Error>();
+
+  if (urls.length === 0) {
+    return results;
+  }
+
+  let browser: Browser;
+  try {
+    browser = await launchBrowser(options.urlConfig);
+  } catch (error) {
+    // If browser launch fails, all URLs fail with the same error
+    for (const url of urls) {
+      results.set(url, error instanceof Error ? error : new Error(String(error)));
+    }
+    return results;
+  }
+
+  const pageOptions = resolvePageOptions(options);
+
+  try {
+    for (const url of urls) {
+      try {
+        const page = await browser.newPage();
+        try {
+          const result = await processPage(page, url, pageOptions);
+          results.set(url, result);
+        } finally {
+          await page.close();
+        }
+      } catch (error) {
+        results.set(url, error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+
+  return results;
 }
