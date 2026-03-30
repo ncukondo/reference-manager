@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type InputFormat, detectFormat, isArxiv, isIsbn, isPmid } from "./detector.js";
+import { type InputFormat, detectFormat, isArxiv, isIsbn, isPmid, isUrl } from "./detector.js";
 
 describe("detectFormat", () => {
   describe("file extension detection", () => {
@@ -174,6 +174,44 @@ describe("detectFormat", () => {
       it("should detect DOI starting with 10.", () => {
         expect(detectFormat("10.1234/test")).toBe("doi");
         expect(detectFormat("10.99999/paper")).toBe("doi");
+      });
+    });
+
+    describe("URL detection", () => {
+      it("should detect http URL as url format", () => {
+        expect(detectFormat("http://example.com")).toBe("url");
+      });
+
+      it("should detect https URL as url format", () => {
+        expect(detectFormat("https://example.com")).toBe("url");
+      });
+
+      it("should detect URL with path as url format", () => {
+        expect(detectFormat("https://example.com/page/123")).toBe("url");
+      });
+
+      it("should detect URL with query parameters", () => {
+        expect(detectFormat("https://example.com/search?q=test&lang=en")).toBe("url");
+      });
+
+      it("should not detect DOI URL as url (detected as doi)", () => {
+        expect(detectFormat("https://doi.org/10.1000/xyz123")).toBe("doi");
+      });
+
+      it("should not detect arXiv URL as url (detected as arxiv)", () => {
+        expect(detectFormat("https://arxiv.org/abs/2301.13867")).toBe("arxiv");
+      });
+
+      it("should detect generic https URL as url", () => {
+        expect(detectFormat("https://elaws.e-gov.go.jp/document?lawid=415AC0000000057")).toBe(
+          "url"
+        );
+      });
+
+      it("should detect government URL as url", () => {
+        expect(
+          detectFormat("https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000164708_00001.html")
+        ).toBe("url");
       });
     });
 
@@ -368,6 +406,7 @@ describe("detectFormat", () => {
         "doi",
         "isbn",
         "arxiv",
+        "url",
         "identifiers",
         "unknown",
       ];
@@ -561,6 +600,40 @@ describe("isIsbn", () => {
     it("should return false for X not at end of ISBN-10", () => {
       expect(isIsbn("ISBN:12345X7890")).toBe(false);
     });
+  });
+});
+
+describe("isUrl", () => {
+  it("should return true for https URL", () => {
+    expect(isUrl("https://example.com")).toBe(true);
+  });
+
+  it("should return true for http URL", () => {
+    expect(isUrl("http://example.com")).toBe(true);
+  });
+
+  it("should return true for URL with path and query", () => {
+    expect(isUrl("https://example.com/page?q=test")).toBe(true);
+  });
+
+  it("should return false for DOI URL", () => {
+    expect(isUrl("https://doi.org/10.1000/xyz")).toBe(false);
+  });
+
+  it("should return false for arXiv URL", () => {
+    expect(isUrl("https://arxiv.org/abs/2301.13867")).toBe(false);
+  });
+
+  it("should return false for empty string", () => {
+    expect(isUrl("")).toBe(false);
+  });
+
+  it("should return false for non-URL string", () => {
+    expect(isUrl("just-a-string")).toBe(false);
+  });
+
+  it("should return false for ftp URL", () => {
+    expect(isUrl("ftp://example.com")).toBe(false);
   });
 });
 

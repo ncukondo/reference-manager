@@ -22,6 +22,7 @@ export type InputFormat =
   | "doi"
   | "isbn"
   | "arxiv"
+  | "url"
   | "identifiers"
   | "unknown";
 
@@ -137,7 +138,7 @@ function detectIdentifier(input: string): InputFormat {
   }
 
   // Check each part
-  const formats: ("pmid" | "doi" | "isbn" | "arxiv")[] = [];
+  const formats: ("pmid" | "doi" | "isbn" | "arxiv" | "url")[] = [];
   for (const part of parts) {
     const format = detectSingleIdentifier(part);
     if (format === "unknown") {
@@ -150,7 +151,7 @@ function detectIdentifier(input: string): InputFormat {
   // Single identifier returns its specific format
   if (formats.length === 1) {
     // formats[0] is guaranteed to exist when length === 1
-    return formats[0] as "pmid" | "doi" | "isbn" | "arxiv";
+    return formats[0] as "pmid" | "doi" | "isbn" | "arxiv" | "url";
   }
 
   // Multiple valid identifiers
@@ -162,7 +163,7 @@ function detectIdentifier(input: string): InputFormat {
  */
 export function detectSingleIdentifier(
   input: string
-): "pmid" | "doi" | "isbn" | "arxiv" | "unknown" {
+): "pmid" | "doi" | "isbn" | "arxiv" | "url" | "unknown" {
   // DOI: starts with 10. or is a DOI URL
   if (isDoi(input)) {
     return "doi";
@@ -183,7 +184,27 @@ export function detectSingleIdentifier(
     return "pmid";
   }
 
+  // URL: http/https URLs not matched above
+  if (isUrl(input)) {
+    return "url";
+  }
+
   return "unknown";
+}
+
+/**
+ * Check if input is an http/https URL that is not already matched as a known identifier (DOI, arXiv).
+ */
+export function isUrl(input: string): boolean {
+  if (!input) return false;
+  const lower = input.toLowerCase();
+  if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+    return false;
+  }
+  // Exclude URLs already detected as other identifier types
+  if (isDoi(input)) return false;
+  if (isArxiv(input)) return false;
+  return true;
 }
 
 /**
