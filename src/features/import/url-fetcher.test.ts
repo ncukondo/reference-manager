@@ -56,6 +56,7 @@ const defaultUrlConfig: UrlConfig = {
 function setupMocks() {
   const mockPage = {
     goto: vi.fn().mockResolvedValue(null),
+    waitForLoadState: vi.fn().mockResolvedValue(undefined),
     addScriptTag: vi.fn().mockResolvedValue(null),
     close: vi.fn().mockResolvedValue(undefined),
   };
@@ -97,15 +98,26 @@ describe("fetchUrl", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("should navigate to URL with networkidle", async () => {
+  it("should navigate with domcontentloaded then try short networkidle", async () => {
     const { mockPage } = setupMocks();
 
     await fetchUrl("https://example.com", { urlConfig: defaultUrlConfig });
 
     expect(mockPage.goto).toHaveBeenCalledWith("https://example.com", {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
       timeout: 30000,
     });
+    expect(mockPage.waitForLoadState).toHaveBeenCalledWith("networkidle", { timeout: 2000 });
+  });
+
+  it("should succeed even if networkidle wait times out", async () => {
+    const { mockPage } = setupMocks();
+    mockPage.waitForLoadState.mockRejectedValue(new Error("Timeout 2000ms exceeded"));
+
+    const result = await fetchUrl("https://example.com", { urlConfig: defaultUrlConfig });
+
+    expect(result.item.title).toBe("Example Page");
+    expect(result.warnings).toEqual([]);
   });
 
   it("should close page and browser after completion", async () => {
@@ -179,7 +191,7 @@ describe("fetchUrl", () => {
     expect(result.warnings).toContainEqual(expect.stringContaining("injection error"));
   });
 
-  it("should use timeout from config", async () => {
+  it("should use timeout from config for navigation", async () => {
     const { mockPage } = setupMocks();
     const config: UrlConfig = { ...defaultUrlConfig, timeout: 60 };
 
@@ -187,7 +199,7 @@ describe("fetchUrl", () => {
 
     expect(mockPage.goto).toHaveBeenCalledWith(
       "https://example.com",
-      expect.objectContaining({ timeout: 60000 })
+      expect.objectContaining({ timeout: 60000, waitUntil: "domcontentloaded" })
     );
   });
 });
