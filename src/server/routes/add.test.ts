@@ -39,6 +39,8 @@ describe("Add Route", () => {
       server: { host: "127.0.0.1", port: 0 },
       citation: { style: "apa", locale: "en-US", format: "text" },
       pubmed: {},
+      url: { archiveFormat: "mhtml", browserPath: "", timeout: 30 },
+      attachments: { directory: path.join(os.tmpdir(), "test-attachments") },
     };
 
     // Create route with library and config

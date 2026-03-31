@@ -62,6 +62,8 @@ export function createAddRoute(library: Library, config: Config) {
     const addOptions: AddReferencesOptions = {
       force: options?.force ?? false,
       pubmedConfig: buildPubmedConfig(config),
+      urlConfig: config.url,
+      attachmentsDirectory: config.attachments.directory,
     };
 
     if (options?.format) {
