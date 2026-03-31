@@ -11,6 +11,7 @@ import {
   executeAdd,
   formatAddOutput,
   getExitCode,
+  printUrlProgress,
 } from "./add.js";
 
 describe("add command", () => {
@@ -557,6 +558,50 @@ describe("add command", () => {
       expect(results).toHaveLength(2);
       expect(results[0]?.success).toBe(false);
       expect(results[1]?.success).toBe(true);
+    });
+  });
+
+  describe("printUrlProgress", () => {
+    let stderrWriteSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    });
+
+    afterEach(() => {
+      stderrWriteSpy.mockRestore();
+    });
+
+    it("should print 'Fetching <URL>...' for URL inputs", () => {
+      printUrlProgress(["https://example.com/article"], false);
+
+      expect(stderrWriteSpy).toHaveBeenCalledWith("Fetching https://example.com/article...\n");
+    });
+
+    it("should not print anything for non-URL inputs", () => {
+      printUrlProgress(["10.1234/test", "ISBN:9784000000000"], false);
+
+      expect(stderrWriteSpy).not.toHaveBeenCalled();
+    });
+
+    it("should print progress for each URL when multiple inputs include URLs", () => {
+      printUrlProgress(["10.1234/test", "https://example.com/a", "https://example.com/b"], false);
+
+      expect(stderrWriteSpy).toHaveBeenCalledTimes(2);
+      expect(stderrWriteSpy).toHaveBeenCalledWith("Fetching https://example.com/a...\n");
+      expect(stderrWriteSpy).toHaveBeenCalledWith("Fetching https://example.com/b...\n");
+    });
+
+    it("should not print when quiet is true", () => {
+      printUrlProgress(["https://example.com/article"], true);
+
+      expect(stderrWriteSpy).not.toHaveBeenCalled();
+    });
+
+    it("should not print for empty inputs", () => {
+      printUrlProgress([], false);
+
+      expect(stderrWriteSpy).not.toHaveBeenCalled();
     });
   });
 });

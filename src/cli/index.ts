@@ -12,7 +12,13 @@ import {
   formatAddJsonOutput,
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
-import { autoFetchFulltext, executeAdd, formatAddOutput, getExitCode } from "./commands/add.js";
+import {
+  autoFetchFulltext,
+  executeAdd,
+  formatAddOutput,
+  getExitCode,
+  printUrlProgress,
+} from "./commands/add.js";
 import {
   handleAttachAddAction,
   handleAttachDetachAction,
@@ -479,6 +485,7 @@ async function handleAddAction(
 
     // Build and execute add options
     const addOptions = buildAddOptions(inputs, options, config, stdinContent);
+    printUrlProgress(inputs, globalOpts.quiet === true);
     const result = await executeAdd(addOptions, context);
 
     // Output result

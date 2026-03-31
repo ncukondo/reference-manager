@@ -1,6 +1,7 @@
 import type { FulltextConfig, UrlArchiveFormat, UrlConfig } from "../../config/schema.js";
 import type { ILibrary } from "../../core/library-interface.js";
 import type { InputFormat } from "../../features/import/detector.js";
+import { isUrl } from "../../features/import/detector.js";
 import type { PubmedConfig } from "../../features/import/fetcher.js";
 import type {
   AddReferencesResult,
@@ -246,4 +247,17 @@ export async function autoFetchFulltext(
   }
 
   return results;
+}
+
+/**
+ * Print progress message to stderr for URL inputs.
+ * Suppressed when quiet is true.
+ */
+export function printUrlProgress(inputs: string[], quiet: boolean): void {
+  if (quiet) return;
+  for (const input of inputs) {
+    if (isUrl(input)) {
+      process.stderr.write(`Fetching ${input}...\n`);
+    }
+  }
 }
