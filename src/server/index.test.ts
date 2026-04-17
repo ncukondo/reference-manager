@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../config/schema.js";
 import { Library } from "../core/library.js";
 import { createServer, startServerWithFileWatcher } from "./index.js";
@@ -273,6 +273,36 @@ describe("startServerWithFileWatcher", () => {
     const persisted = JSON.parse(contents) as Array<{ title?: string }>;
     expect(persisted).toHaveLength(1);
     expect(persisted[0].title).toBe("Unflushed Item");
+  });
+
+  it("should set process.exitCode to 1 when save fails on dispose", async () => {
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    const originalExitCode = process.exitCode;
+    const saveSpy = vi.spyOn(result.library, "save").mockRejectedValue(new Error("disk full"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      // Reset exitCode so the assertion is unambiguous.
+      process.exitCode = undefined;
+
+      // dispose() must NOT throw even when save rejects — throwing would abort
+      // watcher cleanup and leave resources dangling. Surfacing the failure
+      // via process.exitCode lets the CLI exit non-zero without that risk.
+      await expect(result.dispose()).resolves.toBeUndefined();
+
+      expect(process.exitCode).toBe(1);
+
+      // Watcher cleanup must still run even though save failed.
+      expect(result.fileWatcher.isWatching()).toBe(false);
+
+      // Error should be surfaced on stderr (via console.error).
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      process.exitCode = originalExitCode;
+      saveSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
   });
 
   it("should serve requests with reloaded library data", async () => {
