@@ -34,6 +34,10 @@ export class Library implements ILibrary {
   private filePath: string;
   private references: Reference[] = [];
   private currentHash: string | null = null;
+  // Tracks whether in-memory state has diverged from the on-disk file.
+  // Mutations (add/update/remove) set this; save() and reload() clear it.
+  // Callers like the server's dispose() hook use it to skip a no-op save.
+  private dirty = false;
 
   // Indices for fast lookup
   private uuidIndex: Map<string, Reference> = new Map();
@@ -82,6 +86,15 @@ export class Library implements ILibrary {
     await writeCslJson(this.filePath, items);
     // Update file hash after saving
     this.currentHash = await computeFileHash(this.filePath);
+    this.dirty = false;
+  }
+
+  /**
+   * Whether the in-memory state has unsaved changes relative to disk.
+   * Cleared by save() and reload().
+   */
+  isDirty(): boolean {
+    return this.dirty;
   }
 
   /**
@@ -115,6 +128,9 @@ export class Library implements ILibrary {
 
     // Update hash
     this.currentHash = newHash;
+    // External state is now authoritative; discard any dirty flag that may
+    // have been set by pending in-memory mutations.
+    this.dirty = false;
 
     return true;
   }
@@ -134,6 +150,7 @@ export class Library implements ILibrary {
     // Add to library
     this.references.push(ref);
     this.addToIndices(ref);
+    this.dirty = true;
 
     // Return the added item
     return ref.getItem();
@@ -304,6 +321,7 @@ export class Library implements ILibrary {
     }
     this.references.splice(index, 1);
     this.removeFromIndices(ref);
+    this.dirty = true;
     return true;
   }
 
@@ -354,6 +372,7 @@ export class Library implements ILibrary {
     const newRef = new Reference(updatedItem);
     this.references[index] = newRef;
     this.addToIndices(newRef);
+    this.dirty = true;
 
     const result: UpdateResult = { updated: true, item: newRef.getItem(), oldItem: existingItem };
     if (idChanged) {

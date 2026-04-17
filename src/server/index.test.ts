@@ -275,8 +275,55 @@ describe("startServerWithFileWatcher", () => {
     expect(persisted[0].title).toBe("Unflushed Item");
   });
 
+  it("should skip save() on dispose when no mutations occurred", async () => {
+    // Without a dirty-flag short-circuit, dispose() would unconditionally
+    // rewrite the library file on every shutdown, wasting I/O and tripping
+    // FileWatcher self-write detection for no benefit. Verify that a
+    // mutation-free dispose does NOT call save().
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    const saveSpy = vi.spyOn(result.library, "save");
+
+    try {
+      await result.dispose();
+      expect(saveSpy).not.toHaveBeenCalled();
+    } finally {
+      saveSpy.mockRestore();
+    }
+  });
+
+  it("should call save() on dispose when a mutation occurred", async () => {
+    // The complement of the above: after an add() the library is dirty, so
+    // dispose() must flush. (The existing 'should persist in-memory changes
+    // on dispose' test covers the file contents; this one pins the spy call
+    // so a future refactor cannot skip save() unconditionally.)
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    await result.library.add({
+      type: "article-journal",
+      title: "Dirty Marker",
+    });
+
+    const saveSpy = vi.spyOn(result.library, "save");
+
+    try {
+      await result.dispose();
+      expect(saveSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      saveSpy.mockRestore();
+    }
+  });
+
   it("should set process.exitCode to 1 when save fails on dispose", async () => {
     const result = await startServerWithFileWatcher(libraryPath, config);
+
+    // Mutate the library so dispose() will attempt to flush — the dirty
+    // short-circuit would otherwise skip save() entirely on a clean library
+    // and the spy below would never fire.
+    await result.library.add({
+      type: "article-journal",
+      title: "Flush Me",
+    });
 
     const originalExitCode = process.exitCode;
     const saveSpy = vi.spyOn(result.library, "save").mockRejectedValue(new Error("disk full"));

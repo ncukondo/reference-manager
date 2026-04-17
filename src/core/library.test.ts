@@ -183,6 +183,87 @@ describe("Library", () => {
     });
   });
 
+  describe("isDirty", () => {
+    // The dirty flag lets callers (e.g. the HTTP server's dispose() hook)
+    // skip a no-op save on shutdown when the in-memory state already
+    // matches what is on disk. Mutations set it; save()/reload() clear it.
+
+    it("should be false after load", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should become true after add()", async () => {
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.add({ id: "new-2024", type: "article-journal", title: "t" });
+      expect(library.isDirty()).toBe(true);
+    });
+
+    it("should become true after a successful update()", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.update("smith-2023", { title: "New Title" });
+      expect(library.isDirty()).toBe(true);
+    });
+
+    it("should stay false when update() is a no-op (identifier not found)", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      const result = await library.update("does-not-exist", { title: "x" });
+      expect(result.updated).toBe(false);
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should become true after a successful remove()", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.remove("smith-2023");
+      expect(library.isDirty()).toBe(true);
+    });
+
+    it("should stay false when remove() is a no-op (identifier not found)", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("does-not-exist");
+      expect(result.removed).toBe(false);
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should be cleared by save()", async () => {
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.add({ id: "new-2024", type: "article-journal", title: "t" });
+      expect(library.isDirty()).toBe(true);
+
+      await library.save();
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should be cleared by reload() (disk is the new authority)", async () => {
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.add({ id: "pending-2024", type: "article-journal", title: "t" });
+      expect(library.isDirty()).toBe(true);
+
+      // External writer replaces the file — reload() picks up that state,
+      // so our in-memory pending add is effectively discarded along with
+      // the dirty flag.
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const reloaded = await library.reload();
+      expect(reloaded).toBe(true);
+      expect(library.isDirty()).toBe(false);
+    });
+  });
+
   describe("add", () => {
     it("should add new reference to library", async () => {
       await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
