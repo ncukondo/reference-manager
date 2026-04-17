@@ -142,8 +142,15 @@ export async function serverStop(portfilePath: string): Promise<void> {
     throw new Error("Server is not running");
   }
 
-  // In real implementation, send SIGTERM to the server process
-  // For testing, we just remove the portfile
+  // Signal the server process so its SIGTERM handler can flush state
+  // (library save, watcher close, portfile removal) before exit.
+  try {
+    process.kill(status.pid, "SIGTERM");
+  } catch {
+    // Process may have died between the status check and now; fall through
+    // so the caller's portfile is still cleaned up.
+  }
+
   await removePortfile(portfilePath);
 
   process.stdout.write("Server stopped successfully\n");

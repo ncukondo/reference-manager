@@ -154,6 +154,28 @@ describe("server command", () => {
   });
 
   describe("serverStop", () => {
+    let killSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      // Mock process.kill so SIGTERM to test-process PIDs does not terminate the
+      // test runner. Signal 0 (liveness probe used by isProcessRunning) must
+      // still reach the real implementation so "process not found" cases work.
+      const realKill = process.kill.bind(process);
+      killSpy = vi.spyOn(process, "kill").mockImplementation(((
+        pid: number,
+        signal?: string | number
+      ) => {
+        if (signal === 0 || signal === undefined) {
+          return realKill(pid, signal as number | undefined);
+        }
+        return true;
+      }) as typeof process.kill);
+    });
+
+    afterEach(() => {
+      killSpy.mockRestore();
+    });
+
     it("should stop server and remove portfile", async () => {
       // Create portfile with mock PID (use process.pid for testing)
       const dir = path.dirname(testPortfilePath);
@@ -175,6 +197,21 @@ describe("server command", () => {
 
       const output = mockStdout.join("");
       expect(output).toContain("Server stopped");
+    });
+
+    it("should send SIGTERM to the server process before removing the portfile", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      await serverStop(testPortfilePath);
+
+      expect(killSpy).toHaveBeenCalledWith(serverPid, "SIGTERM");
     });
 
     it("should throw error if server not running (no portfile)", async () => {

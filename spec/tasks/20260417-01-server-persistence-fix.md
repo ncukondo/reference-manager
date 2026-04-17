@@ -55,17 +55,17 @@ The cleanup handler at `src/cli/commands/server.ts:101-107` calls `dispose()` bu
 
 `serverStop()` at `src/cli/commands/server.ts:138-149` only removes the portfile without signaling the server process. The server process keeps running.
 
-- [ ] Write test: verify `serverStop` sends SIGTERM to the server process
-- [ ] Implement: Read PID from portfile and send `process.kill(pid, 'SIGTERM')` before removing portfile
-- [ ] Verify Green
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: verify `serverStop` sends SIGTERM to the server process
+- [x] Implement: Read PID from portfile and send `process.kill(pid, 'SIGTERM')` before removing portfile
+- [x] Verify Green
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Close linked issue (include `Closes #93` in PR description)
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Close linked issue (include `Closes #93` in PR description)
+- [ ] Move this file to `spec/tasks/completed/` (done on main after merge)

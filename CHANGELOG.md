@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Server Mutation Persistence (#93)**: Mutations made via the HTTP server now survive restart.
+  - `POST /api/references/` now calls `library.save()` after `library.add()` so the new reference is written to disk.
+  - Server shutdown (`SIGINT`/`SIGTERM`) flushes the in-memory library to disk before closing the file watcher.
+  - `ref server stop` now sends `SIGTERM` to the running server process so its shutdown handler runs (previously only the portfile was removed, leaving the server process alive and unsaved state in memory).
 - **Server Autostart in Bun Binary**: Fix server autostart and `--daemon` mode when running as a bun-compiled single binary. The spawn logic now correctly detects compiled binary mode and avoids passing a redundant script path argument.
 
 ### Added
