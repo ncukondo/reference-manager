@@ -244,6 +244,29 @@ describe("startServerWithFileWatcher", () => {
     expect(result.fileWatcher.isWatching()).toBe(false);
   });
 
+  it("should persist in-memory changes on dispose", async () => {
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    // Mutate the library via the add route (does not itself persist via /api/add)
+    // but more importantly, add to the in-memory library directly to simulate
+    // pending state that must be flushed on shutdown.
+    await result.library.add({
+      type: "article-journal",
+      title: "Unflushed Item",
+      author: [{ family: "Doe", given: "Jane" }],
+    });
+
+    // Overwrite the on-disk file to pretend no save has happened yet
+    await fs.writeFile(libraryPath, "[]", "utf-8");
+
+    await result.dispose();
+
+    const contents = await fs.readFile(libraryPath, "utf-8");
+    const persisted = JSON.parse(contents) as Array<{ title?: string }>;
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0].title).toBe("Unflushed Item");
+  });
+
   it("should serve requests with reloaded library data", async () => {
     const initialRef = {
       id: "server2024",

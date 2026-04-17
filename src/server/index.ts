@@ -100,7 +100,14 @@ export async function startServerWithFileWatcher(
   await fileWatcher.start();
 
   // Create dispose function
+  // Flush in-memory library state to disk before closing the watcher so that
+  // mutations applied during the server's lifetime survive shutdown.
   const dispose = async (): Promise<void> => {
+    try {
+      await library.save();
+    } catch (error) {
+      console.error("Failed to flush library on shutdown:", error);
+    }
     fileWatcher.close();
   };
 

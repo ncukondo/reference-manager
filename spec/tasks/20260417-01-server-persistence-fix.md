@@ -46,10 +46,10 @@ The direct `library.add()` call at `src/server/routes/references.ts:57` does not
 
 The cleanup handler at `src/cli/commands/server.ts:101-107` calls `dispose()` but not `library.save()`.
 
-- [ ] Write test: verify that `dispose()` or cleanup triggers a save
-- [ ] Implement: Update `startServerWithFileWatcher` to return `library` so cleanup can call `library.save()`, or add save to `dispose()`
-- [ ] Verify Green
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: verify that `dispose()` or cleanup triggers a save
+- [x] Implement: Update `startServerWithFileWatcher` to return `library` so cleanup can call `library.save()`, or add save to `dispose()`
+- [x] Verify Green
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Send SIGTERM on `server stop`
 
