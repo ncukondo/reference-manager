@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Config, FulltextSource } from "../../config/schema.js";
 import type { Library } from "../../core/library.js";
+import { addReference } from "../../features/operations/add-reference.js";
 import {
   fulltextConvert,
   fulltextDiscover,
@@ -53,11 +54,10 @@ export function createReferencesRoute(library: Library, config?: Config) {
     try {
       const body = await c.req.json();
 
-      // Create and add reference (library.add handles validation and returns the added item)
-      const addedItem = await library.add(body);
-      await library.save();
+      // Use addReference helper so add+save stay coupled (symmetric with PUT/DELETE).
+      const result = await addReference(library, { item: body });
 
-      return c.json(addedItem, 201);
+      return c.json(result.item, 201);
     } catch (error) {
       return c.json(
         {
