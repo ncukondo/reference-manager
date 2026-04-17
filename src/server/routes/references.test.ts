@@ -174,6 +174,28 @@ describe("References Route", () => {
       const data = await res.json();
       expect(data).toHaveProperty("error");
     });
+
+    it("should persist the created reference to disk", async () => {
+      const newRef = {
+        type: "article-journal" as const,
+        title: "Persisted Article",
+        author: [{ family: "Johnson", given: "Bob" }],
+      };
+
+      const req = new Request("http://localhost/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRef),
+      });
+      const res = await route.fetch(req);
+      expect(res.status).toBe(201);
+
+      // Verify persistence by reading the file directly
+      const fileContents = await fs.readFile(testLibraryPath, "utf-8");
+      const persisted = JSON.parse(fileContents) as CslItem[];
+      expect(persisted).toHaveLength(1);
+      expect(persisted[0].title).toBe("Persisted Article");
+    });
   });
 
   describe("PUT /uuid/:uuid", () => {

@@ -37,10 +37,10 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 The direct `library.add()` call at `src/server/routes/references.ts:57` does not persist to disk.
 
-- [ ] Write test: `src/server/routes/references.test.ts` — verify that POST creates a reference AND persists it to disk
-- [ ] Implement: Add `await library.save()` after `library.add()` in the POST handler
-- [ ] Verify Green: `npm run test:unit -- references.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/server/routes/references.test.ts` — verify that POST creates a reference AND persists it to disk
+- [x] Implement: Add `await library.save()` after `library.add()` in the POST handler
+- [x] Verify Green: `npm run test:unit -- references.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Flush library on server shutdown (SIGINT/SIGTERM)
 

@@ -55,6 +55,7 @@ export function createReferencesRoute(library: Library, config?: Config) {
 
       // Create and add reference (library.add handles validation and returns the added item)
       const addedItem = await library.add(body);
+      await library.save();
 
       return c.json(addedItem, 201);
     } catch (error) {
