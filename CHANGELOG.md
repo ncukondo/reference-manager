@@ -52,9 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Server Mutation Persistence (#93)**: Mutations made via the HTTP server now survive restart.
-  - `POST /api/references/` now calls `library.save()` after `library.add()` so the new reference is written to disk.
-  - Server shutdown (`SIGINT`/`SIGTERM`) flushes the in-memory library to disk before closing the file watcher.
-  - `ref server stop` now sends `SIGTERM` to the running server process so its shutdown handler runs (previously only the portfile was removed, leaving the server process alive and unsaved state in memory).
+  - `POST /api/references/` now persists via a new `addReference` helper (`src/features/operations/add-reference.ts`) that bundles `library.add()` with `library.save()`, matching the PUT/DELETE helpers so future mutation routes cannot forget to persist.
+  - Server shutdown (`SIGINT`/`SIGTERM`) flushes the in-memory library to disk before closing the file watcher. If the shutdown flush itself fails, `dispose()` sets `process.exitCode = 1` (rather than throwing) so the CLI exits non-zero while watcher cleanup still runs.
+  - `ref server stop` now sends `SIGTERM` to the running server process so its shutdown handler runs (previously only the portfile was removed, leaving the server process alive and unsaved state in memory). `ESRCH` remains silent, but any other `process.kill` failure (e.g. `EPERM`) is now surfaced as a stderr warning instead of being silently swallowed.
 - **Server Autostart in Bun Binary**: Fix server autostart and `--daemon` mode when running as a bun-compiled single binary. The spawn logic now correctly detects compiled binary mode and avoids passing a redundant script path argument.
 
 ### Added
