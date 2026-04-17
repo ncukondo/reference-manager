@@ -144,11 +144,69 @@ async function startServerForeground(options: ServerStartOptions): Promise<void>
 }
 
 /**
+ * Options for serverStop.
+ */
+export interface ServerStopOptions {
+  /**
+   * Interval (ms) between liveness probes while waiting for the server PID
+   * to exit after SIGTERM. Lower values shorten worst-case shutdown latency
+   * but add syscall overhead. Default: 100.
+   */
+  exitPollIntervalMs?: number;
+  /**
+   * Maximum time (ms) to wait for the server PID to exit after SIGTERM
+   * before giving up and warning. Default: 5000.
+   */
+  exitWaitTimeoutMs?: number;
+}
+
+const DEFAULT_EXIT_POLL_INTERVAL_MS = 100;
+const DEFAULT_EXIT_WAIT_TIMEOUT_MS = 5000;
+
+/**
+ * Poll the target PID with `process.kill(pid, 0)` until it throws ESRCH
+ * (process gone) or the timeout elapses. Returns true on confirmed exit,
+ * false on timeout or other signal failure.
+ *
+ * Matches the existing liveness-probe pattern used by isProcessRunning().
+ */
+async function waitForPidExit(
+  pid: number,
+  pollIntervalMs: number,
+  timeoutMs: number
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      process.kill(pid, 0);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException | undefined)?.code;
+      if (code === "ESRCH") {
+        return true;
+      }
+      // EPERM or other: process exists but we cannot probe it. Treat as
+      // "unknown — not confirmed exited" so the caller warns rather than
+      // falsely reports success.
+      return false;
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+  return false;
+}
+
+/**
  * Stop running server.
  *
  * @param portfilePath - Path to the portfile
+ * @param options - Shutdown-wait tuning (mostly for tests)
  */
-export async function serverStop(portfilePath: string): Promise<void> {
+export async function serverStop(
+  portfilePath: string,
+  options: ServerStopOptions = {}
+): Promise<void> {
+  const pollIntervalMs = options.exitPollIntervalMs ?? DEFAULT_EXIT_POLL_INTERVAL_MS;
+  const timeoutMs = options.exitWaitTimeoutMs ?? DEFAULT_EXIT_WAIT_TIMEOUT_MS;
+
   // Check if server is running
   const status = await serverStatus(portfilePath);
   if (status === null) {
@@ -157,16 +215,22 @@ export async function serverStop(portfilePath: string): Promise<void> {
 
   // Signal the server process so its SIGTERM handler can flush state
   // (library save, watcher close, portfile removal) before exit.
+  //
+  // exitConfirmed tracks whether we know the process is gone. ESRCH on
+  // SIGTERM means it died between the status check and the signal — same
+  // end-state as a successful wait, so we skip the poll loop entirely.
+  // Any other SIGTERM failure (e.g. EPERM) leaves the process running but
+  // unreachable; we warn and also skip the poll (it would only time out).
+  let exitConfirmed = false;
+  let sigtermDelivered = false;
   try {
     process.kill(status.pid, "SIGTERM");
+    sigtermDelivered = true;
   } catch (error) {
-    // ESRCH means the process died between the status check and now — treat as
-    // the expected "already gone" case and continue with portfile cleanup.
-    // Any other error (e.g. EPERM when the process is owned by another user)
-    // is unexpected and must not be silently swallowed, otherwise we would
-    // falsely report "Server stopped successfully" while the process keeps running.
     const code = (error as NodeJS.ErrnoException | undefined)?.code;
-    if (code !== "ESRCH") {
+    if (code === "ESRCH") {
+      exitConfirmed = true;
+    } else {
       const message = error instanceof Error ? error.message : String(error);
       process.stderr.write(
         `Warning: failed to send SIGTERM to server (pid ${status.pid}): ${code ?? "UNKNOWN"}: ${message}\n`
@@ -174,9 +238,29 @@ export async function serverStop(portfilePath: string): Promise<void> {
     }
   }
 
+  if (sigtermDelivered) {
+    exitConfirmed = await waitForPidExit(status.pid, pollIntervalMs, timeoutMs);
+  }
+
+  // Portfile fallback removal: the server's own SIGTERM cleanup (see
+  // runShutdown) is expected to remove the portfile before exiting. We
+  // remove it again here to handle the edge case where the process was
+  // already dead (ESRCH) or unreachable (EPERM), which leaves a stale
+  // portfile behind. removePortfile is idempotent, so the duplicate when
+  // the server cleaned up first is harmless.
   await removePortfile(portfilePath);
 
-  process.stdout.write("Server stopped successfully\n");
+  if (exitConfirmed) {
+    process.stdout.write("Server stopped successfully\n");
+  } else if (sigtermDelivered) {
+    // Timeout branch: SIGTERM was delivered but the PID is still alive
+    // after timeoutMs. Do NOT claim success — surface the hang so the
+    // operator can investigate (stuck save, blocked watcher close, etc.).
+    process.stderr.write(
+      `Warning: server (pid ${status.pid}) did not exit within ${timeoutMs}ms; portfile removed but process may still be running\n`
+    );
+  }
+  // EPERM branch: warning was already written above; no further output.
 }
 
 /**

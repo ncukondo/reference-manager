@@ -156,18 +156,28 @@ describe("server command", () => {
   describe("serverStop", () => {
     let killSpy: ReturnType<typeof vi.spyOn>;
 
+    // Default mock: the initial signal-0 liveness probe succeeds (hits the
+    // real process.kill, which finds the test runner's own PID); once SIGTERM
+    // is delivered we flip to reporting ESRCH so the exit-wait loop can
+    // confirm shutdown within a single poll iteration. Tests that need a
+    // different shape (EPERM, never-exiting, already-gone) override via
+    // killSpy.mockImplementation().
     beforeEach(() => {
-      // Mock process.kill so SIGTERM to test-process PIDs does not terminate the
-      // test runner. Signal 0 (liveness probe used by isProcessRunning) must
-      // still reach the real implementation so "process not found" cases work.
       const realKill = process.kill.bind(process);
+      let sigtermSent = false;
       killSpy = vi.spyOn(process, "kill").mockImplementation(((
         pid: number,
         signal?: string | number
       ) => {
         if (signal === 0 || signal === undefined) {
+          if (sigtermSent) {
+            const err = new Error("no such process") as NodeJS.ErrnoException;
+            err.code = "ESRCH";
+            throw err;
+          }
           return realKill(pid, signal as number | undefined);
         }
+        sigtermSent = true;
         return true;
       }) as typeof process.kill);
     });
@@ -175,6 +185,10 @@ describe("server command", () => {
     afterEach(() => {
       killSpy.mockRestore();
     });
+
+    // Short timeouts keep serverStop tests snappy — the polling defaults
+    // (100ms / 5s) would add seconds of delay to every case.
+    const fastWaitOptions = { exitPollIntervalMs: 5, exitWaitTimeoutMs: 100 };
 
     it("should stop server and remove portfile", async () => {
       // Create portfile with mock PID (use process.pid for testing)
@@ -186,7 +200,7 @@ describe("server command", () => {
         "utf-8"
       );
 
-      await serverStop(testPortfilePath);
+      await serverStop(testPortfilePath, fastWaitOptions);
 
       // Verify portfile was removed
       const portfileExists = await fs.access(testPortfilePath).then(
@@ -209,7 +223,7 @@ describe("server command", () => {
         "utf-8"
       );
 
-      await serverStop(testPortfilePath);
+      await serverStop(testPortfilePath, fastWaitOptions);
 
       expect(killSpy).toHaveBeenCalledWith(serverPid, "SIGTERM");
     });
@@ -252,7 +266,7 @@ describe("server command", () => {
         throw err;
       }) as typeof process.kill);
 
-      await serverStop(testPortfilePath);
+      await serverStop(testPortfilePath, fastWaitOptions);
 
       const stderrOutput = mockStderr.join("");
       expect(stderrOutput).toContain("EPERM");
@@ -284,9 +298,79 @@ describe("server command", () => {
         throw err;
       }) as typeof process.kill);
 
-      await serverStop(testPortfilePath);
+      await serverStop(testPortfilePath, fastWaitOptions);
 
       expect(mockStderr.join("")).toBe("");
+    });
+
+    // --- review2 #4: exit-wait polling ---------------------------------------
+    // Before this change, serverStop() wrote "Server stopped successfully" the
+    // moment it sent SIGTERM, with no confirmation that the server process
+    // actually exited. A hung shutdown (e.g. a blocked file flush) would be
+    // falsely reported as success. These tests cover the new behavior: after
+    // SIGTERM, serverStop polls `process.kill(pid, 0)` until it throws ESRCH
+    // (success) or a short timeout elapses (stderr warning).
+
+    it("should report success after SIGTERM once the server PID exits", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // Simulate: the server exits in response to SIGTERM. The first liveness
+      // probe (serverStatus() -> isProcessRunning()) must still succeed so the
+      // "not running" branch is not taken; after SIGTERM is sent, subsequent
+      // signal-0 probes throw ESRCH to signal that the process is gone.
+      let sigtermSent = false;
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          if (!sigtermSent) return true;
+          const err = new Error("no such process") as NodeJS.ErrnoException;
+          err.code = "ESRCH";
+          throw err;
+        }
+        sigtermSent = true;
+        return true;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, { exitPollIntervalMs: 5, exitWaitTimeoutMs: 200 });
+
+      expect(mockStdout.join("")).toContain("Server stopped successfully");
+      expect(mockStderr.join("")).toBe("");
+    });
+
+    it("should warn on stderr when the server PID does not exit before timeout", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // Simulate a hung shutdown: SIGTERM "delivers" (no throw) but the
+      // process keeps responding to signal-0 probes, so the exit-wait loop
+      // runs to its timeout.
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          return true;
+        }
+        return true;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, { exitPollIntervalMs: 5, exitWaitTimeoutMs: 30 });
+
+      const stderr = mockStderr.join("");
+      expect(stderr).toContain("did not exit");
+      expect(stderr).toContain(String(serverPid));
+      // Success message must NOT appear when shutdown is not confirmed —
+      // that was the bug we are fixing.
+      expect(mockStdout.join("")).not.toContain("Server stopped successfully");
     });
   });
 
