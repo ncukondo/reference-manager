@@ -146,9 +146,19 @@ export async function serverStop(portfilePath: string): Promise<void> {
   // (library save, watcher close, portfile removal) before exit.
   try {
     process.kill(status.pid, "SIGTERM");
-  } catch {
-    // Process may have died between the status check and now; fall through
-    // so the caller's portfile is still cleaned up.
+  } catch (error) {
+    // ESRCH means the process died between the status check and now — treat as
+    // the expected "already gone" case and continue with portfile cleanup.
+    // Any other error (e.g. EPERM when the process is owned by another user)
+    // is unexpected and must not be silently swallowed, otherwise we would
+    // falsely report "Server stopped successfully" while the process keeps running.
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== "ESRCH") {
+      const message = error instanceof Error ? error.message : String(error);
+      process.stderr.write(
+        `Warning: failed to send SIGTERM to server (pid ${status.pid}): ${code ?? "UNKNOWN"}: ${message}\n`
+      );
+    }
   }
 
   await removePortfile(portfilePath);

@@ -230,6 +230,64 @@ describe("server command", () => {
 
       await expect(serverStop(testPortfilePath)).rejects.toThrow("Server is not running");
     });
+
+    it("should warn on stderr when SIGTERM fails with a non-ESRCH error (e.g. EPERM)", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // Simulate a permission error (e.g. process owned by a different user).
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          // Let liveness probe succeed so serverStatus returns a non-null value.
+          return true;
+        }
+        const err = new Error("permission denied") as NodeJS.ErrnoException;
+        err.code = "EPERM";
+        throw err;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath);
+
+      const stderrOutput = mockStderr.join("");
+      expect(stderrOutput).toContain("EPERM");
+
+      // Portfile should still be cleaned up so the CLI is not left in a stuck state.
+      const portfileExists = await fs.access(testPortfilePath).then(
+        () => true,
+        () => false
+      );
+      expect(portfileExists).toBe(false);
+    });
+
+    it("should stay silent when SIGTERM fails with ESRCH (process already gone)", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          return true;
+        }
+        const err = new Error("no such process") as NodeJS.ErrnoException;
+        err.code = "ESRCH";
+        throw err;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath);
+
+      expect(mockStderr.join("")).toBe("");
+    });
   });
 
   describe("serverStatus", () => {
