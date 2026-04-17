@@ -39,7 +39,7 @@ describe("addReference", () => {
 
     expect(library.add).toHaveBeenCalledWith(input);
     expect(library.save).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ added: true, item: saved });
+    expect(result).toEqual({ item: saved });
   });
 
   it("should call library.add before library.save", async () => {

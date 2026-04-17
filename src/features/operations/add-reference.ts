@@ -11,10 +11,13 @@ export interface AddReferenceOptions {
 
 /**
  * Result of addReference operation.
+ *
+ * Note: this helper throws on failure, so there is no success/failure flag
+ * on the result. Compare with UpdateResult.updated / RemoveResult.removed,
+ * which report miss-by-identifier outcomes — an API that add() does not
+ * have.
  */
 export interface AddReferenceResult {
-  /** Whether the reference was added. */
-  added: true;
   /** The item returned by the library (with generated ID/UUID as needed). */
   item: CslItem;
 }
@@ -32,5 +35,5 @@ export async function addReference(
 ): Promise<AddReferenceResult> {
   const added = await library.add(options.item);
   await library.save();
-  return { added: true, item: added };
+  return { item: added };
 }
