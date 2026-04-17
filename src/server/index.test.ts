@@ -245,19 +245,27 @@ describe("startServerWithFileWatcher", () => {
   });
 
   it("should persist in-memory changes on dispose", async () => {
+    // The on-disk file is "[]" (from beforeEach). We mutate the library in
+    // memory without calling save(), which simulates the state we care about:
+    // unflushed, in-memory pending changes at shutdown time.
+    //
+    // Note: we intentionally do NOT rewrite the file from the outside here,
+    // because an external write would race with FileWatcher's debounced
+    // reload — any future tightening of debounceMs could make the in-memory
+    // state get clobbered by a reload before dispose() gets a chance to save.
     const result = await startServerWithFileWatcher(libraryPath, config);
 
-    // Mutate the library via the add route (does not itself persist via /api/add)
-    // but more importantly, add to the in-memory library directly to simulate
-    // pending state that must be flushed on shutdown.
     await result.library.add({
       type: "article-journal",
       title: "Unflushed Item",
       author: [{ family: "Doe", given: "Jane" }],
     });
 
-    // Overwrite the on-disk file to pretend no save has happened yet
-    await fs.writeFile(libraryPath, "[]", "utf-8");
+    // Sanity check: on-disk file is still the pre-mutation "[]", so the test
+    // really is observing whether dispose() flushes in-memory state, not just
+    // echoing what was already on disk.
+    const beforeDispose = JSON.parse(await fs.readFile(libraryPath, "utf-8"));
+    expect(beforeDispose).toEqual([]);
 
     await result.dispose();
 
