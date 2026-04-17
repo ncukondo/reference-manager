@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../../config/schema.js";
-import { serverStart, serverStatus, serverStop } from "./server.js";
+import { runShutdown, serverStart, serverStatus, serverStop } from "./server.js";
 import type { ServerStartOptions } from "./server.js";
 
 // Mock child_process.spawn for daemon mode tests
@@ -287,6 +287,56 @@ describe("server command", () => {
       await serverStop(testPortfilePath);
 
       expect(mockStderr.join("")).toBe("");
+    });
+  });
+
+  describe("runShutdown", () => {
+    // runShutdown is the extracted cleanup handler invoked on SIGINT/SIGTERM.
+    // It must NOT clobber process.exitCode — if dispose() flagged a shutdown
+    // failure (e.g. library.save() rejected), that non-zero code needs to
+    // survive to process exit. See review2 #1.
+
+    it("should preserve process.exitCode=1 when dispose sets it to signal save failure", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = { close: vi.fn() };
+      const dispose = vi.fn(async () => {
+        process.exitCode = 1;
+      });
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+        expect(process.exitCode).toBe(1);
+        expect(dispose).toHaveBeenCalledTimes(1);
+        expect(fakeServer.close).toHaveBeenCalledTimes(1);
+      } finally {
+        process.exitCode = originalExitCode;
+      }
+    });
+
+    it("should leave process.exitCode untouched on clean shutdown", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = { close: vi.fn() };
+      const dispose = vi.fn(async () => {});
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+        // Node exits with 0 when exitCode is left undefined — there is no
+        // need to explicitly set SUCCESS here, and doing so would erase any
+        // non-zero code a concurrent failure path may have set.
+        expect(process.exitCode).toBeUndefined();
+      } finally {
+        process.exitCode = originalExitCode;
+      }
     });
   });
 

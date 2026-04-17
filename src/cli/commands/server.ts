@@ -8,7 +8,6 @@ import {
   removePortfile,
   writePortfile,
 } from "../../server/portfile.js";
-import { ExitCode, setExitCode } from "../helpers.js";
 import { getCliSpawnArgs } from "../spawn-args.js";
 
 export interface ServerStartOptions {
@@ -76,6 +75,27 @@ async function startServerDaemon(options: ServerStartOptions): Promise<void> {
 }
 
 /**
+ * Run shutdown actions for a foreground server: close the HTTP server, flush
+ * library state via dispose(), and remove the portfile.
+ *
+ * Intentionally does NOT set process.exitCode. dispose() sets exitCode=1 when
+ * the shutdown save fails (see server/index.ts), and unconditionally writing
+ * SUCCESS here would erase that signal and let the CLI exit 0 despite lost
+ * writes. When everything succeeds we simply leave exitCode untouched —
+ * Node exits 0 in that case.
+ */
+export async function runShutdown(
+  server: { close: () => void },
+  dispose: () => Promise<void>,
+  portfilePath: string
+): Promise<void> {
+  process.stdout.write("\nShutting down...\n");
+  server.close();
+  await dispose();
+  await removePortfile(portfilePath);
+}
+
+/**
  * Start server in foreground mode.
  * Server runs until interrupted (Ctrl+C).
  */
@@ -97,14 +117,7 @@ async function startServerForeground(options: ServerStartOptions): Promise<void>
       const addr = server.address() as { port: number };
       resolve(addr.port);
 
-      // Cleanup handler
-      const cleanup = async () => {
-        process.stdout.write("\nShutting down...\n");
-        server.close();
-        await dispose();
-        await removePortfile(options.portfilePath);
-        setExitCode(ExitCode.SUCCESS);
-      };
+      const cleanup = () => runShutdown(server, dispose, options.portfilePath);
 
       // Handle termination signals
       process.on("SIGINT", cleanup);
