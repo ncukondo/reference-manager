@@ -1,8 +1,17 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as fileUtils from "../utils/file";
 import type { CslItem } from "./csl-json/types";
 import { Library } from "./library";
+
+vi.mock("../utils/file", async () => {
+  const actual = await vi.importActual<typeof import("../utils/file")>("../utils/file");
+  return {
+    ...actual,
+    writeFileAtomic: vi.fn(actual.writeFileAtomic),
+  };
+});
 
 describe("Library", () => {
   const testDir = join(process.cwd(), "tests", "temp");
@@ -1062,6 +1071,58 @@ describe("Library", () => {
 
       expect(reloaded).toBe(false);
       expect(await library.getAll()).toHaveLength(3);
+    });
+
+    it("should not poison currentHash when an external write races save()", async () => {
+      // Regression test for the non-atomic hash-update race:
+      // If save() reads the file *after* writing to compute currentHash,
+      // an external writer that overwrites the file in that window will
+      // poison currentHash with the external content's hash. A later
+      // reload() then reads the same external content, sees matching
+      // hashes, and silently skips the reload as a "self-write".
+      //
+      // Fix: compute currentHash from the in-memory bytes we serialized,
+      // not by re-reading the file. The test simulates the race by
+      // intercepting writeFileAtomic to overwrite the file immediately
+      // after our own write completes.
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+      const ourItem: CslItem = {
+        id: "ours",
+        type: "article-journal",
+        title: "Ours",
+      };
+      await library.add(ourItem);
+
+      const externalItems = [
+        {
+          id: "external-race",
+          type: "article-journal",
+          title: "External race winner",
+        },
+      ];
+      const externalContent = JSON.stringify(externalItems, null, 2);
+
+      // Next save()-triggered write: complete the real write, then
+      // immediately overwrite the file with external content to model a
+      // concurrent writer landing inside save()'s hash window.
+      const actualFile = await vi.importActual<typeof import("../utils/file")>("../utils/file");
+      vi.mocked(fileUtils.writeFileAtomic).mockImplementationOnce(
+        async (filePath: string, content: string) => {
+          await actualFile.writeFileAtomic(filePath, content);
+          await writeFile(filePath, externalContent, "utf-8");
+        }
+      );
+
+      await library.save();
+
+      // Disk is now external content, but currentHash must reflect what
+      // we wrote (hash of our serialized in-memory state). A reload()
+      // therefore must detect the external content and reload it.
+      const didReload = await library.reload();
+      expect(didReload).toBe(true);
+      expect(await library.find("external-race")).toBeDefined();
+      expect(await library.find("ours")).toBeUndefined();
     });
 
     it("should reload after external modification following self-write", async () => {
