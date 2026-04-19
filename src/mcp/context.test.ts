@@ -5,6 +5,28 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ILibraryOperations } from "../features/operations/library-operations.js";
 import { createMcpContext } from "./context.js";
 
+/**
+ * Poll a predicate until it returns a truthy value or the timeout elapses.
+ * Used instead of a fixed setTimeout to avoid timing-sensitive flakes when
+ * waiting for debounced/async reloads after FileWatcher emits a change.
+ */
+async function waitFor<T>(
+  fn: () => Promise<T | undefined | null | false> | T | undefined | null | false,
+  options: { timeoutMs?: number; pollMs?: number; label?: string } = {}
+): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? 2000;
+  const pollMs = options.pollMs ?? 10;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const result = await fn();
+    if (result) return result as T;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitFor timed out after ${timeoutMs}ms${options.label ? ` (${options.label})` : ""}`
+  );
+}
+
 describe("McpContext", () => {
   let tempDir: string;
   let libraryPath: string;
@@ -170,8 +192,12 @@ describe("McpContext", () => {
         // Emit change event manually (simulating file watcher)
         ctx.fileWatcher.emit("change");
 
-        // Wait for async reload
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        // Poll until the async reload visible effect lands. A fixed
+        // setTimeout against the debounce window is timing-sensitive under
+        // shared-machine load.
+        await waitFor(async () => (await ctx.libraryOperations.find("external2024")) ?? null, {
+          label: "reload picks up external2024",
+        });
 
         // Library should be reloaded with new content
         expect(await ctx.libraryOperations.getAll()).toHaveLength(1);

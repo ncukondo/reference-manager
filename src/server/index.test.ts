@@ -6,6 +6,28 @@ import type { Config } from "../config/schema.js";
 import { Library } from "../core/library.js";
 import { createServer, startServerWithFileWatcher } from "./index.js";
 
+/**
+ * Poll a predicate until it returns a truthy value or the timeout elapses.
+ * Used instead of a fixed setTimeout to avoid timing-sensitive flakes when
+ * waiting for debounced/async reloads after FileWatcher emits a change.
+ */
+async function waitFor<T>(
+  fn: () => Promise<T | undefined | null | false> | T | undefined | null | false,
+  options: { timeoutMs?: number; pollMs?: number; label?: string } = {}
+): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? 2000;
+  const pollMs = options.pollMs ?? 10;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const result = await fn();
+    if (result) return result as T;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitFor timed out after ${timeoutMs}ms${options.label ? ` (${options.label})` : ""}`
+  );
+}
+
 describe("Server", () => {
   let testLibraryPath: string;
   let testPortfilePath: string;
@@ -184,8 +206,12 @@ describe("startServerWithFileWatcher", () => {
       // Emit change event manually (simulating file watcher)
       result.fileWatcher.emit("change");
 
-      // Wait for async reload
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Poll until the async reload visible effect lands. A fixed
+      // setTimeout against the debounce window is timing-sensitive under
+      // shared-machine load.
+      await waitFor(async () => (await result.library.find("external2024")) ?? null, {
+        label: "reload picks up external2024",
+      });
 
       // Library should be reloaded with new content
       expect(await result.library.getAll()).toHaveLength(1);
@@ -380,12 +406,18 @@ describe("startServerWithFileWatcher", () => {
 
       // Emit change event
       result.fileWatcher.emit("change");
-      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Verify updated data via API
-      const req2 = new Request("http://localhost/api/references");
-      const res2 = await result.app.fetch(req2);
-      const data2 = await res2.json();
+      // Poll the API until the reload is visible.
+      const data2 = await waitFor(
+        async () => {
+          const req = new Request("http://localhost/api/references");
+          const res = await result.app.fetch(req);
+          const body = (await res.json()) as Array<{ id: string }>;
+          return body.length === 1 && body[0].id === "updated2024" ? body : null;
+        },
+        { label: "API serves reloaded updated2024" }
+      );
+
       expect(data2).toHaveLength(1);
       expect(data2[0].id).toBe("updated2024");
     } finally {
