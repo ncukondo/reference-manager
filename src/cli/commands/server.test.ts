@@ -4,6 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../../config/schema.js";
+import * as portfile from "../../server/portfile.js";
 import { runShutdown, serverStart, serverStatus, serverStop } from "./server.js";
 import type { ServerStartOptions } from "./server.js";
 
@@ -14,6 +15,19 @@ vi.mock("node:child_process", () => ({
     pid: 12345,
   })),
 }));
+
+// Wrap portfile exports so individual tests can force removePortfile to
+// throw (the real implementation swallows errors, which is not what we
+// want to exercise when verifying runShutdown's guard).
+vi.mock("../../server/portfile.js", async () => {
+  const actual = await vi.importActual<typeof import("../../server/portfile.js")>(
+    "../../server/portfile.js"
+  );
+  return {
+    ...actual,
+    removePortfile: vi.fn(actual.removePortfile),
+  };
+});
 
 // Create a minimal test config
 function createTestConfig(libraryPath: string): Config {
@@ -458,6 +472,66 @@ describe("server command", () => {
         // need to explicitly set SUCCESS here, and doing so would erase any
         // non-zero code a concurrent failure path may have set.
         expect(process.exitCode).toBeUndefined();
+      } finally {
+        process.exitCode = originalExitCode;
+      }
+    });
+
+    it("should continue with dispose and portfile cleanup if server.close() throws", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = {
+        close: vi.fn(() => {
+          throw new Error("close failed");
+        }),
+      };
+      const dispose = vi.fn(async () => {});
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+
+        // Must run dispose even though close() threw.
+        expect(dispose).toHaveBeenCalledTimes(1);
+        // Must remove portfile even though close() threw.
+        const portfileExists = await fs.access(testPortfilePath).then(
+          () => true,
+          () => false
+        );
+        expect(portfileExists).toBe(false);
+        // Must surface the failure via exitCode and stderr.
+        expect(process.exitCode).toBe(1);
+        expect(mockStderr.join("")).toMatch(/close/i);
+      } finally {
+        process.exitCode = originalExitCode;
+      }
+    });
+
+    it("should set exitCode=1 and log to stderr if removePortfile() throws", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = { close: vi.fn() };
+      const dispose = vi.fn(async () => {});
+
+      // Force removePortfile to throw so runShutdown's guard is exercised.
+      // (The real implementation swallows errors, which is why we need the
+      // guard in runShutdown rather than leaving it to the callee.)
+      vi.mocked(portfile.removePortfile).mockRejectedValueOnce(
+        new Error("simulated portfile removal failure")
+      );
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+
+        expect(process.exitCode).toBe(1);
+        expect(mockStderr.join("")).toMatch(/portfile/i);
       } finally {
         process.exitCode = originalExitCode;
       }

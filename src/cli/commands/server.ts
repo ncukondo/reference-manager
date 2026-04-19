@@ -78,11 +78,15 @@ async function startServerDaemon(options: ServerStartOptions): Promise<void> {
  * Run shutdown actions for a foreground server: close the HTTP server, flush
  * library state via dispose(), and remove the portfile.
  *
- * Intentionally does NOT set process.exitCode. dispose() sets exitCode=1 when
- * the shutdown save fails (see server/index.ts), and unconditionally writing
- * SUCCESS here would erase that signal and let the CLI exit 0 despite lost
- * writes. When everything succeeds we simply leave exitCode untouched —
- * Node exits 0 in that case.
+ * Each step is guarded: a failure in one stage logs to stderr and sets
+ * process.exitCode=1, but subsequent stages still run so we do not skip
+ * the save on a close() error or leave a stale portfile on a dispose()
+ * error. Mirrors how dispose() itself is robust to save() failures.
+ *
+ * Intentionally does NOT set process.exitCode on success. dispose() sets
+ * exitCode=1 internally when the shutdown save fails, and unconditionally
+ * writing SUCCESS here would erase that signal and let the CLI exit 0
+ * despite lost writes.
  */
 export async function runShutdown(
   server: { close: () => void },
@@ -90,9 +94,26 @@ export async function runShutdown(
   portfilePath: string
 ): Promise<void> {
   process.stdout.write("\nShutting down...\n");
-  server.close();
+
+  try {
+    server.close();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`Error closing HTTP server: ${message}\n`);
+    process.exitCode = 1;
+  }
+
+  // dispose() is expected to handle its own errors and set exitCode on
+  // failure; we do not re-wrap it here.
   await dispose();
-  await removePortfile(portfilePath);
+
+  try {
+    await removePortfile(portfilePath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`Error removing portfile: ${message}\n`);
+    process.exitCode = 1;
+  }
 }
 
 /**
