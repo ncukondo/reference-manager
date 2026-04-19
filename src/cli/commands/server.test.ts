@@ -343,6 +343,46 @@ describe("server command", () => {
       expect(mockStderr.join("")).toBe("");
     });
 
+    it("should warn with an EPERM-specific message (not a timeout message) when probes become unreachable after SIGTERM", async () => {
+      // Regression test for review3 #3: if signal-0 probes start throwing
+      // EPERM *after* SIGTERM is delivered, waitForPidExit bails but the
+      // warning text should distinguish the "unreachable" outcome from a
+      // true timeout — it previously said "did not exit within {timeoutMs}ms"
+      // even though no wait actually occurred.
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // First probe (liveness via serverStatus) succeeds; SIGTERM delivers
+      // cleanly; then signal-0 probes in waitForPidExit throw EPERM.
+      let sigtermSent = false;
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          if (!sigtermSent) return true;
+          const err = new Error("permission denied") as NodeJS.ErrnoException;
+          err.code = "EPERM";
+          throw err;
+        }
+        sigtermSent = true;
+        return true;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, { exitPollIntervalMs: 5, exitWaitTimeoutMs: 300 });
+
+      const stderr = mockStderr.join("");
+      // EPERM-specific wording — must mention EPERM or "unreachable".
+      expect(stderr).toMatch(/EPERM|unreachable/);
+      // Must NOT claim a timeout happened, since the wait loop did not run
+      // to completion.
+      expect(stderr).not.toContain("did not exit within");
+      expect(mockStdout.join("")).not.toContain("Server stopped successfully");
+    });
+
     it("should warn on stderr when the server PID does not exit before timeout", async () => {
       const serverPid = process.pid;
       const dir = path.dirname(testPortfilePath);

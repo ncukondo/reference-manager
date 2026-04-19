@@ -164,17 +164,33 @@ const DEFAULT_EXIT_POLL_INTERVAL_MS = 100;
 const DEFAULT_EXIT_WAIT_TIMEOUT_MS = 5000;
 
 /**
+ * Outcome of a PID-exit wait, distinguished so the caller can write a
+ * precise warning:
+ * - "exited":      process confirmed gone (ESRCH).
+ * - "timeout":     poll loop ran to the deadline with the process still
+ *                  alive.
+ * - "unreachable": a signal-0 probe threw a non-ESRCH error (e.g. EPERM),
+ *                  so we cannot tell whether the process exited.
+ */
+export interface WaitForPidExitResult {
+  status: "exited" | "timeout" | "unreachable";
+  /** Error code from the probe that caused an "unreachable" result. */
+  code?: string;
+  /** Error message from the probe that caused an "unreachable" result. */
+  message?: string;
+}
+
+/**
  * Poll the target PID with `process.kill(pid, 0)` until it throws ESRCH
- * (process gone) or the timeout elapses. Returns true on confirmed exit,
- * false on timeout or other signal failure.
+ * (process gone) or the timeout elapses.
  *
- * Matches the existing liveness-probe pattern used by isProcessRunning().
+ * Matches the liveness-probe pattern used by isProcessRunning().
  */
 async function waitForPidExit(
   pid: number,
   pollIntervalMs: number,
   timeoutMs: number
-): Promise<boolean> {
+): Promise<WaitForPidExitResult> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
@@ -182,16 +198,17 @@ async function waitForPidExit(
     } catch (error) {
       const code = (error as NodeJS.ErrnoException | undefined)?.code;
       if (code === "ESRCH") {
-        return true;
+        return { status: "exited" };
       }
-      // EPERM or other: process exists but we cannot probe it. Treat as
-      // "unknown — not confirmed exited" so the caller warns rather than
-      // falsely reports success.
-      return false;
+      // EPERM or other: process exists but we cannot probe it. Bail with
+      // a distinct "unreachable" status so the caller can word the warning
+      // accurately instead of falsely claiming a timeout.
+      const message = error instanceof Error ? error.message : String(error);
+      return { status: "unreachable", code: code ?? "UNKNOWN", message };
     }
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
-  return false;
+  return { status: "timeout" };
 }
 
 /**
@@ -216,12 +233,14 @@ export async function serverStop(
   // Signal the server process so its SIGTERM handler can flush state
   // (library save, watcher close, portfile removal) before exit.
   //
-  // exitConfirmed tracks whether we know the process is gone. ESRCH on
-  // SIGTERM means it died between the status check and the signal — same
-  // end-state as a successful wait, so we skip the poll loop entirely.
-  // Any other SIGTERM failure (e.g. EPERM) leaves the process running but
-  // unreachable; we warn and also skip the poll (it would only time out).
-  let exitConfirmed = false;
+  // waitResult captures what happened during the post-SIGTERM wait so
+  // the caller can produce a precise warning: "exited" (success),
+  // "timeout" (hung), or "unreachable" (probes failed with EPERM etc).
+  // ESRCH on SIGTERM means it died between the status check and the
+  // signal — same end-state as a successful wait.
+  // Any other SIGTERM failure leaves the process running but unreachable;
+  // we warn and skip the poll (it would only time out).
+  let waitResult: WaitForPidExitResult = { status: "unreachable", code: "UNKNOWN" };
   let sigtermDelivered = false;
   try {
     process.kill(status.pid, "SIGTERM");
@@ -229,7 +248,7 @@ export async function serverStop(
   } catch (error) {
     const code = (error as NodeJS.ErrnoException | undefined)?.code;
     if (code === "ESRCH") {
-      exitConfirmed = true;
+      waitResult = { status: "exited" };
     } else {
       const message = error instanceof Error ? error.message : String(error);
       process.stderr.write(
@@ -239,7 +258,7 @@ export async function serverStop(
   }
 
   if (sigtermDelivered) {
-    exitConfirmed = await waitForPidExit(status.pid, pollIntervalMs, timeoutMs);
+    waitResult = await waitForPidExit(status.pid, pollIntervalMs, timeoutMs);
   }
 
   // Portfile fallback removal: the server's own SIGTERM cleanup (see
@@ -250,17 +269,39 @@ export async function serverStop(
   // the server cleaned up first is harmless.
   await removePortfile(portfilePath);
 
-  if (exitConfirmed) {
+  reportShutdownOutcome(status.pid, waitResult, sigtermDelivered, timeoutMs);
+}
+
+/**
+ * Write the appropriate success / warning message for a shutdown attempt.
+ * Extracted to keep serverStop() under the cognitive-complexity cap.
+ */
+function reportShutdownOutcome(
+  pid: number,
+  waitResult: WaitForPidExitResult,
+  sigtermDelivered: boolean,
+  timeoutMs: number
+): void {
+  if (waitResult.status === "exited") {
     process.stdout.write("Server stopped successfully\n");
-  } else if (sigtermDelivered) {
-    // Timeout branch: SIGTERM was delivered but the PID is still alive
-    // after timeoutMs. Do NOT claim success — surface the hang so the
-    // operator can investigate (stuck save, blocked watcher close, etc.).
-    process.stderr.write(
-      `Warning: server (pid ${status.pid}) did not exit within ${timeoutMs}ms; portfile removed but process may still be running\n`
-    );
+    return;
   }
-  // EPERM branch: warning was already written above; no further output.
+  if (waitResult.status === "timeout") {
+    // SIGTERM was delivered but the PID is still alive after timeoutMs.
+    // Do NOT claim success — surface the hang so the operator can
+    // investigate (stuck save, blocked watcher close, etc.).
+    process.stderr.write(
+      `Warning: server (pid ${pid}) did not exit within ${timeoutMs}ms; portfile removed but process may still be running\n`
+    );
+    return;
+  }
+  // "unreachable": only warn here when SIGTERM succeeded — the pre-SIGTERM
+  // EPERM branch already wrote its own warning above.
+  if (!sigtermDelivered) return;
+  const detail = waitResult.message ? `: ${waitResult.message}` : "";
+  process.stderr.write(
+    `Warning: could not confirm server (pid ${pid}) exit — signal probe unreachable (${waitResult.code ?? "UNKNOWN"}${detail}); portfile removed but process may still be running\n`
+  );
 }
 
 /**
