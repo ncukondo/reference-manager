@@ -51,13 +51,10 @@ export function createReferencesRoute(library: Library, config?: Config) {
 
   // POST / - Create new reference
   route.post("/", async (c) => {
+    // Parse + validate request body. Failures here are the client's fault → 400.
+    let body: unknown;
     try {
-      const body = await c.req.json();
-
-      // Use addReference helper so add+save stay coupled (symmetric with PUT/DELETE).
-      const result = await addReference(library, { item: body });
-
-      return c.json(result.item, 201);
+      body = await c.req.json();
     } catch (error) {
       return c.json(
         {
@@ -65,6 +62,21 @@ export function createReferencesRoute(library: Library, config?: Config) {
           details: error instanceof Error ? error.message : String(error),
         },
         400
+      );
+    }
+
+    // Persist the reference. Failures here (save IO, library invariants)
+    // are server-side faults → 500. Do NOT conflate with parse errors.
+    try {
+      const result = await addReference(library, { item: body as never });
+      return c.json(result.item, 201);
+    } catch (error) {
+      return c.json(
+        {
+          error: "Failed to save reference",
+          details: error instanceof Error ? error.message : String(error),
+        },
+        500
       );
     }
   });

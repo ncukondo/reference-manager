@@ -196,6 +196,40 @@ describe("References Route", () => {
       expect(persisted).toHaveLength(1);
       expect(persisted[0].title).toBe("Persisted Article");
     });
+
+    it("should return 5xx when library.save() fails (not 400)", async () => {
+      // Simulate a disk-side failure (ENOSPC, EACCES, etc.) by making save()
+      // reject after the body has been successfully parsed and validated.
+      const originalSave = library.save.bind(library);
+      library.save = async () => {
+        throw Object.assign(new Error("ENOSPC: no space left on device"), {
+          code: "ENOSPC",
+        });
+      };
+
+      try {
+        const newRef = {
+          type: "article-journal" as const,
+          title: "Save Should Fail",
+        };
+
+        const req = new Request("http://localhost/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newRef),
+        });
+        const res = await route.fetch(req);
+
+        expect(res.status).toBeGreaterThanOrEqual(500);
+        expect(res.status).toBeLessThan(600);
+        const data = (await res.json()) as { error?: string };
+        expect(data).toHaveProperty("error");
+        // Must NOT misreport a save failure as "Invalid request body"
+        expect(data.error).not.toBe("Invalid request body");
+      } finally {
+        library.save = originalSave;
+      }
+    });
   });
 
   describe("PUT /uuid/:uuid", () => {
