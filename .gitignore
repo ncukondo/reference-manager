@@ -30,4 +30,5 @@ tmp/
 temp/
 *.tgz
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 .worker-status.json
