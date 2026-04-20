@@ -59,3 +59,6 @@ export type { ExportCommandOptions, ExportCommandResult } from "./export.js";
 
 export { executeEditCommand, formatEditOutput } from "./edit.js";
 export type { EditCommandOptions, EditCommandResult } from "./edit.js";
+
+export { formatUpgradeResult, registerUpgradeCommand, runUpgrade } from "./upgrade.js";
+export type { RunUpgradeDeps, RunUpgradeResult, UpgradeCommandOptions } from "./upgrade.js";

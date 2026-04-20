@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import packageJson from "../../package.json" with { type: "json" };
-import { createProgram, extractCommandName, hasNoUpdateCheckFlag } from "./index.js";
+import {
+  createProgram,
+  extractCommandName,
+  hasNoUpdateCheckFlag,
+  rewriteUpgradeVersionFlag,
+} from "./index.js";
 
 describe("CLI Entry", () => {
   describe("createProgram", () => {
@@ -225,6 +230,57 @@ describe("CLI Entry", () => {
         expect(hasNoUpdateCheckFlag(["node", "cli.js", "--no-update-check=value", "list"])).toBe(
           false
         );
+      });
+    });
+
+    describe("rewriteUpgradeVersionFlag", () => {
+      it("converts 'upgrade --version <tag>' to 'upgrade --version=<tag>'", () => {
+        expect(
+          rewriteUpgradeVersionFlag(["node", "cli.js", "upgrade", "--version", "v0.34.0"])
+        ).toEqual(["node", "cli.js", "upgrade", "--version=v0.34.0"]);
+      });
+
+      it("preserves other arguments around the rewritten flag", () => {
+        expect(
+          rewriteUpgradeVersionFlag([
+            "node",
+            "cli.js",
+            "upgrade",
+            "--check",
+            "--version",
+            "v0.0.0",
+            "--yes",
+          ])
+        ).toEqual(["node", "cli.js", "upgrade", "--check", "--version=v0.0.0", "--yes"]);
+      });
+
+      it("does not rewrite when the subcommand is not 'upgrade'", () => {
+        // `--version` on a non-upgrade command should remain untouched so the
+        // root program's version handler still fires.
+        expect(rewriteUpgradeVersionFlag(["node", "cli.js", "list", "--version"])).toEqual([
+          "node",
+          "cli.js",
+          "list",
+          "--version",
+        ]);
+        expect(rewriteUpgradeVersionFlag(["node", "cli.js", "--version"])).toEqual([
+          "node",
+          "cli.js",
+          "--version",
+        ]);
+      });
+
+      it("does not touch the already-merged '--version=<tag>' form", () => {
+        expect(
+          rewriteUpgradeVersionFlag(["node", "cli.js", "upgrade", "--version=v0.34.0"])
+        ).toEqual(["node", "cli.js", "upgrade", "--version=v0.34.0"]);
+      });
+
+      it("does not eat the next token when it starts with '-'", () => {
+        // `--version --check` — `--check` is another flag, not a value.
+        expect(
+          rewriteUpgradeVersionFlag(["node", "cli.js", "upgrade", "--version", "--check"])
+        ).toEqual(["node", "cli.js", "upgrade", "--version", "--check"]);
       });
     });
 

@@ -41,6 +41,7 @@ export default defineConfig({
         "node:buffer",
         "node:readline",
         "node:module",
+        "node:util",
         "@citation-js/core",
         "@citation-js/plugin-bibtex",
         "@citation-js/plugin-csl",
