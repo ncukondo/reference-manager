@@ -61,6 +61,7 @@ import {
 import { serverStart, serverStatus, serverStop } from "./commands/server.js";
 import { handleShowAction } from "./commands/show.js";
 import { collectSetOption, handleUpdateAction } from "./commands/update.js";
+import { registerUpgradeCommand } from "./commands/upgrade.js";
 import { handleUrlAction } from "./commands/url.js";
 import { handleCompletion, registerCompletionCommand } from "./completion.js";
 import { type ExecutionContext, createExecutionContext } from "./execution-context.js";
@@ -133,6 +134,7 @@ export function createProgram(): Command {
   registerUrlCommand(program);
   registerInstallCommand(program);
   registerConfigCommand(program);
+  registerUpgradeCommand(program);
   registerCompletionCommand(program);
 
   return program;
@@ -1078,6 +1080,34 @@ export function hasNoUpdateCheckFlag(argv: string[]): boolean {
 }
 
 /**
+ * Rewrite `ref upgrade --version <tag>` to `ref upgrade --version=<tag>`.
+ *
+ * The program has `.version(packageJson.version)` which registers a no-arg
+ * `--version` flag at the root. Commander's parser consumes the root
+ * `--version` before subcommand options, so the space-separated form is
+ * caught by the root (prints + exits) instead of reaching `upgrade`'s
+ * `--version <tag>`. The `=` form binds the value to the subcommand's
+ * option and sidesteps the root flag.
+ */
+export function rewriteUpgradeVersionFlag(argv: string[]): string[] {
+  if (extractCommandName(argv) !== "upgrade") return argv;
+  const out: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const token = argv[i];
+    if (token === "--version" && i + 1 < argv.length) {
+      const next = argv[i + 1];
+      if (next !== undefined && !next.startsWith("-")) {
+        out.push(`--version=${next}`);
+        i++;
+        continue;
+      }
+    }
+    if (token !== undefined) out.push(token);
+  }
+  return out;
+}
+
+/**
  * Main CLI entry point
  */
 export async function main(argv: string[]): Promise<void> {
@@ -1098,11 +1128,13 @@ export async function main(argv: string[]): Promise<void> {
     setExitCode(ExitCode.SUCCESS);
   });
 
+  const normalizedArgv = rewriteUpgradeVersionFlag(argv);
+
   // Kick off async update check before command runs. The notifier registers
   // its own exit listener to print the notice after the user's command.
-  maybeStartUpdateCheck(extractCommandName(argv, program), {
-    noUpdateCheck: hasNoUpdateCheckFlag(argv),
+  maybeStartUpdateCheck(extractCommandName(normalizedArgv, program), {
+    noUpdateCheck: hasNoUpdateCheckFlag(normalizedArgv),
   });
 
-  await program.parseAsync(argv);
+  await program.parseAsync(normalizedArgv);
 }

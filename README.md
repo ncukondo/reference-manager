@@ -93,6 +93,29 @@ irm https://raw.githubusercontent.com/ncukondo/reference-manager/main/install.ps
 
 You can also download binaries directly from [GitHub Releases](https://github.com/ncukondo/reference-manager/releases/latest).
 
+### Upgrading
+
+```bash
+ref upgrade          # Upgrade to the latest release via the detected install method
+ref upgrade --check  # Report current vs. latest without applying the upgrade
+```
+
+`ref upgrade` detects whether you installed via `install.sh` (single binary),
+`npm i -g`, `npm link`, or `npx`, then applies the right strategy:
+
+- **Single binary**: downloads the platform asset from GitHub Releases,
+  verifies it, and atomically replaces the running binary.
+- **npm global**: prints the `npm i -g @ncukondo/reference-manager@latest`
+  command (or runs it with `--yes`).
+- **Dev / npx**: prints guidance and exits.
+
+Pin a specific release with `--version v0.33.4`. Override the target
+directory for the single-binary strategy with `--install-dir <path>`.
+
+Running any command on a TTY also prints a one-line notice when a newer
+release is available. Set `REFERENCE_MANAGER_NO_UPDATE_CHECK=1` or pass
+`--no-update-check` to silence it.
+
 ### From npm
 
 Requires Node.js 22 or later:
