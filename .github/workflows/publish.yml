@@ -46,7 +46,11 @@ jobs:
           cache: 'npm'
 
       - name: Upgrade npm for Trusted Publishers OIDC
-        run: npm install -g npm@latest
+        # Pinned to 11.5.2: npm@11.6.0+ ships a global-install regression
+        # ("Cannot find module 'promise-retry'") that breaks `npm i -g npm@latest`
+        # on GitHub Actions hosted runners. 11.5.x is the first line with
+        # Trusted Publishers OIDC support, so this is sufficient for provenance.
+        run: npm install -g npm@11.5.2
 
       - name: Check npm version
         run: npm --version
