@@ -112,6 +112,7 @@ Stage 1 (Steps 1–3) delivers value on its own — users can discover updates e
 - [ ] Create stub: `src/cli/commands/upgrade.ts` with Commander wiring and `runUpgrade(options)` handler
 - [ ] Verify Red
 - [ ] Implement: register command in `src/cli/commands/index.ts`; share version-info fetching with Step 1
+- [ ] **Call `detectInstallMethod()` from `src/upgrade/detect.ts`** to pick the strategy — Stage 1 exported this but never wired it in; Step 4 / Step 6 is where it actually runs in production (see also the `TODO(stage2)` comment at the top of `src/upgrade/detect.ts`)
 - [ ] Verify Green
 - [ ] Lint/Type check
 

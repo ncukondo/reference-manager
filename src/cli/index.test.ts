@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import packageJson from "../../package.json" with { type: "json" };
-import { createProgram } from "./index.js";
+import { createProgram, extractCommandName, hasNoUpdateCheckFlag } from "./index.js";
 
 describe("CLI Entry", () => {
   describe("createProgram", () => {
@@ -166,6 +166,65 @@ describe("CLI Entry", () => {
         expect(subcommands).toContain("attach");
         expect(subcommands).toContain("url");
         expect(subcommands).toContain("config");
+      });
+    });
+
+    describe("extractCommandName", () => {
+      it("returns the first non-option token", () => {
+        expect(extractCommandName(["node", "cli.js", "list"])).toBe("list");
+      });
+
+      it("returns empty string when no subcommand is given", () => {
+        expect(extractCommandName(["node", "cli.js"])).toBe("");
+      });
+
+      it("skips boolean global flags", () => {
+        expect(extractCommandName(["node", "cli.js", "--quiet", "search", "term"])).toBe("search");
+      });
+
+      it("skips global options that take a value", () => {
+        expect(
+          extractCommandName(["node", "cli.js", "--library", "/tmp/lib.json", "upgrade"])
+        ).toBe("upgrade");
+      });
+
+      it("recognizes 'mcp' subcommand", () => {
+        expect(extractCommandName(["node", "cli.js", "mcp"])).toBe("mcp");
+      });
+
+      it("recognizes 'server' subcommand even after global flag", () => {
+        expect(extractCommandName(["node", "cli.js", "--verbose", "server", "start"])).toBe(
+          "server"
+        );
+      });
+    });
+
+    describe("hasNoUpdateCheckFlag", () => {
+      it("returns true when --no-update-check is in argv", () => {
+        expect(hasNoUpdateCheckFlag(["node", "cli.js", "--no-update-check", "list"])).toBe(true);
+      });
+
+      it("returns false when --no-update-check is absent", () => {
+        expect(hasNoUpdateCheckFlag(["node", "cli.js", "list"])).toBe(false);
+      });
+
+      it("returns false for an empty argv tail", () => {
+        expect(hasNoUpdateCheckFlag(["node", "cli.js"])).toBe(false);
+      });
+
+      it("detects the flag when mixed with the 'upgrade' subcommand (flag after)", () => {
+        expect(hasNoUpdateCheckFlag(["node", "cli.js", "upgrade", "--no-update-check"])).toBe(true);
+      });
+
+      it("detects the flag when mixed with the 'upgrade' subcommand (flag before)", () => {
+        expect(hasNoUpdateCheckFlag(["node", "cli.js", "--no-update-check", "upgrade"])).toBe(true);
+      });
+
+      it("does not false-match --update-check or --no-update-check=value", () => {
+        expect(hasNoUpdateCheckFlag(["node", "cli.js", "--update-check", "list"])).toBe(false);
+        expect(hasNoUpdateCheckFlag(["node", "cli.js", "--no-update-check=value", "list"])).toBe(
+          false
+        );
       });
     });
 

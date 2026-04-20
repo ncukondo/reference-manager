@@ -32,9 +32,13 @@ Non-goals:
 On every CLI invocation, an async check compares the running version against the latest GitHub release. If a newer version is available, a one-line notice is printed **after** the user's command completes.
 
 ```
-✨ New version available: 0.33.4 → 0.34.0
-   Run: ref upgrade
+>>> New version available: 0.33.4 -> 0.34.0
+    Run: ref upgrade
 ```
+
+The notice uses ASCII-only characters so it renders legibly on legacy
+Windows terminals (cmd.exe / PowerShell with non-UTF-8 code pages) where
+fancy glyphs like `✨` and the unicode arrow can come out as mojibake.
 
 #### Suppression rules
 
