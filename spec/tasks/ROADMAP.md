@@ -173,9 +173,9 @@ Server mutations are not persisted to `library.json` — data lives only in memo
 
 Single-binary users have no built-in way to discover new releases. Add a non-intrusive version-check notification and a `ref upgrade` subcommand that detects the install method (single binary / npm global / dev) and upgrades appropriately. Two-stage rollout: notification first, `ref upgrade` second.
 
-- Task: `spec/tasks/20260420-01-self-upgrade.md`
+- Task: `spec/tasks/completed/20260420-01-self-upgrade.md`
 - Spec: `spec/features/self-upgrade.md`
-- Status: In Progress (Stage 1 done: PR #96 — update-check notifier, install-method detect; Stage 2 pending: `ref upgrade` subcommand)
+- Status: Done (Stage 1: PR #96, Stage 2: PR #97 closes #95)
 
 ---
 
