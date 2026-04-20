@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import packageJson from "../../package.json" with { type: "json" };
-import { createProgram } from "./index.js";
+import { createProgram, extractCommandName } from "./index.js";
 
 describe("CLI Entry", () => {
   describe("createProgram", () => {
@@ -166,6 +166,36 @@ describe("CLI Entry", () => {
         expect(subcommands).toContain("attach");
         expect(subcommands).toContain("url");
         expect(subcommands).toContain("config");
+      });
+    });
+
+    describe("extractCommandName", () => {
+      it("returns the first non-option token", () => {
+        expect(extractCommandName(["node", "cli.js", "list"])).toBe("list");
+      });
+
+      it("returns empty string when no subcommand is given", () => {
+        expect(extractCommandName(["node", "cli.js"])).toBe("");
+      });
+
+      it("skips boolean global flags", () => {
+        expect(extractCommandName(["node", "cli.js", "--quiet", "search", "term"])).toBe("search");
+      });
+
+      it("skips global options that take a value", () => {
+        expect(
+          extractCommandName(["node", "cli.js", "--library", "/tmp/lib.json", "upgrade"])
+        ).toBe("upgrade");
+      });
+
+      it("recognizes 'mcp' subcommand", () => {
+        expect(extractCommandName(["node", "cli.js", "mcp"])).toBe("mcp");
+      });
+
+      it("recognizes 'server' subcommand even after global flag", () => {
+        expect(extractCommandName(["node", "cli.js", "--verbose", "server", "start"])).toBe(
+          "server"
+        );
       });
     });
 

@@ -12,6 +12,7 @@ import {
   formatAddJsonOutput,
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
+import { flushUpdateNotice, maybeStartUpdateCheck } from "../upgrade/notifier.js";
 import {
   autoFetchFulltext,
   executeAdd,
@@ -1017,6 +1018,37 @@ function registerInstallCommand(program: Command): void {
 }
 
 /**
+ * Extract the subcommand name from argv (best-effort).
+ *
+ * Skips global options that take a value so things like `--library upgrade`
+ * are not misread as the `upgrade` subcommand.
+ */
+export function extractCommandName(argv: string[]): string {
+  const optionsWithValue = new Set([
+    "--library",
+    "--log-level",
+    "--config",
+    "--backup-dir",
+    "--attachments-dir",
+  ]);
+  let skipNext = false;
+  for (let i = 2; i < argv.length; i++) {
+    const token = argv[i];
+    if (!token) continue;
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    if (token.startsWith("-")) {
+      if (optionsWithValue.has(token)) skipNext = true;
+      continue;
+    }
+    return token;
+  }
+  return "";
+}
+
+/**
  * Main CLI entry point
  */
 export async function main(argv: string[]): Promise<void> {
@@ -1035,6 +1067,12 @@ export async function main(argv: string[]): Promise<void> {
 
   process.on("SIGTERM", () => {
     setExitCode(ExitCode.SUCCESS);
+  });
+
+  // Kick off async update check before command runs; print after process exit.
+  maybeStartUpdateCheck(extractCommandName(argv));
+  process.on("exit", () => {
+    flushUpdateNotice();
   });
 
   await program.parseAsync(argv);
