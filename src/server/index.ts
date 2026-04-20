@@ -100,7 +100,26 @@ export async function startServerWithFileWatcher(
   await fileWatcher.start();
 
   // Create dispose function
+  // Flush in-memory library state to disk before closing the watcher so that
+  // mutations applied during the server's lifetime survive shutdown.
+  //
+  // If save() fails, we record the failure via process.exitCode=1 (rather than
+  // throwing) so that watcher cleanup below still runs. Throwing here would
+  // abort dispose() midway and leak the file-watcher resources.
+  //
+  // Skip save() entirely when the library has no unsaved mutations — writing
+  // the file back out would produce identical bytes, waste disk I/O, and
+  // needlessly bump the file hash that FileWatcher uses for self-write
+  // detection.
   const dispose = async (): Promise<void> => {
+    if (library.isDirty()) {
+      try {
+        await library.save();
+      } catch (error) {
+        console.error("Failed to flush library on shutdown:", error);
+        process.exitCode = 1;
+      }
+    }
     fileWatcher.close();
   };
 

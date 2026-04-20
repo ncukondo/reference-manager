@@ -174,6 +174,62 @@ describe("References Route", () => {
       const data = await res.json();
       expect(data).toHaveProperty("error");
     });
+
+    it("should persist the created reference to disk", async () => {
+      const newRef = {
+        type: "article-journal" as const,
+        title: "Persisted Article",
+        author: [{ family: "Johnson", given: "Bob" }],
+      };
+
+      const req = new Request("http://localhost/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRef),
+      });
+      const res = await route.fetch(req);
+      expect(res.status).toBe(201);
+
+      // Verify persistence by reading the file directly
+      const fileContents = await fs.readFile(testLibraryPath, "utf-8");
+      const persisted = JSON.parse(fileContents) as CslItem[];
+      expect(persisted).toHaveLength(1);
+      expect(persisted[0].title).toBe("Persisted Article");
+    });
+
+    it("should return 5xx when library.save() fails (not 400)", async () => {
+      // Simulate a disk-side failure (ENOSPC, EACCES, etc.) by making save()
+      // reject after the body has been successfully parsed and validated.
+      const originalSave = library.save.bind(library);
+      library.save = async () => {
+        throw Object.assign(new Error("ENOSPC: no space left on device"), {
+          code: "ENOSPC",
+        });
+      };
+
+      try {
+        const newRef = {
+          type: "article-journal" as const,
+          title: "Save Should Fail",
+        };
+
+        const req = new Request("http://localhost/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newRef),
+        });
+        const res = await route.fetch(req);
+
+        expect(res.status).toBeGreaterThanOrEqual(500);
+        expect(res.status).toBeLessThan(600);
+        const data = (await res.json()) as { error?: string };
+        expect(data).toHaveProperty("error");
+        // Must NOT misreport a save failure as "Invalid request body"
+        expect(data.error).not.toBe("Invalid request body");
+      } finally {
+        library.save = originalSave;
+      }
+    });
   });
 
   describe("PUT /uuid/:uuid", () => {

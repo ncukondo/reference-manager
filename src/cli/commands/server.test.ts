@@ -4,7 +4,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../../config/schema.js";
-import { serverStart, serverStatus, serverStop } from "./server.js";
+import * as portfile from "../../server/portfile.js";
+import { runShutdown, serverStart, serverStatus, serverStop } from "./server.js";
 import type { ServerStartOptions } from "./server.js";
 
 // Mock child_process.spawn for daemon mode tests
@@ -14,6 +15,19 @@ vi.mock("node:child_process", () => ({
     pid: 12345,
   })),
 }));
+
+// Wrap portfile exports so individual tests can force removePortfile to
+// throw (the real implementation swallows errors, which is not what we
+// want to exercise when verifying runShutdown's guard).
+vi.mock("../../server/portfile.js", async () => {
+  const actual = await vi.importActual<typeof import("../../server/portfile.js")>(
+    "../../server/portfile.js"
+  );
+  return {
+    ...actual,
+    removePortfile: vi.fn(actual.removePortfile),
+  };
+});
 
 // Create a minimal test config
 function createTestConfig(libraryPath: string): Config {
@@ -154,6 +168,42 @@ describe("server command", () => {
   });
 
   describe("serverStop", () => {
+    let killSpy: ReturnType<typeof vi.spyOn>;
+
+    // Default mock: the initial signal-0 liveness probe succeeds (hits the
+    // real process.kill, which finds the test runner's own PID); once SIGTERM
+    // is delivered we flip to reporting ESRCH so the exit-wait loop can
+    // confirm shutdown within a single poll iteration. Tests that need a
+    // different shape (EPERM, never-exiting, already-gone) override via
+    // killSpy.mockImplementation().
+    beforeEach(() => {
+      const realKill = process.kill.bind(process);
+      let sigtermSent = false;
+      killSpy = vi.spyOn(process, "kill").mockImplementation(((
+        pid: number,
+        signal?: string | number
+      ) => {
+        if (signal === 0 || signal === undefined) {
+          if (sigtermSent) {
+            const err = new Error("no such process") as NodeJS.ErrnoException;
+            err.code = "ESRCH";
+            throw err;
+          }
+          return realKill(pid, signal as number | undefined);
+        }
+        sigtermSent = true;
+        return true;
+      }) as typeof process.kill);
+    });
+
+    afterEach(() => {
+      killSpy.mockRestore();
+    });
+
+    // Short timeouts keep serverStop tests snappy — the polling defaults
+    // (100ms / 5s) would add seconds of delay to every case.
+    const fastWaitOptions = { exitPollIntervalMs: 5, exitWaitTimeoutMs: 100 };
+
     it("should stop server and remove portfile", async () => {
       // Create portfile with mock PID (use process.pid for testing)
       const dir = path.dirname(testPortfilePath);
@@ -164,7 +214,7 @@ describe("server command", () => {
         "utf-8"
       );
 
-      await serverStop(testPortfilePath);
+      await serverStop(testPortfilePath, fastWaitOptions);
 
       // Verify portfile was removed
       const portfileExists = await fs.access(testPortfilePath).then(
@@ -175,6 +225,21 @@ describe("server command", () => {
 
       const output = mockStdout.join("");
       expect(output).toContain("Server stopped");
+    });
+
+    it("should send SIGTERM to the server process before removing the portfile", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      await serverStop(testPortfilePath, fastWaitOptions);
+
+      expect(killSpy).toHaveBeenCalledWith(serverPid, "SIGTERM");
     });
 
     it("should throw error if server not running (no portfile)", async () => {
@@ -192,6 +257,284 @@ describe("server command", () => {
       );
 
       await expect(serverStop(testPortfilePath)).rejects.toThrow("Server is not running");
+    });
+
+    it("should warn on stderr when SIGTERM fails with a non-ESRCH error (e.g. EPERM)", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // Simulate a permission error (e.g. process owned by a different user).
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          // Let liveness probe succeed so serverStatus returns a non-null value.
+          return true;
+        }
+        const err = new Error("permission denied") as NodeJS.ErrnoException;
+        err.code = "EPERM";
+        throw err;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, fastWaitOptions);
+
+      const stderrOutput = mockStderr.join("");
+      expect(stderrOutput).toContain("EPERM");
+
+      // Portfile should still be cleaned up so the CLI is not left in a stuck state.
+      const portfileExists = await fs.access(testPortfilePath).then(
+        () => true,
+        () => false
+      );
+      expect(portfileExists).toBe(false);
+    });
+
+    it("should stay silent when SIGTERM fails with ESRCH (process already gone)", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          return true;
+        }
+        const err = new Error("no such process") as NodeJS.ErrnoException;
+        err.code = "ESRCH";
+        throw err;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, fastWaitOptions);
+
+      expect(mockStderr.join("")).toBe("");
+    });
+
+    // --- review2 #4: exit-wait polling ---------------------------------------
+    // Before this change, serverStop() wrote "Server stopped successfully" the
+    // moment it sent SIGTERM, with no confirmation that the server process
+    // actually exited. A hung shutdown (e.g. a blocked file flush) would be
+    // falsely reported as success. These tests cover the new behavior: after
+    // SIGTERM, serverStop polls `process.kill(pid, 0)` until it throws ESRCH
+    // (success) or a short timeout elapses (stderr warning).
+
+    it("should report success after SIGTERM once the server PID exits", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // Simulate: the server exits in response to SIGTERM. The first liveness
+      // probe (serverStatus() -> isProcessRunning()) must still succeed so the
+      // "not running" branch is not taken; after SIGTERM is sent, subsequent
+      // signal-0 probes throw ESRCH to signal that the process is gone.
+      let sigtermSent = false;
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          if (!sigtermSent) return true;
+          const err = new Error("no such process") as NodeJS.ErrnoException;
+          err.code = "ESRCH";
+          throw err;
+        }
+        sigtermSent = true;
+        return true;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, { exitPollIntervalMs: 5, exitWaitTimeoutMs: 200 });
+
+      expect(mockStdout.join("")).toContain("Server stopped successfully");
+      expect(mockStderr.join("")).toBe("");
+    });
+
+    it("should warn with an EPERM-specific message (not a timeout message) when probes become unreachable after SIGTERM", async () => {
+      // Regression test for review3 #3: if signal-0 probes start throwing
+      // EPERM *after* SIGTERM is delivered, waitForPidExit bails but the
+      // warning text should distinguish the "unreachable" outcome from a
+      // true timeout — it previously said "did not exit within {timeoutMs}ms"
+      // even though no wait actually occurred.
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // First probe (liveness via serverStatus) succeeds; SIGTERM delivers
+      // cleanly; then signal-0 probes in waitForPidExit throw EPERM.
+      let sigtermSent = false;
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          if (!sigtermSent) return true;
+          const err = new Error("permission denied") as NodeJS.ErrnoException;
+          err.code = "EPERM";
+          throw err;
+        }
+        sigtermSent = true;
+        return true;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, { exitPollIntervalMs: 5, exitWaitTimeoutMs: 300 });
+
+      const stderr = mockStderr.join("");
+      // EPERM-specific wording — must mention EPERM or "unreachable".
+      expect(stderr).toMatch(/EPERM|unreachable/);
+      // Must NOT claim a timeout happened, since the wait loop did not run
+      // to completion.
+      expect(stderr).not.toContain("did not exit within");
+      expect(mockStdout.join("")).not.toContain("Server stopped successfully");
+    });
+
+    it("should warn on stderr when the server PID does not exit before timeout", async () => {
+      const serverPid = process.pid;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        testPortfilePath,
+        JSON.stringify({ port: 3000, pid: serverPid, library: "/path/to/library.json" }),
+        "utf-8"
+      );
+
+      // Simulate a hung shutdown: SIGTERM "delivers" (no throw) but the
+      // process keeps responding to signal-0 probes, so the exit-wait loop
+      // runs to its timeout.
+      killSpy.mockImplementation(((_pid: number, signal?: string | number) => {
+        if (signal === 0 || signal === undefined) {
+          return true;
+        }
+        return true;
+      }) as typeof process.kill);
+
+      await serverStop(testPortfilePath, { exitPollIntervalMs: 5, exitWaitTimeoutMs: 30 });
+
+      const stderr = mockStderr.join("");
+      expect(stderr).toContain("did not exit");
+      expect(stderr).toContain(String(serverPid));
+      // Success message must NOT appear when shutdown is not confirmed —
+      // that was the bug we are fixing.
+      expect(mockStdout.join("")).not.toContain("Server stopped successfully");
+    });
+  });
+
+  describe("runShutdown", () => {
+    // runShutdown is the extracted cleanup handler invoked on SIGINT/SIGTERM.
+    // It must NOT clobber process.exitCode — if dispose() flagged a shutdown
+    // failure (e.g. library.save() rejected), that non-zero code needs to
+    // survive to process exit. See review2 #1.
+
+    it("should preserve process.exitCode=1 when dispose sets it to signal save failure", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = { close: vi.fn() };
+      const dispose = vi.fn(async () => {
+        process.exitCode = 1;
+      });
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+        expect(process.exitCode).toBe(1);
+        expect(dispose).toHaveBeenCalledTimes(1);
+        expect(fakeServer.close).toHaveBeenCalledTimes(1);
+      } finally {
+        process.exitCode = originalExitCode;
+      }
+    });
+
+    it("should leave process.exitCode untouched on clean shutdown", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = { close: vi.fn() };
+      const dispose = vi.fn(async () => {});
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+        // Node exits with 0 when exitCode is left undefined — there is no
+        // need to explicitly set SUCCESS here, and doing so would erase any
+        // non-zero code a concurrent failure path may have set.
+        expect(process.exitCode).toBeUndefined();
+      } finally {
+        process.exitCode = originalExitCode;
+      }
+    });
+
+    it("should continue with dispose and portfile cleanup if server.close() throws", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = {
+        close: vi.fn(() => {
+          throw new Error("close failed");
+        }),
+      };
+      const dispose = vi.fn(async () => {});
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+
+        // Must run dispose even though close() threw.
+        expect(dispose).toHaveBeenCalledTimes(1);
+        // Must remove portfile even though close() threw.
+        const portfileExists = await fs.access(testPortfilePath).then(
+          () => true,
+          () => false
+        );
+        expect(portfileExists).toBe(false);
+        // Must surface the failure via exitCode and stderr.
+        expect(process.exitCode).toBe(1);
+        expect(mockStderr.join("")).toMatch(/close/i);
+      } finally {
+        process.exitCode = originalExitCode;
+      }
+    });
+
+    it("should set exitCode=1 and log to stderr if removePortfile() throws", async () => {
+      const originalExitCode = process.exitCode;
+      const dir = path.dirname(testPortfilePath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(testPortfilePath, "{}", "utf-8");
+
+      const fakeServer = { close: vi.fn() };
+      const dispose = vi.fn(async () => {});
+
+      // Force removePortfile to throw so runShutdown's guard is exercised.
+      // (The real implementation swallows errors, which is why we need the
+      // guard in runShutdown rather than leaving it to the callee.)
+      vi.mocked(portfile.removePortfile).mockRejectedValueOnce(
+        new Error("simulated portfile removal failure")
+      );
+
+      try {
+        process.exitCode = undefined;
+        await runShutdown(fakeServer, dispose, testPortfilePath);
+
+        expect(process.exitCode).toBe(1);
+        expect(mockStderr.join("")).toMatch(/portfile/i);
+      } finally {
+        process.exitCode = originalExitCode;
+      }
     });
   });
 

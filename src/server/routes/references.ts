@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Config, FulltextSource } from "../../config/schema.js";
 import type { Library } from "../../core/library.js";
+import { addReference } from "../../features/operations/add-reference.js";
 import {
   fulltextConvert,
   fulltextDiscover,
@@ -50,13 +51,10 @@ export function createReferencesRoute(library: Library, config?: Config) {
 
   // POST / - Create new reference
   route.post("/", async (c) => {
+    // Parse + validate request body. Failures here are the client's fault → 400.
+    let body: unknown;
     try {
-      const body = await c.req.json();
-
-      // Create and add reference (library.add handles validation and returns the added item)
-      const addedItem = await library.add(body);
-
-      return c.json(addedItem, 201);
+      body = await c.req.json();
     } catch (error) {
       return c.json(
         {
@@ -64,6 +62,21 @@ export function createReferencesRoute(library: Library, config?: Config) {
           details: error instanceof Error ? error.message : String(error),
         },
         400
+      );
+    }
+
+    // Persist the reference. Failures here (save IO, library invariants)
+    // are server-side faults → 500. Do NOT conflate with parse errors.
+    try {
+      const result = await addReference(library, { item: body as never });
+      return c.json(result.item, 201);
+    } catch (error) {
+      return c.json(
+        {
+          error: "Failed to save reference",
+          details: error instanceof Error ? error.message : String(error),
+        },
+        500
       );
     }
   });

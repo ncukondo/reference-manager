@@ -1,8 +1,17 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as fileUtils from "../utils/file";
 import type { CslItem } from "./csl-json/types";
 import { Library } from "./library";
+
+vi.mock("../utils/file", async () => {
+  const actual = await vi.importActual<typeof import("../utils/file")>("../utils/file");
+  return {
+    ...actual,
+    writeFileAtomic: vi.fn(actual.writeFileAtomic),
+  };
+});
 
 describe("Library", () => {
   const testDir = join(process.cwd(), "tests", "temp");
@@ -180,6 +189,87 @@ describe("Library", () => {
       const reloadedLibrary = await Library.load(testFilePath);
       const reloadedUuid = (await reloadedLibrary.find("smith-2023"))?.custom?.uuid;
       expect(reloadedUuid).toBe(originalUuid);
+    });
+  });
+
+  describe("isDirty", () => {
+    // The dirty flag lets callers (e.g. the HTTP server's dispose() hook)
+    // skip a no-op save on shutdown when the in-memory state already
+    // matches what is on disk. Mutations set it; save()/reload() clear it.
+
+    it("should be false after load", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should become true after add()", async () => {
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.add({ id: "new-2024", type: "article-journal", title: "t" });
+      expect(library.isDirty()).toBe(true);
+    });
+
+    it("should become true after a successful update()", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.update("smith-2023", { title: "New Title" });
+      expect(library.isDirty()).toBe(true);
+    });
+
+    it("should stay false when update() is a no-op (identifier not found)", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      const result = await library.update("does-not-exist", { title: "x" });
+      expect(result.updated).toBe(false);
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should become true after a successful remove()", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.remove("smith-2023");
+      expect(library.isDirty()).toBe(true);
+    });
+
+    it("should stay false when remove() is a no-op (identifier not found)", async () => {
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      const result = await library.remove("does-not-exist");
+      expect(result.removed).toBe(false);
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should be cleared by save()", async () => {
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.add({ id: "new-2024", type: "article-journal", title: "t" });
+      expect(library.isDirty()).toBe(true);
+
+      await library.save();
+      expect(library.isDirty()).toBe(false);
+    });
+
+    it("should be cleared by reload() (disk is the new authority)", async () => {
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+
+      await library.add({ id: "pending-2024", type: "article-journal", title: "t" });
+      expect(library.isDirty()).toBe(true);
+
+      // External writer replaces the file — reload() picks up that state,
+      // so our in-memory pending add is effectively discarded along with
+      // the dirty flag.
+      await writeFile(testFilePath, JSON.stringify(sampleItems, null, 2), "utf-8");
+      const reloaded = await library.reload();
+      expect(reloaded).toBe(true);
+      expect(library.isDirty()).toBe(false);
     });
   });
 
@@ -981,6 +1071,58 @@ describe("Library", () => {
 
       expect(reloaded).toBe(false);
       expect(await library.getAll()).toHaveLength(3);
+    });
+
+    it("should not poison currentHash when an external write races save()", async () => {
+      // Regression test for the non-atomic hash-update race:
+      // If save() reads the file *after* writing to compute currentHash,
+      // an external writer that overwrites the file in that window will
+      // poison currentHash with the external content's hash. A later
+      // reload() then reads the same external content, sees matching
+      // hashes, and silently skips the reload as a "self-write".
+      //
+      // Fix: compute currentHash from the in-memory bytes we serialized,
+      // not by re-reading the file. The test simulates the race by
+      // intercepting writeFileAtomic to overwrite the file immediately
+      // after our own write completes.
+      await writeFile(testFilePath, JSON.stringify([], null, 2), "utf-8");
+      const library = await Library.load(testFilePath);
+      const ourItem: CslItem = {
+        id: "ours",
+        type: "article-journal",
+        title: "Ours",
+      };
+      await library.add(ourItem);
+
+      const externalItems = [
+        {
+          id: "external-race",
+          type: "article-journal",
+          title: "External race winner",
+        },
+      ];
+      const externalContent = JSON.stringify(externalItems, null, 2);
+
+      // Next save()-triggered write: complete the real write, then
+      // immediately overwrite the file with external content to model a
+      // concurrent writer landing inside save()'s hash window.
+      const actualFile = await vi.importActual<typeof import("../utils/file")>("../utils/file");
+      vi.mocked(fileUtils.writeFileAtomic).mockImplementationOnce(
+        async (filePath: string, content: string) => {
+          await actualFile.writeFileAtomic(filePath, content);
+          await writeFile(filePath, externalContent, "utf-8");
+        }
+      );
+
+      await library.save();
+
+      // Disk is now external content, but currentHash must reflect what
+      // we wrote (hash of our serialized in-memory state). A reload()
+      // therefore must detect the external content and reload it.
+      const didReload = await library.reload();
+      expect(didReload).toBe(true);
+      expect(await library.find("external-race")).toBeDefined();
+      expect(await library.find("ours")).toBeUndefined();
     });
 
     it("should reload after external modification following self-write", async () => {

@@ -1,10 +1,32 @@
 import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../config/schema.js";
 import { Library } from "../core/library.js";
 import { createServer, startServerWithFileWatcher } from "./index.js";
+
+/**
+ * Poll a predicate until it returns a truthy value or the timeout elapses.
+ * Used instead of a fixed setTimeout to avoid timing-sensitive flakes when
+ * waiting for debounced/async reloads after FileWatcher emits a change.
+ */
+async function waitFor<T>(
+  fn: () => Promise<T | undefined | null | false> | T | undefined | null | false,
+  options: { timeoutMs?: number; pollMs?: number; label?: string } = {}
+): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? 2000;
+  const pollMs = options.pollMs ?? 10;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const result = await fn();
+    if (result) return result as T;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitFor timed out after ${timeoutMs}ms${options.label ? ` (${options.label})` : ""}`
+  );
+}
 
 describe("Server", () => {
   let testLibraryPath: string;
@@ -184,8 +206,12 @@ describe("startServerWithFileWatcher", () => {
       // Emit change event manually (simulating file watcher)
       result.fileWatcher.emit("change");
 
-      // Wait for async reload
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Poll until the async reload visible effect lands. A fixed
+      // setTimeout against the debounce window is timing-sensitive under
+      // shared-machine load.
+      await waitFor(async () => (await result.library.find("external2024")) ?? null, {
+        label: "reload picks up external2024",
+      });
 
       // Library should be reloaded with new content
       expect(await result.library.getAll()).toHaveLength(1);
@@ -244,6 +270,114 @@ describe("startServerWithFileWatcher", () => {
     expect(result.fileWatcher.isWatching()).toBe(false);
   });
 
+  it("should persist in-memory changes on dispose", async () => {
+    // The on-disk file is "[]" (from beforeEach). We mutate the library in
+    // memory without calling save(), which simulates the state we care about:
+    // unflushed, in-memory pending changes at shutdown time.
+    //
+    // Note: we intentionally do NOT rewrite the file from the outside here,
+    // because an external write would race with FileWatcher's debounced
+    // reload — any future tightening of debounceMs could make the in-memory
+    // state get clobbered by a reload before dispose() gets a chance to save.
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    await result.library.add({
+      type: "article-journal",
+      title: "Unflushed Item",
+      author: [{ family: "Doe", given: "Jane" }],
+    });
+
+    // Sanity check: on-disk file is still the pre-mutation "[]", so the test
+    // really is observing whether dispose() flushes in-memory state, not just
+    // echoing what was already on disk.
+    const beforeDispose = JSON.parse(await fs.readFile(libraryPath, "utf-8"));
+    expect(beforeDispose).toEqual([]);
+
+    await result.dispose();
+
+    const contents = await fs.readFile(libraryPath, "utf-8");
+    const persisted = JSON.parse(contents) as Array<{ title?: string }>;
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0].title).toBe("Unflushed Item");
+  });
+
+  it("should skip save() on dispose when no mutations occurred", async () => {
+    // Without a dirty-flag short-circuit, dispose() would unconditionally
+    // rewrite the library file on every shutdown, wasting I/O and tripping
+    // FileWatcher self-write detection for no benefit. Verify that a
+    // mutation-free dispose does NOT call save().
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    const saveSpy = vi.spyOn(result.library, "save");
+
+    try {
+      await result.dispose();
+      expect(saveSpy).not.toHaveBeenCalled();
+    } finally {
+      saveSpy.mockRestore();
+    }
+  });
+
+  it("should call save() on dispose when a mutation occurred", async () => {
+    // The complement of the above: after an add() the library is dirty, so
+    // dispose() must flush. (The existing 'should persist in-memory changes
+    // on dispose' test covers the file contents; this one pins the spy call
+    // so a future refactor cannot skip save() unconditionally.)
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    await result.library.add({
+      type: "article-journal",
+      title: "Dirty Marker",
+    });
+
+    const saveSpy = vi.spyOn(result.library, "save");
+
+    try {
+      await result.dispose();
+      expect(saveSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      saveSpy.mockRestore();
+    }
+  });
+
+  it("should set process.exitCode to 1 when save fails on dispose", async () => {
+    const result = await startServerWithFileWatcher(libraryPath, config);
+
+    // Mutate the library so dispose() will attempt to flush — the dirty
+    // short-circuit would otherwise skip save() entirely on a clean library
+    // and the spy below would never fire.
+    await result.library.add({
+      type: "article-journal",
+      title: "Flush Me",
+    });
+
+    const originalExitCode = process.exitCode;
+    const saveSpy = vi.spyOn(result.library, "save").mockRejectedValue(new Error("disk full"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      // Reset exitCode so the assertion is unambiguous.
+      process.exitCode = undefined;
+
+      // dispose() must NOT throw even when save rejects — throwing would abort
+      // watcher cleanup and leave resources dangling. Surfacing the failure
+      // via process.exitCode lets the CLI exit non-zero without that risk.
+      await expect(result.dispose()).resolves.toBeUndefined();
+
+      expect(process.exitCode).toBe(1);
+
+      // Watcher cleanup must still run even though save failed.
+      expect(result.fileWatcher.isWatching()).toBe(false);
+
+      // Error should be surfaced on stderr (via console.error).
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      process.exitCode = originalExitCode;
+      saveSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
   it("should serve requests with reloaded library data", async () => {
     const initialRef = {
       id: "server2024",
@@ -272,12 +406,18 @@ describe("startServerWithFileWatcher", () => {
 
       // Emit change event
       result.fileWatcher.emit("change");
-      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Verify updated data via API
-      const req2 = new Request("http://localhost/api/references");
-      const res2 = await result.app.fetch(req2);
-      const data2 = await res2.json();
+      // Poll the API until the reload is visible.
+      const data2 = await waitFor(
+        async () => {
+          const req = new Request("http://localhost/api/references");
+          const res = await result.app.fetch(req);
+          const body = (await res.json()) as Array<{ id: string }>;
+          return body.length === 1 && body[0].id === "updated2024" ? body : null;
+        },
+        { label: "API serves reloaded updated2024" }
+      );
+
       expect(data2).toHaveLength(1);
       expect(data2[0].id).toBe("updated2024");
     } finally {

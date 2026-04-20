@@ -37,35 +37,35 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 The direct `library.add()` call at `src/server/routes/references.ts:57` does not persist to disk.
 
-- [ ] Write test: `src/server/routes/references.test.ts` — verify that POST creates a reference AND persists it to disk
-- [ ] Implement: Add `await library.save()` after `library.add()` in the POST handler
-- [ ] Verify Green: `npm run test:unit -- references.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: `src/server/routes/references.test.ts` — verify that POST creates a reference AND persists it to disk
+- [x] Implement: Add `await library.save()` after `library.add()` in the POST handler
+- [x] Verify Green: `npm run test:unit -- references.test.ts`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Flush library on server shutdown (SIGINT/SIGTERM)
 
 The cleanup handler at `src/cli/commands/server.ts:101-107` calls `dispose()` but not `library.save()`.
 
-- [ ] Write test: verify that `dispose()` or cleanup triggers a save
-- [ ] Implement: Update `startServerWithFileWatcher` to return `library` so cleanup can call `library.save()`, or add save to `dispose()`
-- [ ] Verify Green
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: verify that `dispose()` or cleanup triggers a save
+- [x] Implement: Update `startServerWithFileWatcher` to return `library` so cleanup can call `library.save()`, or add save to `dispose()`
+- [x] Verify Green
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Send SIGTERM on `server stop`
 
 `serverStop()` at `src/cli/commands/server.ts:138-149` only removes the portfile without signaling the server process. The server process keeps running.
 
-- [ ] Write test: verify `serverStop` sends SIGTERM to the server process
-- [ ] Implement: Read PID from portfile and send `process.kill(pid, 'SIGTERM')` before removing portfile
-- [ ] Verify Green
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Write test: verify `serverStop` sends SIGTERM to the server process
+- [x] Implement: Read PID from portfile and send `process.kill(pid, 'SIGTERM')` before removing portfile
+- [x] Verify Green
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Close linked issue (include `Closes #93` in PR description)
-- [ ] Move this file to `spec/tasks/completed/`
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Close linked issue (include `Closes #93` in PR description)
+- [ ] Move this file to `spec/tasks/completed/` (done on main after merge)
