@@ -166,8 +166,8 @@ Enhance URL import with full metadata extraction: JSON-LD (Schema.org), citation
 
 Server mutations are not persisted to `library.json` — data lives only in memory until lost. POST `/api/references/` lacks `save()`, shutdown doesn't flush, `server stop` doesn't signal the process.
 
-- Task: `spec/tasks/20260417-01-server-persistence-fix.md`
-- Status: Pending
+- Task: `spec/tasks/completed/20260417-01-server-persistence-fix.md`
+- Status: Done (PR #94)
 
 ---
 
