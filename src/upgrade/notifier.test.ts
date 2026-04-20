@@ -126,6 +126,12 @@ describe("notifier", () => {
     expect(text).toContain("0.33.4");
     expect(text).toContain("0.34.0");
     expect(text).toContain("ref upgrade");
+    // The notice must use ASCII-only characters so it renders on legacy
+    // Windows terminals (cmd.exe / non-UTF-8 code pages).
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional ASCII-range check
+    expect(text).toMatch(/^[\x00-\x7f]*$/);
+    expect(text).not.toContain("✨");
+    expect(text).not.toContain("→");
   });
 
   it("prints nothing when the running version equals the latest", async () => {

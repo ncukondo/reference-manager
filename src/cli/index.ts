@@ -100,6 +100,10 @@ export function createProgram(): Command {
     .option("--attachments-dir <path>", "Override attachments directory")
     .option("--clipboard", "Copy output to system clipboard")
     .option("--no-clipboard", "Disable clipboard copy")
+    // Declared so Commander doesn't reject the flag; the actual suppression
+    // happens in hasNoUpdateCheckFlag() before parseAsync. Don't consult
+    // program.opts().updateCheck — by the time Commander parses, the async
+    // check has already started (or been skipped).
     .option("--no-update-check", "Disable the async update-version check");
 
   // Default action: `ref` (no subcommand) launches TUI search on TTY, shows help otherwise
@@ -1065,7 +1069,7 @@ export function extractCommandName(argv: string[], program?: Command): string {
  * Best-effort detection of `--no-update-check` in argv, without relying on
  * Commander having parsed yet (we start the async check before parseAsync).
  */
-function hasNoUpdateCheckFlag(argv: string[]): boolean {
+export function hasNoUpdateCheckFlag(argv: string[]): boolean {
   for (let i = 2; i < argv.length; i++) {
     const token = argv[i];
     if (token === "--no-update-check") return true;

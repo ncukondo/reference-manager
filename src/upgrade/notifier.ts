@@ -99,6 +99,6 @@ export function flushUpdateNotice(): void {
   if (result.latest === currentVersion) return;
   state.printed = true;
   output.write(
-    `\n✨ New version available: ${currentVersion} → ${result.latest}\n   Run: ref upgrade\n`
+    `\n>>> New version available: ${currentVersion} -> ${result.latest}\n    Run: ref upgrade\n`
   );
 }
