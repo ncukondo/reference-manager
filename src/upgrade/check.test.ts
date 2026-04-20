@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -35,7 +36,7 @@ describe("getLatestVersion", () => {
   let cachePath: string;
 
   beforeEach(() => {
-    testDir = join(tmpdir(), `upgrade-check-test-${Date.now()}-${Math.random()}`);
+    testDir = join(tmpdir(), `upgrade-check-test-${randomUUID()}`);
     mkdirSync(testDir, { recursive: true });
     cachePath = join(testDir, "update-check.json");
   });
@@ -175,7 +176,7 @@ describe("getLatestVersion", () => {
     ).resolves.toBeNull();
   });
 
-  it("returns null and preserves existing cache on GitHub 403 (rate limit)", async () => {
+  it("falls back to existing cache on GitHub 403 (rate limit)", async () => {
     const now = new Date("2026-04-20T12:00:00Z");
     const checkedAt = new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString();
     const existingCache = {
@@ -192,9 +193,43 @@ describe("getLatestVersion", () => {
       now: () => now,
     });
 
-    expect(result).toBeNull();
+    expect(result).toEqual(existingCache);
     const cached = JSON.parse(readFileSync(cachePath, "utf-8"));
     expect(cached).toEqual(existingCache);
+  });
+
+  it("returns null on GitHub 403 (rate limit) when no cache exists", async () => {
+    const now = new Date("2026-04-20T12:00:00Z");
+    const fetchFn = makeFetchStatus(403);
+
+    const result = await getLatestVersion({
+      cachePath,
+      fetch: fetchFn,
+      now: () => now,
+    });
+
+    expect(result).toBeNull();
+    expect(existsSync(cachePath)).toBe(false);
+  });
+
+  it("falls back to existing cache on GitHub 429 (secondary rate limit)", async () => {
+    const now = new Date("2026-04-20T12:00:00Z");
+    const checkedAt = new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString();
+    const existingCache = {
+      checkedAt,
+      latest: "0.33.0",
+      url: "https://example.com/old",
+    };
+    writeFileSync(cachePath, JSON.stringify(existingCache));
+    const fetchFn = makeFetchStatus(429);
+
+    const result = await getLatestVersion({
+      cachePath,
+      fetch: fetchFn,
+      now: () => now,
+    });
+
+    expect(result).toEqual(existingCache);
   });
 
   it("strips a leading 'v' from tag_name", async () => {

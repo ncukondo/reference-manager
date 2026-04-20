@@ -94,6 +94,11 @@ export async function getLatestVersion(
     return null;
   }
 
+  // On rate-limit (403/429), fall back to any existing cache per spec.
+  if (response.status === 403 || response.status === 429) {
+    return cached ?? null;
+  }
+
   if (!response.ok) {
     return null;
   }

@@ -1,12 +1,7 @@
 import { PassThrough } from "node:stream";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReleaseInfo } from "./check.js";
-import {
-  __pendingForTesting,
-  __resetForTesting,
-  flushUpdateNotice,
-  maybeStartUpdateCheck,
-} from "./notifier.js";
+import type * as NotifierModule from "./notifier.js";
 
 function captureStream(): { stream: NodeJS.WritableStream; output: () => string } {
   const stream = new PassThrough();
@@ -25,20 +20,22 @@ function release(latest: string): ReleaseInfo {
   };
 }
 
+async function freshNotifier(): Promise<typeof NotifierModule> {
+  vi.resetModules();
+  return await import("./notifier.js");
+}
+
 describe("notifier", () => {
   beforeEach(() => {
-    __resetForTesting();
-  });
-
-  afterEach(() => {
-    __resetForTesting();
+    vi.resetModules();
   });
 
   it("does not start a check when stdout is not a TTY", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.34.0"));
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: false,
       env: {},
       currentVersion: "0.33.4",
@@ -47,16 +44,16 @@ describe("notifier", () => {
     });
 
     expect(getLatest).not.toHaveBeenCalled();
-    expect(__pendingForTesting()).toBeNull();
     flushUpdateNotice();
     expect(output()).toBe("");
   });
 
-  it("does not start a check when REFERENCE_MANAGER_NO_UPDATE_CHECK=1", () => {
+  it("does not start a check when REFERENCE_MANAGER_NO_UPDATE_CHECK=1", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.34.0"));
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: true,
       env: { REFERENCE_MANAGER_NO_UPDATE_CHECK: "1" },
       currentVersion: "0.33.4",
@@ -69,13 +66,33 @@ describe("notifier", () => {
     expect(output()).toBe("");
   });
 
+  it("does not start a check when noUpdateCheck=true (e.g. --no-update-check)", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
+    const getLatest = vi.fn(async () => release("0.34.0"));
+    const { stream, output } = captureStream();
+
+    await maybeStartUpdateCheck("list", {
+      isTty: true,
+      env: {},
+      currentVersion: "0.33.4",
+      getLatest,
+      output: stream,
+      noUpdateCheck: true,
+    });
+
+    expect(getLatest).not.toHaveBeenCalled();
+    flushUpdateNotice();
+    expect(output()).toBe("");
+  });
+
   it.each(["upgrade", "completion", "mcp", "server"])(
     "does not start a check for the '%s' command",
-    (command) => {
+    async (command) => {
+      const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
       const getLatest = vi.fn(async () => release("0.34.0"));
       const { stream, output } = captureStream();
 
-      maybeStartUpdateCheck(command, {
+      await maybeStartUpdateCheck(command, {
         isTty: true,
         env: {},
         currentVersion: "0.33.4",
@@ -90,10 +107,11 @@ describe("notifier", () => {
   );
 
   it("prints a notice to the configured stream when a newer version is available", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.34.0"));
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
@@ -102,7 +120,6 @@ describe("notifier", () => {
     });
 
     expect(getLatest).toHaveBeenCalledTimes(1);
-    await __pendingForTesting();
     flushUpdateNotice();
 
     const text = output();
@@ -112,10 +129,11 @@ describe("notifier", () => {
   });
 
   it("prints nothing when the running version equals the latest", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.33.4"));
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
@@ -123,17 +141,16 @@ describe("notifier", () => {
       output: stream,
     });
 
-    await __pendingForTesting();
     flushUpdateNotice();
-
     expect(output()).toBe("");
   });
 
   it("prints nothing when the check returns null (network failure)", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => null);
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
@@ -141,13 +158,12 @@ describe("notifier", () => {
       output: stream,
     });
 
-    await __pendingForTesting();
     flushUpdateNotice();
-
     expect(output()).toBe("");
   });
 
-  it("returns synchronously without awaiting the async check", () => {
+  it("returns synchronously without awaiting the async check", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     let resolveCheck: (v: ReleaseInfo) => void = () => {};
     const pending = new Promise<ReleaseInfo>((r) => {
       resolveCheck = r;
@@ -156,7 +172,7 @@ describe("notifier", () => {
     const { stream, output } = captureStream();
 
     const before = Date.now();
-    maybeStartUpdateCheck("list", {
+    const checkDone = maybeStartUpdateCheck("list", {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
@@ -172,15 +188,17 @@ describe("notifier", () => {
     expect(output()).toBe("");
 
     resolveCheck(release("0.34.0"));
+    await checkDone;
   });
 
   it("does not throw when the check rejects", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => {
       throw new Error("boom");
     });
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
@@ -188,16 +206,37 @@ describe("notifier", () => {
       output: stream,
     });
 
-    await __pendingForTesting();
     expect(() => flushUpdateNotice()).not.toThrow();
     expect(output()).toBe("");
   });
 
+  it("registers the process 'exit' listener only once across repeated calls", async () => {
+    const { maybeStartUpdateCheck } = await freshNotifier();
+    const getLatest = vi.fn(async () => release("0.34.0"));
+    const { stream } = captureStream();
+
+    const before = process.listenerCount("exit");
+
+    for (let i = 0; i < 5; i++) {
+      await maybeStartUpdateCheck("list", {
+        isTty: true,
+        env: {},
+        currentVersion: "0.33.4",
+        getLatest,
+        output: stream,
+      });
+    }
+
+    const after = process.listenerCount("exit");
+    expect(after - before).toBe(1);
+  });
+
   it("does not double-print when flush is called twice", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.34.0"));
     const { stream, output } = captureStream();
 
-    maybeStartUpdateCheck("list", {
+    await maybeStartUpdateCheck("list", {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
@@ -205,7 +244,6 @@ describe("notifier", () => {
       output: stream,
     });
 
-    await __pendingForTesting();
     flushUpdateNotice();
     const first = output();
     flushUpdateNotice();

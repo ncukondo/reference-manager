@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +9,7 @@ describe("detectInstallMethod", () => {
   let testDir: string;
 
   beforeEach(() => {
-    testDir = join(tmpdir(), `upgrade-detect-test-${Date.now()}-${Math.random()}`);
+    testDir = join(tmpdir(), `upgrade-detect-test-${randomUUID()}`);
     mkdirSync(testDir, { recursive: true });
   });
 

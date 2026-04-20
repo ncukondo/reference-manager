@@ -17,6 +17,8 @@ export interface NotifierOptions {
   currentVersion?: string;
   getLatest?: () => Promise<ReleaseInfo | null>;
   output?: NodeJS.WritableStream;
+  /** When true, suppress the check (e.g. user passed `--no-update-check`). */
+  noUpdateCheck?: boolean;
 }
 
 interface NotifierState {
@@ -27,23 +29,45 @@ interface NotifierState {
 }
 
 let state: NotifierState | null = null;
-let pending: Promise<void> | null = null;
+let exitListenerRegistered = false;
 
-function isSuppressed(command: string, env: NodeJS.ProcessEnv, isTty: boolean): boolean {
+function ensureExitListener(): void {
+  if (exitListenerRegistered) return;
+  exitListenerRegistered = true;
+  process.on("exit", () => {
+    flushUpdateNotice();
+  });
+}
+
+function isSuppressed(
+  command: string,
+  env: NodeJS.ProcessEnv,
+  isTty: boolean,
+  noUpdateCheckFlag: boolean
+): boolean {
   if (!isTty) return true;
+  if (noUpdateCheckFlag) return true;
   if (env.REFERENCE_MANAGER_NO_UPDATE_CHECK === "1") return true;
   if (SUPPRESSED_COMMANDS.has(command)) return true;
   return false;
 }
 
-export function maybeStartUpdateCheck(command: string, options: NotifierOptions = {}): void {
+/**
+ * Kicks off the async update check. Returns a promise that resolves once the
+ * check is done (or immediately, if the check was suppressed). Production
+ * callers typically ignore the returned promise; tests can await it.
+ */
+export function maybeStartUpdateCheck(
+  command: string,
+  options: NotifierOptions = {}
+): Promise<void> {
   state = null;
-  pending = null;
 
   const env = options.env ?? process.env;
   const isTty = options.isTty ?? process.stdout.isTTY === true;
+  const noUpdateCheck = options.noUpdateCheck ?? false;
 
-  if (isSuppressed(command, env, isTty)) return;
+  if (isSuppressed(command, env, isTty, noUpdateCheck)) return Promise.resolve();
 
   const currentVersion = options.currentVersion ?? packageJson.version;
   const output = options.output ?? process.stderr;
@@ -56,8 +80,9 @@ export function maybeStartUpdateCheck(command: string, options: NotifierOptions 
     printed: false,
   };
   state = localState;
+  ensureExitListener();
 
-  pending = getLatest().then(
+  return getLatest().then(
     (release) => {
       localState.result = release;
     },
@@ -76,15 +101,4 @@ export function flushUpdateNotice(): void {
   output.write(
     `\n✨ New version available: ${currentVersion} → ${result.latest}\n   Run: ref upgrade\n`
   );
-}
-
-/** Test-only: returns the in-flight check promise (or null if none). */
-export function __pendingForTesting(): Promise<void> | null {
-  return pending;
-}
-
-/** Test-only: resets module state between tests. */
-export function __resetForTesting(): void {
-  state = null;
-  pending = null;
 }

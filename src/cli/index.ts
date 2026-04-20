@@ -12,7 +12,7 @@ import {
   formatAddJsonOutput,
 } from "../features/operations/json-output.js";
 import { getPortfilePath } from "../server/portfile.js";
-import { flushUpdateNotice, maybeStartUpdateCheck } from "../upgrade/notifier.js";
+import { maybeStartUpdateCheck } from "../upgrade/notifier.js";
 import {
   autoFetchFulltext,
   executeAdd,
@@ -99,7 +99,8 @@ export function createProgram(): Command {
     .option("--backup-dir <path>", "Override backup directory")
     .option("--attachments-dir <path>", "Override attachments directory")
     .option("--clipboard", "Copy output to system clipboard")
-    .option("--no-clipboard", "Disable clipboard copy");
+    .option("--no-clipboard", "Disable clipboard copy")
+    .option("--no-update-check", "Disable the async update-version check");
 
   // Default action: `ref` (no subcommand) launches TUI search on TTY, shows help otherwise
   program.action(async () => {
@@ -1018,19 +1019,30 @@ function registerInstallCommand(program: Command): void {
 }
 
 /**
+ * Collect flags (both `--long` and `-s`) for global options that take a value.
+ * Used by {@link extractCommandName} so the subcommand parser can skip the
+ * value after options like `--library <path>`.
+ */
+function collectValueTakingFlags(program: Command): Set<string> {
+  const flags = new Set<string>();
+  for (const opt of program.options) {
+    if (!opt.required && !opt.optional) continue;
+    if (opt.long) flags.add(opt.long);
+    if (opt.short) flags.add(opt.short);
+  }
+  return flags;
+}
+
+/**
  * Extract the subcommand name from argv (best-effort).
  *
  * Skips global options that take a value so things like `--library upgrade`
- * are not misread as the `upgrade` subcommand.
+ * are not misread as the `upgrade` subcommand. The set of value-taking
+ * options is derived from the Commander program itself, so it stays in sync
+ * with the option definitions above.
  */
-export function extractCommandName(argv: string[]): string {
-  const optionsWithValue = new Set([
-    "--library",
-    "--log-level",
-    "--config",
-    "--backup-dir",
-    "--attachments-dir",
-  ]);
+export function extractCommandName(argv: string[], program?: Command): string {
+  const valueTakingFlags = collectValueTakingFlags(program ?? createProgram());
   let skipNext = false;
   for (let i = 2; i < argv.length; i++) {
     const token = argv[i];
@@ -1040,12 +1052,25 @@ export function extractCommandName(argv: string[]): string {
       continue;
     }
     if (token.startsWith("-")) {
-      if (optionsWithValue.has(token)) skipNext = true;
+      // `--opt=value` bundles its value, no skip needed.
+      if (!token.includes("=") && valueTakingFlags.has(token)) skipNext = true;
       continue;
     }
     return token;
   }
   return "";
+}
+
+/**
+ * Best-effort detection of `--no-update-check` in argv, without relying on
+ * Commander having parsed yet (we start the async check before parseAsync).
+ */
+function hasNoUpdateCheckFlag(argv: string[]): boolean {
+  for (let i = 2; i < argv.length; i++) {
+    const token = argv[i];
+    if (token === "--no-update-check") return true;
+  }
+  return false;
 }
 
 /**
@@ -1069,10 +1094,10 @@ export async function main(argv: string[]): Promise<void> {
     setExitCode(ExitCode.SUCCESS);
   });
 
-  // Kick off async update check before command runs; print after process exit.
-  maybeStartUpdateCheck(extractCommandName(argv));
-  process.on("exit", () => {
-    flushUpdateNotice();
+  // Kick off async update check before command runs. The notifier registers
+  // its own exit listener to print the notice after the user's command.
+  maybeStartUpdateCheck(extractCommandName(argv, program), {
+    noUpdateCheck: hasNoUpdateCheckFlag(argv),
   });
 
   await program.parseAsync(argv);
