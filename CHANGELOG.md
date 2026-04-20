@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Self-Upgrade**: `ref upgrade` subcommand and update-check notifier (#95)
+  - One-line notice on TTY invocations when a newer GitHub release exists
+    (suppressed by `REFERENCE_MANAGER_NO_UPDATE_CHECK=1`, `--no-update-check`,
+    or non-TTY output)
+  - `ref upgrade` detects the install method via `realpathSync(process.argv[1])`
+    and dispatches to the matching strategy:
+    - Single binary (`~/.local/bin/ref` etc.): downloads the platform asset
+      from GitHub Releases, verifies with `--version`, then atomically
+      replaces (Unix) or rotates to `.old` (Windows)
+    - npm-global (`npm i -g …`): prints the recommended `npm i -g` command
+      (or runs it with `--yes`)
+    - Dev / npx: prints guidance and exits 2
+  - Options: `--check`, `--version <tag>`, `--yes`, `--install-dir <path>`
 - **URL Import (Phase 2)**: Enhanced metadata extraction for URL imports
   - JSON-LD (Schema.org) parsing with `@graph` support and nested objects
   - Automatic CSL type inference from JSON-LD `@type` (Legislation, Report, Article, etc.)
