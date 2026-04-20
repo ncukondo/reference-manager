@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import type { UpgradeResult } from "../../upgrade/apply-binary.js";
@@ -110,21 +111,25 @@ describe("runUpgrade", () => {
   });
 
   it("passes --check through to the binary strategy without mutating anything", async () => {
+    const assetUrl =
+      "https://github.com/ncukondo/reference-manager/releases/download/v0.34.0/ref-linux-x64";
     const upgradeBinaryFn = vi.fn(async () =>
       okResult({
         status: "guidance",
-        url: "https://github.com/ncukondo/reference-manager/releases/download/v0.34.0/ref-linux-x64",
+        url: assetUrl,
       })
     );
+    const { stream: stdout, output } = captureStream();
     const result = await runUpgrade(
       { check: true } as UpgradeCommandOptions,
-      defaultDeps({ installMethod: "binary", upgradeBinaryFn })
+      defaultDeps({ installMethod: "binary", upgradeBinaryFn, stdout })
     );
 
     expect(upgradeBinaryFn).toHaveBeenCalledTimes(1);
     const [firstCallArgs] = upgradeBinaryFn.mock.calls;
     expect(firstCallArgs?.[0]).toMatchObject({ check: true });
     expect(result.exitCode).toBe(0);
+    expect(output()).toContain(assetUrl);
   });
 
   it("passes --version and --yes through to the npm strategy", async () => {
@@ -162,7 +167,8 @@ describe("runUpgrade", () => {
     );
 
     const [firstCall] = upgradeBinaryFn.mock.calls;
-    expect(firstCall?.[0].destPath).toBe("/opt/custom/ref");
+    const expected = join("/opt/custom", process.platform === "win32" ? "ref.exe" : "ref");
+    expect(firstCall?.[0].destPath).toBe(expected);
   });
 
   it("exits 1 when the strategy returns status='error'", async () => {
@@ -227,6 +233,20 @@ describe("formatUpgradeResult", () => {
       message: "npm i -g @ncukondo/reference-manager@latest",
     });
     expect(text).toContain("npm i -g @ncukondo/reference-manager@latest");
+  });
+
+  it("appends the asset url for a binary guidance result (no message)", () => {
+    const url =
+      "https://github.com/ncukondo/reference-manager/releases/download/v0.34.0/ref-linux-x64";
+    const text = formatUpgradeResult({
+      status: "guidance",
+      fromVersion: "0.33.4",
+      toVersion: "0.34.0",
+      url,
+    });
+    expect(text).toContain("0.33.4");
+    expect(text).toContain("0.34.0");
+    expect(text).toContain(url);
   });
 
   it("formats an error result", () => {

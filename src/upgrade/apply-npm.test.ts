@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { type UpgradeNpmOptions, upgradeNpmGlobal } from "./apply-npm.js";
+import { type UpgradeNpmOptions, defaultRunCommand, upgradeNpmGlobal } from "./apply-npm.js";
 
 function baseOptions(overrides: Partial<UpgradeNpmOptions> = {}): UpgradeNpmOptions {
   return {
@@ -90,5 +90,26 @@ describe("upgradeNpmGlobal", () => {
     expect(result.message).toContain("@0.35.0");
     expect(result.toVersion).toBe("0.35.0");
     expect(getLatest).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a friendly message when npm is not on PATH (ENOENT)", async () => {
+    const runCommand = vi.fn(async () =>
+      defaultRunCommand("ref-nonexistent-binary-for-test-xyz", ["--version"])
+    );
+    const result = await upgradeNpmGlobal(baseOptions({ yes: true, runCommand }));
+
+    expect(result.status).toBe("error");
+    expect(result.error).toMatch(/not found in PATH/);
+    expect(result.error).not.toMatch(/spawn ENOENT/);
+  });
+});
+
+describe("defaultRunCommand", () => {
+  it("returns a friendly ENOENT message when the command is missing", async () => {
+    const result = await defaultRunCommand("ref-nonexistent-binary-for-test-xyz", ["--version"]);
+
+    expect(result.exitCode).toBe(127);
+    expect(result.stderr).toContain("not found in PATH");
+    expect(result.stderr).not.toContain("spawn ENOENT");
   });
 });

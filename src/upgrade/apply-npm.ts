@@ -39,7 +39,10 @@ function stripV(tag: string): string {
   return tag.startsWith("v") ? tag.slice(1) : tag;
 }
 
-async function defaultRunCommand(command: string, args: string[]): Promise<RunCommandResult> {
+export async function defaultRunCommand(
+  command: string,
+  args: string[]
+): Promise<RunCommandResult> {
   try {
     const { stdout, stderr } = await execFileAsync(command, args, { encoding: "utf-8" });
     return { exitCode: 0, stdout, stderr };
@@ -49,6 +52,13 @@ async function defaultRunCommand(command: string, args: string[]): Promise<RunCo
       stdout?: string;
       stderr?: string;
     };
+    if (err.code === "ENOENT") {
+      return {
+        exitCode: 127,
+        stdout: "",
+        stderr: `${command} not found in PATH — install Node.js to use the npm-global upgrade path`,
+      };
+    }
     const exitCode = typeof err.code === "number" ? err.code : 1;
     return {
       exitCode,

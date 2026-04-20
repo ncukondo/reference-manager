@@ -78,8 +78,10 @@ export function formatUpgradeResult(result: UpgradeResult): string {
       return `Upgraded ref ${from} -> ${to}`;
     case "already-up-to-date":
       return `Already up to date (${to})`;
-    case "guidance":
-      return result.message ? `${result.message}` : `Run the upgrade for ${from} -> ${to}`;
+    case "guidance": {
+      const base = result.message ?? `Run the upgrade for ${from} -> ${to}`;
+      return result.url ? `${base} (${result.url})` : base;
+    }
     case "error":
       return `Error: ${result.error ?? "upgrade failed"}`;
   }
