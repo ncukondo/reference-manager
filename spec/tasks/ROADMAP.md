@@ -175,7 +175,7 @@ Single-binary users have no built-in way to discover new releases. Add a non-int
 
 - Task: `spec/tasks/20260420-01-self-upgrade.md`
 - Spec: `spec/features/self-upgrade.md`
-- Status: Planned
+- Status: In Progress (Stage 1 done: PR #96 — update-check notifier, install-method detect; Stage 2 pending: `ref upgrade` subcommand)
 
 ---
 
