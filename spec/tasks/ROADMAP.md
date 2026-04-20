@@ -169,6 +169,14 @@ Server mutations are not persisted to `library.json` — data lives only in memo
 - Task: `spec/tasks/completed/20260417-01-server-persistence-fix.md`
 - Status: Done (PR #94)
 
+### Phase 50: Self-Upgrade UX (#95)
+
+Single-binary users have no built-in way to discover new releases. Add a non-intrusive version-check notification and a `ref upgrade` subcommand that detects the install method (single binary / npm global / dev) and upgrades appropriately. Two-stage rollout: notification first, `ref upgrade` second.
+
+- Task: `spec/tasks/20260420-01-self-upgrade.md`
+- Spec: `spec/features/self-upgrade.md`
+- Status: Planned
+
 ---
 
 ## Next Steps
