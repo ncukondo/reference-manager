@@ -22,10 +22,10 @@ Check current call sites before renaming — the code has grown since the issue 
 
 ### Step 1: Rename and update call sites
 
-- [ ] Rename both functions and update all imports/usages (grep for `normalizeIsbn`)
-- [ ] Update any test names referencing the old names
-- [ ] Verify Green: `npm run test:unit` (existing tests keep passing — no behavior change, no new tests needed)
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Rename both functions and update all imports/usages (grep for `normalizeIsbn`)
+- [x] Update any test names referencing the old names
+- [x] Verify Green: `npm run test:unit` (existing tests keep passing — no behavior change, no new tests needed)
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ## Completion Checklist
 

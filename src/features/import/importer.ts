@@ -32,7 +32,7 @@ import {
 import type { InputFormat } from "./detector.js";
 import { fetchArxiv, fetchDoi, fetchIsbn, fetchPmids } from "./fetcher.js";
 import type { FailureReason, PubmedConfig } from "./fetcher.js";
-import { normalizeArxiv, normalizeDoi, normalizeIsbn, normalizePmid } from "./normalizer.js";
+import { normalizeArxiv, normalizeDoi, normalizePmid, parseIsbnInput } from "./normalizer.js";
 import { parseBibtex, parseNbib, parseRis } from "./parser.js";
 import type { ArchiveResult } from "./url-archive.js";
 import { fetchUrl, fetchUrls } from "./url-fetcher.js";
@@ -97,7 +97,7 @@ function classifyIdentifiers(identifiers: string[]): ClassifiedIdentifiers {
     } else if (isArxiv(id)) {
       arxivs.push(normalizeArxiv(id));
     } else if (isIsbn(id)) {
-      isbns.push(normalizeIsbn(id));
+      isbns.push(parseIsbnInput(id));
     } else if (isPmid(id)) {
       pmids.push(normalizePmid(id));
     } else {

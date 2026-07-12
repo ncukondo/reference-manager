@@ -8,7 +8,7 @@
  * - Multiple whitespace-separated identifiers
  */
 
-import { normalizeArxiv, normalizeIsbn, normalizePmid } from "./normalizer.js";
+import { normalizeArxiv, normalizePmid, parseIsbnInput } from "./normalizer.js";
 
 /**
  * Supported input formats
@@ -319,8 +319,8 @@ export function isIsbn(input: string): boolean {
     return false;
   }
 
-  // Normalize input (removes ISBN: prefix if present, hyphens, spaces)
-  const normalized = normalizeIsbn(input);
+  // Parse input (removes ISBN: prefix if present, hyphens, spaces)
+  const normalized = parseIsbnInput(input);
 
   if (!normalized) {
     return false;
