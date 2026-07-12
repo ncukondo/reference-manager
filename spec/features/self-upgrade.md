@@ -133,7 +133,7 @@ Replacing the running binary on Unix is safe because the kernel keeps the inode 
 1. Download to `{dest}.tmp.{pid}`
 2. Verify the download: run `{tmp} --version` and confirm non-empty output matching `vX.Y.Z`
 3. `chmod +x {tmp}`
-4. `rm -f {dest}` then `mv {tmp} {dest}` (matches `install.sh:81-82`)
+4. `mv {tmp} {dest}` — POSIX `rename()` overwrites the destination atomically. No `rm` beforehand: deleting first would open a crash window with no binary installed at all.
 
 On Windows the running `.exe` cannot be deleted. Strategy: rename the running binary to `{dest}.old`, move the new binary to `{dest}`, best-effort delete `{dest}.old` on next run.
 

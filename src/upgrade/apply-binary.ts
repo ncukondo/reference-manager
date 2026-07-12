@@ -3,7 +3,8 @@
  *
  * Downloads the latest release asset for the current platform to
  * `{dest}.tmp.{pid}`, verifies it by invoking `--version`, then atomically
- * replaces the running binary.
+ * replaces the running binary: a single overwriting `rename()` on Unix, a
+ * `.old` rotation on Windows (where the running exe cannot be replaced).
  *
  * See: spec/features/self-upgrade.md §Atomic replace.
  */
@@ -205,9 +206,8 @@ function atomicReplace(
       }
       renameSync(tmpPath, destPath);
     } else {
-      if (existsSync(destPath)) {
-        rmSync(destPath, { force: true });
-      }
+      // POSIX rename() overwrites dest atomically; removing dest first would
+      // open a crash window with no binary installed at all.
       renameSync(tmpPath, destPath);
     }
   } catch (error) {

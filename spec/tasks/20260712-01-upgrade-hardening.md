@@ -31,9 +31,9 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 2: Atomic binary replacement on Unix
 
-- [ ] Write test: `src/upgrade/apply-binary.test.ts` — non-win32 replacement does NOT call `rmSync(destPath)` before rename; rename overwrites existing file
-- [ ] Implement: drop the pre-`rmSync` in the non-win32 branch (keep win32 `.old` dance as-is); align the module comment with reality
-- [ ] Verify Green, lint/typecheck
+- [x] Write test: `src/upgrade/apply-binary.test.ts` — non-win32 replacement does NOT call `rmSync(destPath)` before rename; rename overwrites existing file
+- [x] Implement: drop the pre-`rmSync` in the non-win32 branch (keep win32 `.old` dance as-is); align the module comment with reality
+- [x] Verify Green, lint/typecheck
 
 ### Step 3: Semver-aware notification
 

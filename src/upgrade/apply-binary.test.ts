@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type UpgradeBinaryOptions, computeAssetName, upgradeBinary } from "./apply-binary.js";
+
+// Spy on node:fs (real implementations preserved) so tests can assert *how*
+// the binary is replaced, not just the end state.
+vi.mock("node:fs", { spy: true });
 
 function makeFetchBinary(bytes: Uint8Array, status = 200): typeof globalThis.fetch {
   return vi.fn(async () => {
@@ -229,6 +233,20 @@ describe("upgradeBinary", () => {
     expect(existsSync(`${destPath}.tmp.12345`)).toBe(true);
     // Dest not replaced.
     expect(readFileSync(destPath, "utf-8")).toBe("old binary\n");
+  });
+
+  it("replaces the Unix binary with a single overwriting rename (no rm of dest)", async () => {
+    vi.mocked(rmSync).mockClear();
+    vi.mocked(renameSync).mockClear();
+
+    const result = await upgradeBinary(baseOptions());
+
+    expect(result.status).toBe("success");
+    expect(readFileSync(destPath, "utf-8")).toBe("new binary contents");
+    // Removing dest before the rename leaves a crash window with no binary
+    // installed at all; POSIX rename() alone overwrites atomically.
+    expect(vi.mocked(rmSync).mock.calls.map((call) => call[0])).not.toContain(destPath);
+    expect(vi.mocked(renameSync)).toHaveBeenCalledWith(`${destPath}.tmp.12345`, destPath);
   });
 
   it("on Windows, rotates dest to .old before moving new binary into place", async () => {
