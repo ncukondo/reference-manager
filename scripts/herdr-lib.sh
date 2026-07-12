@@ -73,7 +73,10 @@ pane_exists() {
 # already_open is false (freshly created, so the shell is guaranteed unused).
 ensure_workspace_for_dir() {
   local dir="$1" out
-  out=$(herdr worktree open --path "$dir" --no-focus --json 2>/dev/null || true)
+  # --cwd anchors the command to the parent repo workspace; without it,
+  # re-opening a worktree whose workspace was closed fails with
+  # "linked_worktree_source".
+  out=$(herdr worktree open --cwd "$HERDR_LIB_REPO_ROOT" --path "$dir" --no-focus --json 2>/dev/null || true)
   if [ -z "$out" ] || echo "$out" | jq -e '.error' >/dev/null 2>&1; then
     echo "herdr worktree open failed for $dir: $(echo "$out" | jq -r '.error.message // "no response"')" >&2
     return 1
