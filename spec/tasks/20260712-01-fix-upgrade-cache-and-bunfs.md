@@ -71,7 +71,7 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 3: Spec update
 
-- [ ] Update `spec/features/self-upgrade.md`: explicit `ref upgrade`/`--check` always bypasses the
+- [x] Update `spec/features/self-upgrade.md`: explicit `ref upgrade`/`--check` always bypasses the
       cache (notifier keeps 24h TTL); document bunfs/execPath destination resolution
 
 ## Manual Verification
