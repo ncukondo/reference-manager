@@ -175,17 +175,6 @@ if [ -z "$PROMPT" ]; then
   mkdir -p "$WORK_DIR/.claude"
   cat > "$WORK_DIR/.claude/settings.local.json" << SETTINGS_EOF
 {
-  "permissions": {
-    "allow": [
-      "Bash(*)",
-      "Read(*)",
-      "Write(*)",
-      "Edit(*)",
-      "Grep(*)",
-      "Glob(*)",
-      "mcp__serena__*"
-    ]
-  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "serena"
@@ -204,7 +193,7 @@ SETTINGS_EOF
 
   echo "starting" > "$STATE_FILE"
 
-  tmux send-keys -t "$PANE_ID" "CLAUDE_WORKER_ID='$PANE_ID' claude"
+  tmux send-keys -t "$PANE_ID" "CLAUDE_WORKER_ID='$PANE_ID' claude --permission-mode auto"
   sleep 1
   tmux send-keys -t "$PANE_ID" Enter
 

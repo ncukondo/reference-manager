@@ -11,9 +11,9 @@ set -euo pipefail
 #   - Must be inside a tmux session
 #
 # What it does:
-#   1. Writes .claude/settings.local.json for auto-permission + state hooks
+#   1. Writes .claude/settings.local.json for state hooks
 #   2. Splits a tmux pane (-d to keep focus on current pane)
-#   3. Launches claude interactively, waits for startup
+#   3. Launches claude interactively (--permission-mode auto), waits for startup
 #   4. Sends the prompt
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -31,8 +31,10 @@ if [ -z "${TMUX:-}" ]; then
   exit 1
 fi
 
-# --- 1. Auto-permission settings (always overwrite) ---
-echo "[$SCRIPT_NAME] Setting up auto-permission..."
+# --- 1. State-hook settings (always overwrite) ---
+# Permissions are handled by --permission-mode auto at launch (a classifier
+# auto-approves safe actions), so no blanket allow list is written here.
+echo "[$SCRIPT_NAME] Setting up state hooks..."
 mkdir -p "$WORKTREE_DIR/.claude"
 
 # State file directory for hook-based state tracking
@@ -51,17 +53,6 @@ echo "[$SCRIPT_NAME] State file: $STATE_FILE"
 
 cat > "$WORKTREE_DIR/.claude/settings.local.json" << SETTINGS_EOF
 {
-  "permissions": {
-    "allow": [
-      "Bash(*)",
-      "Read(*)",
-      "Write(*)",
-      "Edit(*)",
-      "Grep(*)",
-      "Glob(*)",
-      "mcp__serena__*"
-    ]
-  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "serena"
@@ -139,7 +130,7 @@ echo "starting" > "$STATE_FILE"
 # NOTE: text and Enter must be separate send-keys calls (sleep 1 between).
 # Set CLAUDE_WORKER_ID to identify this agent
 echo "[$SCRIPT_NAME] Launching Claude in pane $PANE_ID..."
-tmux send-keys -t "$PANE_ID" "CLAUDE_WORKER_ID='$PANE_ID' claude"
+tmux send-keys -t "$PANE_ID" "CLAUDE_WORKER_ID='$PANE_ID' claude --permission-mode auto"
 sleep 1
 tmux send-keys -t "$PANE_ID" Enter
 
