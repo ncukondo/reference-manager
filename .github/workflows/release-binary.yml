@@ -75,9 +75,15 @@ jobs:
           path: binaries
           merge-multiple: true
 
+      - name: Generate SHA256SUMS
+        run: |
+          cd binaries
+          sha256sum ref-* > SHA256SUMS
+          cat SHA256SUMS
+
       - name: Upload binaries to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ inputs.tag || github.ref_name }}"
-          gh release upload "$TAG" binaries/ref-* install.sh install.ps1 --clobber
+          gh release upload "$TAG" binaries/ref-* binaries/SHA256SUMS install.sh install.ps1 --clobber

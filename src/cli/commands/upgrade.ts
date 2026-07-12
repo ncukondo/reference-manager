@@ -142,6 +142,9 @@ export async function runUpgrade(
 
   const target = result.status === "error" ? stderr : stdout;
   target.write(`${formatUpgradeResult(result)}\n`);
+  if (result.notice) {
+    stderr.write(`${result.notice}\n`);
+  }
 
   return { exitCode: exitCodeFor(result.status), method: installMethod, result };
 }

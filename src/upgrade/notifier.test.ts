@@ -25,6 +25,33 @@ async function freshNotifier(): Promise<typeof NotifierModule> {
   return await import("./notifier.js");
 }
 
+describe("isNewerVersion", () => {
+  it.each([
+    // [latest, current, expected]
+    ["0.34.0", "0.33.4", true],
+    ["0.33.4", "0.33.4", false],
+    ["0.34.0", "0.35.0", false],
+    ["0.10.0", "0.9.0", true],
+    ["1.0.0", "1.0.0-beta.1", true],
+    ["1.0.0-rc.1", "1.0.0", false],
+    ["1.0.0-beta.2", "1.0.0-beta.1", true],
+    ["1.0.0-beta.1", "1.0.0-beta.2", false],
+    ["1.0.0-alpha.1", "1.0.0-alpha", true],
+    ["1.0.0-beta", "1.0.0-alpha", true],
+    ["1.0.0-rc.10", "1.0.0-rc.9", true],
+    ["1.0", "0.9.9", true],
+  ])("isNewerVersion(%s, %s) -> %s", async (latest, current, expected) => {
+    const { isNewerVersion } = await freshNotifier();
+    expect(isNewerVersion(latest, current)).toBe(expected);
+  });
+
+  it("falls back to plain inequality for unparseable versions", async () => {
+    const { isNewerVersion } = await freshNotifier();
+    expect(isNewerVersion("nightly", "0.33.4")).toBe(true);
+    expect(isNewerVersion("nightly", "nightly")).toBe(false);
+  });
+});
+
 describe("notifier", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -106,6 +133,29 @@ describe("notifier", () => {
     }
   );
 
+  it("default check calls getLatestVersion with no overrides, keeping the 3s timeout", async () => {
+    const getLatestVersion = vi.fn(async () => release("0.34.0"));
+    vi.doMock("./check.js", () => ({ getLatestVersion }));
+    try {
+      const { maybeStartUpdateCheck } = await freshNotifier();
+      const { stream } = captureStream();
+
+      await maybeStartUpdateCheck("list", {
+        isTty: true,
+        env: {},
+        currentVersion: "0.33.4",
+        output: stream,
+      });
+
+      expect(getLatestVersion).toHaveBeenCalledTimes(1);
+      // No timeoutMs override: the passive notifier path must keep the
+      // conservative default from check.ts (3s), unlike explicit `ref upgrade`.
+      expect(getLatestVersion).toHaveBeenCalledWith();
+    } finally {
+      vi.doUnmock("./check.js");
+    }
+  });
+
   it("prints a notice to the configured stream when a newer version is available", async () => {
     const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.34.0"));
@@ -143,6 +193,75 @@ describe("notifier", () => {
       isTty: true,
       env: {},
       currentVersion: "0.33.4",
+      getLatest,
+      output: stream,
+    });
+
+    flushUpdateNotice();
+    expect(output()).toBe("");
+  });
+
+  it("prints nothing when the running version is ahead of the latest release", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
+    const getLatest = vi.fn(async () => release("0.34.0"));
+    const { stream, output } = captureStream();
+
+    await maybeStartUpdateCheck("list", {
+      isTty: true,
+      env: {},
+      currentVersion: "0.35.0",
+      getLatest,
+      output: stream,
+    });
+
+    flushUpdateNotice();
+    expect(output()).toBe("");
+  });
+
+  it("compares version components numerically, not lexically", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
+    // Lexically "0.10.0" < "0.9.0"; numerically it is newer.
+    const getLatest = vi.fn(async () => release("0.10.0"));
+    const { stream, output } = captureStream();
+
+    await maybeStartUpdateCheck("list", {
+      isTty: true,
+      env: {},
+      currentVersion: "0.9.0",
+      getLatest,
+      output: stream,
+    });
+
+    flushUpdateNotice();
+    expect(output()).toContain("0.10.0");
+  });
+
+  it("notifies when the latest release finalizes the running pre-release", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
+    const getLatest = vi.fn(async () => release("1.0.0"));
+    const { stream, output } = captureStream();
+
+    await maybeStartUpdateCheck("list", {
+      isTty: true,
+      env: {},
+      currentVersion: "1.0.0-beta.1",
+      getLatest,
+      output: stream,
+    });
+
+    flushUpdateNotice();
+    expect(output()).toContain("1.0.0");
+  });
+
+  it("prints nothing when the latest release is a pre-release of the running version", async () => {
+    const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
+    const getLatest = vi.fn(async () => release("1.0.0-rc.1"));
+    const { stream, output } = captureStream();
+
+    await maybeStartUpdateCheck("list", {
+      isTty: true,
+      env: {},
+      currentVersion: "1.0.0",
       getLatest,
       output: stream,
     });
