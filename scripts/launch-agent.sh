@@ -57,7 +57,11 @@ cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
 SETTINGS_EOF
 
 # --- 3. Open workspace ---
-WORKSPACE_ID=$(ensure_workspace_for_dir "$WORKTREE_DIR")
+IFS=$'\t' read -r WORKSPACE_ID ALREADY_OPEN ROOT_PANE <<< "$(ensure_workspace_for_dir "$WORKTREE_DIR")"
+if [ -z "$WORKSPACE_ID" ]; then
+  echo "[$SCRIPT_NAME] ERROR: Could not open workspace for $WORKTREE_DIR" >&2
+  exit 1
+fi
 echo "[$SCRIPT_NAME] Workspace: $WORKSPACE_ID"
 
 # --- 4. Start claude ---
@@ -80,6 +84,13 @@ if echo "$START_OUT" | jq -e '.error' >/dev/null 2>&1; then
 fi
 
 PANE_ID=$(echo "$START_OUT" | jq -r '.result.agent.pane_id')
+
+# Close the workspace's root shell pane if we just created the workspace —
+# it is an unused shell and only clutters the layout. Never touch it on an
+# already-open workspace (the user may be working in it).
+if [ "$ALREADY_OPEN" = "false" ] && [ -n "$ROOT_PANE" ] && [ "$ROOT_PANE" != "$PANE_ID" ]; then
+  herdr pane close "$ROOT_PANE" >/dev/null 2>&1 || true
+fi
 
 # --- 5. Sanity check: agent should start working shortly ---
 # A startup dialog (trust/MCP prompt) keeps the agent from working; herdr may

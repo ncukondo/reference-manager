@@ -66,7 +66,11 @@ pane_exists() {
   [ -n "$out" ] && ! echo "$out" | jq -e '.error' >/dev/null 2>&1
 }
 
-# Open <dir> as a herdr workspace (idempotent) and print its workspace_id.
+# Open <dir> as a herdr workspace (idempotent).
+# Prints three tab-separated fields: workspace_id, already_open (true/false),
+# and the root pane id. The root pane is a plain shell herdr creates with
+# every new workspace; callers that add an agent pane may close it when
+# already_open is false (freshly created, so the shell is guaranteed unused).
 ensure_workspace_for_dir() {
   local dir="$1" out
   out=$(herdr worktree open --path "$dir" --no-focus --json 2>/dev/null || true)
@@ -74,5 +78,5 @@ ensure_workspace_for_dir() {
     echo "herdr worktree open failed for $dir: $(echo "$out" | jq -r '.error.message // "no response"')" >&2
     return 1
   fi
-  echo "$out" | jq -r '.result.workspace.workspace_id'
+  echo "$out" | jq -r '[.result.workspace.workspace_id, (.result.already_open | tostring), .result.root_pane.pane_id] | @tsv'
 }
