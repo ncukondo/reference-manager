@@ -32,6 +32,7 @@ describe("ACTION_CHOICES", () => {
   it("has all required action types", () => {
     const actionTypes = ACTION_CHOICES.map((c) => c.value);
 
+    expect(actionTypes).toContain("show");
     expect(actionTypes).toContain("key-default");
     expect(actionTypes).toContain("cite-default");
     expect(actionTypes).toContain("cite-choose");
@@ -140,6 +141,11 @@ describe("generateOutput", () => {
     expect(output).toBe("");
   });
 
+  it("should return empty string for show (executed by the CLI after TUI exit)", () => {
+    const output = generateOutput("show", mockItems);
+    expect(output).toBe("");
+  });
+
   it("should return empty string for side-effect actions", () => {
     const sideEffectActions: ActionType[] = [
       "open-url",
@@ -157,24 +163,49 @@ describe("generateOutput", () => {
 
 describe("getActionChoices", () => {
   describe("single entry (count=1)", () => {
-    it("should include all single-entry actions", () => {
-      const choices = getActionChoices(1);
-      const values = choices.map((c) => c.value);
+    it("should match the redesigned menu order", () => {
+      const values = getActionChoices(1).map((c) => c.value);
 
-      expect(values).toContain("key-default");
-      expect(values).toContain("cite-default");
-      expect(values).toContain("cite-choose");
-      expect(values).toContain("open-url");
-      expect(values).toContain("open-fulltext");
-      expect(values).toContain("manage-attachments");
-      expect(values).toContain("edit");
-      expect(values).toContain("output-format");
-      expect(values).toContain("remove");
-      expect(values).toContain("cancel");
+      expect(values).toEqual([
+        "show",
+        "key-default",
+        "cite-default",
+        "cite-choose",
+        "open-url",
+        "open-fulltext",
+        "edit",
+        "manage-attachments",
+        "output-format",
+        "remove",
+        "cancel",
+      ]);
     });
 
-    it("should have 10 choices for single entry", () => {
-      expect(getActionChoices(1)).toHaveLength(10);
+    it("should use the redesigned labels", () => {
+      const labels = getActionChoices(1).map((c) => c.label);
+
+      expect(labels).toEqual([
+        "Show details",
+        "Citation key (Pandoc)",
+        "Cite",
+        "Cite (choose style)",
+        "Open URL",
+        "Open fulltext",
+        "Edit reference",
+        "Manage attachments",
+        "Export (choose format)",
+        "Remove",
+        "Cancel",
+      ]);
+    });
+
+    it("should have 11 choices for single entry", () => {
+      expect(getActionChoices(1)).toHaveLength(11);
+    });
+
+    it("should place Show details at the top", () => {
+      const choices = getActionChoices(1);
+      expect(choices[0]).toEqual({ label: "Show details", value: "show" });
     });
 
     it("should show singular labels for single entry", () => {
@@ -201,22 +232,38 @@ describe("getActionChoices", () => {
       const choices = getActionChoices(3);
       const values = choices.map((c) => c.value);
 
+      expect(values).not.toContain("show");
       expect(values).not.toContain("open-url");
       expect(values).not.toContain("open-fulltext");
       expect(values).not.toContain("manage-attachments");
     });
 
-    it("should include multi-entry actions", () => {
-      const choices = getActionChoices(3);
-      const values = choices.map((c) => c.value);
+    it("should match the redesigned menu order", () => {
+      const values = getActionChoices(3).map((c) => c.value);
 
-      expect(values).toContain("key-default");
-      expect(values).toContain("cite-default");
-      expect(values).toContain("cite-choose");
-      expect(values).toContain("edit");
-      expect(values).toContain("output-format");
-      expect(values).toContain("remove");
-      expect(values).toContain("cancel");
+      expect(values).toEqual([
+        "key-default",
+        "cite-default",
+        "cite-choose",
+        "edit",
+        "output-format",
+        "remove",
+        "cancel",
+      ]);
+    });
+
+    it("should use the redesigned labels", () => {
+      const labels = getActionChoices(3).map((c) => c.label);
+
+      expect(labels).toEqual([
+        "Citation keys (Pandoc)",
+        "Cite",
+        "Cite (choose style)",
+        "Edit references",
+        "Export (choose format)",
+        "Remove",
+        "Cancel",
+      ]);
     });
 
     it("should have 7 choices for multiple entries", () => {
@@ -250,6 +297,7 @@ describe("isSideEffectAction", () => {
   });
 
   it("should return false for output actions", () => {
+    expect(isSideEffectAction("show")).toBe(false);
     expect(isSideEffectAction("key-default")).toBe(false);
     expect(isSideEffectAction("cite-default")).toBe(false);
     expect(isSideEffectAction("cite-choose")).toBe(false);

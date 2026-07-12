@@ -17,6 +17,7 @@ import { Select, type SelectOption } from "./components/index.js";
  * Action types available in the action menu.
  */
 export type ActionType =
+  | "show"
   | "key-default"
   | "cite-default"
   | "cite-choose"
@@ -109,23 +110,33 @@ export function getActionChoices(
 
   const keyLabel = isSingle ? `Citation key (${formatLabel})` : `Citation keys (${formatLabel})`;
 
-  const choices: SelectOption<ActionType>[] = [
+  const choices: SelectOption<ActionType>[] = [];
+
+  if (isSingle) {
+    choices.push({ label: "Show details", value: "show" });
+  }
+
+  choices.push(
     { label: keyLabel, value: "key-default" },
-    { label: "Generate citation", value: "cite-default" },
-    { label: "Generate citation (choose style)", value: "cite-choose" },
-  ];
+    { label: "Cite", value: "cite-default" },
+    { label: "Cite (choose style)", value: "cite-choose" }
+  );
 
   if (isSingle) {
     choices.push(
       { label: "Open URL", value: "open-url" },
-      { label: "Open fulltext", value: "open-fulltext" },
-      { label: "Manage attachments", value: "manage-attachments" }
+      { label: "Open fulltext", value: "open-fulltext" }
     );
   }
 
+  choices.push({ label: isSingle ? "Edit reference" : "Edit references", value: "edit" });
+
+  if (isSingle) {
+    choices.push({ label: "Manage attachments", value: "manage-attachments" });
+  }
+
   choices.push(
-    { label: isSingle ? "Edit reference" : "Edit references", value: "edit" },
-    { label: "Output (choose format)", value: "output-format" },
+    { label: "Export (choose format)", value: "output-format" },
     { label: "Remove", value: "remove" },
     { label: "Cancel", value: "cancel" }
   );
@@ -242,6 +253,8 @@ export function generateOutput(
       }
       return items.map((i) => `@${i.id}`).join("; ");
 
+    // show is executed by the caller after TUI exit (needs library/attachments config)
+    case "show":
     case "cancel":
       return "";
 
@@ -331,8 +344,8 @@ async function processAction(
     };
   }
 
-  // Handle side-effect actions
-  if (isSideEffectAction(action)) {
+  // Handle show and side-effect actions: executed by the caller with selected items
+  if (action === "show" || isSideEffectAction(action)) {
     return {
       action,
       output: "",
