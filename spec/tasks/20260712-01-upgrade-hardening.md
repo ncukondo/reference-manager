@@ -43,17 +43,17 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 4: Checksum verification (SHA256SUMS)
 
-- [ ] Update release workflow to generate and upload a `SHA256SUMS` asset alongside binaries
-- [ ] Write test: download path verifies the binary's SHA256 against SHA256SUMS when the asset exists; clear error on mismatch; graceful skip (with notice) when SHA256SUMS is absent (older releases)
-- [ ] Implement verification in the binary upgrade path (`node:crypto`)
-- [ ] Verify Green, lint/typecheck
+- [x] Update release workflow to generate and upload a `SHA256SUMS` asset alongside binaries
+- [x] Write test: download path verifies the binary's SHA256 against SHA256SUMS when the asset exists; clear error on mismatch; graceful skip (with notice) when SHA256SUMS is absent (older releases)
+- [x] Implement verification in the binary upgrade path (`node:crypto`)
+- [x] Verify Green, lint/typecheck
 
 ## Completion Checklist
 
-- [ ] All tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Type check passes (`npm run typecheck`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] CHANGELOG.md updated
-- [ ] Close linked issue (include `Closes #101` in PR description)
+- [x] All tests pass (`npm run test`)
+- [x] Lint passes (`npm run lint`)
+- [x] Type check passes (`npm run typecheck`)
+- [x] Build succeeds (`npm run build`)
+- [x] CHANGELOG.md updated
+- [x] Close linked issue (include `Closes #101` in PR description)
 - [ ] Move this file to `spec/tasks/completed/`

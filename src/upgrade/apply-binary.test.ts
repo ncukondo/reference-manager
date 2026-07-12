@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -26,6 +26,27 @@ function makeFetchStatus(status: number): typeof globalThis.fetch {
         headers: { "content-type": "text/plain" },
       })
   ) as unknown as typeof globalThis.fetch;
+}
+
+function sha256Hex(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
+}
+
+/**
+ * Routes the release-asset URL to `binary` and the SHA256SUMS URL to `sums`
+ * (404 when `sums` is null, mimicking releases without a checksum asset).
+ */
+function makeFetchWithSums(binary: string, sums: string | null): typeof globalThis.fetch {
+  return vi.fn(async (url: URL | string) => {
+    if (String(url).endsWith("/SHA256SUMS")) {
+      if (sums === null) return new Response("not found", { status: 404 });
+      return new Response(sums, { status: 200, headers: { "content-type": "text/plain" } });
+    }
+    return new Response(new TextEncoder().encode(binary), {
+      status: 200,
+      headers: { "content-type": "application/octet-stream" },
+    });
+  }) as unknown as typeof globalThis.fetch;
 }
 
 describe("computeAssetName", () => {
@@ -132,6 +153,10 @@ describe("upgradeBinary", () => {
   it("uses `--version <tag>` when provided, bypassing getLatest", async () => {
     const getLatest = vi.fn();
     const fetchFn = vi.fn(async (url: URL | string) => {
+      expect(String(url)).toContain("/download/v0.35.0/");
+      if (String(url).endsWith("/SHA256SUMS")) {
+        return new Response("not found", { status: 404 });
+      }
       expect(String(url)).toContain("/download/v0.35.0/ref-linux-x64");
       return new Response(new TextEncoder().encode("pinned binary"), { status: 200 });
     }) as unknown as typeof globalThis.fetch;
@@ -267,6 +292,86 @@ describe("upgradeBinary", () => {
     expect(readFileSync(winDest, "utf-8")).toBe("new exe");
     // Old binary should remain at .old for best-effort cleanup on next run.
     expect(readFileSync(`${winDest}.old`, "utf-8")).toBe("old windows\n");
+  });
+
+  describe("checksum verification", () => {
+    it("verifies the download against SHA256SUMS and succeeds on match", async () => {
+      const binary = "new binary contents";
+      const sums = [
+        `${sha256Hex("other")}  ref-darwin-arm64`,
+        `${sha256Hex(binary)}  ref-linux-x64`,
+      ].join("\n");
+      const fetchFn = makeFetchWithSums(binary, sums);
+
+      const result = await upgradeBinary(baseOptions({ fetch: fetchFn }));
+
+      expect(result.status).toBe("success");
+      expect(result.notice).toBeUndefined();
+      expect(readFileSync(destPath, "utf-8")).toBe(binary);
+      expect(fetchFn).toHaveBeenCalledWith(
+        "https://github.com/ncukondo/reference-manager/releases/download/v0.34.0/SHA256SUMS"
+      );
+    });
+
+    it("accepts the `sha256sum -b` format with a leading asterisk", async () => {
+      const binary = "new binary contents";
+      const sums = `${sha256Hex(binary)} *ref-linux-x64\n`;
+
+      const result = await upgradeBinary(baseOptions({ fetch: makeFetchWithSums(binary, sums) }));
+
+      expect(result.status).toBe("success");
+      expect(result.notice).toBeUndefined();
+    });
+
+    it("errors on checksum mismatch, discards the download, and leaves dest untouched", async () => {
+      const sums = `${sha256Hex("something else entirely")}  ref-linux-x64\n`;
+
+      const result = await upgradeBinary(
+        baseOptions({ fetch: makeFetchWithSums("new binary contents", sums) })
+      );
+
+      expect(result.status).toBe("error");
+      expect(result.error).toMatch(/checksum/i);
+      expect(result.error).toContain("ref-linux-x64");
+      // Tampered/corrupt downloads must not be left around, and must never
+      // reach the `--version` execution check or the install location.
+      expect(existsSync(`${destPath}.tmp.12345`)).toBe(false);
+      expect(readFileSync(destPath, "utf-8")).toBe("old binary\n");
+    });
+
+    it("does not execute the downloaded binary when its checksum mismatches", async () => {
+      const sums = `${sha256Hex("something else entirely")}  ref-linux-x64\n`;
+      const verifyBinary = vi.fn(async () => "ref 0.34.0");
+
+      const result = await upgradeBinary(
+        baseOptions({ fetch: makeFetchWithSums("new binary contents", sums), verifyBinary })
+      );
+
+      expect(result.status).toBe("error");
+      expect(verifyBinary).not.toHaveBeenCalled();
+    });
+
+    it("skips verification with a notice when SHA256SUMS is absent (older releases)", async () => {
+      const result = await upgradeBinary(
+        baseOptions({ fetch: makeFetchWithSums("new binary contents", null) })
+      );
+
+      expect(result.status).toBe("success");
+      expect(result.notice).toMatch(/checksum/i);
+      expect(result.notice).toContain("SHA256SUMS");
+      expect(readFileSync(destPath, "utf-8")).toBe("new binary contents");
+    });
+
+    it("skips verification with a notice when SHA256SUMS has no entry for the asset", async () => {
+      const sums = `${sha256Hex("other")}  ref-darwin-arm64\n`;
+
+      const result = await upgradeBinary(
+        baseOptions({ fetch: makeFetchWithSums("new binary contents", sums) })
+      );
+
+      expect(result.status).toBe("success");
+      expect(result.notice).toContain("ref-linux-x64");
+    });
   });
 
   it("propagates network errors without touching dest", async () => {

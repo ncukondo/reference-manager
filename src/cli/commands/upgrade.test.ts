@@ -110,6 +110,22 @@ describe("runUpgrade", () => {
     expect(output()).toMatch(/npx/i);
   });
 
+  it("prints a strategy notice (e.g. checksum skipped) to stderr", async () => {
+    const notice = "Checksum verification skipped: this release provides no SHA256SUMS.";
+    const upgradeBinaryFn = vi.fn(async () => okResult({ notice }));
+    const { stream: stdout, output: stdoutText } = captureStream();
+    const { stream: stderr, output: stderrText } = captureStream();
+
+    const result = await runUpgrade(
+      {} as UpgradeCommandOptions,
+      defaultDeps({ installMethod: "binary", upgradeBinaryFn, stdout, stderr })
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(stderrText()).toContain(notice);
+    expect(stdoutText()).not.toContain(notice);
+  });
+
   it("passes --check through to the binary strategy without mutating anything", async () => {
     const assetUrl =
       "https://github.com/ncukondo/reference-manager/releases/download/v0.34.0/ref-linux-x64";

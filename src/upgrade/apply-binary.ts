@@ -10,7 +10,8 @@
  */
 
 import { execFile } from "node:child_process";
-import { chmodSync, existsSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { chmodSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { promisify } from "node:util";
 import { type ReleaseInfo, getLatestVersion } from "./check.js";
 
@@ -27,6 +28,8 @@ export interface UpgradeResult {
   url?: string;
   message?: string;
   error?: string;
+  /** Non-fatal caveat about the applied upgrade (e.g. checksum skipped). */
+  notice?: string;
 }
 
 export interface UpgradeBinaryOptions {
@@ -186,6 +189,76 @@ async function downloadAsset(
   return {};
 }
 
+const CHECKSUM_ASSET = "SHA256SUMS";
+
+/** Parses `sha256sum` output lines (`<hex>  <name>` or `<hex> *<name>`). */
+function parseSha256Sums(text: string): Map<string, string> {
+  const sums = new Map<string, string>();
+  for (const line of text.split("\n")) {
+    const match = line.match(/^([0-9a-fA-F]{64})[ \t]+\*?(.+?)\s*$/);
+    if (match?.[1] && match[2]) {
+      sums.set(match[2], match[1].toLowerCase());
+    }
+  }
+  return sums;
+}
+
+/**
+ * Verifies the downloaded asset against the release's SHA256SUMS asset.
+ *
+ * A mismatch is fatal (the download is discarded). When the checksum file
+ * cannot be retrieved or has no usable entry — e.g. releases published before
+ * SHA256SUMS existed — verification is skipped with a notice instead, so old
+ * releases stay installable.
+ */
+async function verifyChecksum(
+  tmpPath: string,
+  assetName: string,
+  targetTag: string,
+  fetchFn: typeof globalThis.fetch
+): Promise<{ notice?: string; error?: string }> {
+  const sumsUrl = buildAssetUrl(targetTag, CHECKSUM_ASSET);
+
+  let response: Response;
+  try {
+    response = await fetchFn(sumsUrl);
+  } catch {
+    return { notice: `Checksum verification skipped: could not download ${CHECKSUM_ASSET}.` };
+  }
+  if (!response.ok) {
+    return {
+      notice: `Checksum verification skipped: this release provides no ${CHECKSUM_ASSET} (HTTP ${response.status}).`,
+    };
+  }
+
+  let text: string;
+  try {
+    text = await response.text();
+  } catch {
+    return { notice: `Checksum verification skipped: could not read ${CHECKSUM_ASSET}.` };
+  }
+
+  const expected = parseSha256Sums(text).get(assetName);
+  if (!expected) {
+    return {
+      notice: `Checksum verification skipped: ${CHECKSUM_ASSET} has no entry for ${assetName}.`,
+    };
+  }
+
+  const actual = createHash("sha256").update(readFileSync(tmpPath)).digest("hex");
+  if (actual !== expected) {
+    try {
+      rmSync(tmpPath, { force: true });
+    } catch {
+      // Best-effort cleanup; the mismatch error below is what matters.
+    }
+    return {
+      error: `Checksum mismatch for ${assetName}: expected ${expected}, got ${actual}. The download has been discarded; re-run \`ref upgrade\` to retry.`,
+    };
+  }
+  return {};
+}
+
 function atomicReplace(
   tmpPath: string,
   destPath: string,
@@ -271,18 +344,19 @@ export async function upgradeBinary(options: UpgradeBinaryOptions): Promise<Upgr
   }
 
   const tmpPath = `${destPath}.tmp.${pid}`;
-  const dl = await downloadAsset(assetUrl, tmpPath, fetchFn);
-  if (dl.error) {
-    return errorResult(currentVersion, dl.error, { toVersion: targetVersion, url: assetUrl });
-  }
-
-  const verified = await verifyBinary(tmpPath);
-  if (!verified) {
-    return errorResult(
-      currentVersion,
-      `Verification failed: downloaded binary at ${tmpPath} did not report a version. The file has been left in place for inspection.`,
-      { toVersion: targetVersion, url: assetUrl }
-    );
+  const acquired = await acquireVerifiedAsset({
+    assetUrl,
+    assetName,
+    targetTag,
+    tmpPath,
+    fetchFn,
+    verifyBinary,
+  });
+  if ("error" in acquired) {
+    return errorResult(currentVersion, acquired.error, {
+      toVersion: targetVersion,
+      url: assetUrl,
+    });
   }
 
   const replaced = atomicReplace(tmpPath, destPath, platform);
@@ -298,6 +372,42 @@ export async function upgradeBinary(options: UpgradeBinaryOptions): Promise<Upgr
     fromVersion: currentVersion,
     toVersion: targetVersion,
     url: assetUrl,
-    message: verified,
+    message: acquired.verified,
+    ...(acquired.notice !== undefined && { notice: acquired.notice }),
   };
+}
+
+/**
+ * Downloads the asset to `tmpPath` and runs both integrity gates in order:
+ * SHA256 checksum first (a corrupt or tampered download must never be
+ * executed), then the `--version` execution check.
+ */
+async function acquireVerifiedAsset(args: {
+  assetUrl: string;
+  assetName: string;
+  targetTag: string;
+  tmpPath: string;
+  fetchFn: typeof globalThis.fetch;
+  verifyBinary: (path: string) => Promise<string | null>;
+}): Promise<{ error: string } | { verified: string; notice?: string }> {
+  const { assetUrl, assetName, targetTag, tmpPath, fetchFn, verifyBinary } = args;
+
+  const dl = await downloadAsset(assetUrl, tmpPath, fetchFn);
+  if (dl.error) {
+    return { error: dl.error };
+  }
+
+  const checksum = await verifyChecksum(tmpPath, assetName, targetTag, fetchFn);
+  if (checksum.error) {
+    return { error: checksum.error };
+  }
+
+  const verified = await verifyBinary(tmpPath);
+  if (!verified) {
+    return {
+      error: `Verification failed: downloaded binary at ${tmpPath} did not report a version. The file has been left in place for inspection.`,
+    };
+  }
+
+  return { verified, ...(checksum.notice !== undefined && { notice: checksum.notice }) };
 }

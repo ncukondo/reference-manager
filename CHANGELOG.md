@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Self-Upgrade hardening** (#101):
+  - Update-check fetch now aborts after 3s so a hung GitHub API request
+    cannot stall the CLI past the user's command
+  - Unix binary replacement is a single overwriting `rename()`; the previous
+    `rm` + `rename` sequence left a crash window with no binary installed
+  - Update notification only fires when the latest release is semver-newer
+    than the running version (no more notices when the local build is ahead)
+
 ### Added
+
+- **Self-Upgrade checksum verification** (#101): the release workflow now
+  publishes a `SHA256SUMS` asset, and `ref upgrade` verifies the downloaded
+  binary against it before execution. Mismatch aborts the upgrade and
+  discards the download; releases without `SHA256SUMS` skip verification
+  with a notice on stderr
 
 - **Self-Upgrade**: `ref upgrade` subcommand and update-check notifier (#95)
   - One-line notice on TTY invocations when a newer GitHub release exists
