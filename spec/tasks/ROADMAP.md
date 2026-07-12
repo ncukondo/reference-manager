@@ -177,6 +177,20 @@ Single-binary users have no built-in way to discover new releases. Add a non-int
 - Spec: `spec/features/self-upgrade.md`
 - Status: Done (Stage 1: PR #96, Stage 2: PR #97 closes #95)
 
+### Fix: Upgrade Hardening (#101)
+
+Harden self-upgrade: update-check fetch timeout, atomic binary replacement on Unix, SHA256SUMS checksum verification, semver-aware update notification.
+
+- Task: `spec/tasks/20260712-01-upgrade-hardening.md`
+- Status: Planned
+
+### Refactor: Rename Duplicate normalizeIsbn Functions (#12)
+
+Rename the two same-named `normalizeIsbn` functions (import parsing vs duplicate comparison) for clarity. Pure rename, no behavior change.
+
+- Task: `spec/tasks/20260712-02-rename-normalize-isbn.md`
+- Status: Planned
+
 ---
 
 ## Next Steps
