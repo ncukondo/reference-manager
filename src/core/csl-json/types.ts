@@ -58,6 +58,8 @@ const CslCustomSchema = z
     additional_urls: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
     arxiv_id: z.string().optional(),
+    eric_id: z.string().optional(),
+    scopus_id: z.string().optional(),
     attachments: AttachmentsSchema.optional(),
     check: CheckDataSchema.optional(),
   })
