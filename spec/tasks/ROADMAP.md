@@ -186,10 +186,10 @@ Harden self-upgrade: update-check fetch timeout (3s notifier / 30s explicit upgr
 
 ### Refactor: Rename Duplicate normalizeIsbn Functions (#12)
 
-Rename the two same-named `normalizeIsbn` functions (import parsing vs duplicate comparison) for clarity. Pure rename, no behavior change.
+Rename the two same-named `normalizeIsbn` functions for clarity: `parseIsbnInput` (import parsing) and `normalizeIsbnForComparison` (duplicate comparison). Pure rename, no behavior change.
 
-- Task: `spec/tasks/20260712-02-rename-normalize-isbn.md`
-- Status: Planned
+- Task: `spec/tasks/completed/20260712-02-rename-normalize-isbn.md`
+- Status: Done (PR #104, closes #12)
 
 ---
 
