@@ -133,6 +133,29 @@ describe("notifier", () => {
     }
   );
 
+  it("default check calls getLatestVersion with no overrides, keeping the 3s timeout", async () => {
+    const getLatestVersion = vi.fn(async () => release("0.34.0"));
+    vi.doMock("./check.js", () => ({ getLatestVersion }));
+    try {
+      const { maybeStartUpdateCheck } = await freshNotifier();
+      const { stream } = captureStream();
+
+      await maybeStartUpdateCheck("list", {
+        isTty: true,
+        env: {},
+        currentVersion: "0.33.4",
+        output: stream,
+      });
+
+      expect(getLatestVersion).toHaveBeenCalledTimes(1);
+      // No timeoutMs override: the passive notifier path must keep the
+      // conservative default from check.ts (3s), unlike explicit `ref upgrade`.
+      expect(getLatestVersion).toHaveBeenCalledWith();
+    } finally {
+      vi.doUnmock("./check.js");
+    }
+  });
+
   it("prints a notice to the configured stream when a newer version is available", async () => {
     const { maybeStartUpdateCheck, flushUpdateNotice } = await freshNotifier();
     const getLatest = vi.fn(async () => release("0.34.0"));

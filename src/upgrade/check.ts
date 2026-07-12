@@ -28,7 +28,14 @@ export interface GetLatestVersionOptions {
 }
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
+// The default protects the passive startup notifier, which must never stall
+// the user's command; keep it short.
 const DEFAULT_TIMEOUT_MS = 3000;
+/**
+ * Timeout for explicit `ref upgrade` runs: the user asked for the network
+ * round-trip, so a slow connection deserves more patience than the notifier.
+ */
+export const EXPLICIT_UPGRADE_TIMEOUT_MS = 30_000;
 const RELEASES_API_URL = "https://api.github.com/repos/ncukondo/reference-manager/releases/latest";
 
 function defaultCachePath(): string {

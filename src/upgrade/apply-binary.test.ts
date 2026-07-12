@@ -4,10 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type UpgradeBinaryOptions, computeAssetName, upgradeBinary } from "./apply-binary.js";
+import { getLatestVersion } from "./check.js";
 
 // Spy on node:fs (real implementations preserved) so tests can assert *how*
 // the binary is replaced, not just the end state.
 vi.mock("node:fs", { spy: true });
+// Spy on check.js so tests can assert how the default getLatest is wired.
+vi.mock("./check.js", { spy: true });
 
 function makeFetchBinary(bytes: Uint8Array, status = 200): typeof globalThis.fetch {
   return vi.fn(async () => {
@@ -148,6 +151,26 @@ describe("upgradeBinary", () => {
 
     expect(result.status).toBe("guidance");
     expect(getLatest).toHaveBeenCalledWith({ force: true });
+  });
+
+  it("default getLatest uses the longer explicit-upgrade timeout, not the notifier's 3s", async () => {
+    vi.mocked(getLatestVersion).mockResolvedValueOnce({
+      checkedAt: "2026-04-20T12:00:00Z",
+      latest: "0.34.0",
+      url: "https://github.com/ncukondo/reference-manager/releases/tag/v0.34.0",
+    });
+
+    const result = await upgradeBinary({
+      destPath,
+      currentVersion: "0.33.4",
+      platform: "linux",
+      arch: "x64",
+      pid: 12345,
+      check: true,
+    });
+
+    expect(result.status).toBe("guidance");
+    expect(getLatestVersion).toHaveBeenCalledWith({ force: true, timeoutMs: 30_000 });
   });
 
   it("uses `--version <tag>` when provided, bypassing getLatest", async () => {

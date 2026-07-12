@@ -303,6 +303,22 @@ describe("getLatestVersion", () => {
     expect(existsSync(cachePath)).toBe(false);
   });
 
+  it("defaults to a 3s fetch timeout (the passive notifier path)", async () => {
+    const now = new Date("2026-04-20T12:00:00Z");
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    const fetchFn = makeFetchOk(
+      "v0.34.0",
+      "https://github.com/ncukondo/reference-manager/releases/tag/v0.34.0"
+    );
+
+    try {
+      await getLatestVersion({ cachePath, fetch: fetchFn, now: () => now });
+      expect(timeoutSpy).toHaveBeenCalledWith(3000);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
+  });
+
   it("passes an AbortSignal to fetch and leaves successful fetches unaffected", async () => {
     const now = new Date("2026-04-20T12:00:00Z");
     const fetchFn = vi.fn(async (_url: unknown, init?: RequestInit) => {

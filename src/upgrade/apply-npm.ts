@@ -8,7 +8,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { UpgradeResult } from "./apply-binary.js";
-import { type ReleaseInfo, getLatestVersion } from "./check.js";
+import { EXPLICIT_UPGRADE_TIMEOUT_MS, type ReleaseInfo, getLatestVersion } from "./check.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -74,7 +74,9 @@ export async function upgradeNpmGlobal(options: UpgradeNpmOptions): Promise<Upgr
     version: pinnedVersion,
     check = false,
     yes = false,
-    getLatest = getLatestVersion,
+    // Explicit upgrades tolerate slow networks; the notifier's 3s default
+    // would make `ref upgrade` fail spuriously on them.
+    getLatest = (opts) => getLatestVersion({ ...opts, timeoutMs: EXPLICIT_UPGRADE_TIMEOUT_MS }),
     runCommand = defaultRunCommand,
   } = options;
 

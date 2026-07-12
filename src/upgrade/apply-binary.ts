@@ -13,7 +13,7 @@ import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { promisify } from "node:util";
-import { type ReleaseInfo, getLatestVersion } from "./check.js";
+import { EXPLICIT_UPGRADE_TIMEOUT_MS, type ReleaseInfo, getLatestVersion } from "./check.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -303,7 +303,9 @@ export async function upgradeBinary(options: UpgradeBinaryOptions): Promise<Upgr
     arch = process.arch,
     pid = process.pid,
     fetch: fetchFn = globalThis.fetch,
-    getLatest = getLatestVersion,
+    // Explicit upgrades tolerate slow networks; the notifier's 3s default
+    // would make `ref upgrade` fail spuriously on them.
+    getLatest = (opts) => getLatestVersion({ ...opts, timeoutMs: EXPLICIT_UPGRADE_TIMEOUT_MS }),
     verifyBinary = defaultVerifyBinary,
   } = options;
 
