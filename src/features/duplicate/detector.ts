@@ -198,6 +198,56 @@ function checkArxivMatch(item: CslItem, existing: CslItem): DuplicateMatch | nul
 }
 
 /**
+ * Check for ERIC ID match
+ */
+function checkEricMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
+  const itemEricId = item.custom?.eric_id;
+  const existingEricId = existing.custom?.eric_id;
+
+  if (!itemEricId || !existingEricId) {
+    return null;
+  }
+
+  // ERIC ID comparison is exact string match
+  if (itemEricId === existingEricId) {
+    return {
+      type: "eric",
+      existing,
+      details: {
+        eric_id: existingEricId,
+      },
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Check for Scopus ID match
+ */
+function checkScopusMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
+  const itemScopusId = item.custom?.scopus_id;
+  const existingScopusId = existing.custom?.scopus_id;
+
+  if (!itemScopusId || !existingScopusId) {
+    return null;
+  }
+
+  // Scopus ID comparison is exact string match
+  if (itemScopusId === existingScopusId) {
+    return {
+      type: "scopus",
+      existing,
+      details: {
+        scopus_id: existingScopusId,
+      },
+    };
+  }
+
+  return null;
+}
+
+/**
  * Check if two items match by Title + Author + Year
  */
 function checkTitleAuthorYearMatch(item: CslItem, existing: CslItem): DuplicateMatch | null {
@@ -264,7 +314,19 @@ function checkSingleDuplicate(item: CslItem, existing: CslItem): DuplicateMatch 
     return arxivMatch;
   }
 
-  // Priority 5: Title + Author + Year matching (lowest priority)
+  // Priority 5: ERIC ID matching
+  const ericMatch = checkEricMatch(item, existing);
+  if (ericMatch) {
+    return ericMatch;
+  }
+
+  // Priority 6: Scopus ID matching
+  const scopusMatch = checkScopusMatch(item, existing);
+  if (scopusMatch) {
+    return scopusMatch;
+  }
+
+  // Priority 7: Title + Author + Year matching (lowest priority)
   return checkTitleAuthorYearMatch(item, existing);
 }
 
@@ -274,7 +336,11 @@ function checkSingleDuplicate(item: CslItem, existing: CslItem): DuplicateMatch 
  * Priority order:
  * 1. DOI (highest priority)
  * 2. PMID
- * 3. Title + Author + Year (lowest priority)
+ * 3. ISBN
+ * 4. arXiv ID
+ * 5. ERIC ID
+ * 6. Scopus ID
+ * 7. Title + Author + Year (lowest priority)
  *
  * @param item - The reference to check for duplicates
  * @param existingReferences - Array of existing references to check against

@@ -7,7 +7,15 @@ import type { CslItem } from "../../core/csl-json/types.js";
 /**
  * Type of duplicate match
  */
-export type DuplicateType = "doi" | "pmid" | "isbn" | "isbn-title" | "arxiv" | "title-author-year";
+export type DuplicateType =
+  | "doi"
+  | "pmid"
+  | "isbn"
+  | "isbn-title"
+  | "arxiv"
+  | "eric"
+  | "scopus"
+  | "title-author-year";
 
 /**
  * A single duplicate match result
@@ -31,6 +39,8 @@ export interface DuplicateMatch {
     pmid?: string;
     isbn?: string;
     arxiv_id?: string;
+    eric_id?: string;
+    scopus_id?: string;
     normalizedTitle?: string;
     normalizedAuthors?: string;
     year?: string;
