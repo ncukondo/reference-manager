@@ -25,9 +25,9 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 1: Fetch timeout in update check
 
-- [ ] Write test: `src/upgrade/check.test.ts` — fetch aborts after timeout (mock a hanging fetch); successful fetch unaffected
-- [ ] Implement: pass `AbortSignal.timeout(3000)` (or similar) to the notifier-path fetch in `check.ts`; treat abort as "check failed" (silent, non-fatal)
-- [ ] Verify Green, lint/typecheck
+- [x] Write test: `src/upgrade/check.test.ts` — fetch aborts after timeout (mock a hanging fetch); successful fetch unaffected
+- [x] Implement: pass `AbortSignal.timeout(3000)` (or similar) to the notifier-path fetch in `check.ts`; treat abort as "check failed" (silent, non-fatal)
+- [x] Verify Green, lint/typecheck
 
 ### Step 2: Atomic binary replacement on Unix
 

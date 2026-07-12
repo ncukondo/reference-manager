@@ -279,6 +279,49 @@ describe("getLatestVersion", () => {
     expect(cached).toEqual(existingCache);
   });
 
+  it("aborts a hanging fetch after timeoutMs and returns null", async () => {
+    const now = new Date("2026-04-20T12:00:00Z");
+    // A fetch that never resolves on its own, but rejects when its signal aborts
+    // (mirroring how undici's fetch reacts to AbortSignal.timeout).
+    const fetchFn = vi.fn(
+      (_url: unknown, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(init.signal?.reason ?? new Error("aborted"));
+          });
+        })
+    ) as unknown as typeof globalThis.fetch;
+
+    const result = await getLatestVersion({
+      cachePath,
+      fetch: fetchFn,
+      now: () => now,
+      timeoutMs: 25,
+    });
+
+    expect(result).toBeNull();
+    expect(existsSync(cachePath)).toBe(false);
+  });
+
+  it("passes an AbortSignal to fetch and leaves successful fetches unaffected", async () => {
+    const now = new Date("2026-04-20T12:00:00Z");
+    const fetchFn = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return new Response(
+        JSON.stringify({
+          tag_name: "v0.34.0",
+          html_url: "https://github.com/ncukondo/reference-manager/releases/tag/v0.34.0",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    }) as unknown as typeof globalThis.fetch;
+
+    const result = await getLatestVersion({ cachePath, fetch: fetchFn, now: () => now });
+
+    expect(result?.latest).toBe("0.34.0");
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
   it("ignores corrupt cache file and re-fetches", async () => {
     const now = new Date("2026-04-20T12:00:00Z");
     writeFileSync(cachePath, "{not valid json");

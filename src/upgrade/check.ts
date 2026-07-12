@@ -23,9 +23,12 @@ export interface GetLatestVersionOptions {
   fetch?: typeof globalThis.fetch;
   now?: () => Date;
   ttlMs?: number;
+  /** Abort the HTTP request after this many milliseconds. */
+  timeoutMs?: number;
 }
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_TIMEOUT_MS = 3000;
 const RELEASES_API_URL = "https://api.github.com/repos/ncukondo/reference-manager/releases/latest";
 
 function defaultCachePath(): string {
@@ -73,6 +76,7 @@ export async function getLatestVersion(
     fetch: fetchFn = globalThis.fetch,
     now = () => new Date(),
     ttlMs = DEFAULT_TTL_MS,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
   } = options;
 
   const currentTime = now();
@@ -89,6 +93,9 @@ export async function getLatestVersion(
         accept: "application/vnd.github+json",
         "user-agent": "reference-manager-update-check",
       },
+      // A hung request must not stall the event loop past the user's command;
+      // abort is caught below and treated as "check failed" (silent).
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
     return null;
