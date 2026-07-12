@@ -21,23 +21,28 @@ Available roles:
 - `implement` — TDD implementation worker (`spec/roles/implement.md`)
 - `review` — PR reviewer (`spec/roles/review.md`)
 
-## tmux send-keys Guidelines
+## Agent Orchestration (herdr)
 
-When sending input to tmux panes (e.g., to other Claude agents), **always send text and Enter separately with sleep 1 in between**:
+Worker/reviewer agents run in [herdr](https://herdr.dev) panes, one workspace per worktree. Worktrees live under `~/.herdr/worktrees/reference-manager/`. Agents are launched with `--permission-mode auto`.
+
+Always use the wrapper scripts instead of raw herdr commands where one exists:
 
 ```bash
-# Correct: separate commands with sleep
-tmux send-keys -t %42 "/code-with-task example"
-sleep 1
-tmux send-keys -t %42 Enter
-
-# WRONG: combining text and Enter causes input races
-tmux send-keys -t %42 "/code-with-task example" Enter
+./scripts/spawn-worker.sh <branch> <task-keyword>   # worktree + workspace + claude
+./scripts/spawn-reviewer.sh --pr <n>                # reviewer agent for a PR
+./scripts/send-to-agent.sh <pane|name> "<prompt>"   # message a running agent
+./scripts/check-agent-state.sh <pane|name>          # idle|working|permission|starting
+./scripts/kill-agent.sh <pane|name>                 # stop agent, close pane
+./scripts/monitor-agents.sh                         # list this repo's agents
 ```
 
-This prevents input race conditions where tmux processes the Enter before the text is fully buffered.
+Useful raw commands: `herdr agent read <pane> --lines 20` (view output), `herdr wait agent-status <pane> --status done --timeout <ms>` (block until task completion), `herdr pane send-keys <pane> Enter` (accept a dialog).
 
-Use `scripts/send-to-agent.sh` when possible, as it handles this correctly.
+Notes:
+- herdr CLI exits 0 even on failure; errors come back as `{"error": ...}` JSON. Check the payload.
+- After sending a prompt, wait for `working` first, then `done`. Waiting for `done` right away can return immediately because the previous task's `done` state persists until the new task starts.
+- Startup dialogs (MCP confirmation etc.) can be reported as `idle`. Never treat `idle` alone as task completion; verify with `herdr agent read` or `gh`.
+- `herdr pane run` submits text + Enter atomically — no send-keys races, no sleep needed.
 
 ## Quick Reference
 

@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Launch a Claude agent in a tmux pane for a given worktree.
+# Launch a Claude agent in a herdr pane for a given worktree.
 #
-# Usage: launch-agent.sh <worktree-dir> <prompt>
-# Example: launch-agent.sh /path/to/worktree "/code-with-task clipboard"
+# Usage: launch-agent.sh <worktree-dir> [prompt]
+# Example: launch-agent.sh ~/.herdr/worktrees/reference-manager/feat-clipboard "/code-with-task clipboard"
 #
 # Prerequisites:
 #   - Worktree must already exist
-#   - Must be inside a tmux session
+#   - herdr server must be running (herdr status)
 #
 # What it does:
-#   1. Writes .claude/settings.local.json for state hooks
-#   2. Splits a tmux pane (-d to keep focus on current pane)
-#   3. Launches claude interactively (--permission-mode auto), waits for startup
-#   4. Sends the prompt
+#   1. Writes .claude/settings.local.json (MCP enablement; permissions are
+#      handled by --permission-mode auto, no allow list needed)
+#   2. Opens the worktree as a herdr workspace (idempotent)
+#   3. Starts claude via `herdr agent start` with the prompt passed as argv,
+#      so there are no send-keys input races
+#
+# Prints the agent pane id on the last line: "pane: <pane_id>"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-WORKTREE_DIR="${1:?Usage: launch-agent.sh <worktree-dir> <prompt>}"
-PROMPT="${2:?Usage: launch-agent.sh <worktree-dir> <prompt>}"
+source "$SCRIPT_DIR/herdr-lib.sh"
+
+WORKTREE_DIR="${1:?Usage: launch-agent.sh <worktree-dir> [prompt]}"
+PROMPT="${2:-}"
 SCRIPT_NAME="${LAUNCH_AGENT_LABEL:-launch-agent}"
 
 if [ ! -d "$WORKTREE_DIR" ]; then
@@ -26,160 +31,69 @@ if [ ! -d "$WORKTREE_DIR" ]; then
   exit 1
 fi
 
-if [ -z "${TMUX:-}" ]; then
-  echo "[$SCRIPT_NAME] ERROR: Not in a tmux session. Run: tmux new-session -s main"
-  exit 1
+WORKTREE_DIR="$(cd "$WORKTREE_DIR" && pwd)"
+AGENT_NAME="$(basename "$WORKTREE_DIR")"
+
+# --- 1. Refuse to double-launch (skip for the main repo, where the main
+# agent itself is always running) ---
+if [ "$WORKTREE_DIR" != "$HERDR_LIB_REPO_ROOT" ]; then
+  EXISTING_PANE=$(find_agent_pane_for_dir "$WORKTREE_DIR")
+  if [ -n "$EXISTING_PANE" ]; then
+    echo "[$SCRIPT_NAME] ERROR: An agent is already running in $WORKTREE_DIR (pane $EXISTING_PANE)"
+    exit 1
+  fi
 fi
 
-# --- 1. State-hook settings (always overwrite) ---
-# Permissions are handled by --permission-mode auto at launch (a classifier
-# auto-approves safe actions), so no blanket allow list is written here.
-echo "[$SCRIPT_NAME] Setting up state hooks..."
+# --- 2. Local settings (MCP enablement only) ---
+echo "[$SCRIPT_NAME] Writing worktree settings..."
 mkdir -p "$WORKTREE_DIR/.claude"
-
-# State file directory for hook-based state tracking
-WORKER_STATE_DIR="/tmp/claude-agent-states"
-mkdir -p "$WORKER_STATE_DIR"
-
-# --- 2. Split pane ---
-echo "[$SCRIPT_NAME] Splitting tmux pane..."
-PANE_ID=$(tmux split-window -h -d -c "$WORKTREE_DIR" -P -F '#{pane_id}')
-echo "[$SCRIPT_NAME] Agent pane: $PANE_ID"
-
-# --- 2b. Write settings with hooks (now that we have PANE_ID) ---
-# State file path uses PANE_ID (e.g., %5 -> /tmp/claude-agent-states/%5)
-STATE_FILE="$WORKER_STATE_DIR/$PANE_ID"
-echo "[$SCRIPT_NAME] State file: $STATE_FILE"
-
-cat > "$WORKTREE_DIR/.claude/settings.local.json" << SETTINGS_EOF
+cat > "$WORKTREE_DIR/.claude/settings.local.json" << 'SETTINGS_EOF'
 {
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "serena"
-  ],
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo idle > '$STATE_FILE'"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo working > '$STATE_FILE'",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "permission_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo permission > '$STATE_FILE'"
-          }
-        ]
-      },
-      {
-        "matcher": "idle_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo idle > '$STATE_FILE'"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "mkdir -p '$WORKER_STATE_DIR' && echo starting > '$STATE_FILE'"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rm -f '$STATE_FILE'"
-          }
-        ]
-      }
-    ]
-  }
+  ]
 }
 SETTINGS_EOF
 
-# Initialize state file
-echo "starting" > "$STATE_FILE"
+# --- 3. Open workspace ---
+WORKSPACE_ID=$(ensure_workspace_for_dir "$WORKTREE_DIR")
+echo "[$SCRIPT_NAME] Workspace: $WORKSPACE_ID"
 
-# --- 3. Launch Claude interactively ---
-# NOTE: text and Enter must be separate send-keys calls (sleep 1 between).
-# Set CLAUDE_WORKER_ID to identify this agent
-echo "[$SCRIPT_NAME] Launching Claude in pane $PANE_ID..."
-tmux send-keys -t "$PANE_ID" "CLAUDE_WORKER_ID='$PANE_ID' claude --permission-mode auto"
-sleep 1
-tmux send-keys -t "$PANE_ID" Enter
-
-echo "[$SCRIPT_NAME] Waiting for Claude to start..."
-DETECTED=false
-# Timeout: 45 iterations × 2s = 90s (extra headroom for parallel launches)
-for i in $(seq 1 45); do
-  sleep 2
-
-  # Use check-agent-state.sh for robust state detection
-  # This handles narrow panes (via -J) and distinguishes Trust prompt from input prompt
-  STATE=$("$SCRIPT_DIR/check-agent-state.sh" "$PANE_ID" 2>/dev/null || echo "error")
-
-  case "$STATE" in
-    trust)
-      echo "[$SCRIPT_NAME] Trust prompt detected, auto-accepting..."
-      tmux send-keys -t "$PANE_ID" Enter
-      # Continue waiting for idle state after accepting trust
-      ;;
-    idle)
-      echo "[$SCRIPT_NAME] Claude is ready (after ~$((i * 2))s)"
-      DETECTED=true
-      break
-      ;;
-    working)
-      # Agent is initializing, keep waiting
-      ;;
-    *)
-      # Error or unexpected state, keep waiting
-      ;;
-  esac
-done
-
-if [ "$DETECTED" = false ]; then
-  echo "[$SCRIPT_NAME] WARNING: Claude startup not detected after 90s. Sending prompt anyway as fallback."
+# --- 4. Start claude ---
+echo "[$SCRIPT_NAME] Starting Claude agent '$AGENT_NAME'..."
+if [ -n "$PROMPT" ]; then
+  START_OUT=$(herdr agent start "$AGENT_NAME" \
+    --cwd "$WORKTREE_DIR" --workspace "$WORKSPACE_ID" \
+    --env CLAUDE_WORKER_ID="$AGENT_NAME" --no-focus \
+    -- claude --permission-mode auto "$PROMPT")
+else
+  START_OUT=$(herdr agent start "$AGENT_NAME" \
+    --cwd "$WORKTREE_DIR" --workspace "$WORKSPACE_ID" \
+    --env CLAUDE_WORKER_ID="$AGENT_NAME" --no-focus \
+    -- claude --permission-mode auto)
 fi
 
-# --- 4. Send prompt ---
-# NOTE: Always send text and Enter as separate send-keys calls with sleep 1
-# in between. Combining them (e.g. 'text' Enter) can cause input races.
-# This runs on both success and timeout — if Claude isn't ready yet,
-# the keys will wait in the input buffer and be processed once it starts.
-echo "[$SCRIPT_NAME] Sending prompt..."
-tmux send-keys -t "$PANE_ID" "$PROMPT"
-sleep 1
-tmux send-keys -t "$PANE_ID" Enter
+if echo "$START_OUT" | jq -e '.error' >/dev/null 2>&1; then
+  echo "[$SCRIPT_NAME] ERROR: $(echo "$START_OUT" | jq -r '.error.message')" >&2
+  exit 1
+fi
 
-# NOTE: This script does NOT call tmux select-layout. The caller is
-# responsible for applying the desired layout after all workers are launched
-# (e.g. via scripts/apply-layout.sh).
-echo "[$SCRIPT_NAME] Done. Agent running in pane $PANE_ID."
-echo "[$SCRIPT_NAME] Monitor: tmux capture-pane -t $PANE_ID -p | tail -20"
+PANE_ID=$(echo "$START_OUT" | jq -r '.result.agent.pane_id')
+
+# --- 5. Sanity check: agent should start working shortly ---
+# A startup dialog (trust/MCP prompt) keeps the agent from working; herdr may
+# report it as idle or blocked. Warn so the caller can inspect the pane.
+if [ -n "$PROMPT" ]; then
+  WAIT_OUT=$(herdr wait agent-status "$PANE_ID" --status working --timeout 30000 2>&1 || true)
+  if ! echo "$WAIT_OUT" | grep -q 'agent_status_changed'; then
+    echo "[$SCRIPT_NAME] WARNING: Agent did not start working within 30s."
+    echo "[$SCRIPT_NAME] It may be stuck on a startup dialog. Inspect with:"
+    echo "  herdr agent read $PANE_ID --lines 30"
+    echo "  herdr pane send-keys $PANE_ID Enter   # accept a dialog"
+  fi
+fi
+
+echo "[$SCRIPT_NAME] Done. Agent '$AGENT_NAME' running."
+echo "[$SCRIPT_NAME] Monitor: herdr agent read $PANE_ID --lines 20"
+echo "pane: $PANE_ID"

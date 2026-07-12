@@ -83,7 +83,7 @@ tail -f /tmp/claude-orchestrator/orchestrator.log
 ## Event: worker-completed
 - **Branch**: feat/my-feature
 - **PR**: #123
-- **Pane**: %31
+- **Pane**: w13:p2
 - **Time**: 14:30:25
 
 ## Details
@@ -92,7 +92,7 @@ Worker finished implementation. PR #123 created and CI passed.
 ## Next Steps
 \```bash
 # コピペで実行可能な推奨コマンド
-./scripts/kill-agent.sh %31 && sleep 2 && ./scripts/spawn-reviewer.sh feat/my-feature 123
+./scripts/kill-agent.sh w13:p2 && sleep 2 && ./scripts/spawn-reviewer.sh feat/my-feature 123
 \```
 ```
 

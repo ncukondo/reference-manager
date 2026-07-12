@@ -32,16 +32,15 @@ gh api repos/{owner}/{repo}/pulls/<pr-number>/reviews --jq '.[] | select(.state 
 
 Check/create worktree for each PR:
 ```bash
-PARENT_DIR="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
-git worktree add "${PARENT_DIR}/reference-manager--worktrees/<branch-dir>" <branch-name>
+git worktree add "$HOME/.herdr/worktrees/reference-manager/<branch-dir>" <branch-name>
 ```
 
 ### 4. Spawn Fixer Agents
 
-**Pane limit: max 4 fixers** (main + 4 fixers = 5 panes).
-Before spawning, check current pane count:
+**Fixer limit: max 4 fixers** (plus the main agent).
+Before spawning, check current agent count:
 ```bash
-tmux list-panes | wc -l  # Must be < 5
+./scripts/monitor-agents.sh  # fixers (non-main rows) must be < 4
 ```
 If more PRs than available slots, fix sequentially — wait for one to finish before spawning the next.
 
@@ -54,13 +53,7 @@ Or if task keyword is unknown:
 1. `./scripts/set-role.sh <worktree-dir> implement`
 2. `./scripts/launch-agent.sh <worktree-dir> "<fix instructions>"`
 
-### 5. Apply Layout
-
-```bash
-./scripts/apply-layout.sh
-```
-
-### 6. Start Orchestration (optional)
+### 5. Start Orchestration (optional)
 
 ```bash
 ./scripts/orchestrate.sh --background
@@ -76,4 +69,4 @@ Report:
 
 - If no PRs need fixes, report that and exit
 - Include full review comments in fix instructions
-- Use separate text and Enter when sending tmux keys (with sleep 1 between)
+- Use `./scripts/send-to-agent.sh` to message agents (herdr submits text + Enter atomically)

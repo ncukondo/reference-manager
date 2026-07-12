@@ -1,70 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Kill a Claude Code agent running in a tmux pane.
+# Stop a Claude agent running in a herdr pane.
 #
-# Usage: kill-agent.sh <pane-id> [--keep-pane]
-# Example: kill-agent.sh %9
-# Example: kill-agent.sh %9 --keep-pane
+# Usage: kill-agent.sh <target> [--keep-pane]
+#   target: herdr pane id (e.g. w13:p2) or unique agent name
 #
-# What it does:
-#   1. Sends SIGINT (Ctrl+C) to interrupt any running operation
-#   2. Sends /exit to quit Claude Code
-#   3. Confirms exit with 'y'
-#   4. Verifies Claude has exited
-#   5. Kills the pane (unless --keep-pane is specified)
+# Default: closes the pane (terminates claude with it).
+# --keep-pane: exits claude gracefully with /exit but keeps the shell pane.
 #
-# Worktree is always preserved.
+# Worktree and workspace are always preserved (merge-pr.sh removes them).
 
-PANE_ID="${1:?Usage: kill-agent.sh <pane-id> [--keep-pane]}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/herdr-lib.sh"
+
+TARGET="${1:?Usage: kill-agent.sh <target> [--keep-pane]}"
 KEEP_PANE=false
 if [ "${2:-}" = "--keep-pane" ]; then
   KEEP_PANE=true
 fi
 
-# Check pane exists
-if ! tmux has-session -t "$PANE_ID" 2>/dev/null; then
+# Resolve target to a pane id (fall back to treating the target as a pane id
+# when no agent is detected, e.g. claude already exited)
+AGENT_JSON=$(herdr agent get "$TARGET" 2>/dev/null || true)
+if [ -n "$AGENT_JSON" ] && ! echo "$AGENT_JSON" | jq -e '.error' >/dev/null 2>&1; then
+  PANE_ID=$(echo "$AGENT_JSON" | jq -r '.result.agent.pane_id')
+else
+  PANE_ID="$TARGET"
+fi
+
+if ! pane_exists "$PANE_ID"; then
   echo "[kill-agent] Pane $PANE_ID does not exist, nothing to do."
   exit 0
 fi
 
-echo "[kill-agent] Stopping Claude in pane $PANE_ID..."
-
-# Step 1: Ctrl+C to interrupt any running operation
-tmux send-keys -t "$PANE_ID" C-c
-sleep 1
-
-# Step 2: Send Escape (in case of a prompt/menu), then /exit
-tmux send-keys -t "$PANE_ID" Escape
-sleep 0.5
-tmux send-keys -t "$PANE_ID" '/exit'
-sleep 1
-tmux send-keys -t "$PANE_ID" Enter
-sleep 2
-
-# Step 3: Confirm exit with 'y'
-tmux send-keys -t "$PANE_ID" 'y'
-sleep 0.5
-tmux send-keys -t "$PANE_ID" Enter
-sleep 2
-
-# Step 4: Verify Claude has exited by checking if prompt is bash/zsh
-PANE_CMD=$(tmux display-message -t "$PANE_ID" -p '#{pane_current_command}' 2>/dev/null || echo "unknown")
-if [ "$PANE_CMD" = "claude" ]; then
-  echo "[kill-agent] WARNING: Claude may still be running (command: $PANE_CMD). Sending SIGTERM..."
-  # Get the PID of the process in the pane and kill it
-  PANE_PID=$(tmux display-message -t "$PANE_ID" -p '#{pane_pid}' 2>/dev/null || echo "")
-  if [ -n "$PANE_PID" ]; then
-    # Kill child processes (claude) of the shell in the pane
-    pkill -TERM -P "$PANE_PID" 2>/dev/null || true
-    sleep 2
-  fi
-fi
-
-# Step 5: Kill pane or keep it
 if [ "$KEEP_PANE" = true ]; then
-  echo "[kill-agent] Claude stopped. Pane $PANE_ID kept (bash prompt)."
+  echo "[kill-agent] Exiting Claude gracefully in pane $PANE_ID..."
+  # Escape interrupts any running operation / dismisses menus
+  herdr pane send-keys "$PANE_ID" Escape >/dev/null 2>&1 || true
+  sleep 1
+  herdr pane run "$PANE_ID" "/exit" >/dev/null 2>&1 || true
+  sleep 2
+  echo "[kill-agent] Claude stopped. Pane $PANE_ID kept."
 else
-  tmux kill-pane -t "$PANE_ID" 2>/dev/null || true
-  echo "[kill-agent] Pane $PANE_ID killed."
+  echo "[kill-agent] Closing pane $PANE_ID..."
+  herdr pane close "$PANE_ID" >/dev/null 2>&1 || true
+  echo "[kill-agent] Pane $PANE_ID closed."
 fi

@@ -21,10 +21,8 @@ set -euo pipefail
 #   - Main agent reads event files and decides what actions to take
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_NAME="$(basename "$REPO_ROOT")"
-PARENT_DIR="$(dirname "$REPO_ROOT")"
-WORKTREE_BASE="${PARENT_DIR}/${PROJECT_NAME}--worktrees"
+source "$SCRIPT_DIR/herdr-lib.sh"
+REPO_ROOT="$HERDR_LIB_REPO_ROOT"
 
 STATE_DIR="/tmp/claude-orchestrator"
 EVENTS_DIR="$STATE_DIR/events"
@@ -90,10 +88,9 @@ done
 # Setup
 mkdir -p "$STATE_DIR" "$EVENTS_DIR"
 
-# Auto-detect main pane (the pane running in main repo)
+# Auto-detect main pane (the agent running in the main repo)
 if [ -z "$MAIN_PANE" ]; then
-  MAIN_PANE=$(tmux list-panes -a -F "#{pane_id} #{pane_current_path}" 2>/dev/null | \
-    grep " ${REPO_ROOT}$" | head -1 | cut -d' ' -f1 || true)
+  MAIN_PANE=$(find_main_agent_pane)
 fi
 
 log() {
@@ -143,14 +140,13 @@ write_event() {
   notify_main "$event_file"
 }
 
-# Notify main agent about an event (short 1-line notification)
+# Notify main agent about an event (short 1-line notification).
+# `herdr pane run` submits text + Enter atomically (no input races).
 notify_main() {
   local event_file="$1"
 
-  if [ -n "$MAIN_PANE" ] && tmux has-session -t "$MAIN_PANE" 2>/dev/null; then
-    tmux send-keys -t "$MAIN_PANE" "# [ORCH] $(basename "$event_file")" 2>/dev/null || true
-    sleep 0.5
-    tmux send-keys -t "$MAIN_PANE" Enter 2>/dev/null || true
+  if [ -n "$MAIN_PANE" ] && pane_exists "$MAIN_PANE"; then
+    herdr pane run "$MAIN_PANE" "# [ORCH] $(basename "$event_file")" >/dev/null 2>&1 || true
   fi
 }
 
@@ -162,16 +158,9 @@ get_active_branches() {
     grep -v "^main$" || true
 }
 
-# Find pane ID for a branch
+# Find pane ID for a branch (via herdr agent list)
 find_pane_for_branch() {
-  local branch="$1"
-  local branch_dash
-  branch_dash=$(echo "$branch" | tr '/' '-')
-  local worktree_path="$WORKTREE_BASE/$branch_dash"
-
-  # Find pane with matching cwd
-  tmux list-panes -a -F "#{pane_id} #{pane_current_path}" 2>/dev/null | \
-    grep " $worktree_path$" | head -1 | cut -d' ' -f1 || true
+  find_agent_pane_for_branch "$1"
 }
 
 # Get current role from CLAUDE.md
@@ -229,13 +218,7 @@ process_branch() {
   pane_id=$(find_pane_for_branch "$branch")
 
   if [ -z "$pane_id" ]; then
-    # No pane found - might be cleaned up or not yet started
-    return
-  fi
-
-  # Check if pane still exists
-  if ! tmux has-session -t "$pane_id" 2>/dev/null; then
-    log "Branch $branch: pane $pane_id no longer exists"
+    # No agent found - might be cleaned up or not yet started
     return
   fi
 
@@ -490,7 +473,7 @@ main_loop() {
 
   while true; do
     # Main agent liveness check
-    if [ -n "$MAIN_PANE" ] && ! tmux has-session -t "$MAIN_PANE" 2>/dev/null; then
+    if [ -n "$MAIN_PANE" ] && ! pane_exists "$MAIN_PANE"; then
       log "Main agent pane $MAIN_PANE no longer exists. Stopping orchestrator."
       rm -f "$PID_FILE"
       exit 0

@@ -23,10 +23,10 @@ gh pr list --state open --json number,headRefName,title
 
 ### 2. Spawn Reviewers
 
-**Pane limit: max 4 reviewers** (main + 4 reviewers = 5 panes).
-Before spawning, check current pane count:
+**Reviewer limit: max 4 reviewers** (plus the main agent).
+Before spawning, check current agent count:
 ```bash
-tmux list-panes | wc -l  # Must be < 5
+./scripts/monitor-agents.sh  # reviewers (non-main rows) must be < 4
 ```
 If more PRs than available slots, review sequentially — wait for one to finish before spawning the next.
 
@@ -40,12 +40,6 @@ wait
 Or with explicit branch names:
 ```bash
 ./scripts/spawn-reviewer.sh <branch-name> <pr-number> --create &
-```
-
-### 4. Apply Layout
-
-```bash
-./scripts/apply-layout.sh
 ```
 
 ### 5. Start Orchestration
@@ -69,6 +63,6 @@ Monitor command:
 ## Notes
 
 - If no open PRs, report that and exit
-- Verify tmux session before spawning
+- Verify herdr server is running before spawning (`herdr status`)
 - Agents autonomously review and post results to GitHub
 - Orchestrator handles transitions after review completion

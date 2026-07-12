@@ -19,14 +19,13 @@ CLAUDE.md, spec/_index.mdを起点として必要事項を確認後、spec/tasks
 
 ```bash
 # worktree作成（ブランチがなければ自動作成）
-PARENT_DIR="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 PROJECT_NAME="$(basename "$(git rev-parse --show-toplevel)")"
-git worktree add "${PARENT_DIR}/${PROJECT_NAME}--worktrees/<branch-name>" -b <branch-name>
-cd "${PARENT_DIR}/${PROJECT_NAME}--worktrees/<branch-name>"
+git worktree add "$HOME/.herdr/worktrees/${PROJECT_NAME}/<branch-name>" -b <branch-name>
+cd "$HOME/.herdr/worktrees/${PROJECT_NAME}/<branch-name>"
 npm install
 ```
 
-**パス規則**: worktreeは必ずリポジトリの親ディレクトリ直下の `reference-manager--worktrees/` 内に作成
+**パス規則**: worktreeは必ず `~/.herdr/worktrees/reference-manager/` 内に作成（herdrのworktreeベースと共通）
 
 ## Implementation Flow
 

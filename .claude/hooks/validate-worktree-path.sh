@@ -4,11 +4,10 @@
 
 set -euo pipefail
 
-# Determine allowed worktree parent dynamically from project directory
+# Worktrees live under herdr's checkout base for this repo
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-PARENT_DIR="$(dirname "$PROJECT_DIR")"
 PROJECT_NAME="$(basename "$PROJECT_DIR")"
-ALLOWED_PARENT="${PARENT_DIR}/${PROJECT_NAME}--worktrees"
+ALLOWED_PARENT="${HOME}/.herdr/worktrees/${PROJECT_NAME}"
 
 # Read JSON input from stdin
 input=$(cat)

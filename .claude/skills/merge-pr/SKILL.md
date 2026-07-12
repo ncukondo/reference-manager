@@ -85,8 +85,7 @@ After merge, update ROADMAP if needed:
 ### "Worktree locked"
 The script handles this with `--force`, but if it still fails:
 ```bash
-PARENT_DIR="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
-rm -rf "${PARENT_DIR}/reference-manager--worktrees/<branch-dir>"
+rm -rf "$HOME/.herdr/worktrees/reference-manager/<branch-dir>"
 git worktree prune
 ```
 

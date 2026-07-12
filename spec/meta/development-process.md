@@ -72,22 +72,21 @@ When implementing tasks from `spec/tasks/`, use a dedicated git worktree to isol
 ### Create Worktree
 
 ```bash
-# Create worktree in the dedicated directory
-git worktree add /workspaces/reference-manager--worktrees/<branch-name> -b <branch-name>
+# Create worktree in the dedicated directory (slashes in branch names become dashes)
+git worktree add "$HOME/.herdr/worktrees/reference-manager/<branch-dir>" -b <branch-name>
 
 # Example for task 20260108-01-new-feature.md
-git worktree add /workspaces/reference-manager--worktrees/feature/new-feature -b feature/new-feature
+git worktree add "$HOME/.herdr/worktrees/reference-manager/feature-new-feature" -b feature/new-feature
 
 # Run initial setup in the new worktree
-cd /workspaces/reference-manager--worktrees/<branch-name> && npm install
+cd "$HOME/.herdr/worktrees/reference-manager/<branch-dir>" && npm install
 ```
 
 ### Worktree Location
 
-- **All worktrees must be created under `/workspaces/reference-manager--worktrees/`**
+- **All worktrees must be created under `~/.herdr/worktrees/reference-manager/`** (herdr's worktree base)
 - This is enforced by the `validate-worktree-path.sh` hook in `.claude/hooks/`
-- The devcontainer is configured to allow this (`postCreateCommand` sets ownership)
-- Use branch name as subdirectory name
+- Use branch name with slashes converted to dashes as subdirectory name (herdr convention)
 
 ### Parallel Work Rules
 
@@ -101,19 +100,19 @@ This separation ensures that shared files (`ROADMAP.md`, `spec/tasks/`) are only
 ### After Completion
 
 ```bash
-# After merging, remove worktree and branch
-git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
+# After merging, remove worktree and branch (merge-pr.sh does this automatically)
+git worktree remove "$HOME/.herdr/worktrees/reference-manager/<branch-dir>"
 git branch -d <branch-name>
 ```
 
 ## Parallel Agent Orchestration
 
-Use tmux pane splitting for parallel agent work. All agents run in panes within the same tmux window for easy monitoring.
+Agents run in [herdr](https://herdr.dev) panes, one workspace per worktree. herdr detects each agent's state (idle/working/blocked) automatically and exposes a socket API used by the scripts below.
 
 ### Prerequisites
 
-- `tmux` (installed via DevContainer)
-- Running inside a tmux session (`$TMUX` must be set)
+- `herdr` installed, server running (`herdr status`)
+- Claude integration installed (`herdr integration install claude`) — enables agent state detection
 
 ### Agent Scripts
 
@@ -121,9 +120,9 @@ Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch
 
 | Script | Usage | Purpose |
 |--------|-------|---------|
-| `launch-agent.sh` | `<worktree-dir> <prompt>` | Base: permissions + hooks, pane split, Claude launch, prompt send |
+| `launch-agent.sh` | `<worktree-dir> [prompt]` | Base: settings, herdr workspace, Claude launch (`--permission-mode auto`) |
 | `spawn-worker.sh` | `<branch> <task-keyword> [step-scope]` | Creates worktree + sets implement role, then delegates |
-| `start-review.sh` | `<pr-number>` | Resolves PR branch + sets review role, then delegates |
+| `spawn-reviewer.sh` | `--pr <pr-number>` | Creates worktree + sets review role, then delegates |
 
 ```bash
 # Implementation worker
@@ -133,7 +132,7 @@ Scripts in `scripts/` automate agent lifecycle. All share a common base (`launch
 ./scripts/spawn-worker.sh feature/<name> <task-keyword> "Steps 1 and 2 only"
 
 # PR review
-./scripts/start-review.sh <pr-number>
+./scripts/spawn-reviewer.sh --pr <pr-number>
 
 # Ad-hoc agent (existing worktree, custom prompt)
 ./scripts/launch-agent.sh /path/to/worktree "your prompt here"
@@ -145,10 +144,10 @@ If auto-launch fails, the scripts print manual commands to run.
 
 | Script | Usage | Purpose |
 |--------|-------|---------|
-| `monitor-agents.sh` | `[--watch] [--json]` | List all agent states (idle/working/trust) |
-| `check-agent-state.sh` | `<pane-id>` | Check single agent's state |
+| `monitor-agents.sh` | `[--watch] [--json] [--all]` | List this repo's agent states |
+| `check-agent-state.sh` | `<pane\|name>` | Check single agent's state |
 | `check-task-completion.sh` | `<branch> <task-type> [pr]` | Check PR/CI/review status via GitHub API |
-| `send-to-agent.sh` | `<pane-id> <prompt>` | Send prompt to idle agent |
+| `send-to-agent.sh` | `<pane\|name> <prompt>` | Send prompt to idle agent |
 
 ### Parallel Task Analysis
 
@@ -156,16 +155,17 @@ When splitting a task into parallel workers:
 
 1. **Check file conflicts**: If two steps modify the same source/test files, assign them to the same worker
 2. **Use step scope**: Pass the third argument to `spawn-worker.sh` to restrict each worker's scope
-3. **Review after implementation**: Use `start-review.sh` to spawn review agents
+3. **Review after implementation**: Use `spawn-reviewer.sh` to spawn review agents
 
 ### State Tracking
 
-Agent states are tracked via hooks in `/tmp/claude-agent-states/<pane-id>`:
-- `starting` - Agent is starting up
+Agent states come from herdr's agent detection (`herdr agent get <target>`):
+- `starting` - Agent detected but state not yet known (herdr: `unknown`)
 - `working` - Agent is executing a task
 - `idle` - Agent is waiting for input
-- `permission` - Permission prompt displayed
-- `trust` - Trust folder prompt displayed
+- `permission` - Agent is blocked on a prompt/dialog (herdr: `blocked`)
+
+Caveat: startup dialogs (MCP confirmation etc.) may be reported as `idle`. Never treat `idle` alone as task completion; verify with `herdr agent read <pane>` or `check-task-completion.sh` (GitHub state).
 
 ### Monitoring
 
@@ -173,11 +173,14 @@ Agent states are tracked via hooks in `/tmp/claude-agent-states/<pane-id>`:
 # Monitor all agents continuously
 ./scripts/monitor-agents.sh --watch
 
-# List all panes
-tmux list-panes -F '#{pane_id} #{pane_current_command} #{pane_current_path}'
+# List all agents
+herdr agent list
 
 # Inspect specific pane
-tmux capture-pane -t <pane-id> -p | tail -20
+herdr agent read <pane-id> --lines 20
+
+# Block until an agent finishes its task (herdr reports "done" on completion)
+herdr wait agent-status <pane-id> --status done --timeout 600000
 
 # Send prompt to idle agent
 ./scripts/send-to-agent.sh <pane-id> "your instruction"
@@ -189,10 +192,10 @@ Agent scripts modify `CLAUDE.md` in the worktree (not committed). Restore it bef
 
 ```bash
 # Restore CLAUDE.md modified by agent scripts
-cd /workspaces/reference-manager--worktrees/<branch-name> && git checkout -- CLAUDE.md
+cd "$HOME/.herdr/worktrees/reference-manager/<branch-dir>" && git checkout -- CLAUDE.md
 
 # Remove worktree and branch
-git worktree remove /workspaces/reference-manager--worktrees/<branch-name>
+git worktree remove "$HOME/.herdr/worktrees/reference-manager/<branch-dir>"
 git branch -d <branch-name>
 ```
 

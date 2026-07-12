@@ -14,29 +14,25 @@ set -euo pipefail
 #                 Appended to CLAUDE.md so the worker knows its scope.
 #
 # What it does:
-#   1. Creates worktree manually (no workmux)
+#   1. Creates worktree under herdr's worktree base
 #   2. Sets role marker in CLAUDE.md
 #   3. Appends step scope if provided
-#   4. Delegates to launch-agent.sh for pane + Claude setup
+#   4. Delegates to launch-agent.sh (herdr workspace + Claude setup)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_NAME="$(basename "$REPO_ROOT")"
-PARENT_DIR="$(dirname "$REPO_ROOT")"
+source "$SCRIPT_DIR/herdr-lib.sh"
 
 BRANCH="${1:?Usage: spawn-worker.sh <branch-name> <task-keyword> [step-scope]}"
 TASK_KEYWORD="${2:?Usage: spawn-worker.sh <branch-name> <task-keyword> [step-scope]}"
 STEP_SCOPE="${3:-}"
 
-WORKTREE_BASE="${PARENT_DIR}/${PROJECT_NAME}--worktrees"
-WORKTREE_DIR="$WORKTREE_BASE/$(echo "$BRANCH" | tr '/' '-')"
+WORKTREE_DIR="$(worktree_dir_for_branch "$BRANCH")"
 
 # --- 1. Create worktree ---
-# All agents run in panes within the current tmux window (no separate windows).
 if [ -d "$WORKTREE_DIR" ]; then
   echo "[spawn-worker] Worktree already exists: $WORKTREE_DIR"
 else
-  echo "[spawn-worker] Creating worktree manually..."
+  echo "[spawn-worker] Creating worktree: $WORKTREE_DIR"
   mkdir -p "$WORKTREE_BASE"
   git worktree add "$WORKTREE_DIR" -b "$BRANCH"
   (cd "$WORKTREE_DIR" && npm install)

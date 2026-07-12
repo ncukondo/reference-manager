@@ -16,15 +16,12 @@ set -euo pipefail
 #   --create         Create worktree if it doesn't exist (default: error if missing)
 #
 # What it does:
-#   1. Locates or creates the worktree
+#   1. Locates or creates the worktree (under herdr's worktree base)
 #   2. Sets role marker to 'review' in CLAUDE.md
 #   3. Delegates to launch-agent.sh with /review-pr prompt
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_NAME="$(basename "$REPO_ROOT")"
-PARENT_DIR="$(dirname "$REPO_ROOT")"
-WORKTREE_BASE="${PARENT_DIR}/${PROJECT_NAME}--worktrees"
+source "$SCRIPT_DIR/herdr-lib.sh"
 
 BRANCH=""
 PR_NUMBER=""
@@ -79,18 +76,15 @@ fi
 echo "[spawn-reviewer] Branch: $BRANCH"
 echo "[spawn-reviewer] PR: #$PR_NUMBER"
 
-BRANCH_DIR=$(echo "$BRANCH" | tr '/' '-')
-WORKTREE_DIR="$WORKTREE_BASE/$BRANCH_DIR"
+WORKTREE_DIR="$(worktree_dir_for_branch "$BRANCH")"
 
 # --- 0. Duplicate reviewer check ---
 # Skip if a review-role agent is already running for this branch
 if [ -d "$WORKTREE_DIR" ]; then
   CLAUDE_MD="$WORKTREE_DIR/CLAUDE.md"
   if [ -f "$CLAUDE_MD" ] && grep -q '^<!-- role: review -->' "$CLAUDE_MD"; then
-    # Role is already review - check if an agent pane exists for this worktree
-    EXISTING_PANE=$(tmux list-panes -a -F "#{pane_id} #{pane_current_path}" 2>/dev/null | \
-      grep " ${WORKTREE_DIR}$" | head -1 | cut -d' ' -f1 || true)
-    if [ -n "$EXISTING_PANE" ] && tmux has-session -t "$EXISTING_PANE" 2>/dev/null; then
+    EXISTING_PANE=$(find_agent_pane_for_dir "$WORKTREE_DIR")
+    if [ -n "$EXISTING_PANE" ]; then
       echo "[spawn-reviewer] WARNING: Review agent already running for branch $BRANCH in pane $EXISTING_PANE. Skipping."
       exit 0
     fi

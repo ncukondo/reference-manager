@@ -1,57 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Send a prompt/instruction to a Claude agent in a tmux pane.
+# Send a prompt/instruction to a running Claude agent via herdr.
 #
-# Usage: send-to-agent.sh <pane-id> <prompt>
-# Example: send-to-agent.sh %31 "/review-pr 44"
-# Example: send-to-agent.sh %31 "Fix the failing test in results.test.ts"
+# Usage: send-to-agent.sh <target> <prompt>
+#   target: herdr pane id (e.g. w13:p2) or unique agent name
+#
+# Example: send-to-agent.sh feat-clipboard "/review-pr 44"
+# Example: send-to-agent.sh w13:p2 "Fix the failing test in results.test.ts"
 #
 # Prerequisites:
 #   - Agent must be in "idle" or "starting" state
-#   - Pane must exist
 #
-# This script:
-#   1. Verifies the agent is ready for input (idle or starting)
-#   2. Sends the prompt text
-#   3. Waits 1 second (important for tmux input handling)
-#   4. Sends Enter to execute
-#
-# Note: Text and Enter MUST be sent separately with sleep 1 in between
-# to avoid input races (per tmux send-keys best practices).
+# `herdr pane run` submits the text and Enter atomically, so there are no
+# input races (unlike tmux send-keys).
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PANE="${1:?Usage: send-to-agent.sh <pane-id> <prompt>}"
-PROMPT="${2:?Usage: send-to-agent.sh <pane-id> <prompt>}"
+source "$SCRIPT_DIR/herdr-lib.sh"
 
-# Check pane exists
-if ! tmux has-session -t "$PANE" 2>/dev/null; then
-  echo "[send-to-agent] ERROR: Pane $PANE does not exist" >&2
+TARGET="${1:?Usage: send-to-agent.sh <target> <prompt>}"
+PROMPT="${2:?Usage: send-to-agent.sh <target> <prompt>}"
+
+# Resolve target to a pane id and verify the agent exists
+AGENT_JSON=$(herdr agent get "$TARGET" 2>/dev/null || true)
+if [ -z "$AGENT_JSON" ] || echo "$AGENT_JSON" | jq -e '.error' >/dev/null 2>&1; then
+  echo "[send-to-agent] ERROR: Agent not found: $TARGET" >&2
   exit 1
 fi
+PANE_ID=$(echo "$AGENT_JSON" | jq -r '.result.agent.pane_id')
+STATE=$(echo "$AGENT_JSON" | jq -r '.result.agent.agent_status')
 
-# Check agent state
-# Accept both "idle" and "starting" - starting means Claude is up but idle_prompt
-# hook hasn't fired yet (it fires after 60s of idle). The agent can still accept input.
-STATE=$("$SCRIPT_DIR/check-agent-state.sh" "$PANE" 2>/dev/null || echo "error")
-
-if [ "$STATE" = "error" ]; then
-  echo "[send-to-agent] ERROR: Could not determine agent state" >&2
-  exit 1
-fi
-
-if [ "$STATE" != "idle" ] && [ "$STATE" != "starting" ]; then
+if [ "$STATE" != "idle" ] && [ "$STATE" != "done" ] && [ "$STATE" != "unknown" ]; then
   echo "[send-to-agent] ERROR: Agent is not ready for input (state: $STATE)" >&2
   echo "[send-to-agent] Wait for the agent to finish its current task" >&2
   exit 1
 fi
 
-# Send the prompt
-# NOTE: Always send text and Enter separately with sleep in between
-# to avoid input races (per tmux send-keys best practices)
-echo "[send-to-agent] Sending prompt to pane $PANE..."
-tmux send-keys -t "$PANE" "$PROMPT"
-sleep 1
-tmux send-keys -t "$PANE" Enter
+echo "[send-to-agent] Sending prompt to pane $PANE_ID..."
+herdr pane run "$PANE_ID" "$PROMPT" >/dev/null
 
 echo "[send-to-agent] Prompt sent successfully"

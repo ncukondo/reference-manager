@@ -1,48 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Start a review agent for a PR in a tmux pane.
+# Start a review agent for a PR.
 #
 # Usage: start-review.sh <pr-number>
 # Example: start-review.sh 56
 #
-# What it does:
-#   1. Gets branch name from PR
-#   2. Creates worktree if not exists (fetches branch from origin)
-#   3. Sets role to 'review' in CLAUDE.md
-#   4. Delegates to launch-agent.sh for pane + Claude setup
+# Thin wrapper around spawn-reviewer.sh (kept for backward compatibility).
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PR_NUMBER="${1:?Usage: start-review.sh <pr-number>}"
 
-WORKTREE_BASE="/workspaces/reference-manager--worktrees"
-
-# --- 1. Get branch name from PR ---
-echo "[start-review] Fetching PR #$PR_NUMBER info..."
-BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')
-if [ -z "$BRANCH" ]; then
-  echo "[start-review] ERROR: Could not get branch name for PR #$PR_NUMBER" >&2
-  exit 1
-fi
-echo "[start-review] Branch: $BRANCH"
-
-WORKTREE_DIR="$WORKTREE_BASE/$(echo "$BRANCH" | tr '/' '-')"
-
-# --- 2. Create worktree if not exists ---
-if [ -d "$WORKTREE_DIR" ]; then
-  echo "[start-review] Worktree already exists: $WORKTREE_DIR"
-else
-  echo "[start-review] Creating worktree..."
-  mkdir -p "$WORKTREE_BASE"
-  git fetch origin "$BRANCH"
-  git worktree add "$WORKTREE_DIR" "$BRANCH"
-  (cd "$WORKTREE_DIR" && npm install)
-fi
-
-# --- 3. Set role to 'review' ---
-echo "[start-review] Setting role to 'review' in CLAUDE.md..."
-"$SCRIPT_DIR/set-role.sh" "$WORKTREE_DIR" review
-
-# --- 4. Delegate to launch-agent.sh ---
 export LAUNCH_AGENT_LABEL="start-review"
-exec "$SCRIPT_DIR/launch-agent.sh" "$WORKTREE_DIR" "/review-pr $PR_NUMBER"
+exec "$SCRIPT_DIR/spawn-reviewer.sh" --pr "$PR_NUMBER"

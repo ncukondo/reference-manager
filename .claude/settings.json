@@ -1,18 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tmux capture-pane:*)",
-      "Bash(tmux send-keys:*)",
-      "Bash(tmux list-panes:*)",
-      "Bash(tmux list-windows:*)",
-      "Bash(tmux kill-pane:*)",
-      "Bash(tmux split-window:*)",
-      "Bash(tmux new-session:*)",
-      "Bash(tmux has-session:*)",
-      "Bash(tmux select-layout:*)",
-      "Bash(which tmux)",
+      "Bash(herdr status:*)",
+      "Bash(herdr agent:*)",
+      "Bash(herdr pane:*)",
+      "Bash(herdr wait:*)",
+      "Bash(herdr worktree:*)",
+      "Bash(herdr workspace:*)",
+      "Bash(herdr tab:*)",
+      "Bash(herdr notification:*)",
       "Bash(sleep:*)",
-      "Read(/workspaces/reference-manager--worktrees/**)"
+      "Read(~/.herdr/worktrees/reference-manager/**)"
     ]
   },
   "statusLine": {

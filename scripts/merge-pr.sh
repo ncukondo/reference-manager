@@ -23,10 +23,8 @@ set -euo pipefail
 #   ./scripts/merge-pr.sh 123 --merge --no-task
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_NAME="$(basename "$REPO_ROOT")"
-PARENT_DIR="$(dirname "$REPO_ROOT")"
-WORKTREE_BASE="${PARENT_DIR}/${PROJECT_NAME}--worktrees"
+source "$SCRIPT_DIR/herdr-lib.sh"
+REPO_ROOT="$HERDR_LIB_REPO_ROOT"
 
 PR_NUM="${1:?Usage: merge-pr.sh <pr-number> [options]}"
 MERGE_METHOD="--squash"
@@ -114,7 +112,7 @@ fi
 # Ensure we're not in the worktree directory
 CURRENT_DIR=$(pwd)
 BRANCH_DIR=$(echo "$BRANCH" | tr '/' '-')
-WORKTREE_PATH="$WORKTREE_BASE/$BRANCH_DIR"
+WORKTREE_PATH="$(worktree_dir_for_branch "$BRANCH")"
 
 if [[ "$CURRENT_DIR" == "$WORKTREE_PATH"* ]]; then
   log "Currently in worktree directory. Switching to repo root..."
@@ -134,21 +132,32 @@ if [ -d "$WORKTREE_PATH" ]; then
   log "Removing worktree: $WORKTREE_PATH"
 
   # Kill any Claude agents running in this worktree
-  PANE_ID=$(tmux list-panes -a -F "#{pane_id} #{pane_current_path}" 2>/dev/null | \
-    grep " $WORKTREE_PATH$" | head -1 | cut -d' ' -f1 || true)
-
+  PANE_ID=$(find_agent_pane_for_dir "$WORKTREE_PATH")
   if [ -n "$PANE_ID" ]; then
     log "Killing agent in pane $PANE_ID..."
-    "$SCRIPT_DIR/kill-agent.sh" "$PANE_ID" 2>/dev/null || true
+    run "$SCRIPT_DIR/kill-agent.sh" "$PANE_ID" 2>/dev/null || true
   fi
 
-  # Remove worktree (force if locked)
-  run git worktree remove "$WORKTREE_PATH" 2>/dev/null || \
-    run git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || {
-      log "Worktree removal failed, trying manual cleanup..."
-      rm -rf "$WORKTREE_PATH" 2>/dev/null || true
-      run git worktree prune
-    }
+  # If the worktree is open as a herdr workspace, remove it via herdr
+  # (closes the workspace and deletes the checkout in one step)
+  WS_ID=$(herdr worktree list --cwd "$REPO_ROOT" --json 2>/dev/null | \
+    jq -r --arg path "$WORKTREE_PATH" \
+    '.result.worktrees[]? | select(.path == $path) | .open_workspace_id // empty' | head -1)
+
+  if [ -n "$WS_ID" ]; then
+    log "Closing herdr workspace $WS_ID and removing worktree..."
+    run herdr worktree remove --workspace "$WS_ID" --force >/dev/null || true
+  fi
+
+  # Fallback: remove via git if the checkout still exists
+  if [ -d "$WORKTREE_PATH" ]; then
+    run git worktree remove "$WORKTREE_PATH" 2>/dev/null || \
+      run git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || {
+        log "Worktree removal failed, trying manual cleanup..."
+        rm -rf "$WORKTREE_PATH" 2>/dev/null || true
+        run git worktree prune
+      }
+  fi
 
   log "Worktree removed."
 else
