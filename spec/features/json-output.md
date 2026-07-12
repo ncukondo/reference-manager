@@ -107,7 +107,7 @@ interface AddJsonOutput {
       "source": "10.1000/existing",
       "reason": "duplicate",
       "existingId": "existing-2024",
-      "duplicateType": "doi"  // or "pmid", "isbn", "isbn-title", "title-author-year"
+      "duplicateType": "doi"  // or "pmid", "isbn", "isbn-title", "arxiv", "eric", "scopus", "title-author-year"
     }
   ],
   "failed": [
