@@ -101,7 +101,7 @@ function checkPmidMatch(item: CslItem, existing: CslItem): DuplicateMatch | null
 /**
  * Normalize ISBN by removing hyphens, spaces, and uppercasing X
  */
-function normalizeIsbn(isbn: string): string {
+function normalizeIsbnForComparison(isbn: string): string {
   return isbn.replace(/[-\s]/g, "").toUpperCase();
 }
 
@@ -125,8 +125,8 @@ function checkIsbnMatch(item: CslItem, existing: CslItem): DuplicateMatch | null
     return null;
   }
 
-  const normalizedItemIsbn = normalizeIsbn(item.ISBN);
-  const normalizedExistingIsbn = normalizeIsbn(existing.ISBN);
+  const normalizedItemIsbn = normalizeIsbnForComparison(item.ISBN);
+  const normalizedExistingIsbn = normalizeIsbnForComparison(existing.ISBN);
 
   if (normalizedItemIsbn !== normalizedExistingIsbn) {
     return null;
