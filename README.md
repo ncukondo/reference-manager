@@ -622,10 +622,10 @@ ref search -t "machine learning" # Pre-fill the search query
 - Real-time filtering as you type (200ms debounce)
 - Multi-select with Space key
 - Action menu for selected references:
-  - Output IDs (citation keys)
-  - Output as CSL-JSON
-  - Output as BibTeX
-  - Generate citation (APA or choose style)
+  - Show details (single selection)
+  - Citation keys (Pandoc or LaTeX)
+  - Cite (default style or choose style)
+  - Export (IDs, CSL-JSON, BibTeX, YAML)
 
 **Navigation:**
 | Key | Action |

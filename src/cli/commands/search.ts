@@ -282,6 +282,12 @@ export async function executeInteractiveSearch(
     })
   );
 
+  // Handle show action: render the reference detail view (same flow as output actions)
+  if (result.action === "show" && result.selectedItems && !result.cancelled) {
+    const output = await executeShowAction(result.selectedItems, config);
+    return { output, cancelled: false, action: result.action };
+  }
+
   // Handle side-effect actions
   if (result.selectedItems && !result.cancelled) {
     const { isSideEffectAction } = await import("../../features/interactive/action-menu.js");
@@ -296,6 +302,18 @@ export async function executeInteractiveSearch(
     cancelled: result.cancelled,
     action: result.action,
   };
+}
+
+/**
+ * Execute the "show" action from the TUI action menu.
+ * Renders the reference detail view using the `ref show` pretty format.
+ * @internal Exported for testing only.
+ */
+export async function executeShowAction(items: CslItem[], config: Config): Promise<string> {
+  const item = items[0];
+  if (!item) return "";
+  const { formatShowOutput } = await import("./show.js");
+  return formatShowOutput(item, {}, config.attachments.directory);
 }
 
 /**

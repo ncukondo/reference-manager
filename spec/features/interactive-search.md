@@ -97,14 +97,15 @@ actions not available for multiple entries.
 
 ```
 ? Action for 1 selected reference:
-❯ Citation key (Pandoc)
-  Generate citation
-  Generate citation (choose style)
+❯ Show details
+  Citation key (Pandoc)
+  Cite
+  Cite (choose style)
   Open URL
   Open fulltext
-  Manage attachments
   Edit reference
-  Output (choose format)
+  Manage attachments
+  Export (choose format)
   Remove
   Cancel
 ```
@@ -118,17 +119,17 @@ The "Citation key" label shows the current format from `config.citation.defaultK
 ```
 ? Action for 3 selected references:
 ❯ Citation keys (Pandoc)
-  Generate citation
-  Generate citation (choose style)
+  Cite
+  Cite (choose style)
   Edit references
-  Output (choose format)
+  Export (choose format)
   Remove
   Cancel
 ```
 
 #### Output Format Submenu
 
-When "Output (choose format)" is selected:
+When "Export (choose format)" is selected:
 
 ```
 ? Output format:
@@ -145,13 +146,14 @@ When "Output (choose format)" is selected:
 
 | Action | Output |
 |--------|--------|
+| Show details | `ref show` pretty format for the selected reference (single only) |
 | Citation key | Pandoc: `@id` (single), `@id1; @id2` (multi). LaTeX: `\cite{id}` (single), `\cite{id1,id2}` (multi) |
-| Generate citation | Formatted citations using `config.citation.defaultStyle` |
-| Generate citation (choose) | Prompt for style, then generate |
-| Output IDs | Citation keys, one per line |
-| Output CSL-JSON | JSON array of selected references |
-| Output BibTeX | BibTeX entries |
-| Output YAML | YAML formatted references |
+| Cite | Formatted citations using `config.citation.defaultStyle` |
+| Cite (choose style) | Prompt for style, then generate |
+| Export IDs | Citation keys, one per line |
+| Export CSL-JSON | JSON array of selected references |
+| Export BibTeX | BibTeX entries |
+| Export YAML | YAML formatted references |
 
 **Side-effect actions** — perform an operation, then exit:
 
