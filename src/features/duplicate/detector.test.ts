@@ -438,6 +438,178 @@ describe("detectDuplicate", () => {
     });
   });
 
+  describe("ERIC ID-based detection (fifth priority)", () => {
+    const ericOriginal: CslItem = {
+      id: "eric2023",
+      type: "article-journal",
+      title: "ERIC Paper on Education",
+      author: [{ family: "Brown", given: "Carol" }],
+      custom: {
+        uuid: "660e8400-e29b-41d4-a716-446655440101",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        eric_id: "EJ1234567",
+      },
+    };
+
+    it("should detect duplicate by ERIC ID", () => {
+      const newItem: CslItem = {
+        id: "new-eric",
+        type: "article-journal",
+        title: "Same ERIC Paper",
+        custom: { eric_id: "EJ1234567" },
+      };
+      const result = detectDuplicate(newItem, [ericOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches).toHaveLength(1);
+      expect(result.matches[0].type).toBe("eric");
+      expect(result.matches[0].details?.eric_id).toBe("EJ1234567");
+    });
+
+    it("should NOT detect duplicate when ERIC IDs differ", () => {
+      const newItem: CslItem = {
+        id: "different-eric",
+        type: "article-journal",
+        title: "Different ERIC Paper",
+        custom: { eric_id: "EJ7654321" },
+      };
+      const result = detectDuplicate(newItem, [ericOriginal]);
+
+      expect(result.isDuplicate).toBe(false);
+    });
+
+    it("should NOT match when item has no eric_id", () => {
+      const newItem: CslItem = {
+        id: "no-eric",
+        type: "article-journal",
+        title: "No ERIC ID",
+      };
+      const result = detectDuplicate(newItem, [ericOriginal]);
+
+      // Should not match on ERIC (may match on title-author-year)
+      const ericMatch = result.matches.find((m) => m.type === "eric");
+      expect(ericMatch).toBeUndefined();
+    });
+
+    it("should prioritize arXiv ID over ERIC ID", () => {
+      const ericWithArxiv: CslItem = {
+        ...ericOriginal,
+        custom: {
+          ...ericOriginal.custom,
+          arxiv_id: "2301.13867",
+        },
+      };
+      const newItem: CslItem = {
+        id: "arxiv-and-eric",
+        type: "article-journal",
+        title: "Paper with both",
+        custom: { arxiv_id: "2301.13867", eric_id: "EJ1234567" },
+      };
+      const result = detectDuplicate(newItem, [ericWithArxiv]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("arxiv");
+    });
+
+    it("should prioritize ERIC ID over Title + Author + Year", () => {
+      const newItem: CslItem = {
+        ...ericOriginal,
+        id: "eric-and-tay",
+        custom: { eric_id: "EJ1234567" },
+      };
+      const result = detectDuplicate(newItem, [ericOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("eric");
+    });
+  });
+
+  describe("Scopus ID-based detection (sixth priority)", () => {
+    const scopusOriginal: CslItem = {
+      id: "scopus2023",
+      type: "article-journal",
+      title: "Scopus Paper on Medicine",
+      author: [{ family: "Davis", given: "Erin" }],
+      custom: {
+        uuid: "660e8400-e29b-41d4-a716-446655440102",
+        timestamp: "2024-01-01T00:00:00.000Z",
+        scopus_id: "2-s2.0-85123456789",
+      },
+    };
+
+    it("should detect duplicate by Scopus ID", () => {
+      const newItem: CslItem = {
+        id: "new-scopus",
+        type: "article-journal",
+        title: "Same Scopus Paper",
+        custom: { scopus_id: "2-s2.0-85123456789" },
+      };
+      const result = detectDuplicate(newItem, [scopusOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches).toHaveLength(1);
+      expect(result.matches[0].type).toBe("scopus");
+      expect(result.matches[0].details?.scopus_id).toBe("2-s2.0-85123456789");
+    });
+
+    it("should NOT detect duplicate when Scopus IDs differ", () => {
+      const newItem: CslItem = {
+        id: "different-scopus",
+        type: "article-journal",
+        title: "Different Scopus Paper",
+        custom: { scopus_id: "2-s2.0-99999999999" },
+      };
+      const result = detectDuplicate(newItem, [scopusOriginal]);
+
+      expect(result.isDuplicate).toBe(false);
+    });
+
+    it("should NOT match when item has no scopus_id", () => {
+      const newItem: CslItem = {
+        id: "no-scopus",
+        type: "article-journal",
+        title: "No Scopus ID",
+      };
+      const result = detectDuplicate(newItem, [scopusOriginal]);
+
+      // Should not match on Scopus (may match on title-author-year)
+      const scopusMatch = result.matches.find((m) => m.type === "scopus");
+      expect(scopusMatch).toBeUndefined();
+    });
+
+    it("should prioritize ERIC ID over Scopus ID", () => {
+      const scopusWithEric: CslItem = {
+        ...scopusOriginal,
+        custom: {
+          ...scopusOriginal.custom,
+          eric_id: "EJ1234567",
+        },
+      };
+      const newItem: CslItem = {
+        id: "eric-and-scopus",
+        type: "article-journal",
+        title: "Paper with both",
+        custom: { eric_id: "EJ1234567", scopus_id: "2-s2.0-85123456789" },
+      };
+      const result = detectDuplicate(newItem, [scopusWithEric]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("eric");
+    });
+
+    it("should prioritize Scopus ID over Title + Author + Year", () => {
+      const newItem: CslItem = {
+        ...scopusOriginal,
+        id: "scopus-and-tay",
+        custom: { scopus_id: "2-s2.0-85123456789" },
+      };
+      const result = detectDuplicate(newItem, [scopusOriginal]);
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.matches[0].type).toBe("scopus");
+    });
+  });
+
   describe("Title + Author + Year detection (lowest priority)", () => {
     it("should detect duplicate by title + author + year", () => {
       const result = detectDuplicate(duplicateTitleAuthorYear, [original]);

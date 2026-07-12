@@ -106,6 +106,8 @@
   - `additional_urls`: Optional array of additional URLs (optional)
   - `tags`: User-defined tags for categorization and search (optional, array of strings)
   - `arxiv_id`: arXiv identifier (optional, e.g. `"2301.13867"`)
+  - `eric_id`: ERIC identifier (optional, e.g. `"EJ1234567"`)
+  - `scopus_id`: Scopus identifier (optional, e.g. `"2-s2.0-85123456789"`)
   - `attachments`: Attachment metadata (optional, see `attachments.md`)
     - `directory`: Directory name relative to attachments base
     - `files`: Array of `{ filename, role, label? }` objects

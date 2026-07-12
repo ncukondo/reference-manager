@@ -30,6 +30,42 @@ describe("CslCustomSchema typed fields", () => {
     });
   });
 
+  describe("eric_id", () => {
+    it("accepts eric_id string", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: { eric_id: "EJ1234567" },
+      });
+      expect(result.custom?.eric_id).toBe("EJ1234567");
+    });
+
+    it("is optional", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: {},
+      });
+      expect(result.custom?.eric_id).toBeUndefined();
+    });
+  });
+
+  describe("scopus_id", () => {
+    it("accepts scopus_id string", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: { scopus_id: "2-s2.0-85123456789" },
+      });
+      expect(result.custom?.scopus_id).toBe("2-s2.0-85123456789");
+    });
+
+    it("is optional", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: {},
+      });
+      expect(result.custom?.scopus_id).toBeUndefined();
+    });
+  });
+
   describe("attachments", () => {
     it("accepts valid attachments object", () => {
       const result = CslItemSchema.parse({
@@ -166,6 +202,24 @@ describe("CslCustomSchema typed fields", () => {
         CslItemSchema.parse({
           ...baseItem,
           custom: { arxiv_id: 12345 },
+        })
+      ).toThrow();
+    });
+
+    it("rejects non-string eric_id", () => {
+      expect(() =>
+        CslItemSchema.parse({
+          ...baseItem,
+          custom: { eric_id: 12345 },
+        })
+      ).toThrow();
+    });
+
+    it("rejects non-string scopus_id", () => {
+      expect(() =>
+        CslItemSchema.parse({
+          ...baseItem,
+          custom: { scopus_id: 12345 },
         })
       ).toThrow();
     });

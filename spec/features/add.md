@@ -102,7 +102,7 @@ arXiv ID is stored in `custom.arxiv_id`. The `DOI` field receives the journal DO
 
 ### Duplicate Detection
 
-- Default: Reject if duplicate found (DOI, PMID, or Title+Author+Year match)
+- Default: Reject if duplicate found (DOI, PMID, ISBN, arXiv ID, ERIC ID, Scopus ID, or Title+Author+Year match; see `spec/features/duplicate-detection.md`)
 - `--force`: Skip duplicate check
 
 ### ID Collision Handling
