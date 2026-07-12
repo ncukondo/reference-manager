@@ -29,7 +29,7 @@ export interface UpgradeNpmOptions {
   /** `--yes`: run npm instead of printing the command. */
   yes?: boolean;
   /** Injection points. */
-  getLatest?: () => Promise<ReleaseInfo | null>;
+  getLatest?: (options?: { force?: boolean }) => Promise<ReleaseInfo | null>;
   runCommand?: (command: string, args: string[]) => Promise<RunCommandResult>;
 }
 
@@ -84,7 +84,9 @@ export async function upgradeNpmGlobal(options: UpgradeNpmOptions): Promise<Upgr
     targetVersion = stripV(pinnedVersion);
     specifier = targetVersion;
   } else {
-    const release = await getLatest();
+    // Explicit `ref upgrade` must see the live latest release; only the
+    // passive startup notifier is allowed to reuse the 24h cache.
+    const release = await getLatest({ force: true });
     if (!release) {
       return {
         status: "error",

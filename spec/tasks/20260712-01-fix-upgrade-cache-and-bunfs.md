@@ -46,14 +46,14 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 1: Explicit upgrade bypasses the 24h cache
 
-- [ ] Write test: extend `src/upgrade/apply-binary.test.ts` and `src/upgrade/apply-npm.test.ts` —
+- [x] Write test: extend `src/upgrade/apply-binary.test.ts` and `src/upgrade/apply-npm.test.ts` —
       assert `getLatest` is invoked with `{ force: true }` (or that a fresh cache is ignored) when the
       upgrade command resolves the target version without a pinned `--version`
-- [ ] Verify Red
-- [ ] Implement: pass `force: true` through `upgradeBinary`/`upgradeNpmGlobal` default `getLatest`
+- [x] Verify Red
+- [x] Implement: pass `force: true` through `upgradeBinary`/`upgradeNpmGlobal` default `getLatest`
       (keep the injected-`getLatest` test seam working; the notifier path must remain cache-first)
-- [ ] Verify Green: `npm run test:unit -- upgrade`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify Green: `npm run test:unit -- upgrade`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: Resolve real binary path inside Bun single-file executables
 

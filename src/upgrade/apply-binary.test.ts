@@ -99,6 +99,32 @@ describe("upgradeBinary", () => {
     expect(verifyCalls).toEqual([`${destPath}.tmp.12345`]);
   });
 
+  it("calls getLatest with force=true so an explicit upgrade bypasses the 24h cache", async () => {
+    const getLatest = vi.fn(async () => ({
+      checkedAt: "2026-04-20T12:00:00Z",
+      latest: "0.34.0",
+      url: "https://github.com/ncukondo/reference-manager/releases/tag/v0.34.0",
+    }));
+
+    const result = await upgradeBinary(baseOptions({ getLatest }));
+
+    expect(result.status).toBe("success");
+    expect(getLatest).toHaveBeenCalledWith({ force: true });
+  });
+
+  it("calls getLatest with force=true in check mode too", async () => {
+    const getLatest = vi.fn(async () => ({
+      checkedAt: "2026-04-20T12:00:00Z",
+      latest: "0.34.0",
+      url: "https://github.com/ncukondo/reference-manager/releases/tag/v0.34.0",
+    }));
+
+    const result = await upgradeBinary(baseOptions({ check: true, getLatest }));
+
+    expect(result.status).toBe("guidance");
+    expect(getLatest).toHaveBeenCalledWith({ force: true });
+  });
+
   it("uses `--version <tag>` when provided, bypassing getLatest", async () => {
     const getLatest = vi.fn();
     const fetchFn = vi.fn(async (url: URL | string) => {

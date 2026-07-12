@@ -25,6 +25,19 @@ describe("upgradeNpmGlobal", () => {
     expect(runCommand).not.toHaveBeenCalled();
   });
 
+  it("calls getLatest with force=true so an explicit upgrade bypasses the 24h cache", async () => {
+    const getLatest = vi.fn(async () => ({
+      checkedAt: "2026-04-20T12:00:00Z",
+      latest: "0.34.0",
+      url: "https://github.com/ncukondo/reference-manager/releases/tag/v0.34.0",
+    }));
+
+    const result = await upgradeNpmGlobal(baseOptions({ getLatest }));
+
+    expect(result.status).toBe("guidance");
+    expect(getLatest).toHaveBeenCalledWith({ force: true });
+  });
+
   it("returns already-up-to-date when latest equals current version", async () => {
     const runCommand = vi.fn();
     const result = await upgradeNpmGlobal(baseOptions({ currentVersion: "0.34.0", runCommand }));
