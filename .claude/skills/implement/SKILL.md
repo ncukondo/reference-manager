@@ -83,6 +83,13 @@ If agent output shows signs of context exhaustion (repetitive output, no progres
 2. Wait for commit, then kill: `./scripts/kill-agent.sh <pane-id>`
 3. Re-spawn: `./scripts/spawn-worker.sh <branch-name> <task-keyword>`
 
+**Blocked (permission) handling:**
+If `check-agent-state.sh` reports `permission`, or the orchestrator sends an `agent-blocked` event:
+1. Inspect the pane: `herdr agent read <pane-id> --lines 30`
+2. Startup dialog (MCP/trust confirmation) → accept it: `herdr pane send-keys <pane-id> Enter`
+3. Auto-mode fallback to manual prompts, or an unexpected interactive prompt → kill and re-spawn:
+   `./scripts/kill-agent.sh <pane-id>` then `./scripts/spawn-worker.sh <branch-name> <task-keyword>`
+
 ### 5. Implementation Complete → Kill → Spawn Reviewer
 
 When worker finishes (PR created, visible in pane output):

@@ -251,6 +251,28 @@ process_branch() {
     return
   fi
 
+  # Blocked on a dialog/permission prompt (e.g. auto-mode fallback,
+  # MCP/trust dialog) - notify main once so it can intervene
+  if [ "$agent_state" = "permission" ]; then
+    if [ "$prev_state" != "blocked-notified" ]; then
+      local pr_num
+      pr_num=$(gh pr list --head "$branch" --json number --jq '.[0].number' 2>/dev/null || true)
+
+      write_event "$branch" "agent-blocked" \
+        "Agent is blocked on a prompt/dialog (role: $role)." \
+        "# Inspect the pane
+herdr agent read $pane_id --lines 30
+# Accept a dialog
+herdr pane send-keys $pane_id Enter
+# Or restart the agent
+./scripts/kill-agent.sh $pane_id" \
+        "$pr_num" "$pane_id"
+
+      BRANCH_STATES[$state_key]="blocked-notified"
+    fi
+    return
+  fi
+
   # Only process when agent becomes idle
   if [ "$agent_state" != "idle" ]; then
     # Don't overwrite terminal states (already processed)

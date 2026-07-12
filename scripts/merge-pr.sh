@@ -189,8 +189,10 @@ fi
 if [ "$SKIP_TASK" = false ]; then
   log "Looking for task file..."
 
-  # Try to find task file matching the branch name
-  TASK_FILE=$(find spec/tasks -maxdepth 1 \( -name "*${BRANCH_DIR}*" -o -name "*$(echo "$BRANCH" | sed 's/feat\///' | sed 's/fix\///')*" \) 2>/dev/null | head -1 || true)
+  # Try to find task file matching the branch name (with or without the
+  # type prefix — feat/, fix/, refactor/, chore/, ...)
+  BRANCH_SHORT=$(echo "$BRANCH" | sed 's|^[^/]*/||' | tr '/' '-')
+  TASK_FILE=$(find spec/tasks -maxdepth 1 \( -name "*${BRANCH_DIR}*" -o -name "*${BRANCH_SHORT}*" \) 2>/dev/null | head -1 || true)
 
   if [ -n "$TASK_FILE" ] && [ -f "$TASK_FILE" ]; then
     TASK_BASENAME=$(basename "$TASK_FILE")

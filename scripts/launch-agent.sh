@@ -31,6 +31,11 @@ if [ ! -d "$WORKTREE_DIR" ]; then
   exit 1
 fi
 
+if ! herdr_server_running; then
+  echo "[$SCRIPT_NAME] ERROR: herdr server is not running. Start it with: herdr" >&2
+  exit 1
+fi
+
 WORKTREE_DIR="$(cd "$WORKTREE_DIR" && pwd)"
 AGENT_NAME="$(basename "$WORKTREE_DIR")"
 
@@ -98,10 +103,19 @@ fi
 if [ -n "$PROMPT" ]; then
   WAIT_OUT=$(herdr wait agent-status "$PANE_ID" --status working --timeout 30000 2>&1 || true)
   if ! echo "$WAIT_OUT" | grep -q 'agent_status_changed'; then
-    echo "[$SCRIPT_NAME] WARNING: Agent did not start working within 30s."
-    echo "[$SCRIPT_NAME] It may be stuck on a startup dialog. Inspect with:"
-    echo "  herdr agent read $PANE_ID --lines 30"
-    echo "  herdr pane send-keys $PANE_ID Enter   # accept a dialog"
+    # "done" = the task already finished (fast completion), "working" = it
+    # started late; both are fine. "idle" without ever working is the
+    # startup-dialog signature (dialogs are reported as idle by herdr).
+    FINAL_STATE=$(agent_status "$PANE_ID")
+    case "$FINAL_STATE" in
+      done|working) ;;
+      *)
+        echo "[$SCRIPT_NAME] WARNING: Agent did not start working within 30s (state: $FINAL_STATE)."
+        echo "[$SCRIPT_NAME] It may be stuck on a startup dialog. Inspect with:"
+        echo "  herdr agent read $PANE_ID --lines 30"
+        echo "  herdr pane send-keys $PANE_ID Enter   # accept a dialog"
+        ;;
+    esac
   fi
 fi
 

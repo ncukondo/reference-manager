@@ -24,6 +24,10 @@ HERDR_LIB_PROJECT_NAME="$(basename "$HERDR_LIB_REPO_ROOT")"
 # herdr's worktree layout: ~/.herdr/worktrees/<repo-name>/<branch-with-dashes>
 WORKTREE_BASE="${HOME}/.herdr/worktrees/${HERDR_LIB_PROJECT_NAME}"
 
+herdr_server_running() {
+  herdr status 2>/dev/null | grep -q 'status: *running'
+}
+
 worktree_dir_for_branch() {
   local branch="$1"
   echo "$WORKTREE_BASE/$(echo "$branch" | tr '/' '-')"
@@ -78,7 +82,11 @@ ensure_workspace_for_dir() {
   # "linked_worktree_source".
   out=$(herdr worktree open --cwd "$HERDR_LIB_REPO_ROOT" --path "$dir" --no-focus --json 2>/dev/null || true)
   if [ -z "$out" ] || echo "$out" | jq -e '.error' >/dev/null 2>&1; then
-    echo "herdr worktree open failed for $dir: $(echo "$out" | jq -r '.error.message // "no response"')" >&2
+    if ! herdr_server_running; then
+      echo "herdr server is not running. Start it with: herdr" >&2
+    else
+      echo "herdr worktree open failed for $dir: $(echo "$out" | jq -r '.error.message // "no response"')" >&2
+    fi
     return 1
   fi
   echo "$out" | jq -r '[.result.workspace.workspace_id, (.result.already_open | tostring), .result.root_pane.pane_id] | @tsv'
