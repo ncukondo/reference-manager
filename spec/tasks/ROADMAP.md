@@ -179,10 +179,10 @@ Single-binary users have no built-in way to discover new releases. Add a non-int
 
 ### Fix: Upgrade Hardening (#101)
 
-Harden self-upgrade: update-check fetch timeout, atomic binary replacement on Unix, SHA256SUMS checksum verification, semver-aware update notification.
+Harden self-upgrade: update-check fetch timeout (3s notifier / 30s explicit upgrade), atomic binary replacement on Unix, SHA256SUMS checksum verification, semver-aware update notification.
 
-- Task: `spec/tasks/20260712-01-upgrade-hardening.md`
-- Status: Planned
+- Task: `spec/tasks/completed/20260712-01-upgrade-hardening.md`
+- Status: Done (PR #103, closes #101)
 
 ### Refactor: Rename Duplicate normalizeIsbn Functions (#12)
 
