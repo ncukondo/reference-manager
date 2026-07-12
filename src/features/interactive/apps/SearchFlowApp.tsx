@@ -117,6 +117,12 @@ export function SearchFlowApp({
       return;
     }
 
+    // Show details: executed by the CLI after TUI exit (needs attachments config)
+    if (action === "show") {
+      exitWith({ action, output: "", cancelled: false, selectedItems });
+      return;
+    }
+
     // If cite-choose, go to style selection
     if (action === "cite-choose") {
       setState("style");

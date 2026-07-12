@@ -353,6 +353,41 @@ describe("search command", () => {
     });
   });
 
+  describe("executeShowAction", () => {
+    it("should render the show pretty format for the first selected item", async () => {
+      const { executeShowAction } = await import("./search.js");
+
+      const item: CslItem = {
+        id: "ref1",
+        type: "article-journal",
+        title: "Test Article 1",
+        author: [{ family: "Smith", given: "John" }],
+        issued: { "date-parts": [[2023]] },
+        custom: { uuid: "uuid-1" },
+      };
+      const config = {
+        attachments: { directory: "/tmp/test-attachments" },
+      } as unknown as Config;
+
+      const output = await executeShowAction([item], config);
+
+      expect(output).toContain("[ref1] Test Article 1");
+      expect(output).toContain("Type:");
+      expect(output).toContain("article-journal");
+      expect(output).toContain("Smith, J.");
+    });
+
+    it("should return empty string when no items are selected", async () => {
+      const { executeShowAction } = await import("./search.js");
+
+      const config = {
+        attachments: { directory: "/tmp/test-attachments" },
+      } as unknown as Config;
+
+      expect(await executeShowAction([], config)).toBe("");
+    });
+  });
+
   describe("executeSideEffectAction", () => {
     const createItem = (id: string, overrides?: Partial<CslItem>): CslItem => ({
       id,
