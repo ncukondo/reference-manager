@@ -57,17 +57,17 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 2: Resolve real binary path inside Bun single-file executables
 
-- [ ] Write test: extend `src/upgrade/detect.test.ts` and `src/cli/commands/upgrade.test.ts` —
+- [x] Write test: extend `src/upgrade/detect.test.ts` and `src/cli/commands/upgrade.test.ts` —
       given `argv1 = "/$bunfs/root/ref-linux-x64"` and an `execPath` like `/home/user/.local/bin/ref`,
       detection returns `"binary"` deliberately (not by fall-through) and destPath resolves to the
       execPath location; non-bunfs behavior unchanged
-- [ ] Verify Red
-- [ ] Implement: add a bunfs-aware resolution helper (e.g. in `src/upgrade/detect.ts` or a shared
+- [x] Verify Red
+- [x] Implement: add a bunfs-aware resolution helper (e.g. in `src/upgrade/detect.ts` or a shared
       util): if `argv[1]` is a bunfs virtual path, substitute `process.execPath` before realpath /
       pattern-matching; wire into both `detectInstallMethod` and `resolveDestPath`; make `execPath`
       injectable for tests
-- [ ] Verify Green: `npm run test:unit -- upgrade detect`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Verify Green: `npm run test:unit -- upgrade detect`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 3: Spec update
 

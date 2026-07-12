@@ -3,10 +3,8 @@
  *
  * Resolves `argv1` (defaults to `process.argv[1]`) through `realpathSync` and
  * pattern-matches the resolved path to determine how the user installed `ref`.
- *
- * TODO(stage2): Wire this into `ref upgrade` (see Step 4/6 of
- * `spec/tasks/20260420-01-self-upgrade.md`). It is currently only used by
- * tests and will select the upgrade strategy once the command lands.
+ * Inside a Bun single-file executable, `argv[1]` is a bunfs virtual path, so
+ * the real on-disk binary path (`execPath`) is substituted first.
  */
 
 import { existsSync, realpathSync, statSync } from "node:fs";
@@ -73,8 +71,34 @@ function isInsideGitWorktree(startPath: string): boolean {
   }
 }
 
-export function detectInstallMethod(argv1?: string): InstallMethod {
+/**
+ * Bun single-file executables mount the bundled sources on a virtual
+ * read-only filesystem: `/$bunfs/root/...` on POSIX, `B:\~BUN\root\...`
+ * (drive letter + `~BUN` marker) on Windows. Paths there are not writable
+ * and do not correspond to the on-disk binary.
+ */
+const BUNFS_POSIX_PREFIX = "/$bunfs/";
+const BUNFS_WINDOWS_PATTERN = /^[a-z]:[\\/]~bun[\\/]/i;
+
+export function isBunfsPath(path: string): boolean {
+  return path.startsWith(BUNFS_POSIX_PREFIX) || BUNFS_WINDOWS_PATTERN.test(path);
+}
+
+/**
+ * Returns the real on-disk path of the running entrypoint: `argv1` normally,
+ * or `execPath` when `argv1` points into the bunfs virtual filesystem of a
+ * Bun single-file executable.
+ */
+export function resolveEntrypoint(argv1?: string, execPath?: string): string | undefined {
   const source = argv1 ?? process.argv[1];
+  if (source !== undefined && isBunfsPath(source)) {
+    return execPath ?? process.execPath;
+  }
+  return source;
+}
+
+export function detectInstallMethod(argv1?: string, execPath?: string): InstallMethod {
+  const source = resolveEntrypoint(argv1, execPath);
   if (!source) return "binary";
 
   const resolved = safeRealpath(source);
