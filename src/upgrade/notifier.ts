@@ -92,11 +92,61 @@ export function maybeStartUpdateCheck(
   );
 }
 
+interface ParsedVersion {
+  core: number[];
+  prerelease: string[];
+}
+
+function parseVersion(version: string): ParsedVersion | null {
+  const [core = "", prerelease] = version.split("-", 2);
+  const parts = core.split(".").map((part) => Number.parseInt(part, 10));
+  if (parts.length === 0 || parts.some((part) => Number.isNaN(part))) return null;
+  return { core: parts, prerelease: prerelease ? prerelease.split(".") : [] };
+}
+
+function comparePrereleaseIds(a: string, b: string): number {
+  const aNum = /^\d+$/.test(a) ? Number.parseInt(a, 10) : null;
+  const bNum = /^\d+$/.test(b) ? Number.parseInt(b, 10) : null;
+  // Numeric identifiers sort below alphanumeric ones (semver §11).
+  if (aNum !== null && bNum !== null) return aNum === bNum ? 0 : aNum < bNum ? -1 : 1;
+  if (aNum !== null) return -1;
+  if (bNum !== null) return 1;
+  return a === b ? 0 : a < b ? -1 : 1;
+}
+
+/**
+ * Returns true when `latest` is strictly newer than `current` per semver
+ * precedence. Falls back to plain inequality when either side is unparseable,
+ * matching the old "notify on any mismatch" behavior for exotic versions.
+ */
+export function isNewerVersion(latest: string, current: string): boolean {
+  const a = parseVersion(latest);
+  const b = parseVersion(current);
+  if (!a || !b) return latest !== current;
+
+  const length = Math.max(a.core.length, b.core.length);
+  for (let i = 0; i < length; i++) {
+    const left = a.core[i] ?? 0;
+    const right = b.core[i] ?? 0;
+    if (left !== right) return left > right;
+  }
+
+  // Equal cores: a release without prerelease outranks one with it.
+  if (a.prerelease.length === 0) return b.prerelease.length > 0;
+  if (b.prerelease.length === 0) return false;
+  const idCount = Math.min(a.prerelease.length, b.prerelease.length);
+  for (let i = 0; i < idCount; i++) {
+    const order = comparePrereleaseIds(a.prerelease[i] ?? "", b.prerelease[i] ?? "");
+    if (order !== 0) return order > 0;
+  }
+  return a.prerelease.length > b.prerelease.length;
+}
+
 export function flushUpdateNotice(): void {
   if (!state || state.printed) return;
   const { result, currentVersion, output } = state;
   if (!result) return;
-  if (result.latest === currentVersion) return;
+  if (!isNewerVersion(result.latest, currentVersion)) return;
   state.printed = true;
   output.write(
     `\n>>> New version available: ${currentVersion} -> ${result.latest}\n    Run: ref upgrade\n`

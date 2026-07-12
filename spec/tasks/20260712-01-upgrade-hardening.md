@@ -37,9 +37,9 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 3: Semver-aware notification
 
-- [ ] Write test: `src/upgrade/notifier.test.ts` — no notification when `currentVersion` >= `latest` (local ahead); notification when `latest` is newer
-- [ ] Implement: replace strict-inequality check with a semver comparison (a small local compare is fine; avoid new deps if possible)
-- [ ] Verify Green, lint/typecheck
+- [x] Write test: `src/upgrade/notifier.test.ts` — no notification when `currentVersion` >= `latest` (local ahead); notification when `latest` is newer
+- [x] Implement: replace strict-inequality check with a semver comparison (a small local compare is fine; avoid new deps if possible)
+- [x] Verify Green, lint/typecheck
 
 ### Step 4: Checksum verification (SHA256SUMS)
 
