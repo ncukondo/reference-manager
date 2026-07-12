@@ -14,7 +14,7 @@ import {
   upgradeBinary,
 } from "../../upgrade/apply-binary.js";
 import { type UpgradeNpmOptions, upgradeNpmGlobal } from "../../upgrade/apply-npm.js";
-import { type InstallMethod, detectInstallMethod } from "../../upgrade/detect.js";
+import { type InstallMethod, detectInstallMethod, isBunfsPath } from "../../upgrade/detect.js";
 import { ExitCode, setExitCode } from "../helpers.js";
 
 export interface UpgradeCommandOptions {
@@ -27,6 +27,8 @@ export interface UpgradeCommandOptions {
 export interface RunUpgradeDeps {
   installMethod?: InstallMethod;
   argv1?: string;
+  /** Defaults to `process.execPath`; replaces a bunfs virtual `argv1`. */
+  execPath?: string;
   currentVersion?: string;
   upgradeBinaryFn?: (options: UpgradeBinaryOptions) => Promise<UpgradeResult>;
   upgradeNpmFn?: (options: UpgradeNpmOptions) => Promise<UpgradeResult>;
@@ -40,15 +42,18 @@ export interface RunUpgradeResult {
   result?: UpgradeResult;
 }
 
-function resolveDestPath(argv1: string, installDir: string | undefined): string {
+function resolveDestPath(argv1: string, installDir: string | undefined, execPath: string): string {
   if (installDir) {
     const basename = process.platform === "win32" ? "ref.exe" : "ref";
     return join(installDir, basename);
   }
+  // A bunfs virtual argv1 is read-only and does not exist on disk; the real
+  // binary a Bun single-file executable runs from is execPath.
+  const source = isBunfsPath(argv1) ? execPath : argv1;
   try {
-    return realpathSync(argv1);
+    return realpathSync(source);
   } catch {
-    return argv1;
+    return source;
   }
 }
 
@@ -90,9 +95,10 @@ export function formatUpgradeResult(result: UpgradeResult): string {
 function buildBinaryOptions(
   options: UpgradeCommandOptions,
   argv1: string,
-  currentVersion: string
+  currentVersion: string,
+  execPath: string
 ): UpgradeBinaryOptions {
-  const destPath = resolveDestPath(argv1, options.installDir);
+  const destPath = resolveDestPath(argv1, options.installDir, execPath);
   const out: UpgradeBinaryOptions = { destPath, currentVersion };
   if (options.check !== undefined) out.check = options.check;
   if (options.version !== undefined) out.version = options.version;
@@ -114,7 +120,9 @@ export async function runUpgrade(
   options: UpgradeCommandOptions,
   deps: RunUpgradeDeps = {}
 ): Promise<RunUpgradeResult> {
-  const installMethod = deps.installMethod ?? detectInstallMethod(deps.argv1 ?? process.argv[1]);
+  const execPath = deps.execPath ?? process.execPath;
+  const installMethod =
+    deps.installMethod ?? detectInstallMethod(deps.argv1 ?? process.argv[1], execPath);
   const argv1 = deps.argv1 ?? process.argv[1] ?? "";
   const currentVersion = deps.currentVersion ?? packageJson.version;
   const upgradeBinaryFn = deps.upgradeBinaryFn ?? upgradeBinary;
@@ -129,7 +137,7 @@ export async function runUpgrade(
 
   const result =
     installMethod === "binary"
-      ? await upgradeBinaryFn(buildBinaryOptions(options, argv1, currentVersion))
+      ? await upgradeBinaryFn(buildBinaryOptions(options, argv1, currentVersion, execPath))
       : await upgradeNpmFn(buildNpmOptions(options, currentVersion));
 
   const target = result.status === "error" ? stderr : stdout;

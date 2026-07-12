@@ -68,6 +68,10 @@ Result is cached at `{data}/update-check.json`:
 - TTL: 24 hours
 - `{data}` resolves to the same platform-specific data dir used by the library (see `spec/architecture/cli.md`)
 - Cache is consulted before any network call; a fresh cache means no HTTP request
+- **The cache applies to the passive notifier only.** An explicit `ref upgrade` (including
+  `--check`) always queries the live GitHub Releases API (`getLatestVersion({ force: true })`)
+  so it never reports "already up to date" from a stale cache. A successful forced check
+  still refreshes the cache file.
 
 ### 2. `ref upgrade` command
 
@@ -76,6 +80,16 @@ ref upgrade [options]
 ```
 
 Detects the install method from `fs.realpathSync(process.argv[1])` and applies the appropriate strategy.
+
+#### bunfs / `execPath` resolution (Bun single-file executables)
+
+Inside a Bun single-file executable, `process.argv[1]` points into a virtual read-only
+filesystem (`/$bunfs/root/...` on POSIX, `B:\~BUN\root\...` on Windows). Those paths do not
+exist on disk and cannot be written to; the real on-disk binary is `process.execPath`.
+Before realpath/pattern-matching, both install-method detection and destination resolution
+substitute `process.execPath` when `argv[1]` is a bunfs virtual path (`isBunfsPath` /
+`resolveEntrypoint` in `src/upgrade/detect.ts`). `--install-dir` still takes precedence over
+the resolved destination. Non-bunfs invocations (node, npm-global, dev) are unaffected.
 
 | Install method | Detection heuristic | Action |
 |---|---|---|

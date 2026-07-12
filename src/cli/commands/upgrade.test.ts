@@ -159,6 +159,39 @@ describe("runUpgrade", () => {
     expect(firstCall?.[0].destPath).toContain("ref");
   });
 
+  it("resolves destPath from execPath when argv1 is a bunfs virtual path", async () => {
+    const upgradeBinaryFn = vi.fn(async () => okResult());
+    await runUpgrade(
+      {} as UpgradeCommandOptions,
+      defaultDeps({
+        installMethod: "binary",
+        argv1: "/$bunfs/root/ref-linux-x64",
+        execPath: "/home/user/.local/bin/ref",
+        upgradeBinaryFn,
+      })
+    );
+
+    const [firstCall] = upgradeBinaryFn.mock.calls;
+    expect(firstCall?.[0].destPath).toBe("/home/user/.local/bin/ref");
+  });
+
+  it("prefers --install-dir over execPath for a bunfs argv1", async () => {
+    const upgradeBinaryFn = vi.fn(async () => okResult());
+    await runUpgrade(
+      { installDir: "/opt/custom" } as UpgradeCommandOptions,
+      defaultDeps({
+        installMethod: "binary",
+        argv1: "/$bunfs/root/ref-linux-x64",
+        execPath: "/home/user/.local/bin/ref",
+        upgradeBinaryFn,
+      })
+    );
+
+    const [firstCall] = upgradeBinaryFn.mock.calls;
+    const expected = join("/opt/custom", process.platform === "win32" ? "ref.exe" : "ref");
+    expect(firstCall?.[0].destPath).toBe(expected);
+  });
+
   it("honors --install-dir override for the binary strategy", async () => {
     const upgradeBinaryFn = vi.fn(async () => okResult());
     await runUpgrade(

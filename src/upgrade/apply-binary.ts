@@ -45,7 +45,7 @@ export interface UpgradeBinaryOptions {
   pid?: number;
   /** Injection points. */
   fetch?: typeof globalThis.fetch;
-  getLatest?: () => Promise<ReleaseInfo | null>;
+  getLatest?: (options?: { force?: boolean }) => Promise<ReleaseInfo | null>;
   /**
    * Runs the downloaded binary's `--version` command and returns the stdout
    * (or null on failure). Injected so unit tests don't execute real children.
@@ -123,13 +123,15 @@ interface ResolvedTarget {
 
 async function resolveTarget(
   pinnedVersion: string | undefined,
-  getLatest: () => Promise<ReleaseInfo | null>
+  getLatest: (options?: { force?: boolean }) => Promise<ReleaseInfo | null>
 ): Promise<ResolvedTarget | { error: string }> {
   if (pinnedVersion) {
     const targetTag = normalizeTag(pinnedVersion);
     return { targetTag, targetVersion: stripV(targetTag) };
   }
-  const release = await getLatest();
+  // Explicit `ref upgrade` must see the live latest release; only the passive
+  // startup notifier is allowed to reuse the 24h cache.
+  const release = await getLatest({ force: true });
   if (!release) {
     return { error: "Could not determine the latest release. Check your network connection." };
   }

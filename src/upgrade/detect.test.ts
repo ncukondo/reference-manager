@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { detectInstallMethod } from "./detect.js";
+import { detectInstallMethod, isBunfsPath } from "./detect.js";
 
 describe("detectInstallMethod", () => {
   let testDir: string;
@@ -143,5 +143,67 @@ describe("detectInstallMethod", () => {
   it("returns 'binary' when the path does not exist (best-effort fallback)", () => {
     const nonexistent = join(testDir, "no-such", "ref");
     expect(detectInstallMethod(nonexistent)).toBe("binary");
+  });
+
+  it("uses execPath when argv1 is a bunfs virtual path (Bun single-file executable)", () => {
+    const binDir = join(testDir, "home", "user", ".local", "bin");
+    mkdirSync(binDir, { recursive: true });
+    const execPath = join(binDir, "ref");
+    writeFileSync(execPath, "elf binary\n");
+
+    expect(detectInstallMethod("/$bunfs/root/ref-linux-x64", execPath)).toBe("binary");
+  });
+
+  it("pattern-matches the substituted execPath, not the bunfs fall-through (dev checkout wins)", () => {
+    // If detection merely fell through to "binary" for bunfs paths, an
+    // execPath inside a git worktree would be misclassified. Asserting "dev"
+    // proves execPath drives the pattern-matching.
+    const repoDir = join(testDir, "repo");
+    mkdirSync(join(repoDir, ".git"), { recursive: true });
+    mkdirSync(join(repoDir, "bin"), { recursive: true });
+    writeFileSync(join(repoDir, "package.json"), '{"name":"reference-manager"}\n');
+    const execPath = join(repoDir, "bin", "ref");
+    writeFileSync(execPath, "elf binary\n");
+
+    expect(detectInstallMethod("/$bunfs/root/ref-linux-x64", execPath)).toBe("dev");
+  });
+
+  it("recognizes the Windows bunfs marker (B:\\~BUN\\)", () => {
+    const binDir = join(testDir, "home", "user", ".local", "bin");
+    mkdirSync(binDir, { recursive: true });
+    const execPath = join(binDir, "ref");
+    writeFileSync(execPath, "elf binary\n");
+
+    expect(detectInstallMethod("B:\\~BUN\\root\\ref.exe", execPath)).toBe("binary");
+  });
+
+  it("ignores execPath when argv1 is a regular on-disk path", () => {
+    const nmBin = join(testDir, "usr", "lib", "node_modules", "@ncukondo", "reference-manager");
+    mkdirSync(nmBin, { recursive: true });
+    const cliPath = join(nmBin, "cli.js");
+    writeFileSync(cliPath, "#!/usr/bin/env node\n");
+
+    const binDir = join(testDir, "home", "user", ".local", "bin");
+    mkdirSync(binDir, { recursive: true });
+    const execPath = join(binDir, "node");
+    writeFileSync(execPath, "node binary\n");
+
+    expect(detectInstallMethod(cliPath, execPath)).toBe("npm-global");
+  });
+});
+
+describe("isBunfsPath", () => {
+  it.each([
+    ["/$bunfs/root/ref-linux-x64", true],
+    ["/$bunfs/root/nested/dir/cli.js", true],
+    ["B:\\~BUN\\root\\ref.exe", true],
+    ["b:\\~bun\\root\\ref.exe", true],
+    ["B:/~BUN/root/ref.exe", true],
+    ["/home/user/.local/bin/ref", false],
+    ["/usr/lib/node_modules/@ncukondo/reference-manager/bin/cli.js", false],
+    ["C:\\Users\\user\\.local\\bin\\ref.exe", false],
+    ["", false],
+  ])("%s -> %s", (path, expected) => {
+    expect(isBunfsPath(path)).toBe(expected);
   });
 });
