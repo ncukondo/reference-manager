@@ -191,6 +191,13 @@ Rename the two same-named `normalizeIsbn` functions for clarity: `parseIsbnInput
 - Task: `spec/tasks/completed/20260712-02-rename-normalize-isbn.md`
 - Status: Done (PR #104, closes #12)
 
+### Fix: `ref export` emits `keyword` as array — invalid CSL-JSON (#106)
+
+`ref export -o json/yaml` could emit `keyword` as a JSON array (invalid CSL-JSON; spec expects a `"; "`-separated string), breaking pandoc/citeproc on the whole file. `formatExportOutput` bypassed the storage serializer's keyword normalization. Extracted reusable `toSerializableCslItem`/`toSerializableCslLibrary` helpers from `serializer.ts` and applied them to export JSON/YAML output (single-object and array shapes); BibTeX unaffected.
+
+- Task: `spec/tasks/completed/20260724-01-fix-export-keyword-array.md`
+- Status: Done (PR #107, closes #106)
+
 ---
 
 ## Next Steps
