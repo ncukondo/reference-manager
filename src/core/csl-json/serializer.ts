@@ -1,5 +1,5 @@
 import { writeFileAtomic } from "../../utils/file.js";
-import type { CslLibrary } from "./types";
+import type { CslItem, CslLibrary } from "./types";
 
 /**
  * Convert keyword array to semicolon-separated string
@@ -15,27 +15,46 @@ function serializeKeyword(keywords: string[] | undefined): string | undefined {
 }
 
 /**
+ * Convert a CSL item to its spec-compliant serializable form.
+ *
+ * The in-memory `keyword` field is an array, but CSL-JSON expects a
+ * semicolon-separated string. This normalizes `keyword` and omits the field
+ * when it is empty or undefined. Use this at any output boundary (storage
+ * write, `export` command) so emitted CSL-JSON is always valid.
+ *
+ * @param item - CSL item with in-memory (array) keyword
+ * @returns Item with `keyword` normalized to a string (or omitted)
+ */
+export function toSerializableCslItem(item: CslItem): Record<string, unknown> {
+  const { keyword, ...rest } = item;
+  const serializedKeyword = serializeKeyword(keyword);
+
+  if (serializedKeyword === undefined) {
+    return rest;
+  }
+
+  return {
+    ...rest,
+    keyword: serializedKeyword,
+  };
+}
+
+/**
+ * Convert a CSL library to its spec-compliant serializable form.
+ * @param library - CSL-JSON library (array of items)
+ * @returns Array of items with normalized keyword fields
+ */
+export function toSerializableCslLibrary(library: CslLibrary): Record<string, unknown>[] {
+  return library.map(toSerializableCslItem);
+}
+
+/**
  * Serialize a CSL-JSON library to a formatted JSON string
  * @param library - CSL-JSON library (array of items)
  * @returns Formatted JSON string with 2-space indentation
  */
 export function serializeCslJson(library: CslLibrary): string {
-  // Convert keyword arrays to semicolon-separated strings
-  const libraryForJson = library.map((item) => {
-    const { keyword, ...rest } = item;
-    const serializedKeyword = serializeKeyword(keyword);
-
-    if (serializedKeyword === undefined) {
-      return rest;
-    }
-
-    return {
-      ...rest,
-      keyword: serializedKeyword,
-    };
-  });
-
-  return JSON.stringify(libraryForJson, null, 2);
+  return JSON.stringify(toSerializableCslLibrary(library), null, 2);
 }
 
 /**

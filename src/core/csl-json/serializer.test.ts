@@ -2,8 +2,13 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseCslJson } from "./parser";
-import { serializeCslJson, writeCslJson } from "./serializer";
-import type { CslLibrary } from "./types";
+import {
+  serializeCslJson,
+  toSerializableCslItem,
+  toSerializableCslLibrary,
+  writeCslJson,
+} from "./serializer";
+import type { CslItem, CslLibrary } from "./types";
 
 const FIXTURES_DIR = resolve(__dirname, "../../../tests/fixtures");
 const TMP_DIR = resolve(__dirname, "../../../tests/tmp");
@@ -185,6 +190,77 @@ describe("CSL-JSON Serializer", () => {
         expect(parsed[0].keyword).toBe("keyword1; keyword2; keyword3");
         expect(parsed[0].keyword).toContain("; ");
       });
+    });
+  });
+
+  describe("toSerializableCslItem", () => {
+    it("should normalize keyword array to semicolon-separated string", () => {
+      const item: CslItem = {
+        id: "test",
+        type: "article-journal",
+        keyword: ["machine learning", "deep learning"],
+      };
+
+      const result = toSerializableCslItem(item);
+
+      expect(result.keyword).toBe("machine learning; deep learning");
+    });
+
+    it("should omit keyword field when empty", () => {
+      const item: CslItem = {
+        id: "test",
+        type: "article-journal",
+        keyword: [],
+      };
+
+      const result = toSerializableCslItem(item);
+
+      expect(result).not.toHaveProperty("keyword");
+    });
+
+    it("should omit keyword field when undefined", () => {
+      const item: CslItem = {
+        id: "test",
+        type: "article-journal",
+      };
+
+      const result = toSerializableCslItem(item);
+
+      expect(result).not.toHaveProperty("keyword");
+    });
+
+    it("should preserve other fields", () => {
+      const item: CslItem = {
+        id: "test",
+        type: "article-journal",
+        title: "A Title",
+        keyword: ["one", "two"],
+        custom: {
+          uuid: "550e8400-e29b-41d4-a716-446655440000",
+          timestamp: "2024-01-01T00:00:00.000Z",
+        },
+      };
+
+      const result = toSerializableCslItem(item);
+
+      expect(result.id).toBe("test");
+      expect(result.type).toBe("article-journal");
+      expect(result.title).toBe("A Title");
+      expect(result.custom).toEqual(item.custom);
+    });
+  });
+
+  describe("toSerializableCslLibrary", () => {
+    it("should normalize keyword for every item", () => {
+      const library: CslLibrary = [
+        { id: "a", type: "article-journal", keyword: ["x", "y"] },
+        { id: "b", type: "article-journal" },
+      ];
+
+      const result = toSerializableCslLibrary(library);
+
+      expect(result[0].keyword).toBe("x; y");
+      expect(result[1]).not.toHaveProperty("keyword");
     });
   });
 
