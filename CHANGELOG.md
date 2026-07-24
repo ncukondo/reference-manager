@@ -80,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Export keyword normalization (#106)**: `ref export -o json` / `-o yaml` no longer emit `keyword` as a JSON array (which is invalid CSL-JSON and breaks pandoc/citeproc on the whole bibliography). Export output now applies the same array→`"; "`-string normalization as the storage serializer.
+  - Extracted reusable `toSerializableCslItem` / `toSerializableCslLibrary` helpers from `serializeCslJson` (`src/core/csl-json/serializer.ts`) and applied them in `formatExportOutput` (`src/cli/commands/export.ts`) for both JSON and YAML, covering single-object and array output. BibTeX output is unaffected (it does not emit `keyword`).
 - **Server Mutation Persistence (#93)**: Mutations made via the HTTP server now survive restart.
   - `POST /api/references/` now persists via a new `addReference` helper (`src/features/operations/add-reference.ts`) that bundles `library.add()` with `library.save()`, matching the PUT/DELETE helpers so future mutation routes cannot forget to persist.
   - Server shutdown (`SIGINT`/`SIGTERM`) flushes the in-memory library to disk before closing the file watcher. If the shutdown flush itself fails, `dispose()` sets `process.exitCode = 1` (rather than throwing) so the CLI exits non-zero while watcher cleanup still runs. The cleanup handler no longer writes `exitCode = 0` at its tail, so the failure code set by `dispose()` survives to process exit (PR #94 review2 #1).
