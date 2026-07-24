@@ -364,6 +364,60 @@ describe("export command", () => {
       expect(output).toContain("- id: jones-2023");
     });
 
+    describe("keyword normalization (CSL-JSON compliance)", () => {
+      const itemWithKeywords: CslItem = {
+        id: "kw-2024",
+        type: "article-journal",
+        title: "Keyworded Article",
+        keyword: ["machine learning", "deep learning", "neural networks"],
+        custom: { uuid: "uuid-kw" },
+      };
+
+      it("should emit keyword as semicolon-separated string in JSON (not array)", () => {
+        const result: ExportCommandResult = { items: [itemWithKeywords], notFound: [] };
+        const options: ExportCommandOptions = { all: true, output: "json" };
+
+        const parsed = JSON.parse(formatExportOutput(result, options));
+
+        expect(Array.isArray(parsed[0].keyword)).toBe(false);
+        expect(parsed[0].keyword).toBe("machine learning; deep learning; neural networks");
+      });
+
+      it("should emit keyword as string for single-item object JSON output", () => {
+        const result: ExportCommandResult = { items: [itemWithKeywords], notFound: [] };
+        const options: ExportCommandOptions = { ids: ["kw-2024"], output: "json" };
+
+        const parsed = JSON.parse(formatExportOutput(result, options));
+
+        expect(Array.isArray(parsed)).toBe(false);
+        expect(parsed.keyword).toBe("machine learning; deep learning; neural networks");
+      });
+
+      it("should omit keyword field when empty in JSON output", () => {
+        const item: CslItem = {
+          id: "empty-kw",
+          type: "article-journal",
+          keyword: [],
+          custom: { uuid: "uuid-empty" },
+        };
+        const result: ExportCommandResult = { items: [item], notFound: [] };
+        const options: ExportCommandOptions = { all: true, output: "json" };
+
+        const parsed = JSON.parse(formatExportOutput(result, options));
+
+        expect(parsed[0]).not.toHaveProperty("keyword");
+      });
+
+      it("should emit keyword as string in YAML output", () => {
+        const result: ExportCommandResult = { items: [itemWithKeywords], notFound: [] };
+        const options: ExportCommandOptions = { all: true, output: "yaml" };
+
+        const output = formatExportOutput(result, options);
+
+        expect(output).toContain("keyword: machine learning; deep learning; neural networks");
+      });
+    });
+
     it("should output as BibTeX with --format bibtex", () => {
       const result: ExportCommandResult = {
         items: [mockItem],

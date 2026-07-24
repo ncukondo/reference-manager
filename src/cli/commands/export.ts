@@ -5,6 +5,7 @@
  */
 
 import { stringify as yamlStringify } from "yaml";
+import { toSerializableCslItem, toSerializableCslLibrary } from "../../core/csl-json/serializer.js";
 import type { CslItem } from "../../core/csl-json/types.js";
 import { formatBibtex } from "../../features/format/bibtex.js";
 import type { ExecutionContext } from "../execution-context.js";
@@ -94,22 +95,26 @@ export function formatExportOutput(
 ): string {
   const format = options.output ?? "json";
 
+  // BibTeX handles its own field mapping and does not emit keyword.
+  if (format === "bibtex") {
+    return formatBibtex(result.items);
+  }
+
   // Determine if this is a single ID request (output object vs array)
   const singleIdRequest = (options.ids?.length ?? 0) === 1 && !options.all && !options.search;
-  const data = result.items.length === 1 && singleIdRequest ? result.items[0] : result.items;
+  const singleItem = result.items.length === 1 && singleIdRequest ? result.items[0] : undefined;
 
-  if (format === "json") {
-    return JSON.stringify(data, null, 2);
-  }
+  // Normalize items to spec-compliant CSL-JSON (keyword array -> "; " string)
+  // before emitting JSON/YAML, mirroring the storage serializer.
+  const data: unknown = singleItem
+    ? toSerializableCslItem(singleItem)
+    : toSerializableCslLibrary(result.items);
 
   if (format === "yaml") {
     return yamlStringify(data);
   }
 
-  if (format === "bibtex") {
-    return formatBibtex(result.items);
-  }
-
+  // Default to JSON (covers format === "json" and any unknown value).
   return JSON.stringify(data, null, 2);
 }
 
