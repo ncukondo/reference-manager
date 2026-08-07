@@ -154,3 +154,49 @@ describe("formatShowPretty", () => {
     expect(result).not.toContain("Authors:");
   });
 });
+
+describe("formatShowPretty superseded line", () => {
+  it("names the successor directly under the header", () => {
+    const output = formatShowPretty(
+      makeNormalized({
+        id: "Carless2020-yj",
+        title: "Online first",
+        superseded: {
+          id: "Carless2023-yt",
+          uuid: "uuid-new",
+          reason: "duplicate",
+          at: "2026-08-07T00:00:00.000Z",
+          cycle: false,
+        },
+      })
+    );
+    const lines = output.split("\n");
+
+    expect(lines[0]).toBe("[Carless2020-yj] Online first");
+    expect(lines[1]).toBe("  SUPERSEDED by Carless2023-yt (duplicate)");
+  });
+
+  it("names the missing uuid when the pointer dangles", () => {
+    const output = formatShowPretty(
+      makeNormalized({
+        superseded: { id: null, uuid: "uuid-gone", reason: "other", at: null, cycle: false },
+      })
+    );
+
+    expect(output).toContain("SUPERSEDED by <missing: uuid-gone> (other)");
+  });
+
+  it("flags a cycle", () => {
+    const output = formatShowPretty(
+      makeNormalized({
+        superseded: { id: "B", uuid: "uuid-b", reason: "duplicate", at: null, cycle: true },
+      })
+    );
+
+    expect(output).toContain("SUPERSEDED by B (duplicate, superseded chain has a cycle)");
+  });
+
+  it("emits no line for an unmarked reference", () => {
+    expect(formatShowPretty(makeNormalized({ superseded: null }))).not.toContain("SUPERSEDED");
+  });
+});

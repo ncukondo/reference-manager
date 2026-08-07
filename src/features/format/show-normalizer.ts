@@ -7,6 +7,7 @@
 
 import path from "node:path";
 import type { CslItem } from "../../core/csl-json/types.js";
+import { buildUuidIndex, getSupersededMark, resolveFinalSuccessor } from "../superseded/index.js";
 
 /** Convert OS path separators to POSIX forward slashes for consistent output. */
 function toPosixPath(p: string): string {
@@ -21,6 +22,18 @@ export interface NormalizedFulltext {
 export interface NormalizedAttachment {
   filename: string;
   role: string;
+}
+
+/** Resolved successor pointer (#108). */
+export interface NormalizedSuperseded {
+  /** Citation key of the successor, or null when the pointer dangles */
+  id: string | null;
+  /** uuid the pointer names, kept so a dangling pointer is still traceable */
+  uuid: string;
+  reason: string;
+  at: string | null;
+  /** True when the successor chain loops; the library was edited outside `ref deprecate` */
+  cycle: boolean;
 }
 
 export interface NormalizedReference {
@@ -44,11 +57,18 @@ export interface NormalizedReference {
   modified: string | null;
   fulltext: NormalizedFulltext | null;
   attachments: NormalizedAttachment[] | null;
+  /** Null when the reference is not superseded, or when no library was supplied to resolve against */
+  superseded: NormalizedSuperseded | null;
   raw: CslItem;
 }
 
 export interface NormalizeOptions {
   attachmentsDirectory?: string;
+  /**
+   * The whole library, needed to turn a `superseded_by` uuid back into a citation key.
+   * Omit it and `superseded` stays null.
+   */
+  allItems?: CslItem[];
 }
 
 function formatAuthor(author: {
@@ -113,6 +133,24 @@ function normalizeFileInfo(
   return resolveFulltextAndAttachments(item, options.attachmentsDirectory);
 }
 
+function normalizeSuperseded(
+  item: CslItem,
+  options?: NormalizeOptions
+): NormalizedSuperseded | null {
+  const mark = getSupersededMark(item);
+  if (!mark || !options?.allItems) {
+    return null;
+  }
+  const chain = resolveFinalSuccessor(item, buildUuidIndex(options.allItems));
+  return {
+    id: chain?.target?.id ?? null,
+    uuid: mark.supersededBy,
+    reason: mark.reason,
+    at: mark.at ?? null,
+    cycle: chain?.cycle ?? false,
+  };
+}
+
 export function normalizeReference(item: CslItem, options?: NormalizeOptions): NormalizedReference {
   const custom = item.custom;
   const { fulltext, attachments } = normalizeFileInfo(item, options);
@@ -138,6 +176,7 @@ export function normalizeReference(item: CslItem, options?: NormalizeOptions): N
     modified: custom?.timestamp ?? null,
     fulltext,
     attachments,
+    superseded: normalizeSuperseded(item, options),
     raw: item,
   };
 }

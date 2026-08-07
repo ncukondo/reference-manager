@@ -57,12 +57,28 @@ function formatAbstract(lines: string[], ref: NormalizedReference): void {
   }
 }
 
+/**
+ * Render the successor pointer directly under the header.
+ *
+ * Deliberately not a `label()` row: someone reading this record needs to know before anything
+ * else that they should be citing something else, and stderr warnings are easy to redirect away.
+ */
+function formatSuperseded(lines: string[], ref: NormalizedReference): void {
+  if (!ref.superseded) return;
+  const successor = ref.superseded.id ?? `<missing: ${ref.superseded.uuid}>`;
+  const reason = ref.superseded.cycle
+    ? `${ref.superseded.reason}, superseded chain has a cycle`
+    : ref.superseded.reason;
+  lines.push(`  SUPERSEDED by ${successor} (${reason})`);
+}
+
 export function formatShowPretty(ref: NormalizedReference): string {
   const lines: string[] = [];
 
   // Header
   const header = ref.title ? `[${ref.id}] ${ref.title}` : `[${ref.id}]`;
   lines.push(header);
+  formatSuperseded(lines, ref);
 
   // Core fields
   lines.push(`${label("Type:")}${ref.type}`);

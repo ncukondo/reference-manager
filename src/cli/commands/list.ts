@@ -39,6 +39,8 @@ export interface ListCommandOptions {
   order?: SortOrder;
   limit?: number;
   offset?: number;
+  /** Include references marked as superseded (#108); hidden by default */
+  includeSuperseded?: boolean;
 }
 
 /**
@@ -143,7 +145,7 @@ export async function executeList(
 
   return context.library.list({
     ...(sort !== undefined && { sort }),
-    ...pickDefined(options, ["order", "limit", "offset"] as const),
+    ...pickDefined(options, ["order", "limit", "offset", "includeSuperseded"] as const),
   });
 }
 

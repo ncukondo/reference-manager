@@ -13,6 +13,7 @@ const listRequestBodySchema = z.object({
   order: sortOrderSchema.optional(),
   limit: z.number().int().min(0).optional(),
   offset: z.number().int().min(0).optional(),
+  includeSuperseded: z.boolean().optional(),
 });
 
 /**

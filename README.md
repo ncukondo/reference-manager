@@ -328,6 +328,7 @@ ref list --format bibtex
 ref list --sort published --order desc          # Latest first
 ref list --sort author --limit 10               # First 10 by author
 ref list --sort created -n 20 --offset 20       # Page 2 (items 21-40)
+ref list --include-superseded                   # Also show deprecated records
 
 # Search references
 ref search "machine learning"
@@ -520,6 +521,49 @@ Sources queried:
 Use `--fix` to interactively update changed fields from the remote source.
 
 Results are saved to `custom.check` by default for skip-if-recent logic.
+
+### Superseded References
+
+When two records point at the same work — an import duplicate, a preprint kept alongside its
+published version, a conference paper and its journal article — mark the redundant one instead of
+deleting it. Deleting would break any manuscript that already cites the old key.
+
+```bash
+# Cite Carless2023-yt instead of Carless2020-yj
+ref deprecate Carless2020-yj --to Carless2023-yt --reason duplicate
+
+# Reasons: duplicate | published_version | other (default: other)
+ref deprecate preprint-2024 --to published-2025 --reason published_version
+
+# Clear the mark
+ref deprecate Carless2020-yj --unset
+
+# JSON output
+ref deprecate Carless2020-yj --to Carless2023-yt -o json
+```
+
+The mark is stored under `custom.superseded_by` as the successor's UUID, so it survives citation
+key renames. `ref deprecate` is the only writer — `update --set` and `edit` cannot touch these
+fields, which is what keeps the successor-exists and cycle checks meaningful.
+
+Read commands report a superseded record on **stderr**, never stdout, so pipelines are unaffected:
+
+```
+$ ref export --all -o json > refs.json
+[SUPERSEDED] Carless2020-yj -> Carless2023-yt (duplicate)
+1 superseded reference included. Update your manuscript keys.
+```
+
+| Command | Behavior |
+|---------|----------|
+| `show` | Warns; pretty output also shows a `SUPERSEDED by` line |
+| `cite` | Warns per cited record |
+| `search` | Warns; results are not filtered |
+| `list` | Hides superseded records; `--include-superseded` shows them |
+| `export` | Keeps the record in the output and warns |
+
+`export` deliberately keeps superseded records: dropping one would leave an unresolvable citation
+key in any manuscript still citing it, turning a warning into a failed bibliography build.
 
 ### Edit Command
 

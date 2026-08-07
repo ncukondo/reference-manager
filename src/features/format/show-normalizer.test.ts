@@ -260,3 +260,67 @@ describe("normalizeReference", () => {
     });
   });
 });
+
+describe("normalizeReference superseded resolution", () => {
+  const successor = makeItem("Carless2023-yt", {
+    title: "Version of record",
+    custom: { uuid: "uuid-new" },
+  });
+  const superseded = makeItem("Carless2020-yj", {
+    title: "Online first",
+    custom: {
+      uuid: "uuid-old",
+      superseded_by: "uuid-new",
+      superseded_reason: "duplicate",
+      superseded_at: "2026-08-07T00:00:00.000Z",
+    },
+  });
+
+  it("resolves the successor's uuid back to its citation key", () => {
+    const result = normalizeReference(superseded, { allItems: [superseded, successor] });
+
+    expect(result.superseded).toEqual({
+      id: "Carless2023-yt",
+      uuid: "uuid-new",
+      reason: "duplicate",
+      at: "2026-08-07T00:00:00.000Z",
+      cycle: false,
+    });
+  });
+
+  it("reports a null id but keeps the uuid when the pointer dangles", () => {
+    const result = normalizeReference(superseded, { allItems: [superseded] });
+
+    expect(result.superseded?.id).toBeNull();
+    expect(result.superseded?.uuid).toBe("uuid-new");
+  });
+
+  it("follows a chain to the final successor", () => {
+    const middle = makeItem("B", { custom: { uuid: "uuid-new", superseded_by: "uuid-final" } });
+    const final = makeItem("C", { custom: { uuid: "uuid-final" } });
+
+    const result = normalizeReference(superseded, { allItems: [superseded, middle, final] });
+
+    expect(result.superseded?.id).toBe("C");
+  });
+
+  it("flags a cycle", () => {
+    const back = makeItem("B", { custom: { uuid: "uuid-new", superseded_by: "uuid-old" } });
+
+    const result = normalizeReference(superseded, { allItems: [superseded, back] });
+
+    expect(result.superseded?.cycle).toBe(true);
+  });
+
+  it("is null for an unmarked reference", () => {
+    expect(
+      normalizeReference(successor, { allItems: [superseded, successor] }).superseded
+    ).toBeNull();
+  });
+
+  // Callers that do not supply the library (MCP resources, other formatters) get null rather
+  // than a half-resolved pointer they would have to interpret.
+  it("is null when no library is supplied", () => {
+    expect(normalizeReference(superseded).superseded).toBeNull();
+  });
+});

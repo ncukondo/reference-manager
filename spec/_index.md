@@ -49,6 +49,7 @@ spec/
 │   ├── pagination.md            # Sorting, limit, offset for list/search
 │   ├── shell-completion.md      # Bash/Zsh/Fish auto-completion
 │   ├── duplicate-detection.md   # Duplicate detection rules
+│   ├── superseded.md            # Superseded pointers, deprecate command
 │   ├── file-monitoring.md       # File watching, reload
 │   ├── write-safety.md          # Atomic write, backup, merge
 │   ├── metadata.md              # Standard and custom fields
@@ -106,6 +107,7 @@ spec/
 | `server` | `architecture/http-server.md` |
 | `mcp` | `architecture/mcp-server.md` |
 | `check` | `features/check.md` |
+| `deprecate` | `features/superseded.md` |
 | `completion` | `features/shell-completion.md` |
 
 ### Core Concepts
@@ -116,6 +118,7 @@ spec/
 | ID generation | `core/data-model.md` |
 | Full-text files | `features/fulltext.md` |
 | Duplicate detection | `features/duplicate-detection.md` |
+| Superseded references | `features/superseded.md` |
 | Conflict resolution | `features/write-safety.md` |
 | File watching | `features/file-monitoring.md` |
 | JSON output (add/remove/update) | `features/json-output.md` |

@@ -111,7 +111,7 @@ function getOptionValuesForCommand(
 }
 
 // Commands that support ID completion
-const ID_COMPLETION_COMMANDS = new Set(["cite", "remove", "update"]);
+const ID_COMPLETION_COMMANDS = new Set(["cite", "deprecate", "remove", "update"]);
 const ID_COMPLETION_FULLTEXT_SUBCOMMANDS = new Set(["attach", "get", "detach", "open"]);
 const ID_COMPLETION_ATTACH_SUBCOMMANDS = new Set(["open", "add", "list", "get", "detach", "sync"]);
 

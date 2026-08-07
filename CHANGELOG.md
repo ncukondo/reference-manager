@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Superseded references** (#108): `ref deprecate <id> --to <id>` records that a reference
+  should no longer be cited and where to cite instead, without deleting it — deleting would
+  leave an unresolvable key in any manuscript that already cites it
+  - New reserved fields `custom.superseded_by` / `superseded_reason` / `superseded_at`.
+    `superseded_by` holds the successor's **UUID**, not its citation key, so the pointer
+    survives the key renames that collision resolution performs
+  - `ref deprecate` is the only writer: the three fields joined `MANAGED_CUSTOM_FIELDS`, so
+    `update --set custom.superseded_*` is rejected and `edit` restores the originals. That is
+    what keeps the successor-exists, self-reference and cycle checks meaningful
+  - Options: `--to <id>`, `--unset`, `--reason duplicate|published_version|other`, `--uuid`,
+    `-o json`, `--full`
+  - Read commands report on **stderr** only — stdout stays byte-identical, so existing
+    pipelines are unaffected:
+    - `show` warns and adds a `SUPERSEDED by` line to pretty output
+    - `cite` and `search` warn without filtering
+    - `list` hides superseded records; `--include-superseded` restores them
+    - `export` keeps the record and adds a summary line naming how many were included
+  - Chains are followed to the final successor; a cycle introduced by hand-editing
+    `library.json` is reported rather than looped over
+  - This is the first of three parts of #108. Still to come: `ref duplicates` for a
+    retroactive DOI/PMID/ISBN/arXiv/ERIC scan, and a `check --fix` action that adds the
+    published version as a new record and marks the old one
+
 ### Fixed
 
 - **Self-Upgrade hardening** (#101):
