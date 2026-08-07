@@ -31,6 +31,7 @@ import {
 import { handleCheckAction } from "./commands/check.js";
 import { handleCiteAction } from "./commands/cite.js";
 import { registerConfigCommand } from "./commands/config.js";
+import { handleDeprecateAction } from "./commands/deprecate.js";
 import { handleEditAction } from "./commands/edit.js";
 import {
   type ExportCommandOptions,
@@ -124,6 +125,7 @@ export function createProgram(): Command {
   registerAddCommand(program);
   registerRemoveCommand(program);
   registerUpdateCommand(program);
+  registerDeprecateCommand(program);
   registerEditCommand(program);
   registerCheckCommand(program);
   registerCiteCommand(program);
@@ -582,6 +584,30 @@ function registerUpdateCommand(program: Command): void {
     .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string | undefined, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program.opts());
+    });
+}
+
+/**
+ * Register 'deprecate' command
+ */
+function registerDeprecateCommand(program: Command): void {
+  program
+    .command("deprecate")
+    .description(
+      "Mark a reference as superseded by another.\n\n" +
+        "The record stays in the library so manuscripts that already cite its key keep\n" +
+        "resolving; read commands report the successor on stderr. See\n" +
+        "spec/features/superseded.md."
+    )
+    .argument("<identifier>", "Citation key or UUID of the reference to mark")
+    .option("--to <identifier>", "Citation key or UUID of the successor")
+    .option("--unset", "Clear an existing superseded mark")
+    .option("--reason <reason>", "Why: duplicate|published_version|other (default: other)")
+    .option("--uuid", "Interpret both identifiers as UUIDs")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
+    .action(async (identifier: string, options) => {
+      await handleDeprecateAction(identifier, options, program.opts());
     });
 }
 
