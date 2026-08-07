@@ -160,6 +160,71 @@ describe("CslCustomSchema typed fields", () => {
     });
   });
 
+  describe("superseded fields", () => {
+    it("accepts a complete superseded mark", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: {
+          superseded_by: "018f2c9a-1234-7890-abcd-000000000001",
+          superseded_reason: "duplicate",
+          superseded_at: "2026-08-07T00:00:00.000Z",
+        },
+      });
+      expect(result.custom?.superseded_by).toBe("018f2c9a-1234-7890-abcd-000000000001");
+      expect(result.custom?.superseded_reason).toBe("duplicate");
+      expect(result.custom?.superseded_at).toBe("2026-08-07T00:00:00.000Z");
+    });
+
+    it("accepts each known reason", () => {
+      for (const reason of ["duplicate", "published_version", "other"]) {
+        const result = CslItemSchema.parse({
+          ...baseItem,
+          custom: {
+            superseded_by: "uuid-1",
+            superseded_reason: reason,
+            superseded_at: "2026-01-01",
+          },
+        });
+        expect(result.custom?.superseded_reason).toBe(reason);
+      }
+    });
+
+    // The storage schema stays permissive: a reason written by another tool must not make the
+    // whole library fail to load. `ref deprecate` enforces the union at the CLI boundary.
+    it("accepts an unknown reason rather than failing the parse", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: {
+          superseded_by: "uuid-1",
+          superseded_reason: "merged",
+          superseded_at: "2026-01-01",
+        },
+      });
+      expect(result.custom?.superseded_reason).toBe("merged");
+    });
+
+    it("accepts a partial mark", () => {
+      const result = CslItemSchema.parse({
+        ...baseItem,
+        custom: { superseded_by: "uuid-1" },
+      });
+      expect(result.custom?.superseded_by).toBe("uuid-1");
+      expect(result.custom?.superseded_reason).toBeUndefined();
+      expect(result.custom?.superseded_at).toBeUndefined();
+    });
+
+    it("is optional", () => {
+      const result = CslItemSchema.parse({ ...baseItem, custom: {} });
+      expect(result.custom?.superseded_by).toBeUndefined();
+    });
+
+    it("rejects a non-string superseded_by", () => {
+      expect(() =>
+        CslItemSchema.parse({ ...baseItem, custom: { superseded_by: 12345 } })
+      ).toThrow();
+    });
+  });
+
   describe("validation", () => {
     it("rejects invalid attachments structure", () => {
       expect(() =>

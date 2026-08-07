@@ -91,8 +91,19 @@ export const PROTECTED_CUSTOM_FIELDS = new Set(["uuid", "created_at", "timestamp
 /**
  * Custom fields excluded from user display/edit.
  * Superset of PROTECTED_CUSTOM_FIELDS — also hides fields that users should not manually edit.
+ *
+ * The superseded_* fields are here so `ref deprecate` is their only writer: hand-editing them
+ * would bypass the successor-exists and cycle checks. They are deliberately NOT in
+ * PROTECTED_CUSTOM_FIELDS, so marking a reference still registers as a real change.
+ * See spec/features/superseded.md.
  */
-export const MANAGED_CUSTOM_FIELDS = new Set([...PROTECTED_CUSTOM_FIELDS, "attachments"]);
+export const MANAGED_CUSTOM_FIELDS = new Set([
+  ...PROTECTED_CUSTOM_FIELDS,
+  "attachments",
+  "superseded_by",
+  "superseded_reason",
+  "superseded_at",
+]);
 
 /**
  * Common interface for library implementations.

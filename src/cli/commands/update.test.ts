@@ -419,6 +419,17 @@ describe("update command", () => {
       expect(() => applySetOperations(operations)).toThrow("Cannot set protected field");
     });
 
+    // `ref deprecate` is the only writer for these — a hand-set value would bypass the
+    // successor-exists and cycle checks (#108).
+    it.each(["custom.superseded_by", "custom.superseded_reason", "custom.superseded_at"])(
+      "should throw on protected field (%s)",
+      (field) => {
+        const operations: SetOperation[] = [{ field, operator: "=", value: "x" }];
+
+        expect(() => applySetOperations(operations)).toThrow("Cannot set protected field");
+      }
+    );
+
     it("should throw on unsupported field", () => {
       const operations: SetOperation[] = [
         { field: "unsupported_field", operator: "=", value: "value" },
