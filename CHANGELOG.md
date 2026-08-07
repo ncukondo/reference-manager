@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Config loader tests are isolated from the host environment** (#105):
+  `src/config/loader.test.ts` read the developer's real
+  `~/.config/reference-manager/config.toml`, so default-value assertions
+  failed on any machine that has one (CI was unaffected). All calls now go
+  through a `loadTestConfig()` helper that pins `userConfigPath` to a
+  non-existent path in the per-test temp directory, and every environment
+  variable the loader reads is cleared before each test. The two e2e tests
+  that build a config from `loadConfig` are isolated the same way
+
 - **Self-Upgrade hardening** (#101):
   - Update-check fetch now aborts after 3s so a hung GitHub API request
     cannot stall the CLI past the user's command

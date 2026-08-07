@@ -7,13 +7,15 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { defaultConfig } from "./defaults.js";
-import { loadConfig } from "./loader.js";
+import { type LoadConfigOptions, loadConfig } from "./loader.js";
 import { getPaths } from "./paths.js";
+import type { Config } from "./schema.js";
 
 describe("Config Loader", () => {
   let testDir: string;
 
-  const ENV_VARS_TO_SAVE = [
+  /** Every environment variable `loadConfig` reads, cleared before each test. */
+  const LOADER_ENV_VARS = [
     "REFERENCE_MANAGER_CONFIG",
     "REFERENCE_MANAGER_LIBRARY",
     "EMAIL",
@@ -24,6 +26,10 @@ describe("Config Loader", () => {
     "REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE",
     "NCBI_EMAIL",
     "NCBI_TOOL",
+    "REFERENCE_MANAGER_ATTACHMENTS_DIR",
+    "REFERENCE_MANAGER_CLI_DEFAULT_LIMIT",
+    "REFERENCE_MANAGER_CLIPBOARD_AUTO_COPY",
+    "REFERENCE_MANAGER_MCP_DEFAULT_LIMIT",
   ] as const;
   const savedEnv: Record<string, string | undefined> = {};
 
@@ -35,14 +41,33 @@ describe("Config Loader", () => {
     }
   }
 
+  /**
+   * Load config with the host environment kept out of the result.
+   *
+   * Without an explicit `userConfigPath`, `loadConfig` falls back to
+   * `getDefaultUserConfigPath()` and reads the developer's real
+   * `~/.config/reference-manager/config.toml`, which makes every default-value
+   * assertion fail on a machine that has one (#105). Default it to a path inside
+   * the per-test temp directory that is never created; callers that exercise
+   * user-config handling pass their own.
+   */
+  function loadTestConfig(options: LoadConfigOptions = {}): Config {
+    return loadConfig({
+      cwd: testDir,
+      userConfigPath: join(testDir, "absent-user-config.toml"),
+      ...options,
+    });
+  }
+
   beforeEach(() => {
     // Create a temporary test directory
     testDir = join(tmpdir(), `config-test-${Date.now()}`);
     mkdirSync(testDir, { recursive: true });
 
-    // Save original environment variables
-    for (const name of ENV_VARS_TO_SAVE) {
+    // Save and clear environment variables so the host shell cannot leak in
+    for (const name of LOADER_ENV_VARS) {
       savedEnv[name] = process.env[name];
+      delete process.env[name];
     }
   });
 
@@ -51,19 +76,19 @@ describe("Config Loader", () => {
     rmSync(testDir, { recursive: true, force: true });
 
     // Restore environment variables
-    for (const name of ENV_VARS_TO_SAVE) {
+    for (const name of LOADER_ENV_VARS) {
       restoreEnvVar(name, savedEnv[name]);
     }
   });
 
   describe("Default configuration", () => {
     it("should return default config when no config files exist", () => {
-      const config = loadConfig({ cwd: testDir, userConfigPath: join(testDir, "no-user.toml") });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config).toEqual(defaultConfig);
     });
 
     it("should use default values for all fields", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.logLevel).toBe("info");
       expect(config.backup.maxGenerations).toBe(50);
       expect(config.backup.maxAgeDays).toBe(365);
@@ -82,7 +107,7 @@ log_level = "debug"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.library).toBe("/custom/library.json");
       expect(config.logLevel).toBe("debug");
     });
@@ -96,7 +121,7 @@ log_level = "silent"
 `
       );
 
-      const config = loadConfig({ cwd: testDir, userConfigPath: join(testDir, "no-user.toml") });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.logLevel).toBe("silent");
       expect(config.library).toBe(defaultConfig.library); // Default value
     });
@@ -120,7 +145,7 @@ max_retries = 5
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.logLevel).toBe("debug");
       expect(config.backup.maxGenerations).toBe(100);
       expect(config.backup.maxAgeDays).toBe(30);
@@ -144,7 +169,7 @@ log_level = "silent"
 
       process.env.REFERENCE_MANAGER_CONFIG = configPath;
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.library).toBe("/env/library.json");
       expect(config.logLevel).toBe("silent");
     });
@@ -152,7 +177,7 @@ log_level = "silent"
     it("should load library from REFERENCE_MANAGER_LIBRARY", () => {
       process.env.REFERENCE_MANAGER_LIBRARY = "/env/direct-library.json";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.library).toBe("/env/direct-library.json");
     });
 
@@ -167,14 +192,14 @@ library = "/config/library.json"
 
       process.env.REFERENCE_MANAGER_LIBRARY = "/env/library.json";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.library).toBe("/env/library.json");
     });
 
     it("should expand tilde in REFERENCE_MANAGER_LIBRARY", () => {
       process.env.REFERENCE_MANAGER_LIBRARY = "~/my-library.json";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.library).toBe(join(homedir(), "my-library.json"));
     });
   });
@@ -190,7 +215,7 @@ log_level = "info"
 `
       );
 
-      const config = loadConfig({ cwd: testDir, userConfigPath });
+      const config = loadTestConfig({ cwd: testDir, userConfigPath });
       expect(config.library).toBe("/user/library.json");
       expect(config.logLevel).toBe("info");
     });
@@ -219,7 +244,7 @@ log_level = "debug"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.library).toBe("/current/library.json");
       expect(config.logLevel).toBe("debug");
     });
@@ -245,7 +270,7 @@ log_level = "debug"
 `
       );
 
-      const config = loadConfig({ cwd: testDir, userConfigPath });
+      const config = loadTestConfig({ cwd: testDir, userConfigPath });
       expect(config.library).toBe("/current/library.json");
       expect(config.logLevel).toBe("debug");
     });
@@ -272,7 +297,7 @@ log_level = "silent"
       );
       process.env.REFERENCE_MANAGER_CONFIG = envConfigPath;
 
-      const config = loadConfig({ cwd: testDir, userConfigPath });
+      const config = loadTestConfig({ cwd: testDir, userConfigPath });
       expect(config.library).toBe("/env/library.json");
       expect(config.logLevel).toBe("silent");
     });
@@ -313,7 +338,7 @@ debounce_ms = 1000
 `
       );
 
-      const config = loadConfig({ cwd: testDir, userConfigPath });
+      const config = loadTestConfig({ cwd: testDir, userConfigPath });
 
       // Current directory wins for watch
       expect(config.watch.debounceMs).toBe(1000);
@@ -335,7 +360,7 @@ debounce_ms = 1000
       const configPath = join(testDir, ".reference-manager.config.toml");
       writeFileSync(configPath, "invalid toml syntax [[[");
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should throw error for invalid log level", () => {
@@ -347,7 +372,7 @@ log_level = "invalid"
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should throw error for invalid backup config", () => {
@@ -360,13 +385,13 @@ max_generations = -1
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should ignore non-existent environment config file", () => {
       process.env.REFERENCE_MANAGER_CONFIG = "/non/existent/config.toml";
 
-      const config = loadConfig({ cwd: testDir, userConfigPath: join(testDir, "no-user.toml") });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config).toEqual(defaultConfig);
     });
   });
@@ -382,7 +407,7 @@ log_level = "info"
 `
       );
 
-      const config = loadConfig({
+      const config = loadTestConfig({
         cwd: testDir,
         overrides: {
           library: "/cli/library.json",
@@ -404,7 +429,7 @@ log_level = "info"
 `
       );
 
-      const config = loadConfig({
+      const config = loadTestConfig({
         cwd: testDir,
         overrides: {
           logLevel: "debug",
@@ -418,7 +443,7 @@ log_level = "info"
 
   describe("Citation configuration", () => {
     it("should use default citation settings when not specified", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultStyle).toBe("apa");
       expect(config.citation.cslDirectory).toEqual([join(getPaths().data, "csl")]);
       expect(config.citation.defaultLocale).toBe("en-US");
@@ -436,7 +461,7 @@ default_style = "vancouver"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultStyle).toBe("vancouver");
     });
 
@@ -450,7 +475,7 @@ csl_directory = "/custom/csl"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.cslDirectory).toEqual(["/custom/csl"]);
     });
 
@@ -464,7 +489,7 @@ csl_directory = ["/custom/csl1", "/custom/csl2"]
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.cslDirectory).toEqual(["/custom/csl1", "/custom/csl2"]);
     });
 
@@ -478,7 +503,7 @@ default_locale = "de-DE"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultLocale).toBe("de-DE");
     });
 
@@ -492,7 +517,7 @@ default_format = "html"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultFormat).toBe("html");
     });
 
@@ -509,7 +534,7 @@ default_format = "rtf"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultStyle).toBe("chicago");
       expect(config.citation.cslDirectory).toEqual(["/custom/csl"]);
       expect(config.citation.defaultLocale).toBe("fr-FR");
@@ -526,7 +551,7 @@ default_format = "invalid"
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should load citation.default_key_format from config", () => {
@@ -539,7 +564,7 @@ default_key_format = "latex"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultKeyFormat).toBe("latex");
     });
 
@@ -553,7 +578,7 @@ default_style = "harvard"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.citation.defaultStyle).toBe("harvard");
       expect(config.citation.defaultLocale).toBe("en-US"); // Default
       expect(config.citation.defaultFormat).toBe("text"); // Default
@@ -563,7 +588,7 @@ default_style = "harvard"
 
   describe("PubMed configuration", () => {
     it("should use default pubmed settings when not specified", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBeUndefined();
       expect(config.pubmed.apiKey).toBeUndefined();
     });
@@ -578,7 +603,7 @@ email = "user@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("user@example.com");
     });
 
@@ -592,7 +617,7 @@ api_key = "my-api-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.apiKey).toBe("my-api-key");
     });
 
@@ -607,7 +632,7 @@ api_key = "my-api-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("user@example.com");
       expect(config.pubmed.apiKey).toBe("my-api-key");
     });
@@ -615,14 +640,14 @@ api_key = "my-api-key"
     it("should load pubmed.email from PUBMED_EMAIL environment variable", () => {
       process.env.PUBMED_EMAIL = "env@example.com";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("env@example.com");
     });
 
     it("should load pubmed.apiKey from PUBMED_API_KEY environment variable", () => {
       process.env.PUBMED_API_KEY = "env-api-key";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.apiKey).toBe("env-api-key");
     });
 
@@ -640,7 +665,7 @@ api_key = "config-api-key"
       process.env.PUBMED_EMAIL = "env@example.com";
       process.env.PUBMED_API_KEY = "env-api-key";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("env@example.com");
       expect(config.pubmed.apiKey).toBe("env-api-key");
     });
@@ -658,7 +683,7 @@ api_key = "config-api-key"
 
       // Environment variables not set
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("config@example.com");
       expect(config.pubmed.apiKey).toBe("config-api-key");
     });
@@ -674,7 +699,7 @@ apiKey = "my-api-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("user@example.com");
       expect(config.pubmed.apiKey).toBe("my-api-key");
     });
@@ -685,14 +710,14 @@ apiKey = "my-api-key"
       const configPath = join(testDir, ".reference-manager.config.toml");
       writeFileSync(configPath, `email = "shared@example.com"\n`);
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.email).toBe("shared@example.com");
     });
 
     it("should load top-level email from EMAIL environment variable", () => {
       process.env.EMAIL = "env-shared@example.com";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.email).toBe("env-shared@example.com");
     });
 
@@ -700,7 +725,7 @@ apiKey = "my-api-key"
       const configPath = join(testDir, ".reference-manager.config.toml");
       writeFileSync(configPath, `email = "shared@example.com"\n`);
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("shared@example.com");
     });
 
@@ -708,7 +733,7 @@ apiKey = "my-api-key"
       const configPath = join(testDir, ".reference-manager.config.toml");
       writeFileSync(configPath, `email = "shared@example.com"\n`);
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.unpaywallEmail).toBe("shared@example.com");
       expect(config.fulltext.sources.ncbiEmail).toBe("shared@example.com");
     });
@@ -725,7 +750,7 @@ email = "pubmed@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("pubmed@example.com");
     });
 
@@ -734,7 +759,7 @@ email = "pubmed@example.com"
       writeFileSync(configPath, `email = "shared@example.com"\n`);
       process.env.PUBMED_EMAIL = "pubmed-env@example.com";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.pubmed.email).toBe("pubmed-env@example.com");
     });
   });
@@ -750,7 +775,7 @@ log_level = "debug"
 `
       );
 
-      const config = loadConfig({ cwd: testDir, configPath: configFilePath });
+      const config = loadTestConfig({ cwd: testDir, configPath: configFilePath });
       expect(config.library).toBe("/custom/library.json");
       expect(config.logLevel).toBe("debug");
     });
@@ -763,7 +788,7 @@ log_level = "debug"
       const cliConfigPath = join(testDir, "cli-config.toml");
       writeFileSync(cliConfigPath, `library = "/cli/library.json"\n`);
 
-      const config = loadConfig({ cwd: testDir, configPath: cliConfigPath });
+      const config = loadTestConfig({ cwd: testDir, configPath: cliConfigPath });
       expect(config.library).toBe("/cli/library.json");
     });
 
@@ -774,7 +799,7 @@ log_level = "debug"
       const cliConfigPath = join(testDir, "cli-config.toml");
       writeFileSync(cliConfigPath, `library = "/cli/library.json"\n`);
 
-      const config = loadConfig({ cwd: testDir, userConfigPath, configPath: cliConfigPath });
+      const config = loadTestConfig({ cwd: testDir, userConfigPath, configPath: cliConfigPath });
       expect(config.library).toBe("/cli/library.json");
     });
 
@@ -785,14 +810,14 @@ log_level = "debug"
       const cliConfigPath = join(testDir, "cli-config.toml");
       writeFileSync(cliConfigPath, `library = "/cli/library.json"\n`);
 
-      const config = loadConfig({ cwd: testDir, configPath: cliConfigPath });
+      const config = loadTestConfig({ cwd: testDir, configPath: cliConfigPath });
       expect(config.library).toBe("/cli/library.json");
     });
 
     it("should throw error if configPath file does not exist", () => {
-      expect(() => loadConfig({ cwd: testDir, configPath: "/non/existent/config.toml" })).toThrow(
-        "Config file not found: /non/existent/config.toml"
-      );
+      expect(() =>
+        loadTestConfig({ cwd: testDir, configPath: "/non/existent/config.toml" })
+      ).toThrow("Config file not found: /non/existent/config.toml");
     });
 
     it("should merge configPath with defaults for unspecified fields", () => {
@@ -805,11 +830,7 @@ default_style = "vancouver"
 `
       );
 
-      const config = loadConfig({
-        cwd: testDir,
-        configPath: cliConfigPath,
-        userConfigPath: join(testDir, "no-user.toml"),
-      });
+      const config = loadTestConfig({ cwd: testDir, configPath: cliConfigPath });
       expect(config.citation.defaultStyle).toBe("vancouver");
       expect(config.library).toBe(defaultConfig.library); // default
       expect(config.logLevel).toBe("info"); // default
@@ -818,7 +839,7 @@ default_style = "vancouver"
 
   describe("cli.tui configuration", () => {
     it("should use default interactive config when not specified", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.cli.tui.limit).toBe(20);
       expect(config.cli.tui.debounceMs).toBe(200);
     });
@@ -834,7 +855,7 @@ debounceMs = 300
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.cli.tui.limit).toBe(30);
       expect(config.cli.tui.debounceMs).toBe(300);
     });
@@ -850,7 +871,7 @@ debounce_ms = 250
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.cli.tui.limit).toBe(25);
       expect(config.cli.tui.debounceMs).toBe(250);
     });
@@ -865,7 +886,7 @@ limit = 50
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.cli.tui.limit).toBe(50);
       expect(config.cli.tui.debounceMs).toBe(200); // default
     });
@@ -880,7 +901,7 @@ limit = -1
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should reject negative debounce_ms", () => {
@@ -893,7 +914,7 @@ debounce_ms = -1
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should accept zero limit", () => {
@@ -906,7 +927,7 @@ limit = 0
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.cli.tui.limit).toBe(0);
     });
 
@@ -920,14 +941,14 @@ debounce_ms = 0
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.cli.tui.debounceMs).toBe(0);
     });
   });
 
   describe("Fulltext configuration", () => {
     it("should use default fulltext settings when not specified", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferSources).toEqual(["pmc", "arxiv", "unpaywall", "core"]);
       expect(config.fulltext.sources.unpaywallEmail).toBeUndefined();
       expect(config.fulltext.sources.coreApiKey).toBeUndefined();
@@ -945,7 +966,7 @@ prefer_sources = ["unpaywall", "pmc"]
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
     });
 
@@ -959,7 +980,7 @@ unpaywall_email = "user@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
     });
 
@@ -973,7 +994,7 @@ core_api_key = "my-core-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.coreApiKey).toBe("my-core-key");
     });
 
@@ -991,7 +1012,7 @@ core_api_key = "my-core-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferSources).toEqual(["pmc", "core"]);
       expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
       expect(config.fulltext.sources.coreApiKey).toBe("my-core-key");
@@ -1000,14 +1021,14 @@ core_api_key = "my-core-key"
     it("should load fulltext.sources.unpaywallEmail from UNPAYWALL_EMAIL environment variable", () => {
       process.env.UNPAYWALL_EMAIL = "env@example.com";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.unpaywallEmail).toBe("env@example.com");
     });
 
     it("should load fulltext.sources.coreApiKey from CORE_API_KEY environment variable", () => {
       process.env.CORE_API_KEY = "env-core-key";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.coreApiKey).toBe("env-core-key");
     });
 
@@ -1025,7 +1046,7 @@ core_api_key = "config-core-key"
       process.env.UNPAYWALL_EMAIL = "env@example.com";
       process.env.CORE_API_KEY = "env-core-key";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.unpaywallEmail).toBe("env@example.com");
       expect(config.fulltext.sources.coreApiKey).toBe("env-core-key");
     });
@@ -1041,7 +1062,7 @@ core_api_key = "config-core-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.unpaywallEmail).toBe("config@example.com");
       expect(config.fulltext.sources.coreApiKey).toBe("config-core-key");
     });
@@ -1060,7 +1081,7 @@ coreApiKey = "my-core-key"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferSources).toEqual(["arxiv", "pmc"]);
       expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
       expect(config.fulltext.sources.coreApiKey).toBe("my-core-key");
@@ -1076,7 +1097,7 @@ unpaywall_email = "user@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
       expect(config.fulltext.sources.coreApiKey).toBeUndefined();
       expect(config.fulltext.preferSources).toEqual(["pmc", "arxiv", "unpaywall", "core"]);
@@ -1092,11 +1113,11 @@ prefer_sources = ["invalid_source"]
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should default autoFetchOnAdd to false", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.autoFetchOnAdd).toBe(false);
     });
 
@@ -1110,7 +1131,7 @@ auto_fetch_on_add = true
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.autoFetchOnAdd).toBe(true);
     });
 
@@ -1124,7 +1145,7 @@ autoFetchOnAdd = true
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.autoFetchOnAdd).toBe(true);
     });
 
@@ -1142,14 +1163,14 @@ unpaywall_email = "user@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.autoFetchOnAdd).toBe(true);
       expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
       expect(config.fulltext.sources.unpaywallEmail).toBe("user@example.com");
     });
 
     it("should default preferredType to undefined", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferredType).toBeUndefined();
     });
 
@@ -1163,7 +1184,7 @@ preferred_type = "markdown"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferredType).toBe("markdown");
     });
 
@@ -1177,7 +1198,7 @@ preferredType = "pdf"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferredType).toBe("pdf");
     });
 
@@ -1191,13 +1212,13 @@ preferred_type = "invalid"
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
 
     it("should load preferred_type from REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE env var", () => {
       process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "markdown";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferredType).toBe("markdown");
     });
 
@@ -1213,14 +1234,14 @@ preferred_type = "pdf"
 
       process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "markdown";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferredType).toBe("markdown");
     });
 
     it("should reject invalid REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE env var values", () => {
       process.env.REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE = "html";
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow(
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow(
         'Invalid value for REFERENCE_MANAGER_FULLTEXT_PREFERRED_TYPE: "html". Must be "pdf" or "markdown".'
       );
     });
@@ -1237,7 +1258,7 @@ prefer_sources = ["unpaywall", "pmc"]
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.preferredType).toBe("markdown");
       expect(config.fulltext.autoFetchOnAdd).toBe(true);
       expect(config.fulltext.preferSources).toEqual(["unpaywall", "pmc"]);
@@ -1253,7 +1274,7 @@ ncbi_email = "ncbi@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiEmail).toBe("ncbi@example.com");
     });
 
@@ -1267,7 +1288,7 @@ ncbiEmail = "ncbi@example.com"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiEmail).toBe("ncbi@example.com");
     });
 
@@ -1281,7 +1302,7 @@ ncbi_tool = "my-tool"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiTool).toBe("my-tool");
     });
 
@@ -1295,21 +1316,21 @@ ncbiTool = "my-tool"
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiTool).toBe("my-tool");
     });
 
     it("should load ncbiEmail from NCBI_EMAIL environment variable", () => {
       process.env.NCBI_EMAIL = "env-ncbi@example.com";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiEmail).toBe("env-ncbi@example.com");
     });
 
     it("should load ncbiTool from NCBI_TOOL environment variable", () => {
       process.env.NCBI_TOOL = "env-tool";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiTool).toBe("env-tool");
     });
 
@@ -1327,7 +1348,7 @@ ncbi_tool = "config-tool"
       process.env.NCBI_EMAIL = "env@example.com";
       process.env.NCBI_TOOL = "env-tool";
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.fulltext.sources.ncbiEmail).toBe("env@example.com");
       expect(config.fulltext.sources.ncbiTool).toBe("env-tool");
     });
@@ -1335,7 +1356,7 @@ ncbi_tool = "config-tool"
 
   describe("URL configuration", () => {
     it("should have default URL config values", () => {
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.url.archiveFormat).toBe("mhtml");
       expect(config.url.browserPath).toBe("");
       expect(config.url.timeout).toBe(30);
@@ -1353,7 +1374,7 @@ timeout = 60
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.url.archiveFormat).toBe("html");
       expect(config.url.browserPath).toBe("/usr/bin/chromium");
       expect(config.url.timeout).toBe(60);
@@ -1371,7 +1392,7 @@ timeout = 45
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.url.archiveFormat).toBe("html");
       expect(config.url.browserPath).toBe("/usr/bin/chromium");
       expect(config.url.timeout).toBe(45);
@@ -1387,7 +1408,7 @@ timeout = 120
 `
       );
 
-      const config = loadConfig({ cwd: testDir });
+      const config = loadTestConfig({ cwd: testDir });
       expect(config.url.archiveFormat).toBe("mhtml"); // default
       expect(config.url.browserPath).toBe(""); // default
       expect(config.url.timeout).toBe(120);
@@ -1403,7 +1424,7 @@ archive_format = "pdf"
 `
       );
 
-      expect(() => loadConfig({ cwd: testDir })).toThrow();
+      expect(() => loadTestConfig({ cwd: testDir })).toThrow();
     });
   });
 });
