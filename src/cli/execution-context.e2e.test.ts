@@ -98,7 +98,13 @@ describe("ExecutionContext E2E", () => {
    * Helper to start real HTTP server
    */
   async function startServer(): Promise<void> {
-    const config = loadConfig({ overrides: { library: libraryPath } });
+    // Point userConfigPath at a file that never exists so the developer's real
+    // ~/.config/reference-manager/config.toml cannot leak into the test (#105)
+    const config = loadConfig({
+      cwd: testDir,
+      userConfigPath: path.join(testDir, "absent-user-config.toml"),
+      overrides: { library: libraryPath },
+    });
     const app = createServer(library, config);
     server = serve({ fetch: app.fetch, port: 0, hostname: "127.0.0.1" });
 
