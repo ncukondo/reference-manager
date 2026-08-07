@@ -28,9 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `export` keeps the record and adds a summary line naming how many were included
   - Chains are followed to the final successor; a cycle introduced by hand-editing
     `library.json` is reported rather than looped over
-  - This is the first of three parts of #108. Still to come: `ref duplicates` for a
-    retroactive DOI/PMID/ISBN/arXiv/ERIC scan, and a `check --fix` action that adds the
-    published version as a new record and marks the old one
+  - This is the first of three parts of #108. Still to come: a `check --fix` action that adds
+    the published version as a new record and marks the old one
+
+- **Retroactive duplicate scan** (#108): `ref duplicates` applies the `add`-time matching rules
+  to the whole library at once. `add` skips duplicates as they arrive but says nothing about
+  what the library already holds
+  - `--by doi,pmid,isbn,arxiv,eric,scopus,title` (default: all but `title`, which is the
+    noisiest rule and pairs errata and translations across a whole library), `--fix`,
+    `--include-resolved`, `-o json`
+  - Groups by key rather than comparing pairs. `detector.ts` compares one incoming record
+    against every existing one, which applied to a library is O(n²) — 6,000 references would
+    mean 18 million normalized comparisons
+  - Two deviations from the pairwise rules, both to avoid false positives at library scale:
+    chapters are keyed by ISBN + title (otherwise one edited volume reports as an N-way
+    duplicate of its own chapters), and a book is never grouped with its own chapter
+  - Records matching on more than one key form a single group rather than overlapping ones,
+    so `--fix` cannot try to mark the same record twice
+  - Groups already linked by `superseded_by` are hidden, so the scan converges instead of
+    reporting the same pairs on every run
+  - `--fix` requires a TTY, matching `check --fix`: which record to keep is a judgement call.
+    The suggestion ranks by metadata completeness, then publication year — the ordering that
+    separates an online-first record from its version of record
 
 ### Fixed
 

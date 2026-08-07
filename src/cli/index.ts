@@ -32,6 +32,7 @@ import { handleCheckAction } from "./commands/check.js";
 import { handleCiteAction } from "./commands/cite.js";
 import { registerConfigCommand } from "./commands/config.js";
 import { handleDeprecateAction } from "./commands/deprecate.js";
+import { handleDuplicatesAction } from "./commands/duplicates.js";
 import { handleEditAction } from "./commands/edit.js";
 import {
   type ExportCommandOptions,
@@ -127,6 +128,7 @@ export function createProgram(): Command {
   registerRemoveCommand(program);
   registerUpdateCommand(program);
   registerDeprecateCommand(program);
+  registerDuplicatesCommand(program);
   registerEditCommand(program);
   registerCheckCommand(program);
   registerCiteCommand(program);
@@ -625,6 +627,29 @@ function registerDeprecateCommand(program: Command): void {
     .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string, options) => {
       await handleDeprecateAction(identifier, options, program.opts());
+    });
+}
+
+/**
+ * Register 'duplicates' command
+ */
+function registerDuplicatesCommand(program: Command): void {
+  program
+    .command("duplicates")
+    .description(
+      "Scan the library for references that point at the same work.\n\n" +
+        "Applies the `add` duplicate rules retroactively. Groups already linked by\n" +
+        "`ref deprecate` are hidden. See spec/features/superseded.md."
+    )
+    .option(
+      "--by <keys>",
+      "Comma-separated keys: doi,pmid,isbn,arxiv,eric,scopus,title (default: all but title)"
+    )
+    .option("--include-resolved", "Also report groups already linked by superseded pointers")
+    .option("--fix", "Choose a record to keep per group and mark the rest (requires a TTY)")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .action(async (options) => {
+      await handleDuplicatesAction(options, program.opts());
     });
 }
 
