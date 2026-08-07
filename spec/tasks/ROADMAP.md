@@ -198,6 +198,31 @@ Rename the two same-named `normalizeIsbn` functions for clarity: `parseIsbnInput
 - Task: `spec/tasks/completed/20260724-01-fix-export-keyword-array.md`
 - Status: Done (PR #107, closes #106)
 
+### Fix: `config/loader.test.ts` is not isolated from the user-level config file (#105)
+
+`src/config/loader.test.ts` read the developer's real `~/.config/reference-manager/config.toml`,
+so default-value assertions failed on any machine that has one. All calls now route through a
+`loadTestConfig()` helper that pins `userConfigPath` to a non-existent path in the per-test temp
+directory, and every environment variable the loader reads is cleared before each test.
+
+- Task: `spec/tasks/completed/20260807-01-isolate-config-loader-tests.md`
+- Status: Done (PR #109, closes #105)
+
+### Phase 51: Superseded References (#108)
+
+Record that a reference should no longer be cited, and where to cite instead, without deleting it
+— deleting would leave an unresolvable key in any manuscript that already cites it. Three parts:
+
+- PR-1: `custom.superseded_by` (successor's uuid), `ref deprecate`, reference-time stderr
+  warnings, `list --include-superseded` — **Done (PR #110)**
+- PR-2: `ref duplicates [--by ...] [--fix]` retroactive scan — **In review (PR #111)**
+- PR-3: `check --fix` action adding the published version as a new record and marking the old one
+  — not started
+
+- Task: `spec/tasks/20260807-02-superseded-pointers.md`
+- Spec: `spec/features/superseded.md`
+- Status: In progress (issue #108 stays open until PR-3 lands)
+
 ---
 
 ## Next Steps
