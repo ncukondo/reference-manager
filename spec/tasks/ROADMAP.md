@@ -214,14 +214,14 @@ Record that a reference should no longer be cited, and where to cite instead, wi
 — deleting would leave an unresolvable key in any manuscript that already cites it. Three parts:
 
 - PR-1: `custom.superseded_by` (successor's uuid), `ref deprecate`, reference-time stderr
-  warnings, `list --include-superseded` — **Done (PR #110)**
-- PR-2: `ref duplicates [--by ...] [--fix]` retroactive scan — **In review (PR #111)**
+  warnings, `list --include-superseded` (PR #110)
+- PR-2: `ref duplicates [--by ...] [--fix]` retroactive scan (PR #112)
 - PR-3: `check --fix` action adding the published version as a new record and marking the old one
-  — not started
+  (PR #113)
 
-- Task: `spec/tasks/20260807-02-superseded-pointers.md`
+- Task: `spec/tasks/completed/20260807-02-superseded-pointers.md`
 - Spec: `spec/features/superseded.md`
-- Status: In progress (issue #108 stays open until PR-3 lands)
+- Status: Done (closes #108)
 
 ---
 
