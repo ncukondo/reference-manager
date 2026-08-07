@@ -166,6 +166,25 @@ record, which is the one that gained volume, issue and page numbers.
 Marking goes through the same `deprecate` path, so a stale group cannot write a pointer the
 command itself would have refused.
 
+## `check --fix`: preprint → published
+
+`check` detects `version_changed` from Crossref's `update-to` relation. Its fix actions are:
+
+| Action | Effect |
+|--------|--------|
+| `add_published_and_supersede` | Add the published version as a **new** record, mark this one superseded by it (`published_version`) |
+| `update_from_published` | Overwrite this record's metadata in place, keeping the citation key |
+| `add_version_tag` | Tag `has-published-version` |
+
+`add_published_and_supersede` is listed first. Overwriting in place silently changes what an
+existing citation key resolves to, so a manuscript citing the preprint ends up rendering the
+published article under a key that no longer describes it. Adding the published version alongside
+keeps both records: the old key still resolves, and every read command reports where to cite
+instead.
+
+If the published DOI is already in the library, that record is reused rather than fetched and
+added again — otherwise the fix would create exactly the duplicate this feature exists to resolve.
+
 ## Non-Goals
 
 - No automatic rewriting of citation keys in manuscripts
