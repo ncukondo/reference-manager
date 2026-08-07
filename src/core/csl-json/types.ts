@@ -62,8 +62,22 @@ const CslCustomSchema = z
     scopus_id: z.string().optional(),
     attachments: AttachmentsSchema.optional(),
     check: CheckDataSchema.optional(),
+    // Successor pointer (#108). Holds the successor's uuid, not its citation key —
+    // keys are renamed by collision resolution, so a key-valued pointer would dangle
+    // silently. See spec/features/superseded.md.
+    superseded_by: z.string().optional(),
+    // Kept as a free string rather than an enum: a reason written by another tool
+    // must not make the whole library fail to load. `ref deprecate` enforces the
+    // SUPERSEDED_REASONS union at the CLI boundary.
+    superseded_reason: z.string().optional(),
+    superseded_at: z.string().optional(),
   })
   .passthrough();
+
+/** Reasons `ref deprecate` accepts for `custom.superseded_reason`. */
+export const SUPERSEDED_REASONS = ["duplicate", "published_version", "other"] as const;
+
+export type SupersededReason = (typeof SUPERSEDED_REASONS)[number];
 
 // CSL-JSON Item
 export const CslItemSchema = z

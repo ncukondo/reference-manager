@@ -31,6 +31,7 @@ import {
 import { handleCheckAction } from "./commands/check.js";
 import { handleCiteAction } from "./commands/cite.js";
 import { registerConfigCommand } from "./commands/config.js";
+import { handleDeprecateAction } from "./commands/deprecate.js";
 import { handleEditAction } from "./commands/edit.js";
 import {
   type ExportCommandOptions,
@@ -77,6 +78,7 @@ import {
   setExitCode,
   writeOutputWithClipboard,
 } from "./helpers.js";
+import { reportSuperseded } from "./superseded-report.js";
 
 /**
  * Create Commander program instance
@@ -124,6 +126,7 @@ export function createProgram(): Command {
   registerAddCommand(program);
   registerRemoveCommand(program);
   registerUpdateCommand(program);
+  registerDeprecateCommand(program);
   registerEditCommand(program);
   registerCheckCommand(program);
   registerCiteCommand(program);
@@ -157,6 +160,9 @@ async function handleListAction(options: ListCommandOptions, program: Command): 
       await writeOutputWithClipboard(output, clipboardEnabled, config.logLevel === "silent");
     }
 
+    // Only reachable with --include-superseded; without it nothing superseded is in `items`.
+    await reportSuperseded(result.items, context, { silent: config.logLevel === "silent" });
+
     setExitCode(ExitCode.SUCCESS);
   } catch (error) {
     exitWithError(error instanceof Error ? error.message : String(error), ExitCode.INTERNAL_ERROR);
@@ -185,6 +191,7 @@ function registerListCommand(program: Command): void {
     .option("--order <order>", "Sort order: asc|desc")
     .option("-n, --limit <n>", "Maximum number of results", Number.parseInt)
     .option("--offset <n>", "Number of results to skip", Number.parseInt)
+    .option("--include-superseded", "Include references marked as superseded")
     .action(async (options) => {
       await handleListAction(options, program);
     });
@@ -233,6 +240,14 @@ async function handleExportAction(
         process.stderr.write(`Error: Reference not found: ${id}\n`);
       }
     }
+
+    // Superseded records stay in the output: dropping one would break a manuscript that still
+    // cites its key, turning a warning into an unresolved citeproc reference.
+    await reportSuperseded(result.items, context, {
+      silent: config.logLevel === "silent",
+      summary: (count) =>
+        `${count} superseded reference${count === 1 ? "" : "s"} included. Update your manuscript keys.`,
+    });
 
     setExitCode(getExportExitCode(result));
   } catch (error) {
@@ -300,6 +315,10 @@ async function handleSearchAction(
     } else if (result.items.length === 0 && query) {
       process.stderr.write(`${buildNoResultsHintText(query)}\n`);
     }
+
+    // Warn but do not filter: search is an explicit query, and silently dropping a record the
+    // user asked for by name would be surprising (spec/features/superseded.md).
+    await reportSuperseded(result.items, context, { silent: config.logLevel === "silent" });
 
     setExitCode(ExitCode.SUCCESS);
   } catch (error) {
@@ -582,6 +601,30 @@ function registerUpdateCommand(program: Command): void {
     .option("--full", "Include full CSL-JSON data in JSON output")
     .action(async (identifier: string | undefined, file: string | undefined, options) => {
       await handleUpdateAction(identifier, file, options, program.opts());
+    });
+}
+
+/**
+ * Register 'deprecate' command
+ */
+function registerDeprecateCommand(program: Command): void {
+  program
+    .command("deprecate")
+    .description(
+      "Mark a reference as superseded by another.\n\n" +
+        "The record stays in the library so manuscripts that already cite its key keep\n" +
+        "resolving; read commands report the successor on stderr. See\n" +
+        "spec/features/superseded.md."
+    )
+    .argument("<identifier>", "Citation key or UUID of the reference to mark")
+    .option("--to <identifier>", "Citation key or UUID of the successor")
+    .option("--unset", "Clear an existing superseded mark")
+    .option("--reason <reason>", "Why: duplicate|published_version|other (default: other)")
+    .option("--uuid", "Interpret both identifiers as UUIDs")
+    .option("-o, --output <format>", "Output format: json|text", "text")
+    .option("--full", "Include full CSL-JSON data in JSON output")
+    .action(async (identifier: string, options) => {
+      await handleDeprecateAction(identifier, options, program.opts());
     });
 }
 

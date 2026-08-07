@@ -10,6 +10,7 @@ import type { DuplicateType } from "../duplicate/types.js";
 import type { FailureReason } from "../import/importer.js";
 import type { AddReferencesResult } from "./add.js";
 import { getChangedFields } from "./change-details.js";
+import type { DeprecateErrorType, DeprecateResult } from "./deprecate.js";
 import type { RemoveResult } from "./remove.js";
 import type { UpdateOperationResult } from "./update.js";
 
@@ -298,4 +299,112 @@ export function formatUpdateJsonOutput(
 
   // Handle success case
   return formatUpdateSuccessJson(result, originalId, options);
+}
+
+// ============================================================================
+// Deprecate command types
+// ============================================================================
+
+export interface DeprecateSuccessorJson {
+  id: string;
+  uuid: string;
+}
+
+export interface DeprecateJsonOutput {
+  success: boolean;
+  id: string;
+  uuid?: string;
+  title?: string;
+  /** Present when a mark was set */
+  supersededBy?: DeprecateSuccessorJson;
+  reason?: string;
+  supersededAt?: string;
+  /** True when the mark was cleared */
+  cleared?: boolean;
+  /** True when --unset ran against a reference that carried no mark */
+  unchanged?: boolean;
+  item?: CslItem;
+  error?: string;
+}
+
+export interface FormatDeprecateJsonOptions {
+  /** Include full CSL-JSON data */
+  full?: boolean;
+}
+
+/**
+ * Human-readable message for a rejected deprecate operation.
+ *
+ * Shared by the text and JSON formatters so the two cannot drift.
+ */
+export function describeDeprecateError(
+  errorType: DeprecateErrorType,
+  id: string,
+  target: string | undefined
+): string {
+  switch (errorType) {
+    case "not_found":
+      return `Reference not found: ${id}`;
+    case "target_not_found":
+      return target
+        ? `Successor not found: ${target}`
+        : "No successor given. Use --to <id> or --unset.";
+    case "target_has_no_uuid":
+      return `Successor ${target} has no uuid to point at`;
+    case "self_reference":
+      return `Cannot supersede ${id} by itself`;
+    case "cycle":
+      return `Cannot supersede ${id} by ${target}: ${target} already leads back to ${id}`;
+  }
+}
+
+/**
+ * Format deprecate command result as JSON output
+ */
+export function formatDeprecateJsonOutput(
+  result: DeprecateResult,
+  id: string,
+  target: string | undefined,
+  options: FormatDeprecateJsonOptions = {}
+): DeprecateJsonOutput {
+  const { full = false } = options;
+
+  if (result.errorType) {
+    return {
+      success: false,
+      id,
+      error: describeDeprecateError(result.errorType, id, target),
+    };
+  }
+
+  const item = result.item;
+  const output: DeprecateJsonOutput = {
+    success: true,
+    id: item?.id ?? id,
+    ...(item?.custom?.uuid && { uuid: item.custom.uuid }),
+    ...(typeof item?.title === "string" && { title: item.title }),
+  };
+
+  if (result.noop) {
+    output.unchanged = true;
+  } else if (result.target) {
+    output.supersededBy = {
+      id: result.target.id,
+      uuid: result.target.custom?.uuid ?? "",
+    };
+    if (item?.custom?.superseded_reason) {
+      output.reason = item.custom.superseded_reason;
+    }
+    if (item?.custom?.superseded_at) {
+      output.supersededAt = item.custom.superseded_at;
+    }
+  } else {
+    output.cleared = true;
+  }
+
+  if (full && item) {
+    output.item = item;
+  }
+
+  return output;
 }

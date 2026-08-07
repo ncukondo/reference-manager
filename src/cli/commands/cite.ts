@@ -1,4 +1,5 @@
 import type { Config } from "../../config/schema.js";
+import type { CslItem } from "../../core/csl-json/types.js";
 import { Library } from "../../core/library.js";
 import type { CiteOperationOptions, CiteResult } from "../../features/operations/cite.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
@@ -11,6 +12,7 @@ import {
   setExitCode,
   writeOutputWithClipboard,
 } from "../helpers.js";
+import { reportSuperseded } from "../superseded-report.js";
 
 /**
  * Options for the cite command.
@@ -194,6 +196,29 @@ async function executeInteractiveCite(
 /**
  * Handle 'cite' command action.
  */
+/**
+ * Look the cited references back up so superseded ones can be reported.
+ *
+ * `CiteResult` carries only the rendered citation strings, and the identifier count here is
+ * whatever the user typed (or selected) — a handful — so per-identifier lookups are cheaper
+ * than reshaping the operation's result type.
+ */
+async function resolveCitedItems(
+  result: CiteCommandResult,
+  context: ExecutionContext,
+  useUuid: boolean
+): Promise<CslItem[]> {
+  const items: CslItem[] = [];
+  for (const r of result.results) {
+    if (!r.success) continue;
+    const item = await context.library.find(r.identifier, { idType: useUuid ? "uuid" : "id" });
+    if (item) {
+      items.push(item);
+    }
+  }
+  return items;
+}
+
 export async function handleCiteAction(
   identifiers: string[],
   options: Omit<CiteCommandOptions, "identifiers">,
@@ -237,6 +262,14 @@ export async function handleCiteAction(
     if (errors) {
       process.stderr.write(`${errors}\n`);
     }
+
+    await reportSuperseded(
+      await resolveCitedItems(result, context, options.uuid ?? false),
+      context,
+      {
+        silent: config.logLevel === "silent",
+      }
+    );
 
     setExitCode(getCiteExitCode(result));
   } catch (error) {

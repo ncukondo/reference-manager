@@ -11,6 +11,7 @@ import { Library } from "../../core/library.js";
 import { formatBibtex } from "../../features/format/bibtex.js";
 import { normalizeReference } from "../../features/format/show-normalizer.js";
 import { formatShowPretty } from "../../features/format/show-pretty.js";
+import { isSuperseded } from "../../features/superseded/index.js";
 import { type ExecutionContext, createExecutionContext } from "../execution-context.js";
 import {
   ExitCode,
@@ -21,6 +22,7 @@ import {
   setExitCode,
   writeOutputWithClipboard,
 } from "../helpers.js";
+import { reportSuperseded } from "../superseded-report.js";
 
 export interface ShowCommandOptions {
   uuid?: boolean;
@@ -40,10 +42,17 @@ export async function executeShow(
 export function formatShowOutput(
   item: CslItem,
   options: ShowCommandOptions,
-  attachmentsDirectory?: string
+  attachmentsDirectory?: string,
+  allItems?: CslItem[]
 ): string {
   const format = options.json ? "json" : (options.output ?? "pretty");
-  const normalizeOpts = attachmentsDirectory ? { attachmentsDirectory } : undefined;
+  const normalizeOpts =
+    attachmentsDirectory || allItems
+      ? {
+          ...(attachmentsDirectory && { attachmentsDirectory }),
+          ...(allItems && { allItems }),
+        }
+      : undefined;
 
   if (format === "json") {
     const normalized = normalizeReference(item, normalizeOpts);
@@ -111,10 +120,16 @@ export async function handleShowAction(
       return;
     }
 
-    const output = formatShowOutput(item, options, config.attachments.directory);
+    // Only fetch the library when this record actually points somewhere — resolving the
+    // successor's citation key needs it, but the common case is an unmarked record.
+    const allItems = isSuperseded(item) ? await context.library.getAll() : undefined;
+
+    const output = formatShowOutput(item, options, config.attachments.directory, allItems);
     if (output) {
       await writeOutputWithClipboard(output, false, config.logLevel === "silent");
     }
+
+    await reportSuperseded([item], context, { silent: config.logLevel === "silent" });
 
     setExitCode(ExitCode.SUCCESS);
   } catch (error) {

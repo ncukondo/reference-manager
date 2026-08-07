@@ -65,6 +65,26 @@ describe("serializeToYaml", () => {
       expect(editableSection).not.toContain("created_at:");
       expect(editableSection).not.toContain("timestamp:");
     });
+
+    // `ref deprecate` is the only writer for the superseded mark (#108); exposing it here
+    // would let an edit bypass the successor-exists and cycle checks.
+    it("does not expose the superseded mark for editing", () => {
+      const yaml = serializeToYaml([
+        {
+          ...baseItem,
+          custom: {
+            ...baseItem.custom,
+            superseded_by: "660e8400-e29b-41d4-a716-446655440001",
+            superseded_reason: "duplicate",
+            superseded_at: "2026-08-07T00:00:00.000Z",
+          },
+        },
+      ]);
+      const editableSection = yaml.split("# ========================================")[1];
+      expect(editableSection).not.toContain("superseded_by:");
+      expect(editableSection).not.toContain("superseded_reason:");
+      expect(editableSection).not.toContain("superseded_at:");
+    });
   });
 
   describe("field transformations", () => {

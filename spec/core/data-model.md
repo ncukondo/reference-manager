@@ -48,6 +48,9 @@ The `custom` field stores reference-manager-specific metadata:
   "timestamp": "2024-01-02T10:30:00.000Z",
   "additional_urls": ["https://example.com/resource"],
   "tags": ["review", "important"],
+  "superseded_by": "<uuid of successor>",
+  "superseded_reason": "duplicate",
+  "superseded_at": "2026-08-07T00:00:00.000Z",
   "attachments": {
     "directory": "Smith-2024-PMID12345678-<uuid-prefix>",
     "files": [
@@ -66,6 +69,9 @@ The `custom` field stores reference-manager-specific metadata:
 | `timestamp` | Last modification time (for LWW conflict resolution) |
 | `additional_urls` | Optional array of additional URLs |
 | `tags` | User-defined tags for categorization (see `features/metadata.md`) |
+| `superseded_by` | uuid of the reference to cite instead (see `features/superseded.md`) |
+| `superseded_reason` | `duplicate` \| `published_version` \| `other` |
+| `superseded_at` | When the mark was set |
 | `attachments` | Attached files (see `features/attachments.md`) |
 | `attachments.directory` | Per-reference directory name |
 | `attachments.files` | Array of attached file metadata |

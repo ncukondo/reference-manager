@@ -8,11 +8,18 @@ import {
   paginate,
   sortReferences,
 } from "../pagination/index.js";
+import { isSuperseded } from "../superseded/index.js";
 
 /**
  * Options for listReferences operation
  */
-export interface ListOptions extends PaginationOptions, SortOptions {}
+export interface ListOptions extends PaginationOptions, SortOptions {
+  /**
+   * Include references marked as superseded (#108). They are hidden by default: once a
+   * successor exists, the old record is noise in a browsing command.
+   */
+  includeSuperseded?: boolean;
+}
 
 /**
  * Result of listReferences operation
@@ -45,10 +52,13 @@ export async function listReferences(library: ILibrary, options: ListOptions): P
 
   // Get all items
   const allItems = await library.getAll();
-  const total = allItems.length;
+
+  // Filter before counting, so `total` describes what the caller can actually page through
+  const visible = options.includeSuperseded ? allItems : allItems.filter((i) => !isSuperseded(i));
+  const total = visible.length;
 
   // Sort
-  const sorted = sortReferences(allItems, sort, order);
+  const sorted = sortReferences(visible, sort, order);
 
   // Paginate
   const { items: paginatedItems, nextOffset } = paginate(sorted, { limit, offset });
