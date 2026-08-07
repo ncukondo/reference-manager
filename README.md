@@ -249,7 +249,7 @@ With a custom library:
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `search` | Search references by query | `query`: Search string (e.g., `"author:smith 2024"`) |
-| `list` | List all references | `format?`: `"json"` \| `"bibtex"` \| `"pretty"` |
+| `list` | List all references (superseded ones omitted) | `format?`: `"json"` \| `"bibtex"` \| `"pretty"`, `includeSuperseded?`: Include deprecated records |
 | `add` | Add new reference(s) | `input`: DOI, PMID, ISBN, BibTeX, RIS, or CSL-JSON |
 | `remove` | Remove a reference | `id`: Reference ID, `force`: must be `true` |
 | `cite` | Generate formatted citation | `ids`: Array of reference IDs, `style?`: Citation style, `format?`: `"text"` \| `"html"` |

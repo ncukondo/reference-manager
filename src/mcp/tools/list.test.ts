@@ -153,3 +153,88 @@ describe("MCP list tool", () => {
     });
   });
 });
+
+describe("MCP list tool superseded handling", () => {
+  let tempDir: string;
+  let libraryOperations: ILibraryOperations;
+
+  /** Capture the tool callback the way the other tests in this file do. */
+  async function callList(
+    args: ListToolParams
+  ): Promise<{ total: number; items: { id: string }[] }> {
+    let capturedCallback:
+      | ((args: ListToolParams) => Promise<{ content: Array<{ text: string }> }>)
+      | undefined;
+    const mockServer = {
+      registerTool: (_name: string, _config: unknown, cb: NonNullable<typeof capturedCallback>) => {
+        capturedCallback = cb;
+      },
+    };
+    registerListTool(mockServer as never, () => libraryOperations, getConfig);
+    const result = await capturedCallback?.(args);
+    return JSON.parse(result?.content[0]?.text ?? "{}");
+  }
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-list-superseded-"));
+    const libraryPath = path.join(tempDir, "references.json");
+    await fs.writeFile(
+      libraryPath,
+      JSON.stringify([
+        {
+          id: "Carless2023-yt",
+          type: "article-journal",
+          title: "Version of record",
+          custom: {
+            uuid: "22222222-2222-4222-8222-222222222222",
+            created_at: "2026-01-01T00:00:00.000Z",
+            timestamp: "2026-01-01T00:00:00.000Z",
+          },
+        },
+        {
+          id: "Carless2020-yj",
+          type: "article-journal",
+          title: "Online first",
+          custom: {
+            uuid: "11111111-1111-4111-8111-111111111111",
+            created_at: "2026-01-01T00:00:00.000Z",
+            timestamp: "2026-01-01T00:00:00.000Z",
+            superseded_by: "22222222-2222-4222-8222-222222222222",
+            superseded_reason: "duplicate",
+            superseded_at: "2026-08-07T00:00:00.000Z",
+          },
+        },
+      ]),
+      "utf-8"
+    );
+    libraryOperations = new OperationsLibrary(await Library.load(libraryPath));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("omits superseded references by default", async () => {
+    const response = await callList({});
+
+    expect(response.items.map((i) => i.id)).toEqual(["Carless2023-yt"]);
+    expect(response.total).toBe(1);
+  });
+
+  // An agent that needs the full library must have a way to ask for it.
+  it("includes them with includeSuperseded", async () => {
+    const response = await callList({ includeSuperseded: true });
+
+    expect(response.items.map((i) => i.id).sort()).toEqual(["Carless2020-yj", "Carless2023-yt"]);
+    expect(response.total).toBe(2);
+  });
+
+  it("carries the pointer through so the agent can follow it", async () => {
+    const response = await callList({ includeSuperseded: true });
+    const superseded = response.items.find((i) => i.id === "Carless2020-yj") as {
+      custom?: { superseded_by?: string };
+    };
+
+    expect(superseded.custom?.superseded_by).toBe("22222222-2222-4222-8222-222222222222");
+  });
+});

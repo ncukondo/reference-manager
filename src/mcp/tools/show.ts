@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { Config } from "../../config/schema.js";
 import { normalizeReference } from "../../features/format/show-normalizer.js";
 import type { ILibraryOperations } from "../../features/operations/library-operations.js";
+import { isSuperseded } from "../../features/superseded/index.js";
 
 interface ShowToolParams {
   identifier?: string | undefined;
@@ -48,7 +49,13 @@ export function createShowToolHandler(
     }
 
     const attachmentsDir = config.attachments?.directory;
-    const normalizeOpts = attachmentsDir ? { attachmentsDirectory: attachmentsDir } : undefined;
+    // Resolve the successor pointer to a citation key. Without the library, `superseded` stays
+    // null and the agent would only see a bare uuid under raw.custom, which it cannot cite.
+    const allItems = isSuperseded(item) ? await libraryOps.getAll() : undefined;
+    const normalizeOpts = {
+      ...(attachmentsDir && { attachmentsDirectory: attachmentsDir }),
+      ...(allItems && { allItems }),
+    };
     const normalized = normalizeReference(item, normalizeOpts);
 
     return {
