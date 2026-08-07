@@ -542,6 +542,35 @@ ref deprecate Carless2020-yj --unset
 ref deprecate Carless2020-yj --to Carless2023-yt -o json
 ```
 
+#### Finding duplicates retroactively
+
+`add` skips duplicates as they arrive, but says nothing about what a library already holds. `ref
+duplicates` applies the same matching rules to the whole library at once:
+
+```bash
+ref duplicates                          # doi, pmid, isbn, arxiv, eric, scopus
+ref duplicates --by doi,pmid            # narrow the keys
+ref duplicates --by title               # title + authors + year (noisier; opt-in)
+ref duplicates -o json                  # machine-readable
+ref duplicates --fix                    # choose a keeper per group (requires a TTY)
+```
+
+```
+1. doi=10.1080/13562517.2020.1782372
+   Carless2020-yj (2020)  Online first version
+   Carless2023-yt (2023)  Version of record
+
+1 duplicate group, 1 redundant record, among 6109 references.
+Run with --fix in a terminal to choose which one to keep.
+```
+
+`--fix` walks each group and asks which record to keep, pre-selecting the more complete one — the
+version of record is typically the one that gained volume, issue and page numbers. The rest are
+marked as superseded by the keeper. Groups already linked this way stop being reported, so the
+scan converges instead of repeating itself; `--include-resolved` shows them again.
+
+#### How the mark is stored
+
 The mark is stored under `custom.superseded_by` as the successor's UUID, so it survives citation
 key renames. `ref deprecate` is the only writer — `update --set` and `edit` cannot touch these
 fields, which is what keeps the successor-exists and cycle checks meaningful.

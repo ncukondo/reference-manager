@@ -137,6 +137,31 @@ expect_contains "second unset is a no-op" "$OUT" "is not marked as superseded"
 OUT="$($CLI list --ids-only 2>/dev/null)"
 expect_contains "record is visible again" "$OUT" "Carless2020-yj"
 
+echo "== duplicates scan =="
+# Both records share a DOI, so a scan should pair them
+OUT="$($CLI duplicates 2>/dev/null)"
+expect_contains "reports the DOI group" "$OUT" "doi=10.1080/13562517.2020.1782372"
+expect_contains "lists both members" "$OUT" "Carless2020-yj"
+expect_contains "counts redundant records" "$OUT" "1 duplicate group, 1 redundant record"
+
+OUT="$($CLI duplicates -o json 2>/dev/null)"
+expect_contains "json carries the group count" "$OUT" '"groupCount": 1'
+expect_contains "json carries the scan size" "$OUT" '"scanned": 2'
+
+OUT="$($CLI duplicates --by pmid 2>/dev/null)"
+expect_contains "--by narrows the keys" "$OUT" "No duplicates found"
+
+expect_exit "unknown --by value is rejected" 1 $CLI duplicates --by issn
+expect_exit "--fix without a TTY is rejected" 1 $CLI duplicates --fix
+
+# Once linked, the pair must stop being reported — otherwise every run repeats the same work
+$CLI deprecate Carless2020-yj --to Carless2023-yt --reason duplicate >/dev/null 2>&1
+OUT="$($CLI duplicates 2>/dev/null)"
+expect_contains "linked pair is no longer reported" "$OUT" "No duplicates found"
+OUT="$($CLI duplicates --include-resolved 2>/dev/null)"
+expect_contains "--include-resolved brings it back" "$OUT" "[already linked]"
+$CLI deprecate Carless2020-yj --unset >/dev/null 2>&1
+
 echo
 echo "PASS: $PASS  FAIL: $FAIL"
 [[ "$FAIL" -eq 0 ]]
