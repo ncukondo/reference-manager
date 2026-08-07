@@ -520,6 +520,12 @@ Sources queried:
 
 Use `--fix` to interactively update changed fields from the remote source.
 
+For a preprint whose published version has appeared, `--fix` offers to **add the published version
+as a new record and mark the preprint as superseded by it**. That option is listed first: updating
+the preprint's metadata in place silently changes what its citation key resolves to, so a
+manuscript citing the preprint would render the published article under a key that no longer
+describes it. If the published DOI is already in your library, the existing record is reused.
+
 Results are saved to `custom.check` by default for skip-if-recent logic.
 
 ### Superseded References

@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `export` keeps the record and adds a summary line naming how many were included
   - Chains are followed to the final successor; a cycle introduced by hand-editing
     `library.json` is reported rather than looped over
-  - This is the first of three parts of #108. Still to come: a `check --fix` action that adds
-    the published version as a new record and marks the old one
+  - Delivered across three PRs: pointers and `ref deprecate` (#110), the `ref duplicates` scan
+    (#112), and the `check --fix` action below
 
 - **Retroactive duplicate scan** (#108): `ref duplicates` applies the `add`-time matching rules
   to the whole library at once. `add` skips duplicates as they arrive but says nothing about
@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--fix` requires a TTY, matching `check --fix`: which record to keep is a judgement call.
     The suggestion ranks by metadata completeness, then publication year — the ordering that
     separates an online-first record from its version of record
+
+- **`check --fix` can keep both versions** (#108): `version_changed` findings gain an
+  `add_published_and_supersede` action that adds the published version as a new record and marks
+  the preprint as superseded by it
+  - Listed before the existing in-place update, which silently changes what the preprint's
+    citation key resolves to — a manuscript citing the preprint would render the published
+    article under a key that no longer describes it
+  - Reuses an existing record when the published DOI is already in the library, rather than
+    adding a second copy of it
 
 ### Fixed
 

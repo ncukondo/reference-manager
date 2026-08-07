@@ -7,6 +7,7 @@ export type FixActionType =
   | "add_retraction_note"
   | "remove_from_library"
   | "update_from_published"
+  | "add_published_and_supersede"
   | "add_version_tag"
   | "add_concern_tag"
   | "add_concern_note"
@@ -36,6 +37,13 @@ export function getFixActionsForFinding(finding: CheckFinding): FixAction[] {
       ];
     case "version_changed":
       return [
+        // Listed first: overwriting in place changes what the existing citation key resolves
+        // to, which breaks a manuscript already citing the preprint. Adding the published
+        // version alongside and forwarding the old record keeps both working (#108).
+        {
+          type: "add_published_and_supersede",
+          label: "Add published version as a new record, supersede this one",
+        },
         { type: "update_from_published", label: "Update metadata from published version" },
         { type: "add_version_tag", label: 'Add tag "has-published-version"' },
         { type: "skip", label: "Skip" },
@@ -132,6 +140,64 @@ async function applyUpdateFromPublished(
   return { applied: true, message: `Updated metadata from ${newDoi}` };
 }
 
+/**
+ * Add the published version as its own record and point the old one at it.
+ *
+ * The alternative action overwrites the existing record in place, which silently changes what
+ * the preprint's citation key resolves to. This keeps both records: the manuscript citing the
+ * preprint still resolves, and every read command reports where to cite instead (#108).
+ */
+async function applyAddPublishedAndSupersede(
+  library: ILibrary,
+  item: CslItem,
+  finding: CheckFinding
+): Promise<FixActionResult> {
+  const newDoi = finding.details?.newDoi;
+  if (!newDoi) {
+    return { applied: false, message: "No published DOI available in finding details" };
+  }
+
+  // The published version may already have been imported separately — reuse it rather than
+  // adding a second copy, which would just create the duplicate this feature exists to resolve.
+  let published = await library.find(newDoi, { idType: "doi" });
+
+  if (!published) {
+    const { fetchDoi } = await import("../import/fetcher.js");
+    const fetchResult = await fetchDoi(newDoi);
+    if (!fetchResult.success) {
+      return {
+        applied: false,
+        message: `Failed to fetch metadata for ${newDoi}: ${fetchResult.error}`,
+      };
+    }
+    // Drop the fetched id and custom block: Library.add generates a citation key that cannot
+    // collide, and a uuid the superseded pointer can target.
+    const { id: _id, custom: _custom, ...metadata } = fetchResult.item;
+    published = await library.add(metadata as CslItem);
+  }
+
+  const { deprecateReference } = await import("../operations/deprecate.js");
+  const outcome = await deprecateReference(library, {
+    identifier: item.id,
+    target: published.id,
+    reason: "published_version",
+  });
+
+  if (!outcome.applied) {
+    // The new record is already in the library, so say so rather than implying nothing happened
+    await library.save();
+    return {
+      applied: false,
+      message: `Added ${published.id}, but could not mark ${item.id} as superseded (${outcome.errorType ?? "unknown"})`,
+    };
+  }
+
+  return {
+    applied: true,
+    message: `Added ${published.id} and marked ${item.id} as superseded by it`,
+  };
+}
+
 async function applyUpdateAllFields(
   library: ILibrary,
   item: CslItem,
@@ -212,6 +278,9 @@ export async function applyFixAction(
 
     case "update_from_published":
       return applyUpdateFromPublished(library, item, finding);
+
+    case "add_published_and_supersede":
+      return applyAddPublishedAndSupersede(library, item, finding);
 
     case "update_all_fields":
       return applyUpdateAllFields(library, item, finding);

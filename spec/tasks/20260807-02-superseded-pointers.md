@@ -11,7 +11,8 @@ Follow-up PRs:
 
 - PR-2 (done, PR #111): `ref duplicates [--by ...] [--fix]` — retroactive scan, applies marks in
   bulk. See "Step 7" below.
-- PR-3: `check --fix` action that adds the published version as a new record and marks the old one
+- PR-3 (done, PR #113): `check --fix` action that adds the published version as a new record and
+  marks the old one. See "Step 8" below.
 
 ## References
 
@@ -134,6 +135,16 @@ stays clean — is covered end to end by `test-fixtures/test-superseded.sh`.
       convergence checks
 - [x] Update `spec/features/superseded.md`, `spec/_index.md`, README, CHANGELOG
 
+### Step 8: `check --fix` keeps both versions (PR-3)
+
+- [x] Write test: `src/features/check/fix-actions.test.ts` — the action list for `version_changed`
+      now leads with the additive option; applying it adds the record and writes the mark; the
+      fetched id and custom block are dropped; an already-present published DOI is reused; fetch
+      failure and a missing `newDoi` are reported; a record added but not marked says so
+- [x] Add `add_published_and_supersede` to `FixActionType` and `getFixActionsForFinding`
+- [x] Implement `applyAddPublishedAndSupersede` in `src/features/check/fix-actions.ts`
+- [x] Update `spec/features/superseded.md`, README, CHANGELOG
+
 ## Manual Verification
 
 **Script**: `test-fixtures/test-superseded.sh`
@@ -160,4 +171,4 @@ Non-TTY tests (automated):
 - [ ] Manual verification: `./test-fixtures/test-superseded.sh`
 - [ ] CHANGELOG.md updated
 - [ ] PR description references #108 (do **not** close it — PR-2 and PR-3 remain)
-- [ ] Move this file to `spec/tasks/completed/` when all three PRs land
+- [x] Move this file to `spec/tasks/completed/` when all three PRs land

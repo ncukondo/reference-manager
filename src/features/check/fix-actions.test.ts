@@ -37,8 +37,11 @@ describe("getFixActionsForFinding", () => {
 
     const actions = getFixActionsForFinding(finding);
 
-    expect(actions).toHaveLength(3);
+    expect(actions).toHaveLength(4);
+    // The additive option is listed first: overwriting in place changes what the preprint's
+    // citation key resolves to (#108).
     expect(actions.map((a) => a.type)).toEqual([
+      "add_published_and_supersede",
       "update_from_published",
       "add_version_tag",
       "skip",
@@ -700,5 +703,207 @@ describe("applyFixAction", () => {
       expect(mockLibrary.remove).not.toHaveBeenCalled();
       expect(mockLibrary.save).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("add_published_and_supersede", () => {
+  const preprint: CslItem = {
+    id: "preprint-2024",
+    type: "article-journal",
+    title: "Preprint Title",
+    DOI: "10.1234/preprint",
+    custom: { uuid: "uuid-preprint" },
+  };
+
+  const finding: CheckFinding = {
+    type: "version_changed",
+    message: "Published version available: 10.5678/published",
+    details: { newDoi: "10.5678/published" },
+  };
+
+  let items: CslItem[];
+  let library: {
+    find: ReturnType<typeof vi.fn>;
+    add: ReturnType<typeof vi.fn>;
+    getAll: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
+  };
+
+  function useLibrary(initial: CslItem[]): void {
+    items = initial;
+    library = {
+      find: vi.fn(async (identifier: string, options?: { idType?: string }) =>
+        options?.idType === "doi"
+          ? items.find((i) => i.DOI === identifier)
+          : items.find((i) => i.id === identifier)
+      ),
+      add: vi.fn(async (item: CslItem) => {
+        const added = {
+          ...item,
+          id: "published-2025",
+          custom: { ...item.custom, uuid: "uuid-published" },
+        };
+        items.push(added);
+        return added;
+      }),
+      getAll: vi.fn(async () => items),
+      update: vi.fn(async (id: string, updates: Partial<CslItem>) => {
+        const index = items.findIndex((i) => i.id === id);
+        if (index === -1) return { updated: false };
+        const updated = {
+          ...items[index],
+          ...updates,
+          custom: { ...items[index]?.custom, ...updates.custom },
+        } as CslItem;
+        items[index] = updated;
+        return { updated: true, item: updated };
+      }),
+      save: vi.fn(async () => undefined),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useLibrary([{ ...preprint }]);
+  });
+
+  it("adds the published version and points the preprint at it", async () => {
+    const { fetchDoi } = await import("../import/fetcher.js");
+    vi.mocked(fetchDoi).mockResolvedValueOnce({
+      success: true,
+      item: {
+        id: "ignored-id",
+        type: "article-journal",
+        title: "Published Title",
+        DOI: "10.5678/published",
+        "container-title": "Nature",
+        custom: { uuid: "ignored-uuid" },
+      },
+    });
+
+    const result = await applyFixAction(
+      library as never,
+      items[0] as CslItem,
+      finding,
+      "add_published_and_supersede"
+    );
+
+    expect(result.applied).toBe(true);
+    expect(result.message).toBe(
+      "Added published-2025 and marked preprint-2024 as superseded by it"
+    );
+    expect(items).toHaveLength(2);
+    expect(items[0]?.custom?.superseded_by).toBe("uuid-published");
+    expect(items[0]?.custom?.superseded_reason).toBe("published_version");
+  });
+
+  // Library.add generates a colliding-safe citation key and a uuid the pointer can target;
+  // carrying the fetched ones over would defeat both.
+  it("drops the fetched id and custom block before adding", async () => {
+    const { fetchDoi } = await import("../import/fetcher.js");
+    vi.mocked(fetchDoi).mockResolvedValueOnce({
+      success: true,
+      item: {
+        id: "ignored-id",
+        type: "article-journal",
+        title: "Published Title",
+        DOI: "10.5678/published",
+        custom: { uuid: "ignored-uuid" },
+      },
+    });
+
+    await applyFixAction(
+      library as never,
+      items[0] as CslItem,
+      finding,
+      "add_published_and_supersede"
+    );
+
+    const added = library.add.mock.calls[0]?.[0] as CslItem;
+    expect(added.id).toBeUndefined();
+    expect(added.custom).toBeUndefined();
+    expect(added.DOI).toBe("10.5678/published");
+  });
+
+  // Otherwise the fix would create exactly the duplicate this feature exists to resolve.
+  it("reuses a published version that is already in the library", async () => {
+    const existing: CslItem = {
+      id: "already-here",
+      type: "article-journal",
+      title: "Published Title",
+      DOI: "10.5678/published",
+      custom: { uuid: "uuid-existing" },
+    };
+    useLibrary([{ ...preprint }, existing]);
+
+    const { fetchDoi } = await import("../import/fetcher.js");
+
+    const result = await applyFixAction(
+      library as never,
+      items[0] as CslItem,
+      finding,
+      "add_published_and_supersede"
+    );
+
+    expect(result.applied).toBe(true);
+    expect(fetchDoi).not.toHaveBeenCalled();
+    expect(library.add).not.toHaveBeenCalled();
+    expect(items).toHaveLength(2);
+    expect(items[0]?.custom?.superseded_by).toBe("uuid-existing");
+  });
+
+  it("reports a fetch failure without touching the library", async () => {
+    const { fetchDoi } = await import("../import/fetcher.js");
+    vi.mocked(fetchDoi).mockResolvedValueOnce({ success: false, error: "404 Not Found" } as never);
+
+    const result = await applyFixAction(
+      library as never,
+      items[0] as CslItem,
+      finding,
+      "add_published_and_supersede"
+    );
+
+    expect(result.applied).toBe(false);
+    expect(result.message).toContain("Failed to fetch metadata for 10.5678/published");
+    expect(library.add).not.toHaveBeenCalled();
+  });
+
+  it("reports a finding with no published DOI", async () => {
+    const result = await applyFixAction(
+      library as never,
+      items[0] as CslItem,
+      { type: "version_changed", message: "Published version available" },
+      "add_published_and_supersede"
+    );
+
+    expect(result.applied).toBe(false);
+    expect(result.message).toBe("No published DOI available in finding details");
+  });
+
+  // The record was added even though the pointer could not be written; saying "nothing
+  // happened" would leave the user unaware of a new entry in their library.
+  it("says the record was added when the mark cannot be written", async () => {
+    const { fetchDoi } = await import("../import/fetcher.js");
+    vi.mocked(fetchDoi).mockResolvedValueOnce({
+      success: true,
+      item: { id: "x", type: "article-journal", title: "Published", DOI: "10.5678/published" },
+    });
+    // Make the preprint unreachable by id, so deprecateReference reports not_found
+    library.find = vi.fn(async (identifier: string, options?: { idType?: string }) =>
+      options?.idType === "doi" ? items.find((i) => i.DOI === identifier) : undefined
+    );
+
+    const result = await applyFixAction(
+      library as never,
+      items[0] as CslItem,
+      finding,
+      "add_published_and_supersede"
+    );
+
+    expect(result.applied).toBe(false);
+    expect(result.message).toContain("Added published-2025");
+    expect(result.message).toContain("could not mark preprint-2024 as superseded (not_found)");
+    expect(library.save).toHaveBeenCalled();
   });
 });
