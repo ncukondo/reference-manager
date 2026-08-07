@@ -124,6 +124,48 @@ stays in the output; the warning tells the author which keys to update:
 `search` is an explicit query — silently dropping a record the user asked for by name would be
 surprising, so it warns only.
 
+## Command: `duplicates`
+
+```
+ref duplicates [--by <keys>] [--include-resolved] [--fix] [-o json]
+```
+
+| Option | Meaning |
+|--------|---------|
+| `--by <keys>` | Comma-separated: `doi,pmid,isbn,arxiv,eric,scopus,title` |
+| `--include-resolved` | Also report groups already linked by `superseded_by` |
+| `--fix` | Choose a keeper per group and mark the rest (TTY only) |
+
+Applies the `add`-time matching rules of `spec/features/duplicate-detection.md` to the whole
+library at once. The algorithm differs from `detector.ts`: that function compares one incoming
+record against every existing one, which is O(n²) applied to a library — 6,000 references means
+18 million normalized comparisons. The scan groups by key instead, which is O(n).
+
+`title` (title + authors + year) is excluded by default. It is the noisiest rule, and across a
+whole library it pairs errata, translations and reprints that the identifier keys do not.
+
+Two deviations from the pairwise detector, both to avoid false positives at library scale:
+
+- **Chapters are keyed by ISBN + title.** Otherwise the twelve chapters of one edited volume
+  collapse into a single twelve-way "duplicate".
+- **A book is never grouped with its own chapter.** `detector.ts` pairs them whenever either side
+  is a `book`, which is harmless for a one-shot `add` check but would report every book alongside
+  its chapters here.
+
+Groups whose members already point at each other are hidden, so the pairs fixed on one run are
+not reported again on the next.
+
+### `--fix`
+
+TTY only, matching `check --fix`: which record to keep is a judgement call, and there is no safe
+default to apply unattended. Each group is presented with its members, one pre-selected as the
+suggestion, plus a skip option. The suggestion ranks by metadata completeness first, then later
+publication year — that ordering is what separates an online-first record from its version of
+record, which is the one that gained volume, issue and page numbers.
+
+Marking goes through the same `deprecate` path, so a stale group cannot write a pointer the
+command itself would have refused.
+
 ## Non-Goals
 
 - No automatic rewriting of citation keys in manuscripts
@@ -134,5 +176,7 @@ surprising, so it warns only.
 
 - `src/features/superseded/` — resolution, validation, warning formatting
 - `src/cli/commands/deprecate.ts` — command implementation
+- `src/features/duplicate/scanner.ts` — library-wide grouping and keeper suggestion
+- `src/features/duplicate/fix-interaction.ts` — interactive keeper selection
 - `spec/features/duplicate-detection.md` — the matching rules `ref duplicates` reuses
 - `spec/features/check.md` — `version_changed` findings

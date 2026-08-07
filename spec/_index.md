@@ -108,6 +108,7 @@ spec/
 | `mcp` | `architecture/mcp-server.md` |
 | `check` | `features/check.md` |
 | `deprecate` | `features/superseded.md` |
+| `duplicates` | `features/superseded.md` |
 | `completion` | `features/shell-completion.md` |
 
 ### Core Concepts

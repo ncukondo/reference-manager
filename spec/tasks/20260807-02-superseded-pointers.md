@@ -7,9 +7,10 @@ three; it delivers the data model, the `ref deprecate` command, and reference-ti
 enough to handle the conference-version → journal-version case by hand, which no automatic detector
 can reach.
 
-Follow-up PRs (not in scope here):
+Follow-up PRs:
 
-- PR-2: `ref duplicates [--by ...] [--fix]` — retroactive scan, applies marks in bulk
+- PR-2 (done, PR #111): `ref duplicates [--by ...] [--fix]` — retroactive scan, applies marks in
+  bulk. See "Step 7" below.
 - PR-3: `check --fix` action that adds the published version as a new record and marks the old one
 
 ## References
@@ -114,6 +115,25 @@ stays clean — is covered end to end by `test-fixtures/test-superseded.sh`.
 - [x] Update `spec/core/data-model.md` with the three reserved fields
 - [x] Update README if it lists commands
 
+### Step 7: `ref duplicates` retroactive scan (PR-2)
+
+- [x] Write test: `src/features/duplicate/scanner.test.ts` — grouping per key type, DOI prefix
+      normalization, arXiv version suffix, ISBN chapter rules, merging groups that share a member,
+      already-linked groups hidden, `suggestKeeper` ordering
+- [x] Implement `src/features/duplicate/scanner.ts` — key-based grouping with union-find rather
+      than the O(n²) pairwise sweep `detector.ts` would give on a whole library
+- [x] Export the normalization helpers from `detector.ts` so the scan uses the same rules
+- [x] Write test: `src/features/operations/duplicates.test.ts` — `findDuplicates`,
+      `markGroupDuplicates` including keeper-in-others, missing member, and cycle rejection
+- [x] Implement `src/features/operations/duplicates.ts`
+- [x] Write test: `src/cli/commands/duplicates.test.ts` — `--by` parsing and errors, text and JSON
+      report shape
+- [x] Implement `src/cli/commands/duplicates.ts` + `src/features/duplicate/fix-interaction.ts`,
+      register in `src/cli/index.ts`
+- [x] Extend `test-fixtures/test-superseded.sh` with the scan, `--by`, `-o json`, TTY guard, and
+      convergence checks
+- [x] Update `spec/features/superseded.md`, `spec/_index.md`, README, CHANGELOG
+
 ## Manual Verification
 
 **Script**: `test-fixtures/test-superseded.sh`
@@ -126,6 +146,10 @@ Non-TTY tests (automated):
 - [x] `ref deprecate B --to A` is rejected as a cycle
 - [x] `ref update A --set custom.superseded_by=X` is rejected as a protected field
 - [x] `ref deprecate A --unset` clears all three fields
+- [x] `ref duplicates` pairs the two records by DOI and counts redundant records
+- [x] `ref duplicates --by pmid` finds nothing; `--by issn` is rejected
+- [x] `ref duplicates --fix` without a TTY is rejected
+- [x] A linked pair stops being reported; `--include-resolved` brings it back
 
 ## Completion Checklist
 

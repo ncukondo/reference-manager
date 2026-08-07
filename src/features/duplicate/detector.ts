@@ -10,7 +10,7 @@ import type { DuplicateMatch, DuplicateResult } from "./types.js";
  * Normalize DOI by removing common URL prefixes
  * Returns the DOI in format: 10.xxxx/...
  */
-function normalizeDoi(doi: string): string {
+export function normalizeDoi(doi: string): string {
   // Remove common DOI URL prefixes
   const normalized = doi
     .replace(/^https?:\/\/doi\.org\//i, "")
@@ -23,7 +23,7 @@ function normalizeDoi(doi: string): string {
 /**
  * Extract year from CSL-JSON issued field
  */
-function extractYear(item: CslItem): string | null {
+export function extractYear(item: CslItem): string | null {
   const dateParts = item.issued?.["date-parts"]?.[0];
   if (!dateParts || dateParts.length === 0) {
     return null;
@@ -34,7 +34,7 @@ function extractYear(item: CslItem): string | null {
 /**
  * Normalize author names to "family given-initial" format
  */
-function normalizeAuthors(item: CslItem): string | null {
+export function normalizeAuthors(item: CslItem): string | null {
   if (!item.author || item.author.length === 0) {
     return null;
   }
@@ -101,7 +101,7 @@ function checkPmidMatch(item: CslItem, existing: CslItem): DuplicateMatch | null
 /**
  * Normalize ISBN by removing hyphens, spaces, and uppercasing X
  */
-function normalizeIsbnForComparison(isbn: string): string {
+export function normalizeIsbnForComparison(isbn: string): string {
   return isbn.replace(/[-\s]/g, "").toUpperCase();
 }
 
@@ -113,7 +113,7 @@ const BOOK_TYPES = ["book"];
 /**
  * Types that should match by ISBN + title (chapters in the same book can differ)
  */
-const BOOK_SECTION_TYPES = ["chapter"];
+export const BOOK_SECTION_TYPES = ["chapter"];
 
 /**
  * Check if two items match by ISBN
