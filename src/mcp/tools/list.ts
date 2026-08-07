@@ -15,6 +15,7 @@ export interface ListToolParams {
   order?: SortOrder | undefined;
   limit?: number | undefined;
   offset?: number | undefined;
+  includeSuperseded?: boolean | undefined;
 }
 
 /**
@@ -33,7 +34,9 @@ export function registerListTool(
     "list",
     {
       description:
-        "List references in the library. Returns raw CslItem[] data. Supports sorting and pagination.",
+        "List references in the library. Returns raw CslItem[] data. Supports sorting and " +
+        "pagination. References marked as superseded (custom.superseded_by) are omitted unless " +
+        "includeSuperseded is set — cite the successor instead.",
       inputSchema: {
         sort: sortFieldSchema
           .optional()
@@ -51,6 +54,13 @@ export function registerListTool(
           .min(0)
           .optional()
           .describe("Number of results to skip (default: 0)"),
+        includeSuperseded: z
+          .boolean()
+          .optional()
+          .describe(
+            "Include references marked as superseded by another (default: false). " +
+              "Their custom.superseded_by holds the successor's uuid."
+          ),
       },
     },
     async (args: ListToolParams) => {
@@ -62,7 +72,7 @@ export function registerListTool(
 
       const result = await libraryOps.list({
         limit,
-        ...pickDefined(args, ["sort", "order", "offset"] as const),
+        ...pickDefined(args, ["sort", "order", "offset", "includeSuperseded"] as const),
       });
 
       return {

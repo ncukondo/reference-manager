@@ -108,6 +108,10 @@ Dangling and self-terminating cases:
 | `list` | Superseded records are **hidden**; `--include-superseded` shows them (and warns) |
 | `export` | Records are **included**; warn per record plus a summary line |
 
+The MCP server mirrors this: the `list` tool omits superseded references unless
+`includeSuperseded` is passed, and the `show` tool resolves the pointer to a citation key so an
+agent sees something it can cite rather than a bare uuid.
+
 ### Why `list` hides but `export` does not
 
 `list` is a browsing command — a superseded record is noise once its successor exists.

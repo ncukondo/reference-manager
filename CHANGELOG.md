@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     The suggestion ranks by metadata completeness, then publication year — the ordering that
     separates an online-first record from its version of record
 
+- **MCP superseded handling** (#108): the `list` tool omits superseded references and gains an
+  `includeSuperseded` parameter to get them back, matching `ref list`; the `show` tool resolves
+  the pointer to a citation key so an agent sees something it can cite rather than a bare uuid
+
 - **`check --fix` can keep both versions** (#108): `version_changed` findings gain an
   `add_published_and_supersede` action that adds the published version as a new record and marks
   the preprint as superseded by it
