@@ -8,11 +8,32 @@
 
 ## Purpose
 
-Enable AI agents (Claude Code, Claude Desktop, etc.) to directly interact with reference management:
+Give a **non-terminal user** — a researcher working in Claude Desktop who never opens a shell — access to their library:
 - Search and retrieve references
 - Add new references from various sources
 - Generate formatted citations
-- Manage full-text attachments
+- Read attached full text
+
+Shell-capable agents (Claude Code, Codex, Cursor) are served by the CLI plus Agent Skills (`ref install skills`), not by MCP.
+
+## Scope
+
+**MCP is not a mirror of the CLI.** See ADR-017 for the decision and its rationale.
+
+Expose an operation over MCP only if all of these hold:
+
+1. It serves the manuscript-writing loop (search → inspect → cite → export), or repairs a reference encountered during it
+2. It needs no TTY (no interactive prompt or TUI)
+3. It needs no local filesystem path supplied by the user
+4. It is not bulk library maintenance or configuration
+
+Exception to (1): a write operation qualifies when the agent can *detect* a problem over MCP but cannot *fix* it, forcing the user back to a terminal.
+
+Out of scope by this rule: `update`, `edit`, `duplicates`, `config`, `url`, `attach` (roles), `upgrade`, `install`.
+
+Prefer few tools with an `action` parameter over one tool per CLI subcommand — every registered tool costs context in every session.
+
+Remote (Streamable HTTP) transport is not pursued; it would require hosted libraries, contradicting ADR-001.
 
 ## Command
 
@@ -150,5 +171,6 @@ See: `src/mcp/context.ts`, `src/features/operations/library-operations.ts`
 - ADR-008: MCP stdio Server
 - ADR-009: ILibraryOperations Pattern for CLI
 - ADR-010: MCP ILibraryOperations Pattern
+- ADR-017: MCP Scope — Target Non-Terminal Hosts, Not CLI Parity
 - `spec/architecture/cli.md`: CLI commands
 - `spec/features/file-monitoring.md`: File watching
