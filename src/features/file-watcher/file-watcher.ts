@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import chokidar, { type FSWatcher } from "chokidar";
+import { StatPoller } from "./stat-poller.js";
 
 /**
  * Options for FileWatcher
@@ -9,9 +10,20 @@ import chokidar, { type FSWatcher } from "chokidar";
 export interface FileWatcherOptions {
   /** Debounce time in milliseconds (default: 500) */
   debounceMs?: number;
-  /** Poll interval in milliseconds for polling mode (default: 5000) */
+  /**
+   * Poll interval in milliseconds (default: 5000).
+   * Used by chokidar's polling mode when `usePolling` is on, and by the
+   * always-on stat fallback otherwise.
+   */
   pollIntervalMs?: number;
-  /** Use polling instead of native file system events */
+  /**
+   * Replace native file system events with chokidar's polling mode
+   * (`fs.watchFile`). Use this on mounts where `fs.watch` itself fails.
+   * When off (default), native events are used and a lightweight `fs.stat`
+   * fallback runs alongside them so that changes which never produce a native
+   * event — cloud sync from another machine, WSL drvfs (9p) mounts — are still
+   * picked up within one poll interval.
+   */
   usePolling?: boolean;
   /** Retry delay in milliseconds for JSON parse (default: 200) */
   retryDelayMs?: number;
@@ -61,6 +73,12 @@ function shouldIgnore(filePath: string): boolean {
 /**
  * FileWatcher watches a file or directory for changes and emits events.
  *
+ * Change detection combines two sources, both debounced through the same
+ * path so a change seen by both fires once:
+ * - chokidar (native events, or its own polling when `usePolling` is set)
+ * - a stat-based fallback ({@link StatPoller}) that only runs when
+ *   `usePolling` is off and the watched path is a file
+ *
  * Events:
  * - 'change': Emitted when a watched file changes (after debounce)
  * - 'error': Emitted when a watch error occurs
@@ -77,6 +95,7 @@ export class FileWatcher extends EventEmitter {
   private readonly maxRetries: number;
 
   private watcher: FSWatcher | null = null;
+  private statPoller: StatPoller | null = null;
   private watching = false;
   private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
 
@@ -110,8 +129,14 @@ export class FileWatcher extends EventEmitter {
 
       this.watcher.on("ready", () => {
         this.watching = true;
-        this.emit("ready");
-        resolve();
+        this.startStatFallback()
+          .catch((error: unknown) => {
+            this.emitErrorIfListened(error);
+          })
+          .finally(() => {
+            this.emit("ready");
+            resolve();
+          });
       });
 
       this.watcher.on("error", (error: unknown) => {
@@ -129,6 +154,37 @@ export class FileWatcher extends EventEmitter {
         this.handleFileChange(filePath);
       });
     });
+  }
+
+  /**
+   * Start the stat-based fallback unless chokidar is already polling.
+   * StatPoller declines to run on a directory path.
+   */
+  private async startStatFallback(): Promise<void> {
+    if (this.usePolling || this.statPoller) return;
+
+    const poller = new StatPoller(this.watchPath, this.pollIntervalMs);
+    poller.on("change", (filePath: string) => {
+      this.handleFileChange(filePath);
+    });
+    poller.on("error", (error: unknown) => {
+      this.emitErrorIfListened(error);
+    });
+    await poller.start();
+
+    if (poller.isRunning()) {
+      this.statPoller = poller;
+    }
+  }
+
+  /**
+   * Emit 'error' only when someone is listening; an unhandled 'error' event
+   * would throw and take the host process down.
+   */
+  private emitErrorIfListened(error: unknown): void {
+    if (this.listenerCount("error") > 0) {
+      this.emit("error", error);
+    }
   }
 
   /**
@@ -195,6 +251,11 @@ export class FileWatcher extends EventEmitter {
       this.watcher = null;
     }
 
+    if (this.statPoller) {
+      this.statPoller.stop();
+      this.statPoller = null;
+    }
+
     // Clear all debounce timers
     for (const timer of this.debounceTimers.values()) {
       clearTimeout(timer);
@@ -216,6 +277,14 @@ export class FileWatcher extends EventEmitter {
    */
   isWatching(): boolean {
     return this.watching;
+  }
+
+  /**
+   * Whether the stat-based fallback poll is running.
+   * False when `usePolling` is on, when the path is a directory, or after close().
+   */
+  isStatPollingActive(): boolean {
+    return this.statPoller?.isRunning() ?? false;
   }
 
   /**

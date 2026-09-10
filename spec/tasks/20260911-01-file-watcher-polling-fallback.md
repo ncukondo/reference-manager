@@ -48,7 +48,7 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 1: Stat-based polling fallback in `FileWatcher`
 
-- [ ] Write test: `src/features/file-watcher/file-watcher.test.ts`
+- [x] Write test: `src/features/file-watcher/stat-poller.test.ts`, `file-watcher.fallback.test.ts`
       - with `usePolling: false`, a change that produces no native event (simulate by stubbing
         chokidar via `vi.mock`, or by pausing the chokidar watcher) is still emitted within
         `pollIntervalMs` + `debounceMs`
@@ -57,10 +57,10 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
         server level in Step 3
       - `close()` stops the poll timer (no events after close, no open handles)
       - with `usePolling: true` the stat poll is not started (chokidar polls instead)
-- [ ] Implement: `startStatPoll()` / `stopStatPoll()` in `FileWatcher`, seeded with the initial
-      `stat` at `start()`, timer `unref()`'d so it never keeps the process alive
-- [ ] Verify Green: `npm run test:unit -- file-watcher.test.ts`
-- [ ] Lint/Type check: `npm run lint && npm run typecheck`
+- [x] Implement: `StatPoller` (`src/features/file-watcher/stat-poller.ts`, compares ino/size/mtime,
+      timer `unref()`'d) started from `FileWatcher.start()` when `usePolling` is off
+- [x] Verify Green: `npm run test:unit -- src/features/file-watcher/`
+- [x] Lint/Type check: `npm run lint && npm run typecheck`
 
 ### Step 2: `watch.use_polling` config key
 
