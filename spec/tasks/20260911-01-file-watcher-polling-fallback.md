@@ -84,11 +84,11 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 4: Spec and docs
 
-- [ ] Update `spec/features/file-monitoring.md`: describe the stat fallback, the `use_polling`
+- [x] Update `spec/features/file-monitoring.md`: describe the stat fallback, the `use_polling`
       key, and the cloud-sync / WSL rationale
-- [ ] Add `watch.use_polling` to the config key table in `spec/features/config-command.md` if
-      the watch section is listed there
-- [ ] CHANGELOG.md entry under Unreleased / Fixed
+- [x] `spec/features/config-command.md` does not list the watch section; added a `[watch]`
+      example to the README configuration section instead
+- [x] CHANGELOG.md entry under Unreleased / Fixed
 
 ## Completion Checklist
 

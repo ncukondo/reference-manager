@@ -780,6 +780,14 @@ directory = "~/references/attachments"
 [server]
 auto_start = true
 auto_stop_minutes = 60
+
+[watch]
+# Server/MCP mode reloads library.json when it changes on disk. Native file
+# events are backed by a stat poll so changes synced from another machine
+# (OneDrive, Dropbox, WSL /mnt/c paths) are picked up within this interval.
+poll_interval_ms = 5000
+# Set to true only if native file watching fails on your mount (some NFS/9p setups)
+use_polling = false
 ```
 
 ### Environment Variables
