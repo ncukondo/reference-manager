@@ -37,6 +37,7 @@ describe("key-parser", () => {
       expect(isValidConfigKey("backup.max_generations")).toBe(true);
       expect(isValidConfigKey("server.auto_start")).toBe(true);
       expect(isValidConfigKey("fulltext.preferred_type")).toBe(true);
+      expect(isValidConfigKey("watch.use_polling")).toBe(true);
     });
 
     it("returns true for valid deeply nested keys", () => {
@@ -103,6 +104,12 @@ describe("key-parser", () => {
 
     it("returns info for boolean keys", () => {
       const info = getConfigKeyInfo("server.auto_start");
+      expect(info).not.toBeNull();
+      expect(info?.type).toBe("boolean");
+    });
+
+    it("returns boolean info for watch.use_polling", () => {
+      const info = getConfigKeyInfo("watch.use_polling");
       expect(info).not.toBeNull();
       expect(info?.type).toBe("boolean");
     });

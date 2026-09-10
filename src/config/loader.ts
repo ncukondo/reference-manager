@@ -170,12 +170,7 @@ function fillDefaults(partial: DeepPartialConfig): Config {
       maxAgeDays: partial.backup?.maxAgeDays ?? defaultConfig.backup.maxAgeDays,
       directory: partial.backup?.directory ?? defaultConfig.backup.directory,
     },
-    watch: {
-      debounceMs: partial.watch?.debounceMs ?? defaultConfig.watch.debounceMs,
-      pollIntervalMs: partial.watch?.pollIntervalMs ?? defaultConfig.watch.pollIntervalMs,
-      retryIntervalMs: partial.watch?.retryIntervalMs ?? defaultConfig.watch.retryIntervalMs,
-      maxRetries: partial.watch?.maxRetries ?? defaultConfig.watch.maxRetries,
-    },
+    watch: fillWatchDefaults(partial.watch),
     server: {
       autoStart: partial.server?.autoStart ?? defaultConfig.server.autoStart,
       autoStopMinutes: partial.server?.autoStopMinutes ?? defaultConfig.server.autoStopMinutes,
@@ -197,6 +192,16 @@ function fillDefaults(partial: DeepPartialConfig): Config {
 /**
  * Fill citation config with defaults
  */
+function fillWatchDefaults(partial: DeepPartialConfig["watch"]): Config["watch"] {
+  return {
+    debounceMs: partial?.debounceMs ?? defaultConfig.watch.debounceMs,
+    pollIntervalMs: partial?.pollIntervalMs ?? defaultConfig.watch.pollIntervalMs,
+    retryIntervalMs: partial?.retryIntervalMs ?? defaultConfig.watch.retryIntervalMs,
+    maxRetries: partial?.maxRetries ?? defaultConfig.watch.maxRetries,
+    usePolling: partial?.usePolling ?? defaultConfig.watch.usePolling,
+  };
+}
+
 function fillCitationDefaults(partial: DeepPartialConfig["citation"]): Config["citation"] {
   return {
     defaultStyle: partial?.defaultStyle ?? defaultConfig.citation.defaultStyle,

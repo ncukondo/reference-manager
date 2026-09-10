@@ -64,13 +64,13 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 2: `watch.use_polling` config key
 
-- [ ] Write test: `src/config/loader.test.ts` (default `false`, TOML `use_polling = true` and
+- [x] Write test: `src/config/loader.test.ts` (default `false`, TOML `use_polling = true` and
       `usePolling = true` both load), `src/features/config/show.test.ts` (`use_polling` shown),
       `src/config/key-parser.test.ts` (`watch.use_polling` is a boolean key)
-- [ ] Implement: `watchConfigSchema`, `partialConfigSchema`, `defaultConfig`, `loader.ts`,
-      `key-parser.ts` registry, `show.ts`
-- [ ] Verify Green
-- [ ] Lint/Type check
+- [x] Implement: `watchConfigSchema`, `partialConfigSchema`, `defaultConfig`, `loader.ts`
+      (`fillWatchDefaults` extracted), `key-parser.ts` registry, `show.ts`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 3: Wire config into server and MCP watchers
 

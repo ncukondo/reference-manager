@@ -36,6 +36,7 @@ function toSnakeCaseConfig(config: Config): Record<string, unknown> {
     poll_interval_ms: config.watch.pollIntervalMs,
     retry_interval_ms: config.watch.retryIntervalMs,
     max_retries: config.watch.maxRetries,
+    use_polling: config.watch.usePolling,
   };
 
   result.server = {

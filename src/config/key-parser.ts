@@ -51,6 +51,11 @@ const CONFIG_KEY_REGISTRY: ConfigKeyInfo[] = [
     description: "File watch retry interval (ms)",
   },
   { key: "watch.max_retries", type: "integer", description: "Maximum file watch retries" },
+  {
+    key: "watch.use_polling",
+    type: "boolean",
+    description: "Poll instead of native file events (for mounts where native watching fails)",
+  },
 
   // server section
   { key: "server.auto_start", type: "boolean", description: "Auto-start server on CLI commands" },
