@@ -71,6 +71,7 @@ export const defaultConfig: Config = {
     pollIntervalMs: 5000,
     retryIntervalMs: 200,
     maxRetries: 10,
+    usePolling: false,
   },
   server: {
     autoStart: false,

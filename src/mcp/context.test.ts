@@ -165,6 +165,75 @@ describe("McpContext", () => {
     });
   });
 
+  describe("watch config wiring", () => {
+    it("runs the stat fallback with the default poll interval", async () => {
+      const ctx = await createMcpContext({ configPath });
+
+      try {
+        expect(ctx.fileWatcher.getPollIntervalMs()).toBe(ctx.config.watch.pollIntervalMs);
+        expect(ctx.fileWatcher.isStatPollingActive()).toBe(true);
+      } finally {
+        await ctx.dispose();
+      }
+    });
+
+    it("forwards watch.poll_interval_ms and watch.use_polling from config", async () => {
+      await fs.appendFile(
+        configPath,
+        `
+[watch]
+poll_interval_ms = 1234
+use_polling = true
+`,
+        "utf-8"
+      );
+      const ctx = await createMcpContext({ configPath });
+
+      try {
+        expect(ctx.config.watch.usePolling).toBe(true);
+        expect(ctx.fileWatcher.getPollIntervalMs()).toBe(1234);
+        expect(ctx.fileWatcher.isStatPollingActive()).toBe(false);
+      } finally {
+        await ctx.dispose();
+      }
+    });
+
+    it("reloads an external write with no manual change event", async () => {
+      await fs.writeFile(
+        libraryPath,
+        JSON.stringify([{ id: "initial2024", type: "article-journal", title: "Initial" }]),
+        "utf-8"
+      );
+      await fs.appendFile(
+        configPath,
+        `
+[watch]
+poll_interval_ms = 50
+debounce_ms = 20
+`,
+        "utf-8"
+      );
+      const ctx = await createMcpContext({ configPath });
+
+      try {
+        expect(await ctx.libraryOperations.find("initial2024")).toBeDefined();
+
+        await fs.writeFile(
+          libraryPath,
+          JSON.stringify([{ id: "synced2024", type: "article-journal", title: "Synced" }]),
+          "utf-8"
+        );
+
+        await waitFor(async () => (await ctx.libraryOperations.find("synced2024")) ?? null, {
+          label: "reload picks up synced2024",
+        });
+        expect(await ctx.libraryOperations.find("initial2024")).toBeUndefined();
+      } finally {
+        await ctx.dispose();
+      }
+    });
+  });
+
   describe("file change handling", () => {
     it("should reload library on external file change", async () => {
       // Initial library with one reference

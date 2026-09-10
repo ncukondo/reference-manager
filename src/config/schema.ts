@@ -68,6 +68,12 @@ export const watchConfigSchema = z.object({
   pollIntervalMs: z.number().int().positive(),
   retryIntervalMs: z.number().int().positive(),
   maxRetries: z.number().int().nonnegative(),
+  /**
+   * Replace native file-system events with polling (fs.watchFile).
+   * Native events plus a stat fallback are the default; turn this on only for
+   * mounts where native watching fails outright.
+   */
+  usePolling: z.boolean(),
 });
 
 /**
@@ -229,6 +235,8 @@ export const partialConfigSchema = z
         retry_interval_ms: z.number().int().positive().optional(),
         maxRetries: z.number().int().nonnegative().optional(),
         max_retries: z.number().int().nonnegative().optional(),
+        usePolling: z.boolean().optional(),
+        use_polling: z.boolean().optional(),
       })
       .optional(),
     server: z
@@ -446,6 +454,8 @@ function normalizeWatchConfig(
     retry_interval_ms?: number;
     maxRetries?: number;
     max_retries?: number;
+    usePolling?: boolean;
+    use_polling?: boolean;
   }>
 ): Partial<WatchConfig> | undefined {
   const normalized: Partial<WatchConfig> = {};
@@ -468,6 +478,11 @@ function normalizeWatchConfig(
   const maxRetries = watch.maxRetries ?? watch.max_retries;
   if (maxRetries !== undefined) {
     normalized.maxRetries = maxRetries;
+  }
+
+  const usePolling = watch.usePolling ?? watch.use_polling;
+  if (usePolling !== undefined) {
+    normalized.usePolling = usePolling;
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;

@@ -41,6 +41,8 @@ export async function createMcpContext(options: CreateMcpContextOptions): Promis
     debounceMs: config.watch.debounceMs,
     maxRetries: config.watch.maxRetries,
     retryDelayMs: config.watch.retryIntervalMs,
+    pollIntervalMs: config.watch.pollIntervalMs,
+    usePolling: config.watch.usePolling,
   });
 
   // Listen for file changes

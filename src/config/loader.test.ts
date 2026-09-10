@@ -94,6 +94,11 @@ describe("Config Loader", () => {
       expect(config.backup.maxAgeDays).toBe(365);
       expect(config.watch.debounceMs).toBe(500);
     });
+
+    it("should default watch.usePolling to false", () => {
+      const config = loadTestConfig({ cwd: testDir });
+      expect(config.watch.usePolling).toBe(false);
+    });
   });
 
   describe("Current directory config", () => {
@@ -142,6 +147,7 @@ debounce_ms = 1000
 poll_interval_ms = 10000
 retry_interval_ms = 500
 max_retries = 5
+use_polling = true
 `
       );
 
@@ -153,6 +159,19 @@ max_retries = 5
       expect(config.watch.pollIntervalMs).toBe(10000);
       expect(config.watch.retryIntervalMs).toBe(500);
       expect(config.watch.maxRetries).toBe(5);
+      expect(config.watch.usePolling).toBe(true);
+    });
+
+    it("should accept camelCase watch.usePolling", () => {
+      writeFileSync(
+        join(testDir, ".reference-manager.config.toml"),
+        `[watch]
+usePolling = true
+`
+      );
+
+      const config = loadTestConfig({ cwd: testDir });
+      expect(config.watch.usePolling).toBe(true);
     });
   });
 

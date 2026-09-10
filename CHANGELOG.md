@@ -66,6 +66,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Server/MCP mode now notices `library.json` changes synced from another machine**:
+  the file watcher relied on native file-system events only, which are never delivered
+  for changes made on the Windows side of a WSL drvfs (9p) mount or, on some mounts,
+  for cloud-sync replaces (OneDrive, Dropbox, Google Drive). The in-memory library
+  silently diverged from disk and the next server-side mutation overwrote the other
+  PC's edits
+  - `FileWatcher` now runs a lightweight `fs.stat` poll (inode/size/mtime) every
+    `watch.poll_interval_ms` alongside native events; both feed the same debounce and
+    `reload()`'s hash check, so a change seen twice still reloads once
+  - New `watch.use_polling` config key (default `false`) switches chokidar to its own
+    polling mode for mounts where native watching fails outright
+  - `watch.poll_interval_ms` is now honoured by the MCP server too (it was dropped)
+
 - **Config loader tests are isolated from the host environment** (#105):
   `src/config/loader.test.ts` read the developer's real
   `~/.config/reference-manager/config.toml`, so default-value assertions

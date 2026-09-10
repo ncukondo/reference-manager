@@ -21,6 +21,49 @@ File monitoring enables the library to automatically reload when the CSL-JSON fi
   - `*.lock`
   - editor swap files
 
+### Two Detection Sources
+
+Native file-system events alone are not enough. They are never delivered in
+several situations that matter for a library kept in a cloud-synced folder:
+
+- **WSL drvfs (9p) mounts** (`/mnt/c/.../OneDrive/library.json`): inotify emits
+  nothing for changes made on the Windows side, so a sync from another PC is
+  invisible to a server running inside WSL.
+- **Cloud sync clients** (OneDrive, Dropbox, Google Drive) that replace the file
+  via write-to-temp + rename, sometimes preserving the source machine's mtime.
+- **Network mounts** where `fs.watch` succeeds but stays silent.
+
+`FileWatcher` therefore combines two sources. Both feed the same debounce, so a
+change seen by both fires once, and `Library.reload()`'s hash check drops it if
+the content is unchanged.
+
+| Source | When | Detects |
+|--------|------|---------|
+| chokidar native events | `use_polling = false` (default) | Changes the OS reports |
+| `StatPoller` fallback | `use_polling = false` and the watched path is a file | `fs.stat` every `poll_interval_ms`; fires when inode, size, or mtime differ from the last tick |
+| chokidar polling (`fs.watchFile`) | `use_polling = true` | Everything, by polling; `StatPoller` is skipped |
+
+The stat fallback compares the **inode** as well as size and mtime so that an
+atomic replace with identical length and a preserved mtime is still noticed.
+It stats, never reads: hashing a multi-megabyte library every tick over 9p is
+too slow, and the content hash is checked once in `reload()` anyway.
+
+The fallback's timer is `unref()`'d. It never keeps the process alive on its
+own, and a slow stat (network mount) does not pile up overlapping ticks.
+
+### `watch.use_polling`
+
+Set `use_polling = true` only when native watching fails outright (some NFS
+and 9p setups raise on `fs.watch`). For the ordinary cloud-sync case the
+default is enough: native events cover local edits instantly, and the stat
+fallback catches synced changes within one poll interval.
+
+```toml
+[watch]
+poll_interval_ms = 5000   # stat fallback cadence, and fs.watchFile interval when polling
+use_polling = false       # true: chokidar polling only, no native events
+```
+
 ## Self-Write Detection
 
 To avoid reloading after the application's own write operations:
@@ -78,10 +121,10 @@ class Library {
 
 ## Reload Policy
 
-- Watch-based reload
-- Polling fallback only
+- Watch-based reload, with an always-on stat fallback (see Two Detection Sources)
 - Debounce: 500 ms
-- Poll interval: 5 s
+- Poll interval: 5 s (`watch.poll_interval_ms`)
+- `watch.use_polling`: `false` (native events + stat fallback) by default
 - JSON parse retry:
   - 200 ms × 10
 - During reload:

@@ -16,6 +16,7 @@ const mockConfig: Config = {
     pollIntervalMs: 1000,
     retryIntervalMs: 5000,
     maxRetries: 3,
+    usePolling: false,
   },
   server: {
     autoStart: false,
@@ -64,6 +65,8 @@ describe("showConfig", () => {
       const result = showConfig(mockConfig, {});
 
       expect(result).toContain("[backup]");
+      expect(result).toContain("[watch]");
+      expect(result).toContain("use_polling = false");
       expect(result).toContain("[server]");
       expect(result).toContain("[citation]");
       expect(result).toContain("[pubmed]");

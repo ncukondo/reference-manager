@@ -263,3 +263,14 @@ When planning new features:
 4. Follow TDD process (see `spec/guidelines/testing.md`)
 5. Update CHANGELOG.md when complete
 6. Move task file to `completed/`
+### Fix: File Watcher Polling Fallback for Cloud-Synced Libraries
+
+Server/MCP mode watches `library.json` with native FS events only, so changes synced from another
+PC via OneDrive (especially through a WSL drvfs mount) are never noticed and the in-memory library
+diverges from disk. Add an always-on `fs.stat` polling fallback to `FileWatcher`, expose
+`watch.use_polling` for mounts where native watching fails outright, and forward `pollIntervalMs`
+from MCP.
+
+- Task: `spec/tasks/20260911-01-file-watcher-polling-fallback.md`
+- Spec: `spec/features/file-monitoring.md`
+- Status: In progress
