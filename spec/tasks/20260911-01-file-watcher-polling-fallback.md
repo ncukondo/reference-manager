@@ -74,12 +74,13 @@ For each step, follow the Red-Green-Refactor cycle (see `spec/guidelines/testing
 
 ### Step 3: Wire config into server and MCP watchers
 
-- [ ] Write test: `src/server/index.test.ts` and `src/mcp/context.test.ts` — with
+- [x] Write test: `src/server/index.test.ts` and `src/mcp/context.test.ts` — with
       `watch.usePolling = true`, an external write is reloaded; `pollIntervalMs` from config is
-      forwarded (assert via `fileWatcher.getPollIntervalMs()`)
-- [ ] Implement: pass `usePolling` (server + MCP) and `pollIntervalMs` (MCP) to `FileWatcher`
-- [ ] Verify Green
-- [ ] Lint/Type check
+      forwarded (assert via `fileWatcher.getPollIntervalMs()`); an external write is reloaded
+      with no manual `change` emit in both modes
+- [x] Implement: pass `usePolling` (server + MCP) and `pollIntervalMs` (MCP) to `FileWatcher`
+- [x] Verify Green
+- [x] Lint/Type check
 
 ### Step 4: Spec and docs
 

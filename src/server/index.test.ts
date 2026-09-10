@@ -270,6 +270,64 @@ describe("startServerWithFileWatcher", () => {
     expect(result.fileWatcher.isWatching()).toBe(false);
   });
 
+  describe("watch config wiring", () => {
+    it("forwards pollIntervalMs and runs the stat fallback by default", async () => {
+      config.watch.pollIntervalMs = 1234;
+      const result = await startServerWithFileWatcher(libraryPath, config);
+
+      try {
+        expect(result.fileWatcher.getPollIntervalMs()).toBe(1234);
+        expect(result.fileWatcher.isStatPollingActive()).toBe(true);
+      } finally {
+        await result.dispose();
+      }
+    });
+
+    it("switches to chokidar polling when watch.usePolling is on", async () => {
+      config.watch.usePolling = true;
+      const result = await startServerWithFileWatcher(libraryPath, config);
+
+      try {
+        expect(result.fileWatcher.isWatching()).toBe(true);
+        expect(result.fileWatcher.isStatPollingActive()).toBe(false);
+      } finally {
+        await result.dispose();
+      }
+    });
+
+    it.each([
+      ["native events + stat fallback", false],
+      ["chokidar polling", true],
+    ])("reloads an external write with no manual change event (%s)", async (_label, usePolling) => {
+      await fs.writeFile(
+        libraryPath,
+        JSON.stringify([{ id: "initial2024", type: "article-journal", title: "Initial" }]),
+        "utf-8"
+      );
+      config.watch.usePolling = usePolling;
+      config.watch.pollIntervalMs = 50;
+      config.watch.debounceMs = 20;
+      const result = await startServerWithFileWatcher(libraryPath, config);
+
+      try {
+        expect(await result.library.find("initial2024")).toBeDefined();
+
+        await fs.writeFile(
+          libraryPath,
+          JSON.stringify([{ id: "synced2024", type: "article-journal", title: "Synced" }]),
+          "utf-8"
+        );
+
+        await waitFor(async () => (await result.library.find("synced2024")) ?? null, {
+          label: `reload picks up synced2024 (${_label})`,
+        });
+        expect(await result.library.find("initial2024")).toBeUndefined();
+      } finally {
+        await result.dispose();
+      }
+    });
+  });
+
   it("should persist in-memory changes on dispose", async () => {
     // The on-disk file is "[]" (from beforeEach). We mutate the library in
     // memory without calling save(), which simulates the state we care about:
