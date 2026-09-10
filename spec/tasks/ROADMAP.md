@@ -271,6 +271,6 @@ diverges from disk. Add an always-on `fs.stat` polling fallback to `FileWatcher`
 `watch.use_polling` for mounts where native watching fails outright, and forward `pollIntervalMs`
 from MCP.
 
-- Task: `spec/tasks/20260911-01-file-watcher-polling-fallback.md`
+- Task: `spec/tasks/completed/20260911-01-file-watcher-polling-fallback.md`
 - Spec: `spec/features/file-monitoring.md`
-- Status: In progress
+- Status: Done (PR #117)
